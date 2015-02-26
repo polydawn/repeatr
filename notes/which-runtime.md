@@ -17,7 +17,7 @@ Deciding which to use for the above properties is the purpose of this document.
 
 This is NOT an exhaustive list of every runtime or even an [objective feature comparison](https://github.com/containers/support-matrix#support-matrix), but instead an informal fitness evaluation for our specific purposes.
 
-By design, repeatr does not care much about runtimes: they are just one of arbitrarily-many job executors. Thus the relative velocity of these projects matters less than the current position; runtimes could later we trivially swapped for any reason.
+By design, repeatr does not care much about runtimes: they are just one of arbitrarily-many job executors. Thus the relative velocity of these projects matters less than the current position; runtimes could later be trivially swapped for any reason.
 
 
 ## [Libcontainer](https://github.com/docker/libcontainer) / nsinit
