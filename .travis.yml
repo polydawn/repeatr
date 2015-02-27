@@ -1,0 +1,11 @@
+language: go
+
+go:
+	- 1.4
+
+script:
+	- contrib/validate-dco
+	- contrib/validate-gofmt
+	- goad test
+	- goad install
+

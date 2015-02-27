@@ -73,7 +73,7 @@ pkg="polydawn.net/$name"
 		rm -f "$coverFile"
 		;;
 	*)
-		echo "Usage: $0 {init|test|install|fmt|doc|cover}" 1>&2;
+		echo "Usage: $0 {init|test|install|fmt|doc|cover|validate}" 1>&2;
 		exit 1
 	;;
 esac
