@@ -16,6 +16,7 @@ done
 
 if [ ${#badFiles[@]} -eq 0 ]; then
 	echo 'All Go source files are properly formatted.'
+	echo
 else
 	{
 		echo "These files are not properly gofmt'd:"

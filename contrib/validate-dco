@@ -17,6 +17,7 @@ check_dco() {
 
 if [ $adds -eq 0 -a $dels -eq 0 ]; then
 	echo '0 adds, 0 deletions; nothing to validate.'
+	echo
 else
 	commits=( $(validate_log --format='format:%H%n') )
 	badCommits=()
@@ -31,6 +32,7 @@ else
 	done
 	if [ ${#badCommits[@]} -eq 0 ]; then
 		echo "All commits are properly signed with the DCO!"
+	echo
 	else
 		{
 			echo "These commits do not have a proper '$dcoPrefix' marker:"
