@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Where is this script located?
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -15,8 +16,11 @@ export BASEDIR="$PWD"
 name="repeatr"
 pkg="polydawn.net/$name"
 
-
-case "$1" in
+[ -z "$1" ] && (
+	go fmt "$pkg"
+	go test "$pkg"
+	go install "$pkg"
+) || case "$1" in
 	-)
 		# passthrough for other commands
 		shift
@@ -34,15 +38,12 @@ case "$1" in
 		# (we don't do it at the front of every build because it will move submodules if you already have them, and that might not be what you want as you're plowing along)
 		git submodule update --init
 		;;
-	build)
-		go build
-		;;
 	test)
 		go test -i "$SUBSECTION" &&
 		go test -v "$SUBSECTION"
 		;;
 	install)
-		go install $pkg
+		go install "$pkg"
 		;;
 	fmt)
 		go fmt "$SUBSECTION"
@@ -55,20 +56,22 @@ case "$1" in
 		done
 		;;
 	cover)
+		coverFile="$GOPATH/tmp/cover/cover.out"
+		mkdir -p "$(dirname "$coverFile")"
 		for package in $(go list "$SUBSECTION" | sed "s#^_${PWD}#${pkg}#"); do
-			rm -f cover.out
+			rm -f "$coverFile"
 			echo ====
-			go test -coverprofile=cover.out "$package" && \
+			go test -coverprofile="$coverFile" "$package" && \
 			echo ---- && \
-			go tool cover -func=cover.out && \
+			go tool cover -func="$coverFile" && \
 			echo ---- && \
-			go tool cover -html=cover.out
+			go tool cover -html="$coverFile"
 			echo ====
 		done
-		rm -f cover.out
+		rm -f "$coverFile"
 		;;
 	*)
-		echo "Usage: $0 {init|build|test|install|fmt|doc|cover}" 1>&2;
+		echo "Usage: $0 {init|test|install|fmt|doc|cover}" 1>&2;
 		exit 1
 	;;
 esac
