@@ -17,8 +17,8 @@ name="repeatr"
 pkg="polydawn.net/$name"
 
 [ -z "$1" ] && (
-	go fmt "$pkg"
-	go test "$pkg"
+	go fmt "$SUBSECTION"
+	go test "$SUBSECTION"
 	go install "$pkg"
 ) || case "$1" in
 	-)
