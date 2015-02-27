@@ -4,8 +4,7 @@ go:
 	- 1.4
 
 script:
-	- contrib/validate-dco
-	- contrib/validate-gofmt
+	- goad validate
 	- goad test
 	- goad install
 
