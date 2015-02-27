@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Where is this script located?
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$DIR"
+export GOPATH="$PWD"/.gopath/
+export BASEDIR="$PWD"
+
+
+# subsection arg?
+[ -z "$2" ] && SUBSECTION="./..." || SUBSECTION="./$2"
+
+
+# Project details
+name="repeatr"
+pkg="polydawn.net/$name"
+
+
+case "$1" in
+	-)
+		# passthrough for other commands
+		shift
+		go "$@"
+		;;
+	env)
+		echo "GOROOT=`go env GOROOT`"
+		echo "GOPATH=`go env GOPATH`"
+		;;
+	path)
+		echo "$GOPATH"
+		;;
+	init)
+		# it's your responsibility to do this the first time
+		# (we don't do it at the front of every build because it will move submodules if you already have them, and that might not be what you want as you're plowing along)
+		git submodule update --init
+		;;
+	build)
+		go build
+		;;
+	test)
+		go test -i "$SUBSECTION" &&
+		go test -v "$SUBSECTION"
+		;;
+	install)
+		go install $pkg
+		;;
+	fmt)
+		go fmt "$SUBSECTION"
+		;;
+	doc)
+		for package in $(go list "$SUBSECTION" | sed "s#^_${PWD}#${pkg}#"); do
+			echo -e "==== $package ====\n"
+			godoc "$package"
+			echo -e "\n\n\n"
+		done
+		;;
+	cover)
+		for package in $(go list "$SUBSECTION" | sed "s#^_${PWD}#${pkg}#"); do
+			rm -f cover.out
+			echo ====
+			go test -coverprofile=cover.out "$package" && \
+			echo ---- && \
+			go tool cover -func=cover.out && \
+			echo ---- && \
+			go tool cover -html=cover.out
+			echo ====
+		done
+		rm -f cover.out
+		;;
+	*)
+		echo "Usage: $0 {init|build|test|install|fmt|doc|cover}" 1>&2;
+		exit 1
+	;;
+esac
+
+
