@@ -19,7 +19,7 @@ type Input struct {
 type Accents struct {
 	OS         string            // Specify an OS limitation.  This may be used by the scheduler, and is also considered part of the 'conjecture' (if you want to assert things are the same across all platforms, build a query to check for that).
 	Arch       string            // Specify an architecture limitation.  Similar to `Accents.OS`.
-	Entrypoint string            // Executable to invoke as the job.
+	Entrypoint []string          // Executable to invoke as the job.
 	Env        map[string]string // Environment variables
 }
 
