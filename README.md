@@ -1,4 +1,4 @@
-# repeatr
+# repeatr [![Build status](https://img.shields.io/travis/polydawn/repeatr.svg?style=flat-square)](https://travis-ci.org/polydawn/repeatr)
 
 Run it. Run it again.
 
