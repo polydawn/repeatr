@@ -60,13 +60,15 @@ pkg="polydawn.net/$name"
 		mkdir -p "$(dirname "$coverFile")"
 		for package in $(go list "$SUBSECTION" | sed "s#^_${PWD}#${pkg}#"); do
 			rm -f "$coverFile"
-			echo ====
+			echo "==== $package ===="
 			go test -coverprofile="$coverFile" "$package" && \
+			[ -f "$coverFile" ] && \
 			echo ---- && \
 			go tool cover -func="$coverFile" && \
 			echo ---- && \
 			go tool cover -html="$coverFile"
 			echo ====
+			echo
 		done
 		rm -f "$coverFile"
 		;;
