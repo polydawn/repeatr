@@ -72,8 +72,33 @@ pkg="polydawn.net/$name"
 		done
 		rm -f "$coverFile"
 		;;
+	validate)
+		# run all validations and exit non-zero after all of them if any fail
+		validators=()
+		validators+=("./contrib/validate-dco")
+		validators+=("./contrib/validate-gofmt")
+		invalid=""
+		for validator in ${validators[@]}; do
+			echo -e "\E[1;34m==== checking $validator ... ====\E[0;m"
+			"$validator" && {
+				echo -e "\E[1;32mpassed.\E[0;m"
+			} || {
+				echo -e "\E[1;31mfailed!\E[0;m"
+				invalid="true"
+			}
+			echo
+			echo
+		done
+		echo
+		[ -z "$invalid" ] && {
+			echo -e "\E[1;32mall validations green.\E[0;m"
+		} || {
+			echo -e "\E[1;41msome validations failed!\E[0;m"
+			exit 6
+		}
+		;;
 	*)
-		echo "Usage: $0 {init|test|install|fmt|doc|cover}" 1>&2;
+		echo "Usage: $0 {init|test|install|fmt|doc|cover|validate}" 1>&2;
 		exit 1
 	;;
 esac

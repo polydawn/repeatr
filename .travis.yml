@@ -1,0 +1,10 @@
+language: go
+
+go:
+	- 1.4
+
+script:
+	- goad validate
+	- goad test
+	- goad install
+
