@@ -1,0 +1,3 @@
+[submodule ".gopath/src/github.com/spacemonkeygo/errors"]
+	path = .gopath/src/github.com/spacemonkeygo/errors
+	url = https://github.com/polydawn/errors
