@@ -7,6 +7,6 @@ import (
 type Executor struct {
 }
 
-func (*Executor) Run(job def.JobDraft) (def.Job, []def.Output) {
+func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 	return nil, nil
 }

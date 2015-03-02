@@ -5,5 +5,5 @@ import (
 )
 
 type Executor interface {
-	Run(def.JobDraft) (def.Job, []def.Output)
+	Run(def.Formula) (def.Job, []def.Output)
 }

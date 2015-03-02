@@ -1,6 +1,6 @@
 package def
 
-type JobDraft struct {
+type Formula struct {
 	ID             string      // ID is a guid, and can be considered a primary key.  (We need some way to refer to different executions with the same inputs, just so we can disambiguate tries.)
 	Inputs         []Input     // The total set of inputs.  This should be maintained in sorted order.
 	SchedulingInfo interface{} // Scheduling info configures what execution framework is used and some additional parameters to that (minimum node memory, etc).  None of these values will be considered part of the 'conjecture' inputs.
@@ -33,7 +33,7 @@ type Output struct {
 }
 
 type Job interface {
-	// TODO: no idea what goes here, just saying it's a distinct concept from the serializable `JobDraft` type.
+	// TODO: no idea what goes here, just saying it's a distinct concept from the serializable `Formula` type.
 
 	// Among other things, this should contain progress reporting interfaces, streams that get realtime stdout/stderr, etc.
 	// Most of those things will also be accessible as some form of Output after the job is complete, but ActiveJob can provide them live.
@@ -42,13 +42,13 @@ type Job interface {
 /*
 	Critial focus:
 
-	Given a JobDraft j, and the []Output v, and some hash h:
+	Given a Formula j, and the []Output v, and some hash h:
 
 	h(j.Inputs||j.Accents||filter(j.Outputs, where Conjecture=true)) -> h(v)
 
 	should be an onto relationship.
 
-	In other words, a JobDraft should define a "pure" function.  And we'll let you know if it doesn't.
+	In other words, a Formula should define a "pure" function.  And we'll let you know if it doesn't.
 
 
 
@@ -57,6 +57,6 @@ type Job interface {
 	- The root filesystem of your execution engine is just another `Input` with the rest, with Location="/".
 	Exactly one input with the root location is required at runtime.
 
-	- JobDraft.SchedulingInfo, since it's *not* included in the 'conjecture', is clearly not expected to have a major impact on your execution correctness.
+	- Formula.SchedulingInfo, since it's *not* included in the 'conjecture', is clearly not expected to have a major impact on your execution correctness.
 	This is probably an assumption that's sometimes broken (vms can do more than containers, for example); if so, consider using the
 */
