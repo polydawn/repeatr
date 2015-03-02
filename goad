@@ -16,11 +16,14 @@ export BASEDIR="$PWD"
 name="repeatr"
 pkg="polydawn.net/$name"
 
-[ -z "$1" ] && (
-	go fmt "$SUBSECTION"
-	go test "$SUBSECTION"
-	go install "$pkg"
-) || case "$1" in
+if [ -z "$1" ] ; then
+	(
+		go fmt "$SUBSECTION"
+		go test "$SUBSECTION"
+		go install "$pkg"
+	)
+else
+	case "$1" in
 	-)
 		# passthrough for other commands
 		shift
@@ -106,4 +109,4 @@ pkg="polydawn.net/$name"
 	;;
 esac
 
-
+fi
