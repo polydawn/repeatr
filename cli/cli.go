@@ -21,50 +21,57 @@ func GetApp() *cli.App {
 	app.Usage = "Run it. Run it again."
 	app.Version = "0.0.1"
 
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "executor, e",
-			Value: "null",
-			Usage: "Which executor to use",
+	app.Commands = []cli.Command{
+		{
+			Name:   "run",
+			Usage:  "Run a forumla",
+			Action: Run,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "executor, e",
+					Value: "null",
+					Usage: "Which executor to use",
+				},
+				cli.StringFlag{
+					Name:  "input, i",
+					Value: "formula.json",
+					Usage: "Location of input forumla (json format)",
+				},
+			},
 		},
-		cli.StringFlag{
-			Name:  "input, i",
-			Value: "formula.json",
-			Usage: "Location of input forumla (json format)",
-		},
-	}
-
-	app.Action = func(c *cli.Context) {
-
-		desiredExecutor := c.String("executor")
-		filename, _ := filepath.Abs(c.String("input"))
-
-		var executor executor.Executor
-
-		switch desiredExecutor {
-		case "null":
-			executor = &null.Executor{}
-		default:
-			Println("No such executor", desiredExecutor)
-			os.Exit(1)
-		}
-
-		content, err := ioutil.ReadFile(filename)
-		if err != nil {
-			Println(err)
-			Println("Could not read file", filename)
-			os.Exit(1)
-		}
-
-		var js codec.JsonHandle
-		handler := &js
-		dec := codec.NewDecoderBytes(content, handler)
-
-		forumla := def.Formula{}
-		dec.MustDecode(&forumla)
-
-		executor.Run(forumla)
 	}
 
 	return app
+}
+
+func Run(c *cli.Context) {
+
+	desiredExecutor := c.String("executor")
+	filename, _ := filepath.Abs(c.String("input"))
+
+	var executor executor.Executor
+
+	switch desiredExecutor {
+	case "null":
+		executor = &null.Executor{}
+	default:
+		Println("No such executor", desiredExecutor)
+		os.Exit(1)
+	}
+
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		Println(err)
+		Println("Could not read file", filename)
+		os.Exit(1)
+	}
+
+	var js codec.JsonHandle
+	handler := &js
+	dec := codec.NewDecoderBytes(content, handler)
+
+	forumla := def.Formula{}
+	dec.MustDecode(&forumla)
+
+	executor.Run(forumla)
 }
