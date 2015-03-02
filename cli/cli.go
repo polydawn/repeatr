@@ -14,14 +14,16 @@ import (
 	"polydawn.net/repeatr/executor/null"
 )
 
-func GetApp() *cli.App {
-	app := cli.NewApp()
+var App *cli.App
 
-	app.Name = "repeatr"
-	app.Usage = "Run it. Run it again."
-	app.Version = "0.0.1"
+func init() {
+	App = cli.NewApp()
 
-	app.Commands = []cli.Command{
+	App.Name = "repeatr"
+	App.Usage = "Run it. Run it again."
+	App.Version = "0.0.1"
+
+	App.Commands = []cli.Command{
 		{
 			Name:   "run",
 			Usage:  "Run a formula",
@@ -40,8 +42,6 @@ func GetApp() *cli.App {
 			},
 		},
 	}
-
-	return app
 }
 
 func Run(c *cli.Context) {
