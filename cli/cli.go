@@ -2,9 +2,12 @@ package cli
 
 import (
 	. "fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/codegangsta/cli"
+	"github.com/ugorji/go/codec"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
@@ -24,11 +27,17 @@ func GetApp() *cli.App {
 			Value: "null",
 			Usage: "Which executor to use",
 		},
+		cli.StringFlag{
+			Name:  "input, i",
+			Value: "formula.json",
+			Usage: "Location of input forumla (json format)",
+		},
 	}
 
 	app.Action = func(c *cli.Context) {
 
 		desiredExecutor := c.String("executor")
+		filename, _ := filepath.Abs(c.String("input"))
 
 		var executor executor.Executor
 
@@ -40,7 +49,21 @@ func GetApp() *cli.App {
 			os.Exit(1)
 		}
 
-		executor.Run(def.Formula{})
+		content, err := ioutil.ReadFile(filename)
+		if err != nil {
+			Println(err)
+			Println("Could not read file", filename)
+			os.Exit(1)
+		}
+
+		var js codec.JsonHandle
+		handler := &js
+		dec := codec.NewDecoderBytes(content, handler)
+
+		forumla := def.Formula{}
+		dec.MustDecode(&forumla)
+
+		executor.Run(forumla)
 	}
 
 	return app
