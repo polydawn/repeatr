@@ -66,9 +66,7 @@ func Run(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	var js codec.JsonHandle
-	handler := &js
-	dec := codec.NewDecoderBytes(content, handler)
+	dec := codec.NewDecoderBytes(content, &codec.JsonHandle{})
 
 	formula := def.Formula{}
 	dec.MustDecode(&formula)
