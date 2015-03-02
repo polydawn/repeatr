@@ -7,6 +7,8 @@ cd "$DIR"
 export GOPATH="$PWD"/.gopath/
 export BASEDIR="$PWD"
 
+# Highlights build failures. Setting to '^' will disable, could make configurable.
+highlighRegex='^|^# (.*/)+.*$'
 
 # subsection arg?
 [ -z "$2" ] && SUBSECTION="./..." || SUBSECTION="./$2"
@@ -19,8 +21,8 @@ pkg="polydawn.net/$name"
 if [ -z "$1" ] ; then
 	(
 		go fmt "$SUBSECTION"
-		go test "$SUBSECTION"
-		go install "$pkg"
+		go test "$SUBSECTION" 2> >(grep --color -E "$highlighRegex")
+		go install "$pkg"     2> >(grep --color -E "$highlighRegex")
 	)
 else
 	case "$1" in
@@ -42,11 +44,11 @@ else
 		git submodule update --init
 		;;
 	test)
-		go test -i "$SUBSECTION" &&
-		go test -v "$SUBSECTION"
+		go test -i "$SUBSECTION" 2> >(grep --color -E "$highlighRegex") &&
+		go test -v "$SUBSECTION" 2> >(grep --color -E "$highlighRegex")
 		;;
 	install)
-		go install "$pkg"
+		go install "$pkg" 2> >(grep --color -E "$highlighRegex")
 		;;
 	fmt)
 		go fmt "$SUBSECTION"
