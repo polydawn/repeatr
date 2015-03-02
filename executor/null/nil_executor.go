@@ -1,4 +1,4 @@
-package nil
+package null
 
 import (
 	"polydawn.net/repeatr/def"
