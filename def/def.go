@@ -21,6 +21,7 @@ type Accents struct {
 	Arch       string            // Specify an architecture limitation.  Similar to `Accents.OS`.
 	Entrypoint []string          // Executable to invoke as the job.
 	Env        map[string]string // Environment variables
+	Custom     map[string]string // User-defined map; a no-man's land where anything goes.
 }
 
 type OutputSpec struct {
