@@ -24,7 +24,7 @@ func GetApp() *cli.App {
 	app.Commands = []cli.Command{
 		{
 			Name:   "run",
-			Usage:  "Run a forumla",
+			Usage:  "Run a formula",
 			Action: Run,
 			Flags: []cli.Flag{
 				cli.StringFlag{
@@ -35,7 +35,7 @@ func GetApp() *cli.App {
 				cli.StringFlag{
 					Name:  "input, i",
 					Value: "formula.json",
-					Usage: "Location of input forumla (json format)",
+					Usage: "Location of input formula (json format)",
 				},
 			},
 		},
@@ -70,8 +70,8 @@ func Run(c *cli.Context) {
 	handler := &js
 	dec := codec.NewDecoderBytes(content, handler)
 
-	forumla := def.Formula{}
-	dec.MustDecode(&forumla)
+	formula := def.Formula{}
+	dec.MustDecode(&formula)
 
-	executor.Run(forumla)
+	executor.Run(formula)
 }
