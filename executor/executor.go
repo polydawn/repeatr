@@ -5,5 +5,5 @@ import (
 )
 
 type Executor interface {
-	Run(def.JobRecord) (def.ActiveJob, []def.Output)
+	Run(def.JobDraft) (def.Job, []def.Output)
 }
