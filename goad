@@ -105,6 +105,10 @@ else
 	clean)
 		rm -r $GOPATH/bin $GOPATH/pkg
 		;;
+	run)
+		shift
+		$GOPATH/bin/$name "$@"
+		;;
 	*)
 		echo "Usage: $0 {init|test|install|fmt|doc|cover|validate|clean}" 1>&2;
 		exit 1
