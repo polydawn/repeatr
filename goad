@@ -60,6 +60,9 @@ else
 			echo -e "\n\n\n"
 		done
 		;;
+	convey)
+		go install github.com/smartystreets/goconvey && "$GOPATH"/bin/goconvey
+		;;
 	cover)
 		coverFile="$GOPATH/tmp/cover/cover.out"
 		mkdir -p "$(dirname "$coverFile")"

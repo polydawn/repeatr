@@ -7,3 +7,12 @@
 [submodule ".gopath/src/github.com/ugorji/go"]
 	path = .gopath/src/github.com/ugorji/go
 	url = https://github.com/ugorji/go.git
+[submodule ".gopath/src/github.com/smartystreets/goconvey"]
+	path = .gopath/src/github.com/smartystreets/goconvey
+	url = http://github.com/smartystreets/goconvey.git
+[submodule ".gopath/src/github.com/jtolds/gls"]
+	path = .gopath/src/github.com/jtolds/gls
+	url = http://github.com/jtolds/gls.git
+[submodule ".gopath/src/github.com/smartystreets/assertions"]
+	path = .gopath/src/github.com/smartystreets/assertions
+	url = http://github.com/smartystreets/assertions
