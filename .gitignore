@@ -1,3 +1,5 @@
 
 /.gopath/bin/
 /.gopath/pkg/
+
+/formula.json

@@ -21,8 +21,8 @@ pkg="polydawn.net/$name"
 if [ -z "$1" ] ; then
 	(
 		go fmt "$SUBSECTION"
-		go test "$SUBSECTION" 2> >(grep --color -E "$highlighRegex")
 		go install "$pkg"     2> >(grep --color -E "$highlighRegex")
+		go test "$SUBSECTION" 2> >(grep --color -E "$highlighRegex")
 	)
 else
 	case "$1" in
@@ -104,6 +104,10 @@ else
 		;;
 	clean)
 		rm -r $GOPATH/bin $GOPATH/pkg
+		;;
+	run)
+		shift
+		$GOPATH/bin/$name "$@"
 		;;
 	*)
 		echo "Usage: $0 {init|test|install|fmt|doc|cover|validate|clean}" 1>&2;

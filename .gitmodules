@@ -1,3 +1,9 @@
 [submodule ".gopath/src/github.com/spacemonkeygo/errors"]
 	path = .gopath/src/github.com/spacemonkeygo/errors
 	url = https://github.com/polydawn/errors
+[submodule ".gopath/src/github.com/codegangsta/cli"]
+	path = .gopath/src/github.com/codegangsta/cli
+	url = https://github.com/codegangsta/cli
+[submodule ".gopath/src/github.com/ugorji/go"]
+	path = .gopath/src/github.com/ugorji/go
+	url = https://github.com/ugorji/go.git
