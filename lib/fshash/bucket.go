@@ -3,6 +3,7 @@ package fshash
 import (
 	"archive/tar"
 	"os"
+	"time"
 
 	"github.com/spacemonkeygo/errors"
 )
@@ -33,6 +34,8 @@ func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
 	}
+	// ctimes are uncontrollable, pave them (╯°□°）╯︵ ┻━┻
+	hdr.ChangeTime = time.Unix(100, 200)
 	return Metadata(*hdr)
 }
 

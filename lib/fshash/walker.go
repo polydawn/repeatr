@@ -14,6 +14,8 @@ import (
 )
 
 func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() hash.Hash) error {
+	// If copying: Dragons: you can set atime and you can set mtime, but you can't ever set ctime again.
+	// Filesystem APIs are constructed such that it's literally impossible to do an attribute-preserving copy in userland.
 	return filepath.Walk(srcPath, func(path string, info os.FileInfo, err error) error {
 		path = "." + strings.TrimPrefix(path, srcPath)
 		if err != nil {
@@ -32,10 +34,10 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 				if err := os.Mkdir(filepath.Join(destPath, path), mode&os.ModePerm); err != nil {
 					return err
 				}
+				// FIXME: this needs post-order traversal to take useful effect
 				if err := fspatch.UtimesNano(filepath.Join(destPath, path), []syscall.Timespec{syscall.NsecToTimespec(hdr.AccessTime.UnixNano()), syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
 					return err
 				}
-				// TODO and create time is just out to lunch still
 			}
 			bucket.Record(Metadata(*hdr), nil)
 		case mode&os.ModeSymlink == os.ModeSymlink:
