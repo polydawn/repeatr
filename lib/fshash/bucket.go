@@ -3,9 +3,9 @@ package fshash
 import (
 	"archive/tar"
 	"os"
-	"time"
 
 	"github.com/spacemonkeygo/errors"
+	"polydawn.net/repeatr/def"
 )
 
 type Metadata tar.Header
@@ -35,13 +35,16 @@ func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
 		panic(errors.IOError.Wrap(err))
 	}
 	// ctimes are uncontrollable, pave them (╯°□°）╯︵ ┻━┻
-	hdr.ChangeTime = time.Unix(100, 200)
+	// atimes mutate on read, pave them
+	hdr.ChangeTime = def.Somewhen
+	hdr.AccessTime = def.Somewhen
 	return Metadata(*hdr)
 }
 
 func (m Metadata) MarshalBinary() ([]byte, error) {
 	// TODO: carefully.  maybe use cbor, but make sure order is consistent and encoding unambiguous.
 	// TODO: switch name to basename, so hash subtrees are severable
+	// disregard atime and ctime because they are almost and completely unusable, respectively
 	return nil, nil
 }
 

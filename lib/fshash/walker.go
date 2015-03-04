@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/spacemonkeygo/errors"
+	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fspatch"
 )
 
@@ -35,7 +36,7 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 					return err
 				}
 				// FIXME: this needs post-order traversal to take useful effect
-				if err := fspatch.UtimesNano(filepath.Join(destPath, path), []syscall.Timespec{syscall.NsecToTimespec(hdr.AccessTime.UnixNano()), syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
+				if err := fspatch.UtimesNano(filepath.Join(destPath, path), []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
 					return err
 				}
 			}
@@ -55,7 +56,7 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 				if err := os.Symlink(filepath.Join(destPath, path), link); err != nil {
 					return err
 				}
-				if err := fspatch.LUtimesNano(filepath.Join(destPath, path), []syscall.Timespec{syscall.NsecToTimespec(hdr.AccessTime.UnixNano()), syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
+				if err := fspatch.LUtimesNano(filepath.Join(destPath, path), []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
 					return err
 				}
 			}
@@ -98,7 +99,7 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 			}
 			hdr.Name = path
 			if destPath != "" {
-				if err := fspatch.UtimesNano(filepath.Join(destPath, path), []syscall.Timespec{syscall.NsecToTimespec(hdr.AccessTime.UnixNano()), syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
+				if err := fspatch.UtimesNano(filepath.Join(destPath, path), []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
 					return err
 				}
 			}
