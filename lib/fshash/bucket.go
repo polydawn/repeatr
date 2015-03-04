@@ -2,11 +2,39 @@ package fshash
 
 import (
 	"archive/tar"
+	"os"
 
 	"github.com/spacemonkeygo/errors"
 )
 
 type Metadata tar.Header
+
+func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
+	var fi os.FileInfo
+	var err error
+	if len(optional) > 0 {
+		fi = optional[0]
+	} else {
+		fi, err = os.Lstat(path)
+		if err != nil {
+			// also consider ENOEXIST a problem; this function is mostly
+			// used in testing where we really expect that path to exist.
+			panic(errors.IOError.Wrap(err))
+		}
+	}
+	// readlink needs the file path again  ヽ(´ー｀)ノ
+	var link string
+	if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
+		if link, err = os.Readlink(path); err != nil {
+			panic(errors.IOError.Wrap(err))
+		}
+	}
+	hdr, err := tar.FileInfoHeader(fi, link)
+	if err != nil {
+		panic(errors.IOError.Wrap(err))
+	}
+	return Metadata(*hdr)
+}
 
 func (m Metadata) MarshalBinary() ([]byte, error) {
 	// TODO: carefully.  maybe use cbor, but make sure order is consistent and encoding unambiguous.

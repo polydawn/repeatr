@@ -5,11 +5,13 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/fshash"
 	"polydawn.net/repeatr/testutil"
 )
 
@@ -53,6 +55,12 @@ func Test(t *testing.T) {
 				})
 
 				Convey("Apply succeeds (hash checks pass)", func() {
+					// wait a moment before copying to decrease the odds of nanotime telling a huge, huge lie.
+					// this, incidentally, varies in effectiveness with whether your running with the goconvey web app or not.
+					// yes, i'm serious.  i clicked many times to determine this.
+					// this is literally the reason why we're building repeatr.
+					time.Sleep(2 * time.Millisecond)
+
 					waitCh := inputter.Apply(filepath.Join(pwd, "dest"))
 					So(<-waitCh, ShouldBeNil)
 
@@ -65,7 +73,19 @@ func Test(t *testing.T) {
 						So(string(content), ShouldEqual, "zyx")
 
 						Convey("And all metadata matches", func() {
-
+							// Comparing fileinfo doesn't work conveniently; you keep getting new pointers for 'sys'
+							//one, _ := os.Lstat("src/a")
+							//two, _ := os.Lstat("dest/a")
+							//So(one, ShouldResemble, two)
+							So(fshash.ReadMetadata("src/a"), ShouldResemble, fshash.ReadMetadata("dest/a"))
+							So(fshash.ReadMetadata("src/b"), ShouldResemble, fshash.ReadMetadata("dest/b"))
+							So(fshash.ReadMetadata("src/b/c"), ShouldResemble, fshash.ReadMetadata("dest/b/c"))
+							// the top dir should have the same attribs too!  but we have to fix the name.
+							srcDirMeta := fshash.ReadMetadata("src/")
+							srcDirMeta.Name = ""
+							destDirMeta := fshash.ReadMetadata("dest/")
+							destDirMeta.Name = ""
+							So(srcDirMeta, ShouldResemble, destDirMeta)
 						})
 					})
 				})
