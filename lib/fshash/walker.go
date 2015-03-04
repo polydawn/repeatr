@@ -21,8 +21,10 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 		// TODO special handling for root dir? ... it's just path="" right now
 		switch {
 		case mode&os.ModeDir == os.ModeDir:
-			if err := os.Mkdir(filepath.Join(destPath, path), mode&os.ModePerm); err != nil {
-				return err
+			if destPath != "" {
+				if err := os.Mkdir(filepath.Join(destPath, path), mode&os.ModePerm); err != nil {
+					return err
+				}
 			}
 			hdr, err := tar.FileInfoHeader(info, "")
 			if err != nil {
@@ -37,8 +39,10 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 			if link, err = os.Readlink(path); err != nil {
 				return err
 			}
-			if err := os.Symlink(filepath.Join(destPath, path), link); err != nil {
-				return err
+			if destPath != "" {
+				if err := os.Symlink(filepath.Join(destPath, path), link); err != nil {
+					return err
+				}
 			}
 			hdr, err := tar.FileInfoHeader(info, link)
 			if err != nil {
@@ -61,13 +65,18 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 				return err
 			}
 			defer src.Close()
-			dest, err := os.OpenFile(filepath.Join(destPath, path), os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode&os.ModePerm)
-			if err != nil {
-				return err
-			}
-			defer dest.Close()
 			hasher := hasherFactory()
-			tee := io.MultiWriter(dest, hasher)
+			var tee io.Writer
+			if destPath != "" {
+				dest, err := os.OpenFile(filepath.Join(destPath, path), os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode&os.ModePerm)
+				if err != nil {
+					return err
+				}
+				defer dest.Close()
+				tee = io.MultiWriter(dest, hasher)
+			} else {
+				tee = hasher
+			}
 			_, err = io.Copy(tee, src)
 			if err != nil {
 				return err
