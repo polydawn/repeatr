@@ -47,6 +47,16 @@ func Test(t *testing.T) {
 			f.Write([]byte("zyx"))
 			So(f.Close(), ShouldBeNil)
 
+			// save attributes first because access times are conceptually insane
+			// remarkably, since the first read doesn't cause atimes to change,
+			// the inputter can capture it and we can recreate it.
+			// but that still doesn't make anything else about checking or handling it sane.
+			path0metadata := fshash.ReadMetadata("src")
+			path0metadata.Name = ""
+			path1metadata := fshash.ReadMetadata("src/a")
+			path2metadata := fshash.ReadMetadata("src/b")
+			path3metadata := fshash.ReadMetadata("src/b/c")
+
 			Convey("We can construct an input", func() {
 				inputter := New(def.Input{
 					Type: "dir",
@@ -59,7 +69,7 @@ func Test(t *testing.T) {
 					// this, incidentally, varies in effectiveness with whether your running with the goconvey web app or not.
 					// yes, i'm serious.  i clicked many times to determine this.
 					// this is literally the reason why we're building repeatr.
-					time.Sleep(2 * time.Millisecond)
+					time.Sleep(12 * time.Millisecond)
 
 					waitCh := inputter.Apply(filepath.Join(pwd, "dest"))
 					So(<-waitCh, ShouldBeNil)
@@ -77,15 +87,13 @@ func Test(t *testing.T) {
 							//one, _ := os.Lstat("src/a")
 							//two, _ := os.Lstat("dest/a")
 							//So(one, ShouldResemble, two)
-							So(fshash.ReadMetadata("src/a"), ShouldResemble, fshash.ReadMetadata("dest/a"))
-							So(fshash.ReadMetadata("src/b"), ShouldResemble, fshash.ReadMetadata("dest/b"))
-							So(fshash.ReadMetadata("src/b/c"), ShouldResemble, fshash.ReadMetadata("dest/b/c"))
+							So(fshash.ReadMetadata("dest/a"), ShouldResemble, path1metadata)
+							So(fshash.ReadMetadata("dest/b"), ShouldResemble, path2metadata)
+							So(fshash.ReadMetadata("dest/b/c"), ShouldResemble, path3metadata)
 							// the top dir should have the same attribs too!  but we have to fix the name.
-							srcDirMeta := fshash.ReadMetadata("src/")
-							srcDirMeta.Name = ""
 							destDirMeta := fshash.ReadMetadata("dest/")
 							destDirMeta.Name = ""
-							So(srcDirMeta, ShouldResemble, destDirMeta)
+							So(destDirMeta, ShouldResemble, path0metadata)
 						})
 					})
 				})

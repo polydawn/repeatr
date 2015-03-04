@@ -11,3 +11,9 @@ import (
 	and it's considered a compile-time boo boo, use `errors.ProgrammerError`.)
 */
 var ValidationError *errors.ErrorClass = errors.NewClass("ValidationError")
+
+/*
+	UnsupportedPlatform is an error raised when an operation is unavailable on the
+	OS.  (Say, setting utime on a symlink on a mac.)
+*/
+var UnsupportedPlatform *errors.ErrorClass = errors.NewClass("UnsupportedPlatform")

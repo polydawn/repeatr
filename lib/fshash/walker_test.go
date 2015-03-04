@@ -43,7 +43,7 @@ func Test(t *testing.T) {
 					So(len(bucket2.lines), ShouldEqual, 4)
 					sort.Sort(linesByFilepath(bucket2.lines))
 					for i := range bucket.lines {
-						So(bucket.lines[i], ShouldResemble, bucket2.lines[i])
+						So(bucket2.lines[i], ShouldResemble, bucket.lines[i])
 					}
 				})
 			})

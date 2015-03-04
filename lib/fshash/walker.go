@@ -7,8 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/spacemonkeygo/errors"
+	"polydawn.net/repeatr/lib/fspatch"
 )
 
 func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() hash.Hash) error {
@@ -21,16 +23,20 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 		// TODO special handling for root dir? ... it's just path="" right now
 		switch {
 		case mode&os.ModeDir == os.ModeDir:
-			if destPath != "" {
-				if err := os.Mkdir(filepath.Join(destPath, path), mode&os.ModePerm); err != nil {
-					return err
-				}
-			}
 			hdr, err := tar.FileInfoHeader(info, "")
 			if err != nil {
 				return err
 			}
 			hdr.Name = path
+			if destPath != "" {
+				if err := os.Mkdir(filepath.Join(destPath, path), mode&os.ModePerm); err != nil {
+					return err
+				}
+				if err := fspatch.UtimesNano(filepath.Join(destPath, path), []syscall.Timespec{syscall.NsecToTimespec(hdr.AccessTime.UnixNano()), syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
+					return err
+				}
+				// TODO and create time is just out to lunch still
+			}
 			bucket.Record(Metadata(*hdr), nil)
 		case mode&os.ModeSymlink == os.ModeSymlink:
 			var link string
@@ -38,16 +44,19 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 			if link, err = os.Readlink(path); err != nil {
 				return err
 			}
-			if destPath != "" {
-				if err := os.Symlink(filepath.Join(destPath, path), link); err != nil {
-					return err
-				}
-			}
 			hdr, err := tar.FileInfoHeader(info, link)
 			if err != nil {
 				return err
 			}
 			hdr.Name = path
+			if destPath != "" {
+				if err := os.Symlink(filepath.Join(destPath, path), link); err != nil {
+					return err
+				}
+				if err := fspatch.LUtimesNano(filepath.Join(destPath, path), []syscall.Timespec{syscall.NsecToTimespec(hdr.AccessTime.UnixNano()), syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
+					return err
+				}
+			}
 			bucket.Record(Metadata(*hdr), nil)
 		case mode&os.ModeNamedPipe == os.ModeNamedPipe:
 			panic(errors.NotImplementedError.New("TODO"))
@@ -86,6 +95,11 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 				return err
 			}
 			hdr.Name = path
+			if destPath != "" {
+				if err := fspatch.UtimesNano(filepath.Join(destPath, path), []syscall.Timespec{syscall.NsecToTimespec(hdr.AccessTime.UnixNano()), syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
+					return err
+				}
+			}
 			hash := hasher.Sum(nil)
 			bucket.Record(Metadata(*hdr), hash)
 		default:
