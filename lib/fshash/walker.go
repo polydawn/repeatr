@@ -30,8 +30,7 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 			if err != nil {
 				return err
 			}
-
-			// TODO: normalize name
+			hdr.Name = path
 			bucket.Record(Metadata(*hdr), nil)
 		case mode&os.ModeSymlink == os.ModeSymlink:
 			var link string
@@ -48,7 +47,7 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 			if err != nil {
 				return err
 			}
-			// TODO: normalize name
+			hdr.Name = path
 			bucket.Record(Metadata(*hdr), nil)
 		case mode&os.ModeNamedPipe == os.ModeNamedPipe:
 			panic(errors.NotImplementedError.New("TODO"))
@@ -86,7 +85,7 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 			if err != nil {
 				return err
 			}
-			// TODO: normalize name
+			hdr.Name = path
 			hash := hasher.Sum(nil)
 			bucket.Record(Metadata(*hdr), hash)
 		default:

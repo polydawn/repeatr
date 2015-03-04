@@ -13,10 +13,6 @@ import (
 	"polydawn.net/repeatr/testutil"
 )
 
-func TestThings(t *testing.T) {
-
-}
-
 func Test(t *testing.T) {
 	Convey("Given a nonexistant path", t, func() {
 		Convey("The input config should be rejected during validation", func() {

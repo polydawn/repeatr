@@ -40,8 +40,20 @@ var _ Bucket = &MemoryBucket{}
 
 type MemoryBucket struct {
 	// my kingdom for a red-black tree or other sane sorted map implementation
+	lines []line
 }
 
-func (b *MemoryBucket) Record(metadata Metadata, contentHash []byte) {
+type line struct {
+	metadata    Metadata
+	contentHash []byte
+}
 
+type linesByFilepath []line
+
+func (a linesByFilepath) Len() int           { return len(a) }
+func (a linesByFilepath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a linesByFilepath) Less(i, j int) bool { return a[i].metadata.Name < a[j].metadata.Name }
+
+func (b *MemoryBucket) Record(metadata Metadata, contentHash []byte) {
+	b.lines = append(b.lines, line{metadata, contentHash})
 }
