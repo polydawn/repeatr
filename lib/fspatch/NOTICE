@@ -1,0 +1,11 @@
+utimes support was forked with modifications from the docker project:
+  https://github.com/docker/docker/tree/master/pkg/system
+
+The upstream license is also Apache2, and we continue our modifications
+under the same license.
+
+We happily credit the origin of this code to those fine authors.  We regret
+any inconvenience in historical tracking; we'd prefer to maintain a proper
+hashed linkage to the original repository and reuse the code as a library
+directly, but ~100 megs (compressed) of vendored unrelated deps in that repo
+makes that untenable.    ヽ(´ー｀)ノ
