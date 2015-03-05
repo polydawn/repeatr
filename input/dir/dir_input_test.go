@@ -86,12 +86,12 @@ func Test(t *testing.T) {
 							//two, _ := os.Lstat("dest/a")
 							//So(one, ShouldResemble, two)
 							So(fshash.ReadMetadata("dest/a"), ShouldResemble, path1metadata)
-							SkipSo(fshash.ReadMetadata("dest/b"), ShouldResemble, path2metadata)
-							So(fshash.ReadMetadata("dest/b/c"), ShouldResemble, path3metadata) // TODO: needs post-order traversal
+							So(fshash.ReadMetadata("dest/b"), ShouldResemble, path2metadata)
+							So(fshash.ReadMetadata("dest/b/c"), ShouldResemble, path3metadata)
 							// the top dir should have the same attribs too!  but we have to fix the name.
 							destDirMeta := fshash.ReadMetadata("dest/")
 							destDirMeta.Name = ""
-							SkipSo(destDirMeta, ShouldResemble, path0metadata) // TODO: needs post-order traversal
+							So(destDirMeta, ShouldResemble, path0metadata)
 						})
 					})
 				})
