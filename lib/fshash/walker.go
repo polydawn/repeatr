@@ -6,31 +6,78 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fspatch"
+	"polydawn.net/repeatr/lib/treewalk"
 )
+
+type fileWalkNode struct {
+	path string // relative to start
+	info os.FileInfo
+	ferr error
+
+	children []*fileWalkNode // note we didn't sort this
+	itrIndex int             // next child offset
+}
+
+func newFileWalkNode(basePath, path string) (filenode *fileWalkNode) {
+	filenode = &fileWalkNode{path: path}
+	filenode.info, filenode.ferr = os.Lstat(filepath.Join(basePath, path))
+	// don't expand the children until the previsit function
+	// we don't want them all crashing into memory at once
+	return
+}
+
+func (t *fileWalkNode) prepareChildren(basePath string) error {
+	if !t.info.IsDir() {
+		return nil
+	}
+	f, err := os.Open(filepath.Join(basePath, t.path))
+	if err != nil {
+		return err
+	}
+	names, err := f.Readdirnames(-1)
+	f.Close()
+	if err != nil {
+		return err
+	}
+	t.children = make([]*fileWalkNode, len(names))
+	for i, name := range names {
+		t.children[i] = newFileWalkNode(basePath, "./"+filepath.Join(t.path, name))
+	}
+	return nil
+}
+
+func (t *fileWalkNode) NextChild() treewalk.Node {
+	if t.itrIndex >= len(t.children) {
+		return nil
+	}
+	t.itrIndex++
+	return t.children[t.itrIndex-1]
+}
 
 func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory func() hash.Hash) error {
 	// If copying: Dragons: you can set atime and you can set mtime, but you can't ever set ctime again.
 	// Filesystem APIs are constructed such that it's literally impossible to do an attribute-preserving copy in userland.
-	return filepath.Walk(srcBasePath, func(srcPath string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+
+	preVisit := func(node treewalk.Node) error {
+		filenode := node.(*fileWalkNode)
+		if filenode.ferr != nil {
+			return filenode.ferr
 		}
-		relPath := "." + strings.TrimPrefix(srcPath, srcBasePath)
-		destPath := filepath.Join(destBasePath, relPath)
-		mode := info.Mode()
+		srcPath := filepath.Join(srcBasePath, filenode.path)
+		destPath := filepath.Join(destBasePath, filenode.path)
+		mode := filenode.info.Mode()
 		switch {
 		case mode&os.ModeDir == os.ModeDir:
-			hdr, err := tar.FileInfoHeader(info, "")
+			hdr, err := tar.FileInfoHeader(filenode.info, "")
 			if err != nil {
 				return err
 			}
-			hdr.Name = relPath
+			hdr.Name = filenode.path
 			hdr.ChangeTime = def.Somewhen
 			hdr.AccessTime = def.Somewhen
 			if destBasePath != "" {
@@ -43,17 +90,18 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				}
 			}
 			bucket.Record(Metadata(*hdr), nil)
+			filenode.prepareChildren(srcBasePath)
 		case mode&os.ModeSymlink == os.ModeSymlink:
 			var link string
 			var err error
 			if link, err = os.Readlink(srcPath); err != nil {
 				return err
 			}
-			hdr, err := tar.FileInfoHeader(info, link)
+			hdr, err := tar.FileInfoHeader(filenode.info, link)
 			if err != nil {
 				return err
 			}
-			hdr.Name = relPath
+			hdr.Name = filenode.path
 			hdr.ChangeTime = def.Somewhen
 			hdr.AccessTime = def.Somewhen
 			if destBasePath != "" {
@@ -97,11 +145,11 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				return err
 			}
 			// marshal headers and save to bucket with hash
-			hdr, err := tar.FileInfoHeader(info, "")
+			hdr, err := tar.FileInfoHeader(filenode.info, "")
 			if err != nil {
 				return err
 			}
-			hdr.Name = relPath
+			hdr.Name = filenode.path
 			hdr.ChangeTime = def.Somewhen
 			hdr.AccessTime = def.Somewhen
 			if destBasePath != "" {
@@ -119,5 +167,12 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			// we could add a hash of inodes to bucket to address this.
 		}
 		return nil
-	})
+	}
+	postVisit := func(node treewalk.Node) error {
+		filenode := node.(*fileWalkNode)
+		filenode.children = nil
+		return nil
+	}
+
+	return treewalk.Walk(newFileWalkNode(srcBasePath, "."), preVisit, postVisit)
 }

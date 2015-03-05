@@ -41,6 +41,7 @@ func Test(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					So(len(bucket2.lines), ShouldEqual, 4)
+					sort.Sort(linesByFilepath(bucket.lines))
 					sort.Sort(linesByFilepath(bucket2.lines))
 					for i := range bucket.lines {
 						So(bucket2.lines[i], ShouldResemble, bucket.lines[i])
