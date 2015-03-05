@@ -30,6 +30,8 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 				return err
 			}
 			hdr.Name = path
+			hdr.ChangeTime = def.Somewhen
+			hdr.AccessTime = def.Somewhen
 			if destPath != "" {
 				if err := os.Mkdir(filepath.Join(destPath, path), mode&os.ModePerm); err != nil {
 					return err
@@ -51,6 +53,8 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 				return err
 			}
 			hdr.Name = path
+			hdr.ChangeTime = def.Somewhen
+			hdr.AccessTime = def.Somewhen
 			if destPath != "" {
 				if err := os.Symlink(filepath.Join(destPath, path), link); err != nil {
 					return err
@@ -97,6 +101,8 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 				return err
 			}
 			hdr.Name = path
+			hdr.ChangeTime = def.Somewhen
+			hdr.AccessTime = def.Somewhen
 			if destPath != "" {
 				if err := fspatch.UtimesNano(filepath.Join(destPath, path), []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
 					return err
