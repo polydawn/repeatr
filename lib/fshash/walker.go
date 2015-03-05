@@ -31,6 +31,10 @@ func newFileWalkNode(basePath, path string) (filenode *fileWalkNode) {
 	return
 }
 
+/*
+	Expand next subtree.  Used in the pre-order visit step so we don't walk
+	every dir up front.
+*/
 func (t *fileWalkNode) prepareChildren(basePath string) error {
 	if !t.info.IsDir() {
 		return nil
@@ -105,7 +109,8 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				if err := os.Symlink(destPath, link); err != nil {
 					return err
 				}
-				if err := fspatch.LUtimesNano(destPath, []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
+				filetimes := []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}
+				if err := fspatch.LUtimesNano(destPath, filetimes); err != nil {
 					return err
 				}
 			}
@@ -150,7 +155,8 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			hdr.ChangeTime = def.Somewhen
 			hdr.AccessTime = def.Somewhen
 			if destBasePath != "" {
-				if err := fspatch.UtimesNano(destPath, []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
+				filetimes := []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}
+				if err := fspatch.UtimesNano(destPath, filetimes); err != nil {
 					return err
 				}
 			}
@@ -169,7 +175,8 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		filenode := node.(*fileWalkNode)
 		filenode.children = nil
 		if filenode.info.IsDir() && destBasePath != "" {
-			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.path), []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(filenode.info.ModTime().UnixNano())}); err != nil {
+			filetimes := []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(filenode.info.ModTime().UnixNano())}
+			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.path), filetimes); err != nil {
 				return err
 			}
 		}
