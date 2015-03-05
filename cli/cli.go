@@ -30,7 +30,7 @@ func init() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "executor, e",
-					Value: "null",
+					Value: "nsinit",
 					Usage: "Which executor to use",
 				},
 				cli.StringFlag{

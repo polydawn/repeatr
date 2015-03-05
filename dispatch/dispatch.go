@@ -3,6 +3,7 @@ package dispatch
 import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
+	"polydawn.net/repeatr/executor/nsinit"
 	"polydawn.net/repeatr/executor/null"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/input/dir"
@@ -20,6 +21,8 @@ func GetExecutor(desire string) *executor.Executor {
 	switch desire {
 	case "null":
 		executor = &null.Executor{}
+	case "nsinit":
+		executor = &nsinit.Executor{}
 	default:
 		panic(def.ValidationError.New("No such executor %s", desire))
 	}
