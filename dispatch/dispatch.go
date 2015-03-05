@@ -21,11 +21,11 @@ func GetExecutor(desire string) *executor.Executor {
 	var executor executor.Executor
 
 	switch desire {
-		case "null":
-			executor = &null.Executor{}
-		default:
-			Println("No such executor", desire)
-			os.Exit(1)
+	case "null":
+		executor = &null.Executor{}
+	default:
+		Println("No such executor", desire)
+		os.Exit(1)
 	}
 
 	return &executor
@@ -35,13 +35,13 @@ func GetInput(desire def.Input) *input.Input {
 	var input input.Input
 
 	switch desire.Type {
-		case "dir":
-			input = dir.New(desire)
-		case "tar":
-			input = tar.New(desire)
-		default:
-			Println("No such input", desire)
-			os.Exit(1)
+	case "dir":
+		input = dir.New(desire)
+	case "tar":
+		input = tar.New(desire)
+	default:
+		Println("No such input", desire)
+		os.Exit(1)
 	}
 
 	return &input
@@ -51,9 +51,9 @@ func GetOutput(desire def.Output) *output.Output {
 	var output output.Output
 
 	switch desire.Type {
-		default:
-			Println("No such output", desire)
-			os.Exit(1)
+	default:
+		Println("No such output", desire)
+		os.Exit(1)
 	}
 
 	return &output
