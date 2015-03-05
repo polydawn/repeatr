@@ -10,8 +10,7 @@ import (
 	"github.com/ugorji/go/codec"
 
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/executor"
-	"polydawn.net/repeatr/executor/null"
+	"polydawn.net/repeatr/dispatch"
 )
 
 var App *cli.App
@@ -46,18 +45,8 @@ func init() {
 
 func Run(c *cli.Context) {
 
-	desiredExecutor := c.String("executor")
+	executor := *dispatch.GetExecutor(c.String("executor"))
 	filename, _ := filepath.Abs(c.String("input"))
-
-	var executor executor.Executor
-
-	switch desiredExecutor {
-	case "null":
-		executor = &null.Executor{}
-	default:
-		Println("No such executor", desiredExecutor)
-		os.Exit(1)
-	}
 
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
