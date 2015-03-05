@@ -1,9 +1,5 @@
 package def
 
-import (
-	. "fmt"
-)
-
 // Convenience method that calls all forumla validation.
 // Modifies the formula.
 func ValidateAll(job *Formula) {
@@ -16,13 +12,13 @@ func ValidateAll(job *Formula) {
 func ValidateBasic(job *Formula) {
 	// Note, we don't require non-zero outputs, for obvious reasons :)
 	if len(job.Inputs) < 1 {
-		Println("Error, formula has less than one input")
+		panic(ValidationError.New("Formula needs at least one input"))
 	}
 
 	if job.Inputs[0].Location == "" {
 		job.Inputs[0].Location = "/"
 	} else if job.Inputs[0].Location != "/" {
-		Println("Error, first formula input must be mounted to /")
+		panic(ValidationError.New("First formula input must be mounted to /"))
 	}
 
 	if job.Accents.Env == nil {

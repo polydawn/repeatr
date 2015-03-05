@@ -1,10 +1,11 @@
 package flak
 
 import (
-	. "fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/spacemonkeygo/errors"
 )
 
 // Methods that many executors might use
@@ -17,8 +18,7 @@ import (
 func GetTempDir(dirs ...string) string {
 
 	if len(dirs) < 1 {
-		Println("Must have at least one sub-folder for tempdir", "replace with space monkey")
-		panic("whelp")
+		panic(errors.ProgrammerError.New("Must have at least one sub-folder for tempdir"))
 	}
 
 	dir := []string{os.TempDir(), "repeatr"}
@@ -28,13 +28,13 @@ func GetTempDir(dirs ...string) string {
 	// Tempdir wants parent path to exist
 	err := os.MkdirAll(tempPath, 0600)
 	if err != nil {
-		Println(err, "replace with space monkey")
+		panic(errors.IOError.Wrap(err))
 	}
 
 	// Make temp dir for this instance
 	folder, err := ioutil.TempDir(tempPath, "")
 	if err != nil {
-		Println(err, "replace with space monkey")
+		panic(errors.IOError.Wrap(err))
 	}
 
 	return folder
