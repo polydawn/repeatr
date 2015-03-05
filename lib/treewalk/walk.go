@@ -8,10 +8,6 @@ type Node interface {
 	NextChild() Node
 }
 
-func Walk(root Node, preVisit WalkFunc, postVisit WalkFunc) error {
-	return walk(root, preVisit, postVisit)
-}
-
 type WalkFunc func(node Node) error
 
 /*
@@ -21,7 +17,7 @@ type WalkFunc func(node Node) error
 var SkipNode = errors.New("skip this node")
 
 /*
-	walk recursively descends tree,
+	Walk recursively descends a tree,
 	calling `preVisit` on each node,
 	then walking children,
 	then calling `postVisit` on the node.
@@ -30,7 +26,7 @@ var SkipNode = errors.New("skip this node")
 	The post-visition function may similarly drop references to children
 	(and probably should, to reduce memory use on large trees).
 */
-func walk(node Node, preVisit WalkFunc, postVisit WalkFunc) error {
+func Walk(node Node, preVisit WalkFunc, postVisit WalkFunc) error {
 	err := preVisit(node)
 	if err != nil {
 		if err == SkipNode {
@@ -40,7 +36,7 @@ func walk(node Node, preVisit WalkFunc, postVisit WalkFunc) error {
 	}
 
 	for next := node.NextChild(); next != nil; next = node.NextChild() {
-		if err := walk(next, preVisit, postVisit); err != nil {
+		if err := Walk(next, preVisit, postVisit); err != nil {
 			return err
 		}
 	}
