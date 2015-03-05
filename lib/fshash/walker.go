@@ -23,7 +23,6 @@ func FillBucket(srcPath, destPath string, bucket Bucket, hasherFactory func() ha
 			return err
 		}
 		mode := info.Mode()
-		// TODO special handling for root dir? ... it's just path="" right now
 		switch {
 		case mode&os.ModeDir == os.ModeDir:
 			hdr, err := tar.FileInfoHeader(info, "")

@@ -21,12 +21,9 @@ func Test(t *testing.T) {
 			correctError := false
 			try.Do(func() {
 				New(def.Input{
-					Type:     "dir",
-					Hash:     "abcd",
-					URL:      "/tmp/certainly/should/not/exist",
-					Location: "/data",
-					// REVIEW: two of these four fields were more for the executor.
-					// maybe this struct isn't the sanest to use for this arg.
+					Type: "dir",
+					Hash: "abcd",
+					URL:  "/tmp/certainly/should/not/exist",
 				})
 			}).Catch(def.ValidationError, func(e *errors.Error) {
 				correctError = true
@@ -66,7 +63,8 @@ func Test(t *testing.T) {
 
 				Convey("Apply succeeds (hash checks pass)", func() {
 					// wait a moment before copying to decrease the odds of nanotime telling a huge, huge lie.
-					// this, incidentally, varies in effectiveness with whether you're running with the goconvey web app or working from cli.
+					// time reporting granularity can be extremely arbitrary and without this delay it's possible for the fs timestamps to end up the same before and after copy by pure coincidence, which would make much of the test vacuous.
+					// this wait, incidentally, varies in effectiveness with whether you're running with the goconvey web app or working from cli.
 					// yes, i'm serious.  i clicked many times to determine this.
 					// this is literally the reason why we're building repeatr.
 					time.Sleep(2 * time.Millisecond)
