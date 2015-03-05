@@ -21,7 +21,14 @@ type WalkFunc func(node Node) error
 var SkipNode = errors.New("skip this node")
 
 /*
-	walk recursively descends tree, calling walkFn.
+	walk recursively descends tree,
+	calling `preVisit` on each node,
+	then walking children,
+	then calling `postVisit` on the node.
+
+	The pre-visit function may add children.
+	The post-visition function may similarly drop references to children
+	(and probably should, to reduce memory use on large trees).
 */
 func walk(node Node, preVisit WalkFunc, postVisit WalkFunc) error {
 	err := preVisit(node)
