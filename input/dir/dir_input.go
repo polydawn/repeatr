@@ -25,9 +25,9 @@ func New(spec def.Input) *Input {
 	if spec.Type != Type {
 		panic(errors.ProgrammerError.New("This input implementation supports definitions of type %q, not %q", Type, spec.Type))
 	}
-	_, err := os.Stat(spec.URL)
+	_, err := os.Stat(spec.URI)
 	if os.IsNotExist(err) {
-		panic(def.ValidationError.New("Input URL %q must be a directory", spec.URL))
+		panic(def.ValidationError.New("Input URI %q must be a directory", spec.URI))
 	}
 	return &Input{
 		spec:          spec,
@@ -42,7 +42,7 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 
 		// walk filesystem, copying and accumulating data for integrity check
 		bucket := &fshash.MemoryBucket{}
-		err := fshash.FillBucket(i.spec.URL, destinationRoot, bucket, i.hasherFactory)
+		err := fshash.FillBucket(i.spec.URI, destinationRoot, bucket, i.hasherFactory)
 		if err != nil {
 			done <- err
 			return

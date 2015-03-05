@@ -23,7 +23,7 @@ func Test(t *testing.T) {
 				New(def.Input{
 					Type: "dir",
 					Hash: "abcd",
-					URL:  "/tmp/certainly/should/not/exist",
+					URI:  "/tmp/certainly/should/not/exist",
 				})
 			}).Catch(def.ValidationError, func(e *errors.Error) {
 				correctError = true
@@ -58,7 +58,7 @@ func Test(t *testing.T) {
 				inputter := New(def.Input{
 					Type: "dir",
 					Hash: "abcd",
-					URL:  filepath.Join(pwd, "src"),
+					URI:  filepath.Join(pwd, "src"),
 				})
 
 				Convey("Apply succeeds (hash checks pass)", func() {
