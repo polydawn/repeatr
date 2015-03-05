@@ -84,10 +84,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				if err := os.Mkdir(destPath, mode&os.ModePerm); err != nil {
 					return err
 				}
-				// FIXME: this needs post-order traversal to take useful effect
-				if err := fspatch.UtimesNano(destPath, []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}); err != nil {
-					return err
-				}
+				// setting time is done in the post-order phase of traversal since adding children will mutate mtime
 			}
 			bucket.Record(Metadata(*hdr), nil)
 			filenode.prepareChildren(srcBasePath)
@@ -171,6 +168,11 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 	postVisit := func(node treewalk.Node) error {
 		filenode := node.(*fileWalkNode)
 		filenode.children = nil
+		if filenode.info.IsDir() && destBasePath != "" {
+			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.path), []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(filenode.info.ModTime().UnixNano())}); err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 
