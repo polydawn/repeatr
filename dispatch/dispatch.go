@@ -1,8 +1,6 @@
 package dispatch
 
 import (
-	"github.com/spacemonkeygo/errors"
-
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/null"
@@ -23,7 +21,7 @@ func GetExecutor(desire string) *executor.Executor {
 	case "null":
 		executor = &null.Executor{}
 	default:
-		panic(errors.NotImplementedError.New("No such executor %s", desire))
+		panic(def.ValidationError.New("No such executor %s", desire))
 	}
 
 	return &executor
@@ -38,7 +36,7 @@ func GetInput(desire def.Input) *input.Input {
 	case "tar":
 		input = tar.New(desire)
 	default:
-		panic(errors.NotImplementedError.New("No such input %s", desire))
+		panic(def.ValidationError.New("No such input %s", desire))
 	}
 
 	return &input
@@ -49,7 +47,7 @@ func GetOutput(desire def.Output) *output.Output {
 
 	switch desire.Type {
 	default:
-		panic(errors.NotImplementedError.New("No such output %s", desire))
+		panic(def.ValidationError.New("No such output %s", desire))
 	}
 
 	return &output
