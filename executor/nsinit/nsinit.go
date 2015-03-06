@@ -20,33 +20,28 @@ var _ executor.Executor = &Executor{}
 type Executor struct {
 }
 
-// Can generalize & relocate
+// Execute a forumla in a specified directory.
+// Directory is assumed to exist.
+func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 
-func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
-	// Where we'll put the rootfs
-	base := flak.GetTempDir("nsinit")
-	rootfs := filepath.Join(base, "rootfs")
-
+	// Dedicated rootfs folder to distinguish container from nsinit noise
+	rootfs := filepath.Join(d, "rootfs")
 	err := os.MkdirAll(rootfs, 0777)
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
 	}
 
 	// nsinit wants to have a legferl
-	logFile := filepath.Join(base, "nsinit-debug.log")
-
-	// DISCUSS: consider doing this in the CLI before the executor gets it?
-	// Probably not; future executors may want to do specific subsets of validation at specific times (see def/validate.go)
-	def.ValidateAll(&job)
+	logFile := filepath.Join(d, "nsinit-debug.log")
 
 	// Prep command
 	args := []string{}
 
 	// Global options:
-	// --root will place the 'nsinit' folder (holding a state.json file) in base
+	// --root will place the 'nsinit' folder (holding a state.json file) in d
 	// --log-file does much the same with a log file (unsure if care?)
 	// --debug allegedly enables debug output in the log file
-	args = append(args, "--root", base, "--log-file", logFile, "--debug")
+	args = append(args, "--root", d, "--log-file", logFile, "--debug")
 
 	// Subcommand, and tell nsinit to not desire a JSON file (instead just use many flergs)
 	args = append(args, "exec", "--create")
@@ -76,7 +71,7 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 	cmd.Stderr = os.Stderr
 
 	// Run inputs
-	// ( discussion: replace with mounts? )
+	// TODO: replace with mounts
 	Println("Provisioning inputs...")
 	for _, input := range job.Inputs {
 		path := filepath.Join(rootfs, input.Location)
@@ -96,7 +91,7 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 	}
 
 	// Output folders should exist
-	// ( discussion: replace with mounts? )
+	// TODO: replace with mounts
 	for _, output := range job.Outputs {
 		path := filepath.Join(rootfs, output.Location)
 		err := os.MkdirAll(path, 0777)
@@ -123,13 +118,21 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 		// err := <- dispatch.GetOutput(output).Dream()
 	}
 
-	Println("Cleaning up...")
-	err = os.RemoveAll(base)
-	if err != nil {
-		panic(errors.IOError.Wrap(err))
-	}
+	// Done... ish. No outputs. Womp womp!
+	return job, nil
+}
 
-	// Done... ish. No outputs or job result. Womp womp!
+func (e *Executor) Run(job def.Formula) (def.Job, []def.Output) {
+	// Prepare the forumla for execution on this host
+	def.ValidateAll(&job)
+
+	var resultJob def.Job
+	var outputs []def.Output
+
+	flak.WithTempDir(func(d string) {
+		resultJob, outputs = e.Execute(job, d)
+	}, "nsinit")
+
 	Println("Done!")
-	return nil, nil
+	return resultJob, outputs
 }
