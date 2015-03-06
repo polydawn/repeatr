@@ -57,7 +57,7 @@ func Test(t *testing.T) {
 			Convey("We can construct an input", func() {
 				inputter := New(def.Input{
 					Type: "dir",
-					Hash: "abcd",
+					Hash: "B50b7UBhjsqFkXbIfEUhFwl5C28SBlj17z-FCo6WqOEOlrVl-asYcUFUGZ5YvwDn",
 					URI:  filepath.Join(pwd, "src"),
 				})
 

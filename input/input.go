@@ -1,5 +1,9 @@
 package input
 
+import (
+	"github.com/spacemonkeygo/errors"
+)
+
 type Input interface {
 	/*
 		Set the contents of the given filesystem path to the contents
@@ -25,3 +29,7 @@ type Input interface {
 	*/
 	Apply(path string) <-chan error
 }
+
+var InputError *errors.ErrorClass = errors.NewClass("InputError") // grouping, do not instantiate
+
+var InputHashMismatchError *errors.ErrorClass = InputError.NewClass("InputHashMismatchError")
