@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/spacemonkeygo/errors"
+
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/lib/flak"
@@ -24,9 +26,10 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 	// Where we'll put the rootfs
 	base := flak.GetTempDir("nsinit")
 	rootfs := filepath.Join(base, "rootfs")
+
 	err := os.MkdirAll(rootfs, 0777)
 	if err != nil {
-		Println(err, "replace with space monkey")
+		panic(errors.IOError.Wrap(err))
 	}
 
 	// nsinit wants to have a legferl
@@ -66,7 +69,7 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 	// Unroll command args
 	args = append(args, job.Accents.Entrypoint...)
 
-	// For now, un in this terminal
+	// For now, run in this terminal
 	cmd := exec.Command("nsinit", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -79,7 +82,7 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 		path := filepath.Join(rootfs, input.Location)
 		err := os.MkdirAll(path, 0777)
 		if err != nil {
-			Println(err, "replace with space monkey")
+			panic(errors.IOError.Wrap(err))
 		}
 
 		tar := exec.Command("tar", "-xf", input.URI, "-C", path)
@@ -90,7 +93,6 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 
 		// Eventually:
 		// err := <- dispatch.GetInput(input).Apply(path)
-		// Println(err)
 	}
 
 	// Output folders should exist
@@ -99,7 +101,7 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 		path := filepath.Join(rootfs, output.Location)
 		err := os.MkdirAll(path, 0777)
 		if err != nil {
-			Println(err, "replace with space monkey")
+			panic(errors.IOError.Wrap(err))
 		}
 	}
 
@@ -119,13 +121,12 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 
 		// Eventually:
 		// err := <- dispatch.GetOutput(output).Dream()
-		// Println(err)
 	}
 
 	Println("Cleaning up...")
 	err = os.RemoveAll(base)
 	if err != nil {
-		Println(err, "replace with space monkey")
+		panic(errors.IOError.Wrap(err))
 	}
 
 	// Done... ish. No outputs or job result. Womp womp!
