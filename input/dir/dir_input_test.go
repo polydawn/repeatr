@@ -44,6 +44,8 @@ func Test(t *testing.T) {
 			f.Write([]byte("zyx"))
 			So(f.Close(), ShouldBeNil)
 
+			fixtureHash := "B50b7UBhjsqFkXbIfEUhFwl5C28SBlj17z-FCo6WqOEOlrVl-asYcUFUGZ5YvwDn"
+
 			// save attributes first because access times are conceptually insane
 			// remarkably, since the first read doesn't cause atimes to change,
 			// the inputter can capture it and we can recreate it.
@@ -57,7 +59,7 @@ func Test(t *testing.T) {
 			Convey("We can construct an input", func() {
 				inputter := New(def.Input{
 					Type: "dir",
-					Hash: "B50b7UBhjsqFkXbIfEUhFwl5C28SBlj17z-FCo6WqOEOlrVl-asYcUFUGZ5YvwDn",
+					Hash: fixtureHash,
 					URI:  filepath.Join(pwd, "src"),
 				})
 
@@ -93,6 +95,17 @@ func Test(t *testing.T) {
 							destDirMeta.Name = ""
 							So(destDirMeta, ShouldResemble, path0metadata)
 						})
+					})
+
+					Convey("Copying the copy should still match on hash", func() {
+						inputter2 := New(def.Input{
+							Type: "dir",
+							Hash: fixtureHash,
+							URI:  filepath.Join(pwd, "dest"),
+						})
+
+						waitCh := inputter2.Apply(filepath.Join(pwd, "copycopy"))
+						So(<-waitCh, ShouldBeNil)
 					})
 				})
 			})
