@@ -82,7 +82,7 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 			Println(err, "replace with space monkey")
 		}
 
-		tar := exec.Command("tar", "-xf", input.URL, "-C", path)
+		tar := exec.Command("tar", "-xf", input.URI, "-C", path)
 		tar.Stdin = os.Stdin
 		tar.Stdout = os.Stdout
 		tar.Stderr = os.Stderr
@@ -111,7 +111,7 @@ func (*Executor) Run(job def.Formula) (def.Job, []def.Output) {
 		path := filepath.Join(rootfs, output.Location)
 
 		// Assumes output is a folder. Output transport impls should obviously be more robust
-		tar := exec.Command("tar", "-cf", output.URL, "--xform", "s,"+strings.TrimLeft(rootfs, "/")+",,", path)
+		tar := exec.Command("tar", "-cf", output.URI, "--xform", "s,"+strings.TrimLeft(rootfs, "/")+",,", path)
 		tar.Stdin = os.Stdin
 		tar.Stdout = os.Stdout
 		tar.Stderr = os.Stderr
