@@ -70,6 +70,22 @@ func Test(t *testing.T) {
 					So(root.NextChild(), ShouldBeNil)
 				})
 			})
+
+			Convey("We can walk and make a copy while filling a bucket", func() {
+				bucket := &MemoryBucket{}
+				err := FillBucket("src", "dest", bucket, sha512.New384)
+				So(err, ShouldBeNil)
+
+				Convey("Walking the copy should match on hash", func() {
+					bucket2 := &MemoryBucket{}
+					err := FillBucket("dest", "", bucket2, sha512.New384)
+					So(err, ShouldBeNil)
+
+					hash1, _ := Hash(bucket, sha512.New384())
+					hash2, _ := Hash(bucket2, sha512.New384())
+					So(hash2, ShouldResemble, hash1)
+				})
+			})
 		}),
 	)
 }
