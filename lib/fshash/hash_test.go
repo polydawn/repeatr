@@ -10,7 +10,7 @@ import (
 
 func TestMetadataSerialization(t *testing.T) {
 	Convey("Given a metadata structure", t, func() {
-		metadata := &Metadata{}
+		metadata := &Metadata{Name: "nom"}
 		marshalled := &bytes.Buffer{}
 		metadata.Marshal(marshalled)
 		marshalled = bytes.NewBuffer(marshalled.Bytes())
@@ -26,9 +26,10 @@ func TestMetadataSerialization(t *testing.T) {
 			reheated := make(map[string]interface{})
 			err := dec.Decode(reheated)
 			So(err, ShouldBeNil)
-			v, exists := reheated["k"]
+			v, exists := reheated["n"]
 			So(exists, ShouldBeTrue)
-			So(v, ShouldEqual, "v")
+			So(v, ShouldEqual, "nom")
+			So(marshalled.Len(), ShouldEqual, 0)
 		})
 	})
 }

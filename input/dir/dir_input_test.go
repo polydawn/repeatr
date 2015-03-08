@@ -44,7 +44,13 @@ func Test(t *testing.T) {
 			f.Write([]byte("zyx"))
 			So(f.Close(), ShouldBeNil)
 
-			fixtureHash := "jc82QbqKRT0njFNFkq6DWCji4REiwd3ZKjV0u2uFbh_A-nA7W6KKe9mBUgcNckKm"
+			// since we hash modtimes and this test has a fixture hash, we have to set those up!
+			os.Chtimes("src", time.Unix(1, 2), time.Unix(1000, 2000))
+			os.Chtimes("src/a", time.Unix(3, 2), time.Unix(3000, 2000))
+			os.Chtimes("src/b", time.Unix(5, 2), time.Unix(5000, 2000))
+			os.Chtimes("src/b/c", time.Unix(7, 2), time.Unix(7000, 2000))
+
+			fixtureHash := "ohWJbkqAgr5g3hTXT9GELqFAkQmYPz69QDStlQOkATAC5zLKvYbZrezI61Asvd55"
 
 			// save attributes first because access times are conceptually insane
 			// remarkably, since the first read doesn't cause atimes to change,
@@ -63,7 +69,7 @@ func Test(t *testing.T) {
 					URI:  filepath.Join(pwd, "src"),
 				})
 
-				Convey("Apply succeeds (hash checks pass)", func() {
+				Convey("Apply succeeds (hash fixture checks pass)", func() {
 					// wait a moment before copying to decrease the odds of nanotime telling a huge, huge lie.
 					// time reporting granularity can be extremely arbitrary and without this delay it's possible for the fs timestamps to end up the same before and after copy by pure coincidence, which would make much of the test vacuous.
 					// this wait, incidentally, varies in effectiveness with whether you're running with the goconvey web app or working from cli.
