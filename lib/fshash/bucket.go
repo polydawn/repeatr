@@ -2,9 +2,11 @@ package fshash
 
 import (
 	"archive/tar"
+	"io"
 	"os"
 
 	"github.com/spacemonkeygo/errors"
+	"github.com/ugorji/go/codec"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/treewalk"
 )
@@ -42,11 +44,22 @@ func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
 	return Metadata(*hdr)
 }
 
-func (m Metadata) MarshalBinary() ([]byte, error) {
-	// TODO: carefully.  maybe use cbor, but make sure order is consistent and encoding unambiguous.
-	// TODO: switch name to basename, so hash subtrees are severable
-	// disregard atime and ctime because they are almost and completely unusable, respectively
-	return nil, nil
+func (m Metadata) Marshal(out io.Writer) {
+	// Encodes the metadata as a CBOR map.
+	// We follow the rfc7049 section 3.9 description of "cannonical CBOR": namely, map keys are here entered consistently, and in sorted order.
+	// This doesn't implement `BinaryMarshaller` because we A: don't care and B: are invariably writing to another stream anyway.
+	// Note that if your writer ever returns an error, the codec library will panic with exactly that.  Yes, including `io.EOF`.
+	_, enc := codec.GenHelperEncoder(codec.NewEncoder(out, new(codec.CborHandle)))
+	// Hack around codec not exporting things very usefully -.-
+	const magic_UTF8 = 1
+	// Let us begin!
+	enc.EncodeMapStart(1) // TODO: we should have a decodability test so you don't break this crap
+	enc.EncodeString(magic_UTF8, "k")
+	enc.EncodeString(magic_UTF8, "v")
+	// There is no map-end to encode in cbor since we used the fixed-length map.  We're done.
+
+	// REVIEW: consider switch name back to basename, so hash subtrees are severable -- but this would require the hashing walker to actually you know encode and hash things as a tree... yeahhhhh it should probably do that.
+	// TODO: disregard atime and ctime because they are almost and completely unusable, respectively
 }
 
 /*

@@ -3,22 +3,20 @@ package fshash
 import (
 	"hash"
 
+	"github.com/ugorji/go/codec"
 	"polydawn.net/repeatr/lib/treewalk"
 )
 
 func Hash(bucket Bucket, hasher hash.Hash) ([]byte, error) {
+	enc := codec.NewEncoder(hasher, new(codec.CborHandle))
+	hasher.Write([]byte{codec.CborStreamArray})
+
 	preVisit := func(node treewalk.Node) error {
 		record := node.(RecordIterator).Record()
-		metabin, err := record.Metadata.MarshalBinary()
-		if err != nil {
-			return err
-		}
+		record.Metadata.Marshal(hasher)
 		// TODO : this also needs some higher level alignment/length stuff
-		_, err = hasher.Write(metabin)
-		if err != nil {
-			return err
-		}
-		_, err = hasher.Write(record.ContentHash)
+		_ = enc
+		_, err := hasher.Write(record.ContentHash)
 		return err
 	}
 	postVisit := func(node treewalk.Node) error { return nil }
@@ -26,5 +24,6 @@ func Hash(bucket Bucket, hasher hash.Hash) ([]byte, error) {
 		// TODO: these actually all seem like really severe panic-worthy errors
 		return nil, err
 	}
+	hasher.Write([]byte{0xff}) // should be `codec.CborStreamBreak` but upstream has an export bug :/
 	return hasher.Sum(nil), nil
 }

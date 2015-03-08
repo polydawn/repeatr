@@ -44,7 +44,7 @@ func Test(t *testing.T) {
 			f.Write([]byte("zyx"))
 			So(f.Close(), ShouldBeNil)
 
-			fixtureHash := "B50b7UBhjsqFkXbIfEUhFwl5C28SBlj17z-FCo6WqOEOlrVl-asYcUFUGZ5YvwDn"
+			fixtureHash := "jc82QbqKRT0njFNFkq6DWCji4REiwd3ZKjV0u2uFbh_A-nA7W6KKe9mBUgcNckKm"
 
 			// save attributes first because access times are conceptually insane
 			// remarkably, since the first read doesn't cause atimes to change,
