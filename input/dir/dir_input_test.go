@@ -70,13 +70,6 @@ func Test(t *testing.T) {
 				})
 
 				Convey("Apply succeeds (hash fixture checks pass)", func() {
-					// wait a moment before copying to decrease the odds of nanotime telling a huge, huge lie.
-					// time reporting granularity can be extremely arbitrary and without this delay it's possible for the fs timestamps to end up the same before and after copy by pure coincidence, which would make much of the test vacuous.
-					// this wait, incidentally, varies in effectiveness with whether you're running with the goconvey web app or working from cli.
-					// yes, i'm serious.  i clicked many times to determine this.
-					// this is literally the reason why we're building repeatr.
-					time.Sleep(2 * time.Millisecond)
-
 					waitCh := inputter.Apply(filepath.Join(pwd, "dest"))
 					So(<-waitCh, ShouldBeNil)
 
