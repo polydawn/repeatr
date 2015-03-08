@@ -11,6 +11,7 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/fshash"
 	"polydawn.net/repeatr/testutil"
 )
@@ -107,6 +108,31 @@ func Test(t *testing.T) {
 						So(<-waitCh, ShouldBeNil)
 					})
 				})
+			})
+
+			Convey("A different hash is rejected", func() {
+				inputter := New(def.Input{
+					Type: "dir",
+					Hash: "abcd",
+					URI:  filepath.Join(pwd, "src"),
+				})
+				err := <-inputter.Apply(filepath.Join(pwd, "dest"))
+				So(err, ShouldHaveSameTypeAs, input.InputHashMismatchError.New(""))
+			})
+
+			Convey("A change in content breaks the hash", func() {
+				// we could do separate tests for added and removed, but those don't trigger markedly different paths so i think we're pretty well covered already.
+				inputter := New(def.Input{
+					Type: "dir",
+					Hash: fixtureHash,
+					URI:  filepath.Join(pwd, "src"),
+				})
+				f, err := os.OpenFile("src/b/c", os.O_RDWR, 0664)
+				So(err, ShouldBeNil)
+				f.Write([]byte("222"))
+				So(f.Close(), ShouldBeNil)
+				err = <-inputter.Apply(filepath.Join(pwd, "dest"))
+				So(err, ShouldHaveSameTypeAs, input.InputHashMismatchError.New(""))
 			})
 		}),
 	)
