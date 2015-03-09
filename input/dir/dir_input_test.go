@@ -51,7 +51,7 @@ func Test(t *testing.T) {
 			os.Chtimes("src/b", time.Unix(5, 2), time.Unix(5000, 2000))
 			os.Chtimes("src/b/c", time.Unix(7, 2), time.Unix(7000, 2000))
 
-			fixtureHash := "ohWJbkqAgr5g3hTXT9GELqFAkQmYPz69QDStlQOkATAC5zLKvYbZrezI61Asvd55"
+			fixtureHash := "IcXVfhMBhI8mdjVUHve8zA3ZSnPIe_wHYIXiToWkEbMrttIYU1vS3vTsET2yrvrF"
 
 			// save attributes first because access times are conceptually insane
 			// remarkably, since the first read doesn't cause atimes to change,

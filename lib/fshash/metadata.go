@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -55,7 +56,7 @@ func (m Metadata) Marshal(out io.Writer) {
 	// Hack around codec not exporting things very usefully -.-
 	const magic_UTF8 = 1
 	// Count up how many fields we're about to encode.
-	fieldCount := 6
+	fieldCount := 7
 	if m.Linkname != "" {
 		fieldCount++
 	}
@@ -65,9 +66,13 @@ func (m Metadata) Marshal(out io.Writer) {
 	}
 	// Let us begin!
 	enc.EncodeMapStart(fieldCount)
-	enc.EncodeString(magic_UTF8, "n")    // name
-	enc.EncodeString(magic_UTF8, m.Name) // REVIEW: consider switch name back to basename, so hash subtrees are severable -- but this would require the hashing walker to actually you know encode and hash things as a tree... yeahhhhh it should probably do that.
-	enc.EncodeString(magic_UTF8, "m")    // mode
+	enc.EncodeString(magic_UTF8, "n") // name
+	// use basename so hash subtrees are severable
+	enc.EncodeString(magic_UTF8, filepath.Base(m.Name))
+	// tar format magic numbers for file type  aren't particularly human readable but they're no more or less arbitrary than anyone else's
+	enc.EncodeString(magic_UTF8, "t") // type
+	enc.EncodeInt(int64(m.Typeflag))
+	enc.EncodeString(magic_UTF8, "m") // mode -- note this is *not* `os.FileMode`, it's just the perm bits
 	enc.EncodeInt(m.Mode)
 	enc.EncodeString(magic_UTF8, "u") // uid
 	enc.EncodeInt(int64(m.Uid))
@@ -82,7 +87,6 @@ func (m Metadata) Marshal(out io.Writer) {
 	enc.EncodeString(magic_UTF8, "tmn") // modified time, nano component
 	enc.EncodeInt(int64(m.ModTime.Nanosecond()))
 	// disregard atime and ctime because they are almost and completely unusable, respectively (change on read and unsettable)
-	// skipped Typeflag because that's pretty redundant with the mode bits
 	if m.Linkname != "" {
 		enc.EncodeString(magic_UTF8, "l") // link name (optional)
 		enc.EncodeString(magic_UTF8, m.Linkname)

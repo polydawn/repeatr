@@ -51,7 +51,7 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 		}
 
 		// hash whole tree
-		actualTreeHash, _ := fshash.Hash(bucket, i.hasherFactory())
+		actualTreeHash, _ := fshash.Hash(bucket, i.hasherFactory)
 
 		// verify total integrity
 		expectedTreeHash, err := base64.URLEncoding.DecodeString(i.spec.Hash)

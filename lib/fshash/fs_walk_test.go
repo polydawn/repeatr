@@ -81,8 +81,8 @@ func Test(t *testing.T) {
 					err := FillBucket("dest", "", bucket2, sha512.New384)
 					So(err, ShouldBeNil)
 
-					hash1, _ := Hash(bucket, sha512.New384())
-					hash2, _ := Hash(bucket2, sha512.New384())
+					hash1, _ := Hash(bucket, sha512.New384)
+					hash2, _ := Hash(bucket2, sha512.New384)
 					So(hash2, ShouldResemble, hash1)
 				})
 			})
