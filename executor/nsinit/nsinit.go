@@ -5,15 +5,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/spacemonkeygo/errors"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/input/dispatch"
-	"polydawn.net/repeatr/output/dispatch"
 	"polydawn.net/repeatr/lib/flak"
+	"polydawn.net/repeatr/output/dispatch"
 )
 
 // interface assertion
@@ -74,26 +73,14 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 
 	// Run inputs
 	// TODO: replace with mounts
-	Println("Provisioning inputs...")
 	for x, input := range job.Inputs {
-		Println(x)
+		Println("Provisioning input", x+1, input.Type, "to", input.Location)
 		path := filepath.Join(rootfs, input.Location)
-		err := os.MkdirAll(path, 0777)
-		if err != nil {
-			panic(errors.IOError.Wrap(err))
-		}
 
-		tar := exec.Command("tar", "-xf", input.URI, "-C", path)
-		tar.Stdin = os.Stdin
-		tar.Stdout = os.Stdout
-		tar.Stderr = os.Stderr
-		tar.Run()
-
-		// Eventually:
-		err = <- inputs.Get(input).Apply(path)
+		err = <-inputs.Get(input).Apply(path)
 		if err != nil {
-			Println("Input", x, "failed")
-			panic(errors.IOError.Wrap(err))
+			Println("Input", x+1, "failed:", err)
+			panic(err)
 		}
 	}
 
@@ -110,20 +97,16 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	Println("Running formula...")
 	cmd.Run()
 
-	Println("Persisting outputs...")
-	for _, output := range job.Outputs {
-		path := filepath.Join(rootfs, output.Location)
+	// Run outputs
+	for x, output := range job.Outputs {
+		Println("Persisting output", x+1, output.Type, "from", output.Location)
+		// path := filepath.Join(rootfs, output.Location)
 
-		// Assumes output is a folder. Output transport impls should obviously be more robust
-		tar := exec.Command("tar", "-cf", output.URI, "--xform", "s,"+strings.TrimLeft(rootfs, "/")+",,", path)
-		tar.Stdin = os.Stdin
-		tar.Stdout = os.Stdout
-		tar.Stderr = os.Stderr
-		tar.Run()
-
-		// Eventually:
-		// err := <- outputs.Get(output).Dream()
-		_ = outputs.Get(output)
+		err = <-outputs.Get(output).Apply(rootfs)
+		if err != nil {
+			Println("Output", x+1, "failed:", err)
+			panic(err)
+		}
 	}
 
 	// Done... ish. No outputs. Womp womp!
