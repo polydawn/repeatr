@@ -11,6 +11,8 @@ import (
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
+	"polydawn.net/repeatr/input/dispatch"
+	"polydawn.net/repeatr/output/dispatch"
 	"polydawn.net/repeatr/lib/flak"
 )
 
@@ -73,7 +75,8 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	// Run inputs
 	// TODO: replace with mounts
 	Println("Provisioning inputs...")
-	for _, input := range job.Inputs {
+	for x, input := range job.Inputs {
+		Println(x)
 		path := filepath.Join(rootfs, input.Location)
 		err := os.MkdirAll(path, 0777)
 		if err != nil {
@@ -87,7 +90,11 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 		tar.Run()
 
 		// Eventually:
-		// err := <- dispatch.GetInput(input).Apply(path)
+		err = <- inputs.Get(input).Apply(path)
+		if err != nil {
+			Println("Input", x, "failed")
+			panic(errors.IOError.Wrap(err))
+		}
 	}
 
 	// Output folders should exist
@@ -115,7 +122,8 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 		tar.Run()
 
 		// Eventually:
-		// err := <- dispatch.GetOutput(output).Dream()
+		// err := <- outputs.Get(output).Dream()
+		_ = outputs.Get(output)
 	}
 
 	// Done... ish. No outputs. Womp womp!
