@@ -85,7 +85,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			hdr.ChangeTime = def.Somewhen
 			hdr.AccessTime = def.Somewhen
 			if destBasePath != "" {
-				if err := os.Mkdir(destPath, mode&os.ModePerm); err != nil {
+				if err := os.MkdirAll(destPath, mode&os.ModePerm); err != nil {
 					return err
 				}
 				// setting time is done in the post-order phase of traversal since adding children will mutate mtime
