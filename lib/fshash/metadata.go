@@ -15,6 +15,10 @@ import (
 
 type Metadata tar.Header
 
+/*
+	Scan file attributes into a repeatr Metadata struct.  FileInfo
+	may be provided if it is already available (this will save a stat call).
+*/
 func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
 	var fi os.FileInfo
 	var err error
