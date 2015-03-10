@@ -50,12 +50,17 @@ func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
 	return Metadata(*hdr)
 }
 
+/*
+	Encodes the metadata as a CBOR map -- deterministically; the output is appropriate to feed to a hash and expect consistency.
+
+	We follow the rfc7049 section 3.9 description of "canonical CBOR": namely, map keys are here entered consistently, and in sorted order.
+	Except when maps are representing a struct; then it's deterministic order, but specified by (fairly arbitrary) hardcoded choices.
+
+	Errors are panicked.
+	(Note that if your writer ever returns an error, the codec library will panic with exactly that.  Yes, including `io.EOF`.)
+*/
 func (m Metadata) Marshal(out io.Writer) {
-	// Encodes the metadata as a CBOR map -- deterministically; the output is appropriate to feed to a hash and expect consistency.
-	// We follow the rfc7049 section 3.9 description of "canonical CBOR": namely, map keys are here entered consistently, and in sorted order.
-	// Except when maps are representing a struct; then it's deterministic order, but specified by (fairly arbitrary) hardcoded choices.
 	// This doesn't implement `BinaryMarshaller` because we A: don't care and B: are invariably writing to another stream anyway.
-	// Note that if your writer ever returns an error, the codec library will panic with exactly that.  Yes, including `io.EOF`.
 	_, enc := codec.GenHelperEncoder(codec.NewEncoder(out, new(codec.CborHandle)))
 	// Hack around codec not exporting things very usefully -.-
 	const magic_UTF8 = 1

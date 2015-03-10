@@ -18,6 +18,15 @@ func (b *MemoryBucket) Record(metadata Metadata, contentHash []byte) {
 	b.lines = append(b.lines, Record{metadata, contentHash})
 }
 
+/*
+	Get a `treewalk.Node` that starts at the root of the bucket.
+	The walk will be in deterministic, sorted order (and thus is appropriate
+	for hashing).
+
+	This is only safe for non-concurrent use and depth-first traversal.
+	If the data structure is changed, or (sub)iterators used out of order,
+	behavior is undefined.
+*/
 func (b *MemoryBucket) Iterator() RecordIterator {
 	sort.Sort(linesByFilepath(b.lines))
 	// TODO: check for rootedness
@@ -32,11 +41,15 @@ type memoryBucketIterator struct {
 }
 
 func (i *memoryBucketIterator) NextChild() treewalk.Node {
-	// is the next one still a child?
+	// Since we sorted before starting iteration, all child nodes are contiguous and follow their parent.
+	// Each treewalk node keeps its own record's index (implicitly, this is forming a stack),
+	// and they all share the same value for last index walked, so when a child has been fully iterated over,
+	// the next call on the parent will start looking right after all the child's children.
 	next := *i.that + 1
 	if next >= len(i.lines) {
 		return nil
 	}
+	// is the next one still a child?
 	if strings.HasPrefix(i.lines[next].Metadata.Name, i.lines[i.this].Metadata.Name+"/") {
 		*i.that = next
 		// TODO: check for missing trees

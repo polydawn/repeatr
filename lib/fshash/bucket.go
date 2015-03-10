@@ -14,8 +14,8 @@ import (
 	e.g. boltdb for really large file trees would also make sense.
 */
 type Bucket interface {
-	Record(metadata Metadata, contentHash []byte)
-	Iterator() (rootRecord RecordIterator)
+	Record(metadata Metadata, contentHash []byte) // record a file into the bucket
+	Iterator() (rootRecord RecordIterator)        // return a treewalk root that does a traversal ordered by path
 }
 
 type Record struct {
