@@ -31,7 +31,7 @@ Acceptable in light of convenience.
 
 From [docs](https://github.com/docker/libcontainer/blob/master/CONTRIBUTING.md#building-libcontainer-directly). Establish a clean gopath, and:
 
-```
+```bash
 go get -v github.com/docker/libcontainer
 cd $GOPATH/src/github.com/docker/libcontainer
 
@@ -66,7 +66,7 @@ Luckily, the `--create` flag will implicitly use a default & sane config, extend
 The result is not far removed from `docker run`, with several advantages.
 For example:
 
-```
+```bash
 # Disregard layers, acquire containers
 docker run --name "export-me" ubuntu:14.04 /bin/true
 docker export export-me > ubuntu.tar
@@ -165,7 +165,7 @@ A network bridge is something Docker provides automatically, and is a feature no
 
 From the [contribution docs](https://github.com/docker/libcontainer/blob/master/CONTRIBUTING.md#testing-changes-with-nsinit-directly):
 
-```
+```bash
 # Optional, add a docker0 bridge
 ip link add docker0 type bridge
 ifconfig docker0 172.17.0.1/16 up
@@ -287,7 +287,7 @@ As shown above, ACIs do not quite do this, adding an extra layer. There are a fe
 
 Tool to build from a filesystem + manifest.
 
-```
+```bash
 go build -o $GOPATH/bin/actool github.com/appc/spec/actool
 
 # Assuming container exists from before (libcontainer tutorial)
@@ -301,7 +301,7 @@ nano wat/manifest
 
 time ./bin/actool build ./wat watbuntu.aci
 
-real	0m18.098s
+# real	0m18.098s
 ```
 
 It's not actually clear to me if there's a reason this tool exists beyond convenience.
@@ -315,8 +315,8 @@ It might be possible to expand a rootFS into the CAS by lying about its (unknown
 
 Go binary that does conversion from a docker registry.
 
-```
-pike go get github.com/appc/docker2aci
+```bash
+go get github.com/appc/docker2aci
 
 time ./bin/docker2aci ubuntu:14.04
 
@@ -329,7 +329,7 @@ Downloading layer: 2d24f826cb16146e2016ff349a8a33ed5830f3b938d45c0f82943f4ab8c09
 Generated ACI(s):
 ubuntu-14.04.aci
 
-real	0m32.135s
+# real	0m32.135s
 ```
 
 Results in 189 MB file, same as a docker export of same.
@@ -358,8 +358,8 @@ Resultant generated manifest:
 
 Attempting to run this (note it is a bash entry point), I got:
 
-```
-rkt run ./ubuntu-14.04.aci
+```bash
+$ rkt run ./ubuntu-14.04.aci
 /etc/localtime is not a symlink, not updating container timezone.
 Sending SIGTERM to remaining processes...
 Sending SIGKILL to remaining processes...
@@ -387,9 +387,7 @@ Usage:
 Running any of these will end up with copies of the FS and ACI in the CAS /var/lib/rkt.
 You now have a docker-esque GC problem of containers + images. Enjoy!
 
-To be fair there is a `rkt gc` command. Exact behavior untested.
-
-But for fundamentally disposable & transient invocations, I can't ever see myself gratified for mandated use of a polluted CAS folder.
+To be fair there is a `rkt gc` command. Exact behavior untested. But for fundamentally disposable & transient invocations, I can't ever see myself gratified for mandated use of a polluted CAS folder.
 
 
 ### Host mounts
