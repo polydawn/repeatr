@@ -1,4 +1,4 @@
-package executors
+package executordispatch
 
 import (
 	"polydawn.net/repeatr/def"

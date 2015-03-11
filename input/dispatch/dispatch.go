@@ -1,4 +1,4 @@
-package inputs
+package inputdispatch
 
 import (
 	"polydawn.net/repeatr/def"

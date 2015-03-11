@@ -45,7 +45,7 @@ func init() {
 
 func Run(c *cli.Context) {
 
-	executor := *executors.Get(c.String("executor"))
+	executor := *executordispatch.Get(c.String("executor"))
 	filename, _ := filepath.Abs(c.String("input"))
 
 	content, err := ioutil.ReadFile(filename)

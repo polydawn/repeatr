@@ -54,6 +54,7 @@ func WithTempDir(f func(string), dirs ...string) {
 		if err != nil {
 			// TODO: we don't want to panic here, more like a debug log entry, "failed to remove tempdir."
 			// Can accomplish once we add logging.
+			panic(errors.IOError.Wrap(err))
 		}
 	}).Done()
 }

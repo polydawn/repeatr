@@ -73,13 +73,13 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 		path := filepath.Join(rootfs, input.Location)
 
 		// Ensure that the parent folder of this input exists
-		err := os.MkdirAll(filepath.Dir(path), 0777)
+		err := os.MkdirAll(filepath.Dir(path), 0755)
 		if err != nil {
 			panic(errors.IOError.Wrap(err))
 		}
 
 		// Run input
-		err = <-inputs.Get(input).Apply(path)
+		err = <-inputdispatch.Get(input).Apply(path)
 		if err != nil {
 			Println("Input", x+1, "failed:", err)
 			panic(err)
@@ -90,7 +90,7 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	// TODO: discussion
 	for _, output := range job.Outputs {
 		path := filepath.Join(rootfs, output.Location)
-		err := os.MkdirAll(path, 0777)
+		err := os.MkdirAll(path, 0755)
 		if err != nil {
 			panic(errors.IOError.Wrap(err))
 		}
@@ -104,7 +104,7 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 		Println("Persisting output", x+1, output.Type, "from", output.Location)
 		// path := filepath.Join(rootfs, output.Location)
 
-		err := <-outputs.Get(output).Apply(rootfs)
+		err := <-outputdispatch.Get(output).Apply(rootfs)
 		if err != nil {
 			Println("Output", x+1, "failed:", err)
 			panic(err)
