@@ -1,52 +1,9 @@
 package fshash
 
 import (
-	"archive/tar"
-	"os"
-
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/treewalk"
 )
-
-type Metadata tar.Header
-
-func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
-	var fi os.FileInfo
-	var err error
-	if len(optional) > 0 {
-		fi = optional[0]
-	} else {
-		fi, err = os.Lstat(path)
-		if err != nil {
-			// also consider ENOEXIST a problem; this function is mostly
-			// used in testing where we really expect that path to exist.
-			panic(errors.IOError.Wrap(err))
-		}
-	}
-	// readlink needs the file path again  ヽ(´ー｀)ノ
-	var link string
-	if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
-		if link, err = os.Readlink(path); err != nil {
-			panic(errors.IOError.Wrap(err))
-		}
-	}
-	hdr, err := tar.FileInfoHeader(fi, link)
-	if err != nil {
-		panic(errors.IOError.Wrap(err))
-	}
-	// ctimes are uncontrollable, pave them (╯°□°）╯︵ ┻━┻
-	// atimes mutate on read, pave them
-	hdr.ChangeTime = def.Somewhen
-	hdr.AccessTime = def.Somewhen
-	return Metadata(*hdr)
-}
-
-func (m Metadata) MarshalBinary() ([]byte, error) {
-	// TODO: carefully.  maybe use cbor, but make sure order is consistent and encoding unambiguous.
-	// TODO: switch name to basename, so hash subtrees are severable
-	// disregard atime and ctime because they are almost and completely unusable, respectively
-	return nil, nil
-}
 
 /*
 	Bucket keeps hashes of file content and the set of metadata per file and dir.
@@ -57,8 +14,32 @@ func (m Metadata) MarshalBinary() ([]byte, error) {
 	e.g. boltdb for really large file trees would also make sense.
 */
 type Bucket interface {
-	Record(metadata Metadata, contentHash []byte)
+	Record(metadata Metadata, contentHash []byte) // record a file into the bucket
+	Iterator() (rootRecord RecordIterator)        // return a treewalk root that does a traversal ordered by path
 }
+
+type Record struct {
+	// Note: tags are to indicate that this field is serialized, but are a non-functional ornamentation.
+	// Serialization code is handcrafted in order to deal with order determinism and does not actually refer to them.
+
+	Metadata    Metadata `json:"m"`
+	ContentHash []byte   `json:"h"`
+}
+
+/*
+	RecordIterator is used for walking Bucket contents in hash-ready order.
+	It's specified separately from Record for three reasons: There will be many
+	Record objects, and so they should be small (the iterators tend to require
+	at least another two words of memory); and the Record objects are
+	serializable the same way for all implementations of Bucket (the iterators
+	may work differently depending on how data is heaped in the Bucket impl).
+*/
+type RecordIterator interface {
+	treewalk.Node
+	Record() Record
+}
+
+var InvalidFilesystem *errors.ErrorClass = errors.NewClass("InvalidFilesystem")
 
 /*
 	FileCollision is reported when the same file path is submitted to a `Bucket`
@@ -68,26 +49,18 @@ type Bucket interface {
 	question of which should be sorted first when creating a deterministic
 	hash of the whole tree.)
 */
-var FileCollision *errors.ErrorClass = errors.NewClass("FileCollision")
+var FileCollision *errors.ErrorClass = InvalidFilesystem.NewClass("FileCollision")
 
-var _ Bucket = &MemoryBucket{}
+/*
+	MissingTree is reported when iteration over a filled bucket encounters
+	a file that has no parent nodes.  I.e., if there's a file path "./a/b",
+	and there's no entries for "./a", it's a MissingTree error.
+*/
+var MissingTree *errors.ErrorClass = InvalidFilesystem.NewClass("MissingTree")
 
-type MemoryBucket struct {
-	// my kingdom for a red-black tree or other sane sorted map implementation
-	lines []line
-}
-
-type line struct {
-	metadata    Metadata
-	contentHash []byte
-}
-
-type linesByFilepath []line
+// for sorting
+type linesByFilepath []Record
 
 func (a linesByFilepath) Len() int           { return len(a) }
 func (a linesByFilepath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a linesByFilepath) Less(i, j int) bool { return a[i].metadata.Name < a[j].metadata.Name }
-
-func (b *MemoryBucket) Record(metadata Metadata, contentHash []byte) {
-	b.lines = append(b.lines, line{metadata, contentHash})
-}
+func (a linesByFilepath) Less(i, j int) bool { return a[i].Metadata.Name < a[j].Metadata.Name }

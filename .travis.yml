@@ -10,5 +10,5 @@ install: true
 script:
   - ./goad init
   - ./goad validate
-  - ./goad test
   - ./goad install
+  - sudo bash -c "export PATH=$PATH ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell

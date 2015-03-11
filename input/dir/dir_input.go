@@ -1,7 +1,9 @@
 package dir
 
 import (
+	"bytes"
 	"crypto/sha512"
+	"encoding/base64"
 	"hash"
 	"os"
 
@@ -48,8 +50,14 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 			return
 		}
 
-		// hash whole tree and verify total integrity
-		// TODO
+		// hash whole tree
+		actualTreeHash, _ := fshash.Hash(bucket, i.hasherFactory)
+
+		// verify total integrity
+		expectedTreeHash, err := base64.URLEncoding.DecodeString(i.spec.Hash)
+		if !bytes.Equal(actualTreeHash, expectedTreeHash) {
+			done <- input.InputHashMismatchError.New("expected hash %q, got %q", i.spec.Hash, base64.URLEncoding.EncodeToString(actualTreeHash))
+		}
 	}()
 	return done
 }

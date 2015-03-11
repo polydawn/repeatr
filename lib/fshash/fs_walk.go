@@ -1,7 +1,6 @@
 package fshash
 
 import (
-	"archive/tar"
 	"hash"
 	"io"
 	"os"
@@ -77,20 +76,18 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		mode := filenode.info.Mode()
 		switch {
 		case mode&os.ModeDir == os.ModeDir:
-			hdr, err := tar.FileInfoHeader(filenode.info, "")
-			if err != nil {
-				return err
-			}
+			hdr := ReadMetadata(destPath, filenode.info)
 			hdr.Name = filenode.path
-			hdr.ChangeTime = def.Somewhen
-			hdr.AccessTime = def.Somewhen
 			if destBasePath != "" {
-				if err := os.Mkdir(destPath, mode&os.ModePerm); err != nil {
+				if err := os.MkdirAll(destPath, mode&os.ModePerm); err != nil {
 					return err
 				}
 				// setting time is done in the post-order phase of traversal since adding children will mutate mtime
+				if err := os.Chown(destPath, hdr.Uid, hdr.Gid); err != nil {
+					return err
+				}
 			}
-			bucket.Record(Metadata(*hdr), nil)
+			bucket.Record(hdr, nil)
 			filenode.prepareChildren(srcBasePath)
 		case mode&os.ModeSymlink == os.ModeSymlink:
 			var link string
@@ -98,13 +95,8 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			if link, err = os.Readlink(srcPath); err != nil {
 				return err
 			}
-			hdr, err := tar.FileInfoHeader(filenode.info, link)
-			if err != nil {
-				return err
-			}
+			hdr := ReadMetadata(destPath, filenode.info)
 			hdr.Name = filenode.path
-			hdr.ChangeTime = def.Somewhen
-			hdr.AccessTime = def.Somewhen
 			if destBasePath != "" {
 				if err := os.Symlink(destPath, link); err != nil {
 					return err
@@ -114,7 +106,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 					return err
 				}
 			}
-			bucket.Record(Metadata(*hdr), nil)
+			bucket.Record(hdr, nil)
 		case mode&os.ModeNamedPipe == os.ModeNamedPipe:
 			panic(errors.NotImplementedError.New("TODO"))
 		case mode&os.ModeSocket == os.ModeSocket:
@@ -147,21 +139,19 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				return err
 			}
 			// marshal headers and save to bucket with hash
-			hdr, err := tar.FileInfoHeader(filenode.info, "")
-			if err != nil {
-				return err
-			}
+			hdr := ReadMetadata(destPath, filenode.info)
 			hdr.Name = filenode.path
-			hdr.ChangeTime = def.Somewhen
-			hdr.AccessTime = def.Somewhen
 			if destBasePath != "" {
 				filetimes := []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}
 				if err := fspatch.UtimesNano(destPath, filetimes); err != nil {
 					return err
 				}
+				if err := os.Chown(destPath, hdr.Uid, hdr.Gid); err != nil {
+					return err
+				}
 			}
 			hash := hasher.Sum(nil)
-			bucket.Record(Metadata(*hdr), hash)
+			bucket.Record(hdr, hash)
 		default:
 			panic(errors.NotImplementedError.New("The tennants of filesystems have changed!  We're not prepared for this file mode %d", mode))
 			// side note: i don't know how to check for hardlinks

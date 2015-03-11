@@ -61,7 +61,8 @@ else
 		done
 		;;
 	convey)
-		go install github.com/smartystreets/goconvey && "$GOPATH"/bin/goconvey
+		shift
+		go install github.com/smartystreets/goconvey && "$GOPATH"/bin/goconvey "$@"
 		;;
 	cover)
 		coverFile="$GOPATH/tmp/cover/cover.out"
