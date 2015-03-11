@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 )
 
 // Methods that many executors might use
@@ -38,4 +39,22 @@ func GetTempDir(dirs ...string) string {
 	}
 
 	return folder
+}
+
+// Runs a function with a tempdir, cleaning up afterward.
+func WithTempDir(f func(string), dirs ...string) {
+
+	// If IOError occurs while creating tempdir, final dir was not created to clean up.
+	dir := GetTempDir(dirs...)
+
+	try.Do(func() {
+		f(dir)
+	}).Finally(func() {
+		err := os.RemoveAll(dir)
+		if err != nil {
+			// TODO: we don't want to panic here, more like a debug log entry, "failed to remove tempdir."
+			// Can accomplish once we add logging.
+			panic(errors.IOError.Wrap(err))
+		}
+	}).Done()
 }
