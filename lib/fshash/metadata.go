@@ -24,13 +24,15 @@ func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
 	var err error
 	if len(optional) > 0 {
 		fi = optional[0]
-	} else {
+	} else if len(optional) == 0 {
 		fi, err = os.Lstat(path)
 		if err != nil {
 			// also consider ENOEXIST a problem; this function is mostly
 			// used in testing where we really expect that path to exist.
 			panic(errors.IOError.Wrap(err))
 		}
+	} else {
+		panic(errors.ProgrammerError.New("optional fileinfo may only be one"))
 	}
 	// readlink needs the file path again  ヽ(´ー｀)ノ
 	var link string

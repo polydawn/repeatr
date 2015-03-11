@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"hash"
 
+	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
 	"polydawn.net/repeatr/lib/treewalk"
 )
@@ -93,7 +94,7 @@ func Hash(bucket Bucket, hasherFactory func() hash.Hash) ([]byte, error) {
 	// Sanity check no node left behind
 	_ = upsubs.Pop()
 	if !upsubs.Empty() || !hashers.Empty() {
-		panic("goofed")
+		panic(errors.ProgrammerError.New("invariant failed after bucket records walk"))
 	}
 	// return the result upsubbed by the root
 	return finalAnswer, nil

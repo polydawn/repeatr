@@ -19,6 +19,9 @@ type Bucket interface {
 }
 
 type Record struct {
+	// Note: tags are to indicate that this field is serialized, but are a non-functional ornamentation.
+	// Serialization code is handcrafted in order to deal with order determinism and does not actually refer to them.
+
 	Metadata    Metadata `json:"m"`
 	ContentHash []byte   `json:"h"`
 }
