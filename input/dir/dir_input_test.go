@@ -34,7 +34,7 @@ func Test(t *testing.T) {
 		})
 	})
 
-	Convey("Given a directory with a mixture of files and folders", t,
+	testutil.Convey_IfHaveRoot("Given a directory with a mixture of files and folders", t,
 		testutil.WithTmpdir(func() {
 			pwd, _ := os.Getwd()
 			os.Mkdir("src", 0755)
@@ -46,12 +46,17 @@ func Test(t *testing.T) {
 			So(f.Close(), ShouldBeNil)
 
 			// since we hash modtimes and this test has a fixture hash, we have to set those up!
-			os.Chtimes("src", time.Unix(1, 2), time.Unix(1000, 2000))
-			os.Chtimes("src/a", time.Unix(3, 2), time.Unix(3000, 2000))
-			os.Chtimes("src/b", time.Unix(5, 2), time.Unix(5000, 2000))
-			os.Chtimes("src/b/c", time.Unix(7, 2), time.Unix(7000, 2000))
+			So(os.Chtimes("src", time.Unix(1, 2), time.Unix(1000, 2000)), ShouldBeNil)
+			So(os.Chtimes("src/a", time.Unix(3, 2), time.Unix(3000, 2000)), ShouldBeNil)
+			So(os.Chtimes("src/b", time.Unix(5, 2), time.Unix(5000, 2000)), ShouldBeNil)
+			So(os.Chtimes("src/b/c", time.Unix(7, 2), time.Unix(7000, 2000)), ShouldBeNil)
+			// similarly, force uid and gid bits since otherwise they default to your current user, and that's not the same for everyone
+			So(os.Chown("src", 10000, 10000), ShouldBeNil)
+			So(os.Chown("src/a", 10000, 10000), ShouldBeNil)
+			So(os.Chown("src/b", 10000, 10000), ShouldBeNil)
+			So(os.Chown("src/b/c", 10000, 10000), ShouldBeNil)
 
-			fixtureHash := "IcXVfhMBhI8mdjVUHve8zA3ZSnPIe_wHYIXiToWkEbMrttIYU1vS3vTsET2yrvrF"
+			fixtureHash := "nIf-ikfYp83OWWc_y2D-IGC9WOMYdfMA0l_11TL3VCeFq4QtsU6bBWeXyevujYr4"
 
 			// save attributes first because access times are conceptually insane
 			// remarkably, since the first read doesn't cause atimes to change,

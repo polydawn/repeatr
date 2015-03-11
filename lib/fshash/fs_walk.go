@@ -83,6 +83,9 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 					return err
 				}
 				// setting time is done in the post-order phase of traversal since adding children will mutate mtime
+				if err := os.Chown(destPath, hdr.Uid, hdr.Gid); err != nil {
+					return err
+				}
 			}
 			bucket.Record(hdr, nil)
 			filenode.prepareChildren(srcBasePath)
@@ -141,6 +144,9 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			if destBasePath != "" {
 				filetimes := []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}
 				if err := fspatch.UtimesNano(destPath, filetimes); err != nil {
+					return err
+				}
+				if err := os.Chown(destPath, hdr.Uid, hdr.Gid); err != nil {
 					return err
 				}
 			}
