@@ -27,12 +27,8 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 
 	// Dedicated rootfs folder to distinguish container from nsinit noise
 	rootfs := filepath.Join(d, "rootfs")
-	err := os.MkdirAll(rootfs, 0777)
-	if err != nil {
-		panic(errors.IOError.Wrap(err))
-	}
 
-	// nsinit wants to have a legferl
+	// nsinit wants to have a logfile
 	logFile := filepath.Join(d, "nsinit-debug.log")
 
 	// Prep command
@@ -72,11 +68,17 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	cmd.Stderr = os.Stderr
 
 	// Run inputs
-	// TODO: replace with mounts
 	for x, input := range job.Inputs {
 		Println("Provisioning input", x+1, input.Type, "to", input.Location)
 		path := filepath.Join(rootfs, input.Location)
 
+		// Ensure that the parent folder of this input exists
+		err := os.MkdirAll(filepath.Dir(path), 0777)
+		if err != nil {
+			panic(errors.IOError.Wrap(err))
+		}
+
+		// Run input
 		err = <-inputs.Get(input).Apply(path)
 		if err != nil {
 			Println("Input", x+1, "failed:", err)
@@ -85,7 +87,7 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	}
 
 	// Output folders should exist
-	// TODO: replace with mounts
+	// TODO: discussion
 	for _, output := range job.Outputs {
 		path := filepath.Join(rootfs, output.Location)
 		err := os.MkdirAll(path, 0777)
@@ -102,7 +104,7 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 		Println("Persisting output", x+1, output.Type, "from", output.Location)
 		// path := filepath.Join(rootfs, output.Location)
 
-		err = <-outputs.Get(output).Apply(rootfs)
+		err := <-outputs.Get(output).Apply(rootfs)
 		if err != nil {
 			Println("Output", x+1, "failed:", err)
 			panic(err)
