@@ -122,7 +122,7 @@ func Test(t *testing.T) {
 					URI:  filepath.Join(pwd, "src"),
 				})
 				err := <-inputter.Apply(filepath.Join(pwd, "dest"))
-				So(err, ShouldHaveSameTypeAs, input.InputHashMismatchError.New(""))
+				So(err, testutil.ShouldBeErrorClass, input.InputHashMismatchError)
 			})
 
 			Convey("A change in content breaks the hash", func() {
@@ -137,7 +137,7 @@ func Test(t *testing.T) {
 				f.Write([]byte("222"))
 				So(f.Close(), ShouldBeNil)
 				err = <-inputter.Apply(filepath.Join(pwd, "dest"))
-				So(err, ShouldHaveSameTypeAs, input.InputHashMismatchError.New(""))
+				So(err, testutil.ShouldBeErrorClass, input.InputHashMismatchError)
 			})
 		}),
 	)
