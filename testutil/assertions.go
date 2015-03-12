@@ -3,9 +3,8 @@ package testutil
 import (
 	"fmt"
 	"os"
-	//	"path/filepath"
 
-	//	"github.com/smartystreets/goconvey/convey"
+	"github.com/spacemonkeygo/errors"
 )
 
 /*
@@ -42,4 +41,35 @@ func ShouldBeFile(actual interface{}, expected ...interface{}) string {
 	default:
 		return "You must provide zero or one parameters as expectations to this assertion."
 	}
+}
+
+/*
+	'actual' should be an `*errors.Error`; 'expected' should be an `*errors.ErrorClass`;
+	we'll check that the error is under the umbrella of the error class.
+*/
+func ShouldBeErrorClass(actual interface{}, expected ...interface{}) string {
+	err, ok := actual.(error)
+	if !ok {
+		return fmt.Sprintf("You must provide an `error` as the first argument to this assertion; got `%T`", actual)
+	}
+
+	var class *errors.ErrorClass
+	switch len(expected) {
+	case 0:
+		return "You must provide a spacemonkey `ErrorClass` as the expectation parameter to this assertion."
+	case 1:
+		cls, ok := expected[0].(*errors.ErrorClass)
+		if !ok {
+			return "You must provide a spacemonkey `ErrorClass` as the expectation parameter to this assertion."
+		}
+		class = cls
+	default:
+		return "You must provide zero or one parameters as expectations to this assertion."
+	}
+
+	spaceClass := errors.GetClass(err)
+	if spaceClass.Is(class) {
+		return ""
+	}
+	return fmt.Sprintf("Expected error to be of class %q but it had %q instead!  (Full message: %s)", class.String(), spaceClass.String(), err.Error())
 }
