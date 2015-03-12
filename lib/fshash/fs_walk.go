@@ -95,10 +95,10 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			if link, err = os.Readlink(srcPath); err != nil {
 				return err
 			}
-			hdr := ReadMetadata(destPath, filenode.info)
+			hdr := ReadMetadata(srcPath, filenode.info)
 			hdr.Name = filenode.path
 			if destBasePath != "" {
-				if err := os.Symlink(destPath, link); err != nil {
+				if err := os.Symlink(link, destPath); err != nil {
 					return err
 				}
 				filetimes := []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}
