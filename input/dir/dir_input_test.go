@@ -174,10 +174,10 @@ func Test(t *testing.T) {
 			So(os.Chown("src/b", 10000, 10000), ShouldBeNil)
 			So(os.Chown("src/b/c", 10000, 10000), ShouldBeNil)
 			So(os.Chown("src/b/d", 10000, 10000), ShouldBeNil)
-			So(os.Chown("src/b/d/link-rel", 10000, 10000), ShouldBeNil) // TOOD: more diverse -- will currently break because we don't have `Lchown`!
-			//So(os.Chown("src/link-abs", 10000, 10000), ShouldBeNil)   // FIXME: DOESN'T WORK, BECAUSE IT'S NOT DOING `Lchown` and it's a dead link!
+			So(os.Lchown("src/b/d/link-rel", 10002, 10002), ShouldBeNil)
+			So(os.Lchown("src/link-abs", 10000, 10000), ShouldBeNil)
 
-			fixtureHash := "sPIsmeBeeGAiRuYF7XOUzelrK2j9sTZmS5t9CuLIYxq2Rc9L4xS1hLaSJEQ4G8Jw"
+			fixtureHash := "SQ013PmxYZ6ofOZ_sFm4fx_bQDmJAjSMn88OZ7gm_Z-Vo_iGhlEt-fVYafp1aJXz"
 
 			Convey("We can construct an input", func() {
 				inputter := New(def.Input{

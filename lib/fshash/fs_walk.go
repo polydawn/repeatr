@@ -105,6 +105,9 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				if err := fspatch.LUtimesNano(destPath, filetimes); err != nil {
 					return err
 				}
+				if err := os.Lchown(destPath, hdr.Uid, hdr.Gid); err != nil {
+					return err
+				}
 			}
 			bucket.Record(hdr, nil)
 		case mode&os.ModeNamedPipe == os.ModeNamedPipe:
