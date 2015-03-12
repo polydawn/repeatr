@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/fshash"
@@ -42,22 +43,28 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 	go func() {
 		defer close(done)
 
-		// walk filesystem, copying and accumulating data for integrity check
-		bucket := &fshash.MemoryBucket{}
-		err := fshash.FillBucket(i.spec.URI, destinationRoot, bucket, i.hasherFactory)
-		if err != nil {
-			done <- err
-			return
-		}
+		try.Do(func() {
+			// walk filesystem, copying and accumulating data for integrity check
+			bucket := &fshash.MemoryBucket{}
+			err := fshash.FillBucket(i.spec.URI, destinationRoot, bucket, i.hasherFactory)
+			if err != nil {
+				done <- err
+				return
+			}
 
-		// hash whole tree
-		actualTreeHash, _ := fshash.Hash(bucket, i.hasherFactory)
+			// hash whole tree
+			actualTreeHash, _ := fshash.Hash(bucket, i.hasherFactory)
 
-		// verify total integrity
-		expectedTreeHash, err := base64.URLEncoding.DecodeString(i.spec.Hash)
-		if !bytes.Equal(actualTreeHash, expectedTreeHash) {
-			done <- input.InputHashMismatchError.New("expected hash %q, got %q", i.spec.Hash, base64.URLEncoding.EncodeToString(actualTreeHash))
-		}
+			// verify total integrity
+			expectedTreeHash, err := base64.URLEncoding.DecodeString(i.spec.Hash)
+			if !bytes.Equal(actualTreeHash, expectedTreeHash) {
+				done <- input.InputHashMismatchError.New("expected hash %q, got %q", i.spec.Hash, base64.URLEncoding.EncodeToString(actualTreeHash))
+			}
+		}).CatchAll(func(e error) {
+			// any errors should be caught and forwarded through a channel for management rather than killing the whole sytem unexpectedly.
+			// this could maybe be improved with better error grouping (wrap all errors in a type that indicates origin subsystem and forwards the original as a 'cause' attachement, etc).
+			done <- e
+		}).Done()
 	}()
 	return done
 }
