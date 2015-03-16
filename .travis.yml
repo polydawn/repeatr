@@ -16,4 +16,5 @@ script:
   - ./goad init
   - ./goad validate
   - ./goad install
-  - sudo bash -c "export PATH=$PATH ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell
+  - ./lib/integration/assets.sh
+  - sudo bash -c "export PATH=$PATH:$PWD/assets ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell
