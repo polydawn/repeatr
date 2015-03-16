@@ -9,7 +9,7 @@ import (
 
 var (
 	// os flag parsing mandates the executable name
-	baseArgs = []string{ "repeatr"}
+	baseArgs = []string{"repeatr"}
 )
 
 // These can be swapped wholesale; demonstration only.
@@ -21,7 +21,7 @@ func Test(t *testing.T) {
 	})
 
 	testutil.Convey_IfHaveRoot("It should run a basic example", t, func() {
-		App.Run(append(baseArgs, "run", "-i", "lib/integration/basic.json"))
+		App.Run(append(baseArgs, "run", "-i", "../lib/integration/basic.json"))
 	})
 
 }
