@@ -7,6 +7,11 @@ go:
 # Oh wait, no. No I don't.
 install: true
 
+# No need to download assets from hoster each time.
+cache:
+  directories:
+  - assets
+
 script:
   - ./goad init
   - ./goad validate
