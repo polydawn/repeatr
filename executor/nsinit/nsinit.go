@@ -44,7 +44,8 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	args = append(args, "exec", "--create")
 
 	// Lol-networking, a giant glorious TODO.
-	args = append(args, "--veth-bridge", "docker0", "--veth-address", "172.17.0.101/16", "--veth-gateway", "172.17.42.1", "--veth-mtu", "1500")
+	args = append(args, "--net=host")
+	//args = append(args, "--veth-bridge", "docker0", "--veth-address", "172.17.0.101/16", "--veth-gateway", "172.17.42.1", "--veth-mtu", "1500")
 
 	// For now, interactive attach. Debuggery.
 	// Eventually, replace with uh... siphon... vodoo... and an Accent?
