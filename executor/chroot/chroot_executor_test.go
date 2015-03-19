@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/testutil"
@@ -31,13 +29,7 @@ func Test(t *testing.T) {
 			So(os.Mkdir(executor.workspacePath, 0755), ShouldBeNil)
 
 			Convey("We should get an InputError", func() {
-				correctError := false
-				try.Do(func() {
-					_, _ = executor.Run(formula)
-				}).Catch(input.InputError, func(e *errors.Error) {
-					correctError = true
-				}).Done()
-				So(correctError, ShouldBeTrue)
+				So(func() { executor.Run(formula) }, testutil.ShouldPanicWith, input.InputError)
 			})
 		}),
 	)

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 )
 
 /*
@@ -72,4 +73,45 @@ func ShouldBeErrorClass(actual interface{}, expected ...interface{}) string {
 		return ""
 	}
 	return fmt.Sprintf("Expected error to be of class %q but it had %q instead!  (Full message: %s)", class.String(), spaceClass.String(), err.Error())
+}
+
+/*
+	'actual' should be a `func()`; 'expected' should be an `*errors.ErrorClass`;
+	we'll run the function, and check that it panics, and that the error is under the umbrella of the error class.
+*/
+func ShouldPanicWith(actual interface{}, expected ...interface{}) string {
+	fn, ok := actual.(func())
+	if !ok {
+		return fmt.Sprintf("You must provide a `func()` as the first argument to this assertion; got `%T`", actual)
+	}
+
+	var errClass *errors.ErrorClass
+	switch len(expected) {
+	case 0:
+		return "You must provide a spacemonkey `ErrorClass` as the expectation parameter to this assertion."
+	case 1:
+		cls, ok := expected[0].(*errors.ErrorClass)
+		if !ok {
+			return "You must provide a spacemonkey `ErrorClass` as the expectation parameter to this assertion."
+		}
+		errClass = cls
+	default:
+		return "You must provide zero or one parameters as expectations to this assertion."
+	}
+
+	var caught error
+	try.Do(
+		fn,
+	).CatchAll(func(err error) {
+		caught = err
+	}).Done()
+
+	if caught == nil {
+		return fmt.Sprintf("Expected error to be of class %q but no error was raised!", errClass.String())
+	}
+	spaceClass := errors.GetClass(caught)
+	if spaceClass.Is(errClass) {
+		return ""
+	}
+	return fmt.Sprintf("Expected error to be of class %q but it had %q instead!  (Full message: %s)", errClass.String(), spaceClass.String(), caught.Error())
 }
