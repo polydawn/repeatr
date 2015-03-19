@@ -1,3 +1,23 @@
+/*
+	`guid.New` generates a string that functions as a unique identifier.
+
+	This is roughly based on some "betterguid" stuff based on firebase "push ids", though rather tweaked to a slightly different aesthetic.
+	IDs generated will be roughly chronologically sortable (they'll occur in runs, anyway; in the long run they'll loop, because we don't
+	*really* care about monotonicity guarantees; we're really just after some loose clustering behavior as a politeness to humans debugging).
+	They're also lowercase and punctuation free except for some non-semantic dashes that are just there to make visual breaks (again, for
+	no reason but politeness on the eyes of a human doing debugging on something).
+
+	These are *not* uids in any rfc4122 sense of the word, if that wasn't already clear.
+
+	The guids are returned as ascii strings.
+	It's strongly advised that the consumers of this library define some other type alias for various kinds of IDs to keep them clearly separated.
+
+	There is no recommended canonical/dense binary encoding or mapping back to numbers, and there are no multiple encodings;
+	this is a random ID generator, not a message-bearing serialization format!
+
+	This implementation has a global mutex such that multiple guids requested in the same millisecond still are roughly
+	chronologically sortable.  Totally a performance bottleneck.  If you're generating enough guids in practice to care, use something else.
+*/
 package guid
 
 import (
