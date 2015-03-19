@@ -45,7 +45,7 @@ func (i Input) Apply(path string) <-chan error {
 
 		err := os.MkdirAll(path, 0777)
 		if err != nil {
-			done <- err
+			done <- Error.Wrap(errors.IOError.Wrap(err))
 			return
 		}
 
@@ -56,10 +56,12 @@ func (i Input) Apply(path string) <-chan error {
 
 		err = tar.Run()
 		if err != nil {
-			done <- err
+			done <- Error.Wrap(err)
 			return
 		}
 
 	}()
 	return done
 }
+
+var Error *errors.ErrorClass = input.InputError.NewClass("TarInputError") // currently contains little information because the returns of the subcommand are already opaque.  may become the root of a more expressive error hierarchy when we replace the tar implementation.
