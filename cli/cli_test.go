@@ -20,8 +20,10 @@ func Test(t *testing.T) {
 		App.Run(baseArgs)
 	})
 
-	testutil.Convey_IfHaveRoot("It should run a basic example", t, func() {
-		App.Run(append(baseArgs, "run", "-i", "../lib/integration/basic.json"))
+	testutil.Convey_IfCanNS("Within an environment that can run namespaces", t, func() {
+		testutil.Convey_IfHaveRoot("It should run a basic example", func() {
+			App.Run(append(baseArgs, "run", "-i", "../lib/integration/basic.json"))
+		})
 	})
 
 }
