@@ -414,3 +414,5 @@ There's a few hundred more choices that could belong in this file.
 
 Not all ended up with extensive enough notes to warrant inclusion.
 Discussion PRs to this file accepted.
+
+https://github.com/jpetazzo/sekexe
