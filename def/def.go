@@ -172,3 +172,5 @@ type Job interface {
 	// Among other things, this should contain progress reporting interfaces, streams that get realtime stdout/stderr, etc.
 	// Most of those things will also be accessible as some form of Output after the job is complete, but ActiveJob can provide them live.
 }
+
+type JobID string // type def just to make it hard to accidentally get ids crossed.
