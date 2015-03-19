@@ -7,8 +7,14 @@ go:
 # Oh wait, no. No I don't.
 install: true
 
+# No need to download assets from hoster each time.
+cache:
+  directories:
+  - assets
+
 script:
   - ./goad init
   - ./goad validate
   - ./goad install
-  - sudo bash -c "export PATH=$PATH ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell
+  - ./lib/integration/assets.sh
+  - sudo bash -c "export PATH=$PATH:$PWD/assets ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell

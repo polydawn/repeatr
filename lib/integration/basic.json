@@ -1,0 +1,19 @@
+{
+	"Inputs": [
+		{
+			"Type": "tar",
+			"Location": "/",
+			"URI": "../assets/ubuntu.tar.gz"
+		}
+	],
+	"Accents": {
+		"Entrypoint": [ "whoami" ]
+	},
+	"Outputs": [
+		{
+			"Type": "tar",
+			"Location": "/var/log",
+			"URI": "../basic.tar"
+		}
+	]
+}
