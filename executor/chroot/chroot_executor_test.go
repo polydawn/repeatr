@@ -67,6 +67,16 @@ func Test(t *testing.T) {
 				So(string(msg), ShouldEqual, "echococo\n")
 				// So(outs, ShouldNotBeNil)
 			})
+
+			Convey("The executor should be able to check exit codes", func() {
+				formula.Accents = def.Accents{
+					Entrypoint: []string{"sh", "-c", "exit 14"},
+				}
+
+				job, _ := executor.Run(formula)
+				So(job, ShouldNotBeNil)
+				So(job.ExitCode(), ShouldEqual, 14)
+			})
 		}),
 	)
 }

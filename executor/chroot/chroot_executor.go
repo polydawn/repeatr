@@ -123,7 +123,7 @@ func (j job) OutputReader() io.Reader {
 	return &j.buf
 }
 
-func (j job) ExitCode() int {
+func (j *job) ExitCode() int {
 	<-j.wait
 	return j.exitCode
 }
