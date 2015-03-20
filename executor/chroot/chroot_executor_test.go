@@ -65,7 +65,6 @@ func Test(t *testing.T) {
 				msg, err := ioutil.ReadAll(job.OutputReader())
 				So(err, ShouldBeNil)
 				So(string(msg), ShouldEqual, "echococo\n")
-				// So(outs, ShouldNotBeNil)
 			})
 
 			Convey("The executor should be able to check exit codes", func() {
@@ -84,6 +83,32 @@ func Test(t *testing.T) {
 				}
 
 				So(func() { executor.Run(formula) }, testutil.ShouldPanicWith, NoSuchCommandError)
+			})
+
+			Convey("Given another input", func() {
+				formula.Inputs = append(formula.Inputs, def.Input{
+					Type:     "dir",
+					Location: "/data/test",
+					URI:      "testdata",
+				})
+				So(os.Mkdir("testdata", 0755), ShouldBeNil)
+				So(ioutil.WriteFile("testdata/1", []byte{}, 0644), ShouldBeNil)
+				So(ioutil.WriteFile("testdata/2", []byte{}, 0644), ShouldBeNil)
+				So(ioutil.WriteFile("testdata/3", []byte{}, 0644), ShouldBeNil)
+				// FIXME: ugh, you either need some fixtures up in here, or we need to implement a "scan" feature asap
+
+				//	Convey("The executor should be able to see the mounted files", func() {
+				//		formula.Accents = def.Accents{
+				//			Entrypoint: []string{"ls", "/data/test"},
+				//		}
+				//
+				//		job, _ := executor.Run(formula)
+				//		So(job, ShouldNotBeNil)
+				//		So(job.ExitCode(), ShouldEqual, 0)
+				//		msg, err := ioutil.ReadAll(job.OutputReader())
+				//		So(err, ShouldBeNil)
+				//		So(string(msg), ShouldEqual, "1 2 3\n")
+				//	})
 			})
 		}),
 	)
