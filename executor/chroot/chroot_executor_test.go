@@ -1,6 +1,7 @@
 package chroot
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -58,10 +59,13 @@ func Test(t *testing.T) {
 					Entrypoint: []string{"echo", "echococo"},
 				}
 
-				_, _ = executor.Run(formula)
-				// So(job, ShouldNotBeNil)
+				job, _ := executor.Run(formula)
+				So(job, ShouldNotBeNil)
+				So(job.ExitCode(), ShouldEqual, 0) // TODO: this waits... the test should still pass if the reader happens first
+				msg, err := ioutil.ReadAll(job.OutputReader())
+				So(err, ShouldBeNil)
+				So(string(msg), ShouldEqual, "echococo\n")
 				// So(outs, ShouldNotBeNil)
-				// TODO: spec out how we're going to watch stdout/err from jobs, then test
 			})
 		}),
 	)

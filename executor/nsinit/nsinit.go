@@ -109,7 +109,7 @@ func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	}
 
 	// Done... ish. No outputs. Womp womp!
-	return job, nil
+	return nil, nil
 }
 
 func (e *Executor) Run(job def.Formula) (def.Job, []def.Output) {
