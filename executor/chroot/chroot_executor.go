@@ -100,7 +100,9 @@ func (x *Executor) invokeTask(rootfsPath string, formula def.Formula) def.Job {
 	cmd.Stderr = &job.buf
 
 	if err := cmd.Start(); err != nil {
-		// TODO: i'd love to report executable-not-found (very) differently from other major blowups, syscall fails, etc.
+		if err2, ok := err.(*exec.Error); ok && err2.Err == exec.ErrNotFound {
+			panic(NoSuchCommandError.Wrap(err))
+		}
 		panic(TaskExecError.Wrap(err))
 	}
 

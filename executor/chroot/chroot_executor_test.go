@@ -77,6 +77,14 @@ func Test(t *testing.T) {
 				So(job, ShouldNotBeNil)
 				So(job.ExitCode(), ShouldEqual, 14)
 			})
+
+			Convey("The executor should report command not found clearly", func() {
+				formula.Accents = def.Accents{
+					Entrypoint: []string{"not a command"},
+				}
+
+				So(func() { executor.Run(formula) }, testutil.ShouldPanicWith, NoSuchCommandError)
+			})
 		}),
 	)
 }
