@@ -9,8 +9,15 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
+	"polydawn.net/repeatr/input/fixtures"
 	"polydawn.net/repeatr/testutil"
 )
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	inputfixtures.Cleanup()
+	os.Exit(code)
+}
 
 func Test(t *testing.T) {
 	Convey("Given a rootfs input that errors", t,
@@ -86,29 +93,21 @@ func Test(t *testing.T) {
 			})
 
 			Convey("Given another input", func() {
-				formula.Inputs = append(formula.Inputs, def.Input{
-					Type:     "dir",
-					Location: "/data/test",
-					URI:      "testdata",
-				})
-				So(os.Mkdir("testdata", 0755), ShouldBeNil)
-				So(ioutil.WriteFile("testdata/1", []byte{}, 0644), ShouldBeNil)
-				So(ioutil.WriteFile("testdata/2", []byte{}, 0644), ShouldBeNil)
-				So(ioutil.WriteFile("testdata/3", []byte{}, 0644), ShouldBeNil)
-				// FIXME: ugh, you either need some fixtures up in here, or we need to implement a "scan" feature asap
+				inputfixtures.DirInput2.Location = "/data/test"
+				formula.Inputs = append(formula.Inputs, inputfixtures.DirInput2)
 
-				//	Convey("The executor should be able to see the mounted files", func() {
-				//		formula.Accents = def.Accents{
-				//			Entrypoint: []string{"ls", "/data/test"},
-				//		}
-				//
-				//		job, _ := executor.Run(formula)
-				//		So(job, ShouldNotBeNil)
-				//		So(job.ExitCode(), ShouldEqual, 0)
-				//		msg, err := ioutil.ReadAll(job.OutputReader())
-				//		So(err, ShouldBeNil)
-				//		So(string(msg), ShouldEqual, "1 2 3\n")
-				//	})
+				Convey("The executor should be able to see the mounted files", func() {
+					formula.Accents = def.Accents{
+						Entrypoint: []string{"ls", "/data/test"},
+					}
+
+					job, _ := executor.Run(formula)
+					So(job, ShouldNotBeNil)
+					So(job.ExitCode(), ShouldEqual, 0)
+					msg, err := ioutil.ReadAll(job.OutputReader())
+					So(err, ShouldBeNil)
+					So(string(msg), ShouldEqual, "1\n2\n3\n")
+				})
 			})
 		}),
 	)
