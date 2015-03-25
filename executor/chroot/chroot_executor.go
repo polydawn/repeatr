@@ -42,8 +42,9 @@ func (x *Executor) run(formula def.Formula) (def.Job, []def.Output) {
 	jobID := def.JobID(guid.New())
 
 	// make a rootfs in our workspace using the jobID
-	rootfsPath := filepath.Join(x.workspacePath, string(jobID))
-	if err := os.Mkdir(rootfsPath, 0755); err != nil {
+	jobPath := filepath.Join(x.workspacePath, "job", string(jobID))
+	rootfsPath := filepath.Join(jobPath, "rootfs")
+	if err := os.MkdirAll(rootfsPath, 0755); err != nil {
 		panic(Error.Wrap(errors.IOError.Wrap(err))) // REVIEW: WorkspaceIOError?  or a flag that indicates "wow, super hosed"?
 	}
 
