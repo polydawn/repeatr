@@ -60,6 +60,13 @@ func (x *Executor) run(formula def.Formula) (def.Job, []def.Output) {
 	// commit outputs
 	// TODO implement some outputs!
 
+	// cleanup the job's filesystems
+	if err := os.RemoveAll(jobPath); err != nil {
+		// Note that since this executor doesn't include PID namespacing, it's altogether easy for a runaway process to still have open FDs.
+		// should probably just log in prod mode (but still blow up when running in a test).
+		panic(Error.Wrap(errors.IOError.Wrap(err)))
+	}
+
 	return job, nil
 }
 
