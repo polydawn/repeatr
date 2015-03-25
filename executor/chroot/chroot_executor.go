@@ -11,10 +11,13 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/input/dispatch"
 	"polydawn.net/repeatr/lib/guid"
 )
+
+var _ executor.Executor = &Executor{} // interface assertion
 
 type Executor struct {
 	workspacePath string // default: something like '/var/lib/repeatr/executors/chroot/'.
