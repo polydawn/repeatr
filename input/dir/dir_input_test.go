@@ -9,8 +9,6 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/fshash"
@@ -21,18 +19,14 @@ import (
 func Test(t *testing.T) {
 	Convey("Given a nonexistant path", t, func() {
 		Convey("The input config should be rejected during validation", func() {
-			correctError := false
-			try.Do(func() {
+			tryConstruction := func() {
 				New(def.Input{
 					Type: "dir",
 					Hash: "abcd",
 					URI:  "/tmp/certainly/should/not/exist",
 				})
-			}).Catch(def.ValidationError, func(e *errors.Error) {
-				correctError = true
-			}).Done()
-
-			So(correctError, ShouldBeTrue)
+			}
+			So(tryConstruction, testutil.ShouldPanicWith, def.ValidationError)
 		})
 	})
 

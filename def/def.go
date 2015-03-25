@@ -36,6 +36,10 @@
 */
 package def
 
+import (
+	"io"
+)
+
 /*
 	Formula describes `(inputs, computation) -> (outputs)`.
 
@@ -166,9 +170,30 @@ type Output struct {
 	Conjecture bool     // whether or not this output is expected to contain the same result, every time, when given the same set of `Input` items.
 }
 
-type Job interface {
-	// TODO: no idea what goes here, just saying it's a distinct concept from the serializable `Formula` type.
+/*
+	Job is an interface for observing actively running tasks.
+	It contains progress reporting interfaces, streams that get realtime
+	stdout/stderr, wait for finish, return exit codes, etc.
 
-	// Among other things, this should contain progress reporting interfaces, streams that get realtime stdout/stderr, etc.
-	// Most of those things will also be accessible as some form of Output after the job is complete, but ActiveJob can provide them live.
+	All of the data available from `Job` should also be accessible as
+	some form of `Output`s	after the execution is complete, but `Job` can
+	provide them live.
+*/
+type Job interface {
+	// question the first: provide readables, or accept writables for stdout?
+	// probably provide.  the downside of course is this often forces a byte copy somewhere.
+	// however, we're going to store these streams anyway.  so the most useful thing to do actually turns out to be log outputs immediately, and just reexpose that readers to that stream.
+
+	/*
+		Returns a new reader that delivers the combined stdout and
+		stderr of a command, from the beginning of execution.
+	*/
+	OutputReader() io.Reader
+
+	/*
+		Waits for completion if necessary, then returns the exit code.
+	*/
+	ExitCode() int
 }
+
+type JobID string // type def just to make it hard to accidentally get ids crossed.
