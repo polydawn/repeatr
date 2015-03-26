@@ -29,10 +29,13 @@ Build repeatr:
 # Build
 ./goad install
 
-# Try it out!
-sudo .gopath/bin/repeatr run -i lib/integration/basic.json
+# See usage
+sudo ./goad exec
 
-# See the forumla repeatr has run
+# Try an example!
+sudo ./goad exec run -i lib/integration/basic.json
+
+# See the forumla repeatr just ran
 cat lib/integration/basic.json
 
 # See the /var/log output repeatr has generated!

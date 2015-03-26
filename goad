@@ -109,9 +109,9 @@ else
 	clean)
 		rm -rf $GOPATH/bin $GOPATH/pkg
 		;;
-	run)
+	exec)
 		shift
-		$GOPATH/bin/$name "$@"
+		PATH=$PWD/assets:$PATH $GOPATH/bin/$name "$@"
 		;;
 	*)
 		echo "Usage: $0 {init|test|install|fmt|doc|cover|validate|clean}" 1>&2;

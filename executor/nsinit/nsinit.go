@@ -100,7 +100,10 @@ func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	}
 
 	Println("Running formula...")
-	cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		panic(err)
+	}
 
 	// Run outputs
 	for x, output := range job.Outputs {
