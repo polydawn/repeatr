@@ -18,3 +18,14 @@ script:
   - ./goad install
   - ./lib/integration/assets.sh
   - sudo bash -c "export PATH=$PATH:$PWD/assets ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell
+
+notifications:
+  email: false
+  irc:
+    channels:
+      - "chat.freenode.net##polydawn"
+    on_success: always
+    on_failure: always
+    template:
+      - "%{repository_name}: %{commit} on %{branch} by %{author}: %{result}. %{build_url} %{commit_message}"
+    skip_join: true
