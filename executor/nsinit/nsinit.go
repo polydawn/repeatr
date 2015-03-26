@@ -12,6 +12,7 @@ import (
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/input/dispatch"
 	"polydawn.net/repeatr/lib/flak"
+	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/output/dispatch"
 )
 
@@ -19,11 +20,16 @@ import (
 var _ executor.Executor = &Executor{}
 
 type Executor struct {
+	workspacePath string
+}
+
+func (e *Executor) Configure(workspacePath string) {
+	e.workspacePath = workspacePath
 }
 
 // Execute a forumla in a specified directory.
 // Directory is assumed to exist.
-func (*Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
+func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 
 	// Dedicated rootfs folder to distinguish container from nsinit noise
 	rootfs := filepath.Join(d, "rootfs")
@@ -119,9 +125,13 @@ func (e *Executor) Run(job def.Formula) (def.Job, []def.Output) {
 	var resultJob def.Job
 	var outputs []def.Output
 
-	flak.WithTempDir(func(d string) {
+	// make up a job id
+	jobID := def.JobID(guid.New())
+
+	flak.WithDir(func(d string) {
 		resultJob, outputs = e.Execute(job, d)
-	}, "nsinit")
+
+	}, e.workspacePath, "job", string(jobID))
 
 	Println("Done!")
 	return resultJob, outputs

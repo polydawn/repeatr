@@ -1,8 +1,12 @@
 package executordispatch
 
 import (
+	"os"
+	"path/filepath"
+
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
+	"polydawn.net/repeatr/executor/chroot"
 	"polydawn.net/repeatr/executor/nsinit"
 	"polydawn.net/repeatr/executor/null"
 )
@@ -19,9 +23,14 @@ func Get(desire string) *executor.Executor {
 		executor = &null.Executor{}
 	case "nsinit":
 		executor = &nsinit.Executor{}
+	case "chroot":
+		executor = &chroot.Executor{}
 	default:
 		panic(def.ValidationError.New("No such executor %s", desire))
 	}
+
+	// Set the base path to operate from
+	executor.Configure(filepath.Join(os.TempDir(), "repeatr", "executor", desire))
 
 	return &executor
 }
