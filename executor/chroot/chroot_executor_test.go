@@ -61,7 +61,7 @@ func Test(t *testing.T) {
 			}
 			So(os.Mkdir(executor.workspacePath, 0755), ShouldBeNil)
 
-			Convey("The executor should be able to invoke echo", func() {
+			Convey("The executor should be able to invoke echo", FailureContinues, func() {
 				formula.Accents = def.Accents{
 					Entrypoint: []string{"echo", "echococo"},
 				}
@@ -96,7 +96,7 @@ func Test(t *testing.T) {
 				inputfixtures.DirInput2.Location = "/data/test"
 				formula.Inputs = append(formula.Inputs, inputfixtures.DirInput2)
 
-				Convey("The executor should be able to see the mounted files", func() {
+				Convey("The executor should be able to see the mounted files", FailureContinues, func() {
 					formula.Accents = def.Accents{
 						Entrypoint: []string{"ls", "/data/test"},
 					}
