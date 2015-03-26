@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"syscall"
 	"testing"
 	"time"
 
@@ -160,8 +159,8 @@ func Test(t *testing.T) {
 			So(os.Chtimes("src/b", time.Unix(5, 2), time.Unix(5000, 2000)), ShouldBeNil)
 			So(os.Chtimes("src/b/c", time.Unix(7, 2), time.Unix(7000, 2000)), ShouldBeNil)
 			So(os.Chtimes("src/b/d", time.Unix(9, 2), time.Unix(9000, 2000)), ShouldBeNil)
-			So(fspatch.LUtimesNano("src/b/d/link-rel", []syscall.Timespec{syscall.NsecToTimespec(time.Unix(11, 2).UnixNano()), syscall.NsecToTimespec(time.Unix(11000, 2000).UnixNano())}), ShouldBeNil)
-			So(fspatch.LUtimesNano("src/link-abs", []syscall.Timespec{syscall.NsecToTimespec(time.Unix(11, 2).UnixNano()), syscall.NsecToTimespec(time.Unix(11000, 2000).UnixNano())}), ShouldBeNil)
+			So(fspatch.LUtimesNano("src/b/d/link-rel", time.Unix(11, 2), time.Unix(11000, 2000)), ShouldBeNil)
+			So(fspatch.LUtimesNano("src/link-abs", time.Unix(11, 2), time.Unix(11000, 2000)), ShouldBeNil)
 			// similarly, force uid and gid bits since otherwise they default to your current user, and that's not the same for everyone
 			So(os.Chown("src", 10000, 10000), ShouldBeNil)
 			So(os.Chown("src/a", 10001, 10001), ShouldBeNil)
