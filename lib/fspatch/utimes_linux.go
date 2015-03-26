@@ -16,7 +16,8 @@ func LUtimesNano(path string, ts []syscall.Timespec) error {
 		return err
 	}
 
-	if _, _, err := syscall.Syscall6(syscall.SYS_UTIMENSAT, uintptr(AT_FDCWD), uintptr(unsafe.Pointer(_path)), uintptr(unsafe.Pointer(&ts[0])), uintptr(AT_SYMLINK_NOFOLLOW), 0, 0); err != 0 && err != syscall.ENOSYS {
+	// Note this does depend on kernel 2.6.22 or newer.  Fallbacks are available but we haven't implemented them and they lose nano precision.
+	if _, _, err := syscall.Syscall6(syscall.SYS_UTIMENSAT, uintptr(AT_FDCWD), uintptr(unsafe.Pointer(_path)), uintptr(unsafe.Pointer(&ts[0])), uintptr(AT_SYMLINK_NOFOLLOW), 0, 0); err != 0 {
 		return err
 	}
 
