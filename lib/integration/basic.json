@@ -7,7 +7,7 @@
 		}
 	],
 	"Accents": {
-		"Entrypoint": [ "whoami" ]
+		"Entrypoint": [ "echo", "Hello from repeatr!" ]
 	},
 	"Outputs": [
 		{
