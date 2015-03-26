@@ -14,7 +14,6 @@ import (
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/input/dispatch"
-	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/guid"
 )
 
@@ -49,14 +48,24 @@ func (x *Executor) run(formula def.Formula) (def.Job, []def.Output) {
 	// make up a job id
 	jobID := def.JobID(guid.New())
 
-	var job def.Job
+	// make a rootfs in our workspace using the jobID
+	jobPath := filepath.Join(x.workspacePath, "job", string(jobID))
+	rootfsPath := filepath.Join(jobPath, "rootfs")
+	if err := os.MkdirAll(rootfsPath, 0755); err != nil {
+		panic(Error.Wrap(errors.IOError.Wrap(err))) // REVIEW: WorkspaceIOError?  or a flag that indicates "wow, super hosed"?
+	}
 
-	flak.WithDir(func(jobPath string) {
-		rootfsPath := filepath.Join(jobPath, "rootfs")
-		if err := os.MkdirAll(rootfsPath, 0755); err != nil {
-			panic(Error.Wrap(errors.IOError.Wrap(err))) // REVIEW: WorkspaceIOError?  or a flag that indicates "wow, super hosed"?
+	// be ready to cleanup the job's filesystems
+	cleanup := func() {
+		if err := os.RemoveAll(jobPath); err != nil {
+			// Note that since this executor doesn't include PID namespacing, it's altogether easy for a runaway process to still have open FDs.
+			// should probably just log in prod mode (but still blow up when running in a test).
+			panic(Error.Wrap(errors.IOError.Wrap(err)))
 		}
+	}
 
+	var job def.Job
+	try.Do(func() {
 		// prep inputs
 		x.prepareInputs(rootfsPath, formula.Inputs)
 
@@ -64,12 +73,22 @@ func (x *Executor) run(formula def.Formula) (def.Job, []def.Output) {
 		// TODO implement some outputs!
 
 		// sandbox up and invoke the real job
+		// this starts the job and immediately returns with a promise
 		job = x.invokeTask(rootfsPath, formula)
+	}).CatchAll(func(err error) {
+		cleanup()
+		panic(err)
+	}).Done()
 
-		// commit outputs
-		// TODO implement some outputs!
+	// and at this point error handling changes, because the job is asynchronously in flight
+	go func() {
+		job.ExitCode() // wait
+		cleanup()
+	}()
 
-	}, x.workspacePath, "job", string(jobID))
+	// commit outputs
+	// TODO implement some outputs!
+	// go func() { job.Wait(); /* ... */ }()
 
 	return job, nil
 }
