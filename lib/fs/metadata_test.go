@@ -1,4 +1,4 @@
-package fshash
+package fs
 
 import (
 	"bytes"

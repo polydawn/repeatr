@@ -9,13 +9,10 @@ import (
 	"syscall"
 
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/lib/fshash"
 	"polydawn.net/repeatr/lib/fspatch"
 )
 
-// TODO : move the fshash.Metadata type to this package
-
-func PlaceFile(destBasePath string, hdr fshash.Metadata, body io.Reader) {
+func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 	// 'destBasePath' should be an absolute path on the host.
 	// 'hdr.Name' should be the full relative path of the file.
 	// if it has an absolute prefix, that's quietly ignored, and it's treated as relative anyway.

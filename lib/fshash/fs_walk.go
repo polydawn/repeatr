@@ -8,6 +8,7 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
 	"polydawn.net/repeatr/lib/treewalk"
 )
@@ -75,7 +76,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		mode := filenode.info.Mode()
 		switch {
 		case mode&os.ModeDir == os.ModeDir:
-			hdr := ReadMetadata(destPath, filenode.info)
+			hdr := fs.ReadMetadata(destPath, filenode.info)
 			hdr.Name = filenode.path
 			if destBasePath != "" {
 				if err := os.MkdirAll(destPath, mode&os.ModePerm); err != nil {
@@ -94,7 +95,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			if link, err = os.Readlink(srcPath); err != nil {
 				return err
 			}
-			hdr := ReadMetadata(srcPath, filenode.info)
+			hdr := fs.ReadMetadata(srcPath, filenode.info)
 			hdr.Name = filenode.path
 			if destBasePath != "" {
 				if err := os.Symlink(link, destPath); err != nil {
@@ -140,7 +141,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				return err
 			}
 			// marshal headers and save to bucket with hash
-			hdr := ReadMetadata(destPath, filenode.info)
+			hdr := fs.ReadMetadata(destPath, filenode.info)
 			hdr.Name = filenode.path
 			if destBasePath != "" {
 				if err := fspatch.UtimesNano(destPath, def.Somewhen, hdr.ModTime); err != nil {
