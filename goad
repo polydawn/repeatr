@@ -107,7 +107,7 @@ else
 		}
 		;;
 	clean)
-		rm -r $GOPATH/bin $GOPATH/pkg
+		rm -rf $GOPATH/bin $GOPATH/pkg
 		;;
 	run)
 		shift
