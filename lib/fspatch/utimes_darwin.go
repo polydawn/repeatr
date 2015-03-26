@@ -1,6 +1,7 @@
 package fspatch
 
 import (
+	"os"
 	"syscall"
 
 	"polydawn.net/repeatr/def"
@@ -11,5 +12,8 @@ func LUtimesNano(path string, ts []syscall.Timespec) error {
 }
 
 func UtimesNano(path string, ts []syscall.Timespec) error {
-	return syscall.UtimesNano(path, ts)
+	if err := syscall.UtimesNano(path, ts); err != nil {
+		return &os.PathError{"chtimes", path, err}
+	}
+	return nil
 }
