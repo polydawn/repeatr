@@ -3,15 +3,15 @@
 package fspatch
 
 import (
-	"syscall"
+	"time"
 
 	"polydawn.net/repeatr/def"
 )
 
-func LUtimesNano(path string, ts []syscall.Timespec) error {
+func LUtimesNano(path string, atime time.Time, mtime time.Time) error {
 	return def.ErrNotSupportedPlatform
 }
 
-func UtimesNano(path string, ts []syscall.Timespec) error {
+func UtimesNano(path string, atime time.Time, mtime time.Time) error {
 	return def.ErrNotSupportedPlatform
 }

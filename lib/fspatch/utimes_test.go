@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"syscall"
 	"testing"
+	"time"
 )
 
 func prepareFiles(t *testing.T) (string, string, string, string) {
@@ -38,8 +38,7 @@ func TestLUtimesNano(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ts := []syscall.Timespec{{0, 0}, {0, 0}}
-	if err := LUtimesNano(symlink, ts); err != nil {
+	if err := LUtimesNano(symlink, time.Unix(0, 0), time.Unix(0, 0)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -59,7 +58,7 @@ func TestLUtimesNano(t *testing.T) {
 		t.Fatal("The modification time of the file should be same")
 	}
 
-	if err := LUtimesNano(invalid, ts); err == nil {
+	if err := LUtimesNano(invalid, time.Unix(0, 0), time.Unix(0, 0)); err == nil {
 		t.Fatal("Doesn't return an error on a non-existing file")
 	}
 }

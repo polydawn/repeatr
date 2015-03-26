@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/def"
@@ -101,8 +100,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				if err := os.Symlink(link, destPath); err != nil {
 					return err
 				}
-				filetimes := []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}
-				if err := fspatch.LUtimesNano(destPath, filetimes); err != nil {
+				if err := fspatch.LUtimesNano(destPath, def.Somewhen, hdr.ModTime); err != nil {
 					return err
 				}
 				if err := os.Lchown(destPath, hdr.Uid, hdr.Gid); err != nil {
@@ -145,8 +143,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			hdr := ReadMetadata(destPath, filenode.info)
 			hdr.Name = filenode.path
 			if destBasePath != "" {
-				filetimes := []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(hdr.ModTime.UnixNano())}
-				if err := fspatch.UtimesNano(destPath, filetimes); err != nil {
+				if err := fspatch.UtimesNano(destPath, def.Somewhen, hdr.ModTime); err != nil {
 					return err
 				}
 				if err := os.Chown(destPath, hdr.Uid, hdr.Gid); err != nil {
@@ -168,8 +165,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		filenode := node.(*fileWalkNode)
 		filenode.children = nil
 		if filenode.info.IsDir() && destBasePath != "" {
-			filetimes := []syscall.Timespec{def.SomewhenTimespec, syscall.NsecToTimespec(filenode.info.ModTime().UnixNano())}
-			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.path), filetimes); err != nil {
+			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.path), def.Somewhen, filenode.info.ModTime()); err != nil {
 				return err
 			}
 		}
