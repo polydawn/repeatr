@@ -77,7 +77,7 @@ func (x *Executor) run(formula def.Formula) (def.Job, []def.Output) {
 		job = x.invokeTask(rootfsPath, formula)
 	}).CatchAll(func(err error) {
 		cleanup()
-		panic(err)
+		try.Repanic(err)
 	}).Done()
 
 	// and at this point error handling changes, because the job is asynchronously in flight
