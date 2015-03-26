@@ -26,6 +26,8 @@ type Input interface {
 		The Input implementation is responsible for ensuring that the content
 		of this filesystem matches the hash described by the `def.Input` used
 		to construct the Input implementation.
+
+		The input expects the parent folder of its path to exist, but not the path itself.
 	*/
 	Apply(path string) <-chan error
 }

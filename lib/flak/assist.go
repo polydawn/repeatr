@@ -44,13 +44,22 @@ func GetTempDir(dirs ...string) string {
 // Runs a function with a tempdir, cleaning up afterward.
 func WithTempDir(f func(string), dirs ...string) {
 
-	// If IOError occurs while creating tempdir, final dir was not created to clean up.
-	dir := GetTempDir(dirs...)
+	if len(dirs) < 1 {
+		panic(errors.ProgrammerError.New("Must have at least one sub-folder for tempdir"))
+	}
+
+	tempPath := filepath.Join(dirs...)
+
+	// Tempdir wants parent path to exist
+	err := os.MkdirAll(tempPath, 0600)
+	if err != nil {
+		panic(errors.IOError.Wrap(err))
+	}
 
 	try.Do(func() {
-		f(dir)
+		f(tempPath)
 	}).Finally(func() {
-		err := os.RemoveAll(dir)
+		err := os.RemoveAll(tempPath)
 		if err != nil {
 			// TODO: we don't want to panic here, more like a debug log entry, "failed to remove tempdir."
 			// Can accomplish once we add logging.

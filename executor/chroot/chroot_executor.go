@@ -14,13 +14,18 @@ import (
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/input/dispatch"
+	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/guid"
 )
 
 var _ executor.Executor = &Executor{} // interface assertion
 
 type Executor struct {
-	workspacePath string // default: something like '/var/lib/repeatr/executors/chroot/'.
+	workspacePath string
+}
+
+func (e *Executor) Configure(workspacePath string) {
+	e.workspacePath = workspacePath
 }
 
 func (x *Executor) Run(formula def.Formula) (job def.Job, outs []def.Output) {
@@ -44,31 +49,27 @@ func (x *Executor) run(formula def.Formula) (def.Job, []def.Output) {
 	// make up a job id
 	jobID := def.JobID(guid.New())
 
-	// make a rootfs in our workspace using the jobID
-	jobPath := filepath.Join(x.workspacePath, "job", string(jobID))
-	rootfsPath := filepath.Join(jobPath, "rootfs")
-	if err := os.MkdirAll(rootfsPath, 0755); err != nil {
-		panic(Error.Wrap(errors.IOError.Wrap(err))) // REVIEW: WorkspaceIOError?  or a flag that indicates "wow, super hosed"?
-	}
+	var job def.Job
 
-	// prep inputs
-	x.prepareInputs(rootfsPath, formula.Inputs)
+	flak.WithTempDir(func(jobPath string) {
+		rootfsPath := filepath.Join(jobPath, "rootfs")
+		if err := os.MkdirAll(rootfsPath, 0755); err != nil {
+			panic(Error.Wrap(errors.IOError.Wrap(err))) // REVIEW: WorkspaceIOError?  or a flag that indicates "wow, super hosed"?
+		}
 
-	// prep outputs
-	// TODO implement some outputs!
+		// prep inputs
+		x.prepareInputs(rootfsPath, formula.Inputs)
 
-	// sandbox up and invoke the real job
-	job := x.invokeTask(rootfsPath, formula)
+		// prep outputs
+		// TODO implement some outputs!
 
-	// commit outputs
-	// TODO implement some outputs!
+		// sandbox up and invoke the real job
+		job = x.invokeTask(rootfsPath, formula)
 
-	// cleanup the job's filesystems
-	if err := os.RemoveAll(jobPath); err != nil {
-		// Note that since this executor doesn't include PID namespacing, it's altogether easy for a runaway process to still have open FDs.
-		// should probably just log in prod mode (but still blow up when running in a test).
-		panic(Error.Wrap(errors.IOError.Wrap(err)))
-	}
+		// commit outputs
+		// TODO implement some outputs!
+
+	}, x.workspacePath, "job", string(jobID))
 
 	return job, nil
 }
