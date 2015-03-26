@@ -51,7 +51,7 @@ func (x *Executor) run(formula def.Formula) (def.Job, []def.Output) {
 
 	var job def.Job
 
-	flak.WithTempDir(func(jobPath string) {
+	flak.WithDir(func(jobPath string) {
 		rootfsPath := filepath.Join(jobPath, "rootfs")
 		if err := os.MkdirAll(rootfsPath, 0755); err != nil {
 			panic(Error.Wrap(errors.IOError.Wrap(err))) // REVIEW: WorkspaceIOError?  or a flag that indicates "wow, super hosed"?

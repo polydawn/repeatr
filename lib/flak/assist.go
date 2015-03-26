@@ -42,7 +42,7 @@ func GetTempDir(dirs ...string) string {
 }
 
 // Runs a function with a tempdir, cleaning up afterward.
-func WithTempDir(f func(string), dirs ...string) {
+func WithDir(f func(string), dirs ...string) {
 
 	if len(dirs) < 1 {
 		panic(errors.ProgrammerError.New("Must have at least one sub-folder for tempdir"))

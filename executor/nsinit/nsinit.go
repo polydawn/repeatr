@@ -128,7 +128,7 @@ func (e *Executor) Run(job def.Formula) (def.Job, []def.Output) {
 	// make up a job id
 	jobID := def.JobID(guid.New())
 
-	flak.WithTempDir(func(d string) {
+	flak.WithDir(func(d string) {
 		resultJob, outputs = e.Execute(job, d)
 
 	}, e.workspacePath, "job", string(jobID))
