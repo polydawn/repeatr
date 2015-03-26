@@ -16,6 +16,36 @@ import (
 type Metadata tar.Header
 
 /*
+	FileMode returns the permission and mode bits (setuid, setguid, sticky)
+	in golang `os.FileMode` format.
+
+	We decline to use `tar.Header.FileInfo()` because the `Mode()` method
+	checks *both* the higher mode bits *and* the typeflag, which... seems strange, to
+	say the least, since it can result in conflicting information.
+	The bits emitted by this method are the only bits that make sense to use anyway --
+	see `syscallMode` in stdlib file_posix.go as used in e.g. `os.Mkdir`.
+
+	Note that if you're about to hand a number to a direct linux syscall, you do
+	*not* want to use this.  `m.Mode&07777` is safe/correct instead.
+*/
+func (m Metadata) FileMode() os.FileMode {
+	// Set file permission bits.  They're pretty universal.
+	mode := os.FileMode(m.Mode).Perm()
+	// Map suid, guid, and sticky -- they differ between go os and tar format.
+	// Arbitrary constants from tar "spec" -- same as in archive/tar; they're unexported.
+	if m.Mode&04000 != 0 {
+		mode |= os.ModeSetuid
+	}
+	if m.Mode&02000 != 0 {
+		mode |= os.ModeSetgid
+	}
+	if m.Mode&01000 != 0 {
+		mode |= os.ModeSticky
+	}
+	return mode
+}
+
+/*
 	Scan file attributes into a repeatr Metadata struct.  FileInfo
 	may be provided if it is already available (this will save a stat call).
 */

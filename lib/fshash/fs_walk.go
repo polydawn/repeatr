@@ -160,6 +160,9 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			// we could add a hash of inodes to bucket to address this.
 		}
 		return nil
+
+		// TODO : much of this function could now be ablated down to
+		// calling lib/fs.PlaceFile with the metadata that's just been read
 	}
 	postVisit := func(node treewalk.Node) error {
 		filenode := node.(*fileWalkNode)
