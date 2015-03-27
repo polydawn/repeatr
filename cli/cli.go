@@ -7,11 +7,14 @@ import (
 	"path/filepath"
 
 	"github.com/codegangsta/cli"
+	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 	"github.com/ugorji/go/codec"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/dispatch"
 )
+
 
 var App *cli.App
 
@@ -45,20 +48,44 @@ func init() {
 
 func Run(c *cli.Context) {
 
-	executor := *executordispatch.Get(c.String("executor"))
-	filename, _ := filepath.Abs(c.String("input"))
+	try.Do(func() {
+		executor := *executordispatch.Get(c.String("executor"))
+		filename, _ := filepath.Abs(c.String("input"))
 
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		Println(err)
-		Println("Could not read file", filename)
-		os.Exit(1)
-	}
+		content, err := ioutil.ReadFile(filename)
+		if err != nil {
+			Println(err)
+			Println("Could not read file", filename)
+			os.Exit(1)
+		}
 
-	dec := codec.NewDecoderBytes(content, &codec.JsonHandle{})
+		dec := codec.NewDecoderBytes(content, &codec.JsonHandle{})
 
-	formula := def.Formula{}
-	dec.MustDecode(&formula)
+		formula := def.Formula{}
+		dec.MustDecode(&formula)
 
-	executor.Run(formula)
+		job := executor.Start(formula)
+		Println("Job starting...")
+
+		result := job.Wait()
+		Println("Job finished")
+
+		Println(4, result)
+
+		// Println("Job returned with code", result.ExitCode)
+		// Println("Outputs:", result.Outputs)
+
+		// if result.Error != nil {
+		// 	Println("Problem executing job:", result.Error)
+		// 	os.Exit(3)
+		// }
+
+		// // DISCUSS: we could consider any non-zero exit a Error, but having that distinct from execution problems makes sense.
+		// // This is clearly silly and placeholder.
+		// os.Exit(result.ExitCode)
+
+	}).Catch(def.ValidationError, func(e *errors.Error) {
+		Println(e.Message())
+		os.Exit(2)
+	}).Done()
 }

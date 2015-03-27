@@ -8,11 +8,11 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 
+	"polydawn.net/repeatr/basicjob"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/input/dispatch"
 	"polydawn.net/repeatr/lib/flak"
-	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/output/dispatch"
 )
 
@@ -29,7 +29,14 @@ func (e *Executor) Configure(workspacePath string) {
 
 // Execute a forumla in a specified directory.
 // Directory is assumed to exist.
-func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
+func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
+
+	result := def.JobResult {
+		ID: j.Id(),
+		Error: nil,
+		ExitCode: 0, //TODO: gosh
+		Outputs: []def.Output{},
+	}
 
 	// Dedicated rootfs folder to distinguish container from nsinit noise
 	rootfs := filepath.Join(d, "rootfs")
@@ -57,12 +64,12 @@ func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	args = append(args, "--rootfs", rootfs)
 
 	// Add all desired environment variables
-	for k, v := range job.Accents.Env {
+	for k, v := range f.Accents.Env {
 		args = append(args, "--env", k+"="+v)
 	}
 
 	// Unroll command args
-	args = append(args, job.Accents.Entrypoint...)
+	args = append(args, f.Accents.Entrypoint...)
 
 	// For now, run in this terminal
 	cmd := exec.Command("nsinit", args...)
@@ -71,7 +78,7 @@ func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	cmd.Stderr = os.Stderr
 
 	// Run inputs
-	for x, input := range job.Inputs {
+	for x, input := range f.Inputs {
 		Println("Provisioning input", x+1, input.Type, "to", input.Location)
 		path := filepath.Join(rootfs, input.Location)
 
@@ -91,7 +98,7 @@ func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 
 	// Output folders should exist
 	// TODO: discussion
-	for _, output := range job.Outputs {
+	for _, output := range f.Outputs {
 		path := filepath.Join(rootfs, output.Location)
 		err := os.MkdirAll(path, 0755)
 		if err != nil {
@@ -106,7 +113,7 @@ func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	}
 
 	// Run outputs
-	for x, output := range job.Outputs {
+	for x, output := range f.Outputs {
 		Println("Persisting output", x+1, output.Type, "from", output.Location)
 		// path := filepath.Join(rootfs, output.Location)
 
@@ -115,27 +122,36 @@ func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 			Println("Output", x+1, "failed:", err)
 			panic(err)
 		}
+
+		// TODO: doesn't get hash info, etc
+		result.Outputs = append(result.Outputs, output)
 	}
 
-	// Done... ish. No outputs. Womp womp!
-	return nil, nil
+	return result
 }
 
-func (e *Executor) Run(job def.Formula) (def.Job, []def.Output) {
+func (e *Executor) Start(f def.Formula) def.Job {
+
 	// Prepare the forumla for execution on this host
-	def.ValidateAll(&job)
+	def.ValidateAll(&f)
+	job := basicjob.New()
 
-	var resultJob def.Job
-	var outputs []def.Output
+	go func(){
+		// Run the formula in a temporary directory
+		flak.WithDir(func(dir string) {
 
-	// make up a job id
-	jobID := def.JobID(guid.New())
+			job.Result = e.Execute(f, job, dir)
+			Println(1, job.Result)
 
-	flak.WithDir(func(d string) {
-		resultJob, outputs = e.Execute(job, d)
+		}, e.workspacePath, "job", string(job.Id()))
 
-	}, e.workspacePath, "job", string(jobID))
+		Println(2, job.Result)
 
-	Println("Done!")
-	return resultJob, outputs
+		// Directory is clean; job complete
+		close(job.WaitChan)
+
+		Println("Done!")
+	}()
+
+	return def.Job(job)
 }
