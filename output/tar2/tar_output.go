@@ -46,10 +46,12 @@ func (o Output) Apply(basePath string) <-chan error {
 			// report the hash by mutating our spec object.
 			// heh, see the problem there?  pointers
 			o.spec.Hash = base64.URLEncoding.EncodeToString(actualTreeHash)
-		}).CatchAll(func(e error) {
-			// any errors should be caught and forwarded through a channel for management rather than killing the whole sytem unexpectedly.
-			// this could maybe be improved with better error grouping (wrap all errors in a type that indicates origin subsystem and forwards the original as a 'cause' attachement, etc).
-			done <- e
+		}).Catch(output.Error, func(err *errors.Error) {
+			done <- err
+		}).CatchAll(func(err error) {
+			// All errors we emit will be under `output.Error`'s type.
+			// Every time we hit this UnknownError path, we should consider it a bug until that error is categorized.
+			done <- output.UnknownError.Wrap(err)
 		}).Done()
 	}()
 	return done
