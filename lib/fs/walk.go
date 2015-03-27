@@ -107,7 +107,6 @@ func (t *FilewalkNode) prepareChildren(basePath string) error {
 	memory as we walk.  `Walk()` wraps the user-defined post-visit function
 	to do this at the end.
 */
-func (t *FilewalkNode) forgetChildren() error {
+func (t *FilewalkNode) forgetChildren() {
 	t.children = nil
-	return nil
 }
