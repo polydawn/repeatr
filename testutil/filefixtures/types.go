@@ -5,10 +5,12 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/lib/fs"
 )
 
@@ -93,6 +95,10 @@ func defaults(f FixtureFile) FixtureFile {
 	Create files described by the fixtures on the real filesystem path given.
 */
 func (ffs Fixture) Create(basePath string) {
+	basePath, err := filepath.Abs(basePath)
+	if err != nil {
+		panic(errors.IOError.Wrap(err))
+	}
 	for _, f := range ffs.Files {
 		fs.PlaceFile(basePath, f.Metadata, bytes.NewBuffer(f.Body))
 	}
