@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -118,13 +117,12 @@ func Scan(basePath string) Fixture {
 		if filenode.Err != nil {
 			return filenode.Err
 		}
-		fullPath := filepath.Join(basePath, filenode.Path)
-		hdr := fs.ReadMetadata(fullPath, filenode.Info)
-		hdr.Name = filenode.Path
+		hdr, file := fs.ScanFile(basePath, filenode.Path)
 		var body []byte
-		if hdr.Typeflag == tar.TypeReg {
+		if file != nil {
+			defer file.Close()
 			var err error
-			body, err = ioutil.ReadFile(fullPath)
+			body, err = ioutil.ReadAll(file)
 			if err != nil {
 				return err
 			}

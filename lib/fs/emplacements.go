@@ -108,3 +108,18 @@ func PlaceDirTime(destBasePath string, hdr Metadata) {
 		ioError(err)
 	}
 }
+
+func ScanFile(basePath, path string, optional ...os.FileInfo) (hdr Metadata, file io.ReadCloser) {
+	fullPath := filepath.Join(basePath, path)
+	hdr = ReadMetadata(fullPath, optional...)
+	hdr.Name = path
+	switch hdr.Typeflag {
+	case tar.TypeReg:
+		var err error
+		file, err = os.OpenFile(fullPath, os.O_RDONLY, 0)
+		if err != nil {
+			ioError(err)
+		}
+	}
+	return
+}

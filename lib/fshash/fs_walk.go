@@ -20,21 +20,13 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		if filenode.Err != nil {
 			return filenode.Err
 		}
-		srcPath := filepath.Join(srcBasePath, filenode.Path)
 		destPath := filepath.Join(destBasePath, filenode.Path)
 		mode := filenode.Info.Mode()
+		hdr, file := fs.ScanFile(srcBasePath, filenode.Path, filenode.Info)
 		switch {
 		case mode&os.ModeDir == os.ModeDir:
-			hdr := fs.ReadMetadata(srcPath, filenode.Info)
-			hdr.Name = filenode.Path
-			if destBasePath != "" {
-				fs.PlaceFile(destBasePath, hdr, nil)
-				// setting time is (re)done in the post-order phase of traversal since adding children will mutate mtime
-			}
-			bucket.Record(hdr, nil)
+			fallthrough
 		case mode&os.ModeSymlink == os.ModeSymlink:
-			hdr := fs.ReadMetadata(srcPath, filenode.Info)
-			hdr.Name = filenode.Path
 			if destBasePath != "" {
 				fs.PlaceFile(destBasePath, hdr, nil)
 			}
@@ -50,11 +42,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		case mode&os.ModeType == 0: // i.e. regular file
 			// TODO : rearrange hasher stream so we can call lib/fs.PlaceFile
 			// copy data into place and accumulate hash
-			src, err := os.OpenFile(srcPath, os.O_RDONLY, 0)
-			if err != nil {
-				return err
-			}
-			defer src.Close()
+			defer file.Close()
 			hasher := hasherFactory()
 			var tee io.Writer
 			if destBasePath != "" {
@@ -67,13 +55,11 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			} else {
 				tee = hasher
 			}
-			_, err = io.Copy(tee, src)
+			_, err := io.Copy(tee, file)
 			if err != nil {
 				return err
 			}
 			// marshal headers and save to bucket with hash
-			hdr := fs.ReadMetadata(srcPath, filenode.Info)
-			hdr.Name = filenode.Path
 			if destBasePath != "" {
 				if err := fspatch.UtimesNano(destPath, def.Somewhen, hdr.ModTime); err != nil {
 					return err
