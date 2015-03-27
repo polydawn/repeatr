@@ -16,6 +16,9 @@ type WalkFunc func(filenode *FilewalkNode) error
 	it's based on `treewalk`, which means it supports both pre- and post-order
 	traversals.
 
+	All paths begin in `.`, e.g. you'll see a series like	`{".", "./a", "./a/b"}`, etc.
+	This is identical in behavior to `filepath.Clean` having been called on each path.
+
 	Symlinks are not followed.
 
 	The traversal order of siblings is *not* guaranteed, and is *not* necessarily
