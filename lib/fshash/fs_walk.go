@@ -13,80 +13,30 @@ import (
 	"polydawn.net/repeatr/lib/treewalk"
 )
 
-type fileWalkNode struct {
-	path string // relative to start
-	info os.FileInfo
-	ferr error
-
-	children []*fileWalkNode // note we didn't sort this
-	itrIndex int             // next child offset
-}
-
-func newFileWalkNode(basePath, path string) (filenode *fileWalkNode) {
-	filenode = &fileWalkNode{path: path}
-	filenode.info, filenode.ferr = os.Lstat(filepath.Join(basePath, path))
-	// don't expand the children until the previsit function
-	// we don't want them all crashing into memory at once
-	return
-}
-
-/*
-	Expand next subtree.  Used in the pre-order visit step so we don't walk
-	every dir up front.
-*/
-func (t *fileWalkNode) prepareChildren(basePath string) error {
-	if !t.info.IsDir() {
-		return nil
-	}
-	f, err := os.Open(filepath.Join(basePath, t.path))
-	if err != nil {
-		return err
-	}
-	names, err := f.Readdirnames(-1)
-	f.Close()
-	if err != nil {
-		return err
-	}
-	t.children = make([]*fileWalkNode, len(names))
-	for i, name := range names {
-		t.children[i] = newFileWalkNode(basePath, "./"+filepath.Join(t.path, name))
-	}
-	return nil
-}
-
-func (t *fileWalkNode) NextChild() treewalk.Node {
-	if t.itrIndex >= len(t.children) {
-		return nil
-	}
-	t.itrIndex++
-	return t.children[t.itrIndex-1]
-}
-
 func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory func() hash.Hash) error {
 	// If copying: Dragons: you can set atime and you can set mtime, but you can't ever set ctime again.
 	// Filesystem APIs are constructed such that it's literally impossible to do an attribute-preserving copy in userland.
 
 	preVisit := func(node treewalk.Node) error {
-		filenode := node.(*fileWalkNode)
-		if filenode.ferr != nil {
-			return filenode.ferr
+		filenode := node.(*fs.FilewalkNode)
+		if filenode.Err != nil {
+			return filenode.Err
 		}
-		srcPath := filepath.Join(srcBasePath, filenode.path)
-		destPath := filepath.Join(destBasePath, filenode.path)
-		mode := filenode.info.Mode()
+		srcPath := filepath.Join(srcBasePath, filenode.Path)
+		destPath := filepath.Join(destBasePath, filenode.Path)
+		mode := filenode.Info.Mode()
 		switch {
 		case mode&os.ModeDir == os.ModeDir:
-			hdr := fs.ReadMetadata(srcPath, filenode.info)
-			hdr.Name = filenode.path
+			hdr := fs.ReadMetadata(srcPath, filenode.Info)
+			hdr.Name = filenode.Path
 			if destBasePath != "" {
 				fs.PlaceFile(destBasePath, hdr, nil)
 				// setting time is (re)done in the post-order phase of traversal since adding children will mutate mtime
 			}
 			bucket.Record(hdr, nil)
-			filenode.prepareChildren(srcBasePath)
 		case mode&os.ModeSymlink == os.ModeSymlink:
-			hdr := fs.ReadMetadata(srcPath, filenode.info)
-			hdr.Name = filenode.path
+			hdr := fs.ReadMetadata(srcPath, filenode.Info)
+			hdr.Name = filenode.Path
 			if destBasePath != "" {
 				fs.PlaceFile(destBasePath, hdr, nil)
 			}
@@ -124,8 +74,8 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				return err
 			}
 			// marshal headers and save to bucket with hash
-			hdr := fs.ReadMetadata(srcPath, filenode.info)
-			hdr.Name = filenode.path
+			hdr := fs.ReadMetadata(srcPath, filenode.Info)
+			hdr.Name = filenode.Path
 			if destBasePath != "" {
 				if err := fspatch.UtimesNano(destPath, def.Somewhen, hdr.ModTime); err != nil {
 					return err
@@ -146,15 +96,14 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		return nil
 	}
 	postVisit := func(node treewalk.Node) error {
-		filenode := node.(*fileWalkNode)
-		filenode.children = nil
-		if filenode.info.IsDir() && destBasePath != "" {
-			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.path), def.Somewhen, filenode.info.ModTime()); err != nil {
+		filenode := node.(*fs.FilewalkNode)
+		if filenode.Info.IsDir() && destBasePath != "" {
+			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), def.Somewhen, filenode.Info.ModTime()); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
 
-	return treewalk.Walk(newFileWalkNode(srcBasePath, "."), preVisit, postVisit)
+	return fs.Walk(srcBasePath, preVisit, postVisit)
 }
