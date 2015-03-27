@@ -4,6 +4,9 @@ import (
 	"archive/tar"
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -35,6 +38,12 @@ const (
 		CompareSize | CompareBody
 	CompareAll = CompareDefaults | CompareAtime
 )
+
+type filesByPath []FixtureFile
+
+func (a filesByPath) Len() int           { return len(a) }
+func (a filesByPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a filesByPath) Less(i, j int) bool { return a[i].Metadata.Name < a[j].Metadata.Name }
 
 func (f Fixture) defaults() Fixture {
 	for i, ff := range f.Files {
@@ -97,7 +106,30 @@ func (ffs Fixture) Create(basePath string) {
 	Result will be sorted by filename, as per usual.
 */
 func Scan(basePath string) Fixture {
-	return Fixture{} // TODO
+	ffs := Fixture{fmt.Sprintf("Scan of %q", basePath), nil}
+	preVisit := func(filenode *fs.FilewalkNode) error {
+		if filenode.Err != nil {
+			return filenode.Err
+		}
+		fullPath := filepath.Join(basePath, filenode.Path)
+		hdr := fs.ReadMetadata(fullPath, filenode.Info)
+		hdr.Name = filenode.Path
+		var body []byte
+		if hdr.Typeflag == tar.TypeReg {
+			var err error
+			body, err = ioutil.ReadFile(fullPath)
+			if err != nil {
+				return err
+			}
+		}
+		ffs.Files = append(ffs.Files, FixtureFile{hdr, body})
+		return nil
+	}
+	if err := fs.Walk(basePath, preVisit, nil); err != nil {
+		panic(err)
+	}
+	sort.Sort(filesByPath(ffs.Files))
+	return ffs
 }
 
 /*
