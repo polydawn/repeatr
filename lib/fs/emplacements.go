@@ -98,3 +98,13 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 		ioError(err)
 	}
 }
+
+// Exposed only because you're probably doing your own trees somehow, and it's
+// necessary to cover your tracks by forcing times on dirs after all children are done.
+// Symmetric params and error handling to `PlaceFile` for your convenience.
+func PlaceDirTime(destBasePath string, hdr Metadata) {
+	destPath := filepath.Join(destBasePath, hdr.Name)
+	if err := fspatch.LUtimesNano(destPath, hdr.AccessTime, hdr.ModTime); err != nil {
+		ioError(err)
+	}
+}

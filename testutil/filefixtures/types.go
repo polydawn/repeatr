@@ -93,6 +93,13 @@ func (ffs Fixture) Create(basePath string) {
 	for _, f := range ffs.Files {
 		fs.PlaceFile(basePath, f.Metadata, bytes.NewBuffer(f.Body))
 	}
+	// re-do time enforcement... in reverse order, so we cover our own tracks
+	for i := len(ffs.Files) - 1; i >= 0; i-- {
+		f := ffs.Files[i]
+		if f.Metadata.Typeflag == tar.TypeDir {
+			fs.PlaceDirTime(basePath, f.Metadata)
+		}
+	}
 }
 
 /*
@@ -159,8 +166,8 @@ func (ff FixtureFile) Describe(opts ComparisonOptions) string {
 		{"Name:%q", ff.Metadata.Name},
 		{"Type:%q", ff.Metadata.Typeflag},
 		{"Perms:%q", (map[bool]interface{}{true: "-", false: ff.Metadata.FileMode()})[opts&ComparePerms == 0]},
-		{"Mtime:%q", (map[bool]interface{}{true: "-", false: ff.Metadata.ModTime})[opts&CompareMtime == 0]},
-		{"Atime:%q", (map[bool]interface{}{true: "-", false: ff.Metadata.AccessTime})[opts&CompareAtime == 0]},
+		{"Mtime:%q", (map[bool]interface{}{true: "-", false: ff.Metadata.ModTime.UTC()})[opts&CompareMtime == 0]},
+		{"Atime:%q", (map[bool]interface{}{true: "-", false: ff.Metadata.AccessTime.UTC()})[opts&CompareAtime == 0]},
 		{"Uid:%d", (map[bool]interface{}{true: "-", false: ff.Metadata.Uid})[opts&CompareUid == 0]},
 		{"Gid:%d", (map[bool]interface{}{true: "-", false: ff.Metadata.Gid})[opts&CompareGid == 0]},
 		{"DM:%d", ff.Metadata.Devmajor},
