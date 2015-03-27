@@ -13,7 +13,7 @@ import (
 
 var Alpha Fixture = Fixture{"Alpha",
 	[]FixtureFile{
-		{fs.Metadata{Name: "./", Mode: 0755, ModTime: time.Unix(1000, 2000)}, nil},
+		{fs.Metadata{Name: ".", Mode: 0755, ModTime: time.Unix(1000, 2000)}, nil},
 		{fs.Metadata{Name: "./a", Mode: 01777, ModTime: time.Unix(3000, 2000)}, nil},
 		{fs.Metadata{Name: "./b", Mode: 0750, ModTime: time.Unix(5000, 2000)}, nil},
 		{fs.Metadata{Name: "./b/c", Mode: 0664, ModTime: time.Unix(7000, 2000)}, []byte("zyx")},
@@ -22,7 +22,7 @@ var Alpha Fixture = Fixture{"Alpha",
 
 var Beta Fixture = Fixture{"Beta",
 	[]FixtureFile{
-		{fs.Metadata{Name: "./"}, nil},
+		{fs.Metadata{Name: "."}, nil},
 		{fs.Metadata{Name: "./1"}, []byte{}},
 		{fs.Metadata{Name: "./2"}, []byte{}},
 		{fs.Metadata{Name: "./3"}, []byte{}},
