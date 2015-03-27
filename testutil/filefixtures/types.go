@@ -54,7 +54,11 @@ func (f Fixture) defaults() Fixture {
 func defaults(f FixtureFile) FixtureFile {
 	if f.Metadata.Typeflag == '\x00' {
 		if f.Body == nil {
-			f.Metadata.Typeflag = tar.TypeDir
+			if f.Metadata.Linkname != "" {
+				f.Metadata.Typeflag = tar.TypeSymlink
+			} else {
+				f.Metadata.Typeflag = tar.TypeDir
+			}
 		} else {
 			f.Metadata.Typeflag = tar.TypeReg
 		}
