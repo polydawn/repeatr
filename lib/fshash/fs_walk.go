@@ -76,37 +76,19 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		mode := filenode.info.Mode()
 		switch {
 		case mode&os.ModeDir == os.ModeDir:
-			hdr := fs.ReadMetadata(destPath, filenode.info)
+			hdr := fs.ReadMetadata(srcPath, filenode.info)
 			hdr.Name = filenode.path
 			if destBasePath != "" {
-				if err := os.MkdirAll(destPath, mode&os.ModePerm); err != nil {
-					return err
-				}
-				// setting time is done in the post-order phase of traversal since adding children will mutate mtime
-				if err := os.Chown(destPath, hdr.Uid, hdr.Gid); err != nil {
-					return err
-				}
+				fs.PlaceFile(destBasePath, hdr, nil)
+				// setting time is (re)done in the post-order phase of traversal since adding children will mutate mtime
 			}
 			bucket.Record(hdr, nil)
 			filenode.prepareChildren(srcBasePath)
 		case mode&os.ModeSymlink == os.ModeSymlink:
-			var link string
-			var err error
-			if link, err = os.Readlink(srcPath); err != nil {
-				return err
-			}
 			hdr := fs.ReadMetadata(srcPath, filenode.info)
 			hdr.Name = filenode.path
 			if destBasePath != "" {
-				if err := os.Symlink(link, destPath); err != nil {
-					return err
-				}
-				if err := fspatch.LUtimesNano(destPath, def.Somewhen, hdr.ModTime); err != nil {
-					return err
-				}
-				if err := os.Lchown(destPath, hdr.Uid, hdr.Gid); err != nil {
-					return err
-				}
+				fs.PlaceFile(destBasePath, hdr, nil)
 			}
 			bucket.Record(hdr, nil)
 		case mode&os.ModeNamedPipe == os.ModeNamedPipe:
@@ -118,6 +100,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		case mode&os.ModeCharDevice == os.ModeCharDevice:
 			panic(errors.NotImplementedError.New("TODO"))
 		case mode&os.ModeType == 0: // i.e. regular file
+			// TODO : rearrange hasher stream so we can call lib/fs.PlaceFile
 			// copy data into place and accumulate hash
 			src, err := os.OpenFile(srcPath, os.O_RDONLY, 0)
 			if err != nil {
@@ -141,7 +124,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 				return err
 			}
 			// marshal headers and save to bucket with hash
-			hdr := fs.ReadMetadata(destPath, filenode.info)
+			hdr := fs.ReadMetadata(srcPath, filenode.info)
 			hdr.Name = filenode.path
 			if destBasePath != "" {
 				if err := fspatch.UtimesNano(destPath, def.Somewhen, hdr.ModTime); err != nil {
@@ -161,9 +144,6 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			// we could add a hash of inodes to bucket to address this.
 		}
 		return nil
-
-		// TODO : much of this function could now be ablated down to
-		// calling lib/fs.PlaceFile with the metadata that's just been read
 	}
 	postVisit := func(node treewalk.Node) error {
 		filenode := node.(*fileWalkNode)
