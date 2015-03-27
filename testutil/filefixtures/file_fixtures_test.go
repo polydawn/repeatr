@@ -2,9 +2,11 @@ package filefixture
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/testutil"
 )
 
@@ -33,4 +35,22 @@ func Test(t *testing.T) {
 			}))
 		}
 	})
+
+	testutil.Convey_IfHaveRoot("Symlink breakouts should be refuted", t, FailureContinues, testutil.WithTmpdir(func() {
+		// this is a sketchy, unsandboxed test.
+		// I hope you don't have anything in /tmp/dangerzone, and/or that you're running the entire suite in a vm.
+		os.RemoveAll("/tmp/dangerzone")
+		Convey("With a relative basepath", func() {
+			So(func() { Breakout.Create(".") }, testutil.ShouldPanicWith, fs.BreakoutError)
+			_, err := os.Stat("/tmp/dangerzone/laaaaanaaa")
+			So(err, ShouldNotBeNil) // if nil err, oh my god, it exists
+		})
+		Convey("With an absolute basepath", func() {
+			pwd, err := os.Getwd()
+			So(err, ShouldBeNil)
+			So(func() { Breakout.Create(pwd) }, testutil.ShouldPanicWith, fs.BreakoutError)
+			_, err = os.Stat("/tmp/dangerzone/laaaaanaaa")
+			So(err, ShouldNotBeNil) // if nil err, oh my god, it exists
+		})
+	}))
 }

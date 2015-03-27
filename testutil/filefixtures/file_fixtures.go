@@ -29,6 +29,15 @@ var Beta Fixture = Fixture{"Beta",
 	},
 }.defaults()
 
+var Breakout Fixture = Fixture{"Breakout",
+	[]FixtureFile{
+		{fs.Metadata{Name: "."}, nil},
+		{fs.Metadata{Name: "./danger", Linkname: "/tmp"}, nil},
+		{fs.Metadata{Name: "./danger/dangerzone"}, nil},
+		{fs.Metadata{Name: "./danger/dangerzone/laaaaanaaa"}, []byte("WHAT")},
+	},
+}.defaults() // this is *not* included in `All` because it's actually a little scary.
+
 var All []Fixture = []Fixture{
 	Alpha,
 	Beta,

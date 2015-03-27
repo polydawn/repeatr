@@ -12,13 +12,58 @@ import (
 	"polydawn.net/repeatr/lib/fspatch"
 )
 
-func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
-	// 'destBasePath' should be an absolute path on the host.
-	// 'hdr.Name' should be the full relative path of the file.
-	// if it has an absolute prefix, that's quietly ignored, and it's treated as relative anyway.
+/*
+	Places a file on the filesystem.
+	Replicates all attributes described in the metadata.
 
+	The path is the join of `destBasePath` and `hdr.Name`.
+	`hdr.Name` should be the full relative path of the file;
+	if it has an absolute prefix, that's quietly ignored, and it's treated as relative anyway.
+	`hdr.Name` should match `filepath.Clean` output, except that it must always
+	use the unix directory separator.
+
+	No changes are allowed to occur outside of `destBasePath`.
+	Hardlinks may not point outside of the base path.
+	Symlinks may *point* at paths outside of the base path (because you
+	may be about to chroot into this, in which case absolute link paths
+	make perfect sense), and invalid symlinks are acceptable -- however
+	symlinks may *not* be traversed during any part of `hdr.Name`; this is
+	considered malformed input and will result in a BreakoutError.
+
+	`destBasePath` MUST be absolute.  Isolation checks assume this, and
+	have undefined operation if this requirement is not met.
+
+	Please note that like all filesystem operations within a lightyear of
+	symlinks, all validations are best-effort, but are only capable of
+	correctness in the absense of concurrent modifications inside `destBasePath`.
+
+	Device files *will* be created, with their maj/min numbers.
+	This may be considered a security concern; you should whitelist inputs
+	if using this to provision a sandbox.
+*/
+func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 	destPath := filepath.Join(destBasePath, hdr.Name)
 	mode := hdr.FileMode()
+
+	// First, no part of the path may be a symlink.
+	// We *could* create an application-level jailing effect as we walk this,
+	// but that's just complicated enough to be dangerous, and also still
+	// results in a world where results would vary depending on order of `PlaceFile` calls.
+	// So!  Traversing symlinks during placement is fiat unacceptable.
+	parts := strings.Split(hdr.Name, "/")
+	for i, _ := range parts {
+		target, err := os.Readlink(filepath.Join(append([]string{destBasePath}, parts[:i]...)...))
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			} else if err.(*os.PathError).Err == syscall.EINVAL {
+				continue
+			} else {
+				ioError(err)
+			}
+		}
+		panic(BreakoutError.New("placefile: refusing to traverse symlink at %q->%q while placing %q", filepath.Join(parts[:i]...), target, hdr.Name))
+	}
 
 	switch hdr.Typeflag {
 	case tar.TypeDir:
@@ -34,7 +79,7 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 			ioError(err)
 		}
 	case tar.TypeReg, tar.TypeRegA:
-		file, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY, mode)
+		file, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, mode)
 		if err != nil {
 			ioError(err)
 		}
@@ -44,10 +89,9 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 		}
 		file.Close()
 	case tar.TypeSymlink:
-		targetPath := filepath.Join(filepath.Dir(destPath), hdr.Linkname)
-		if !strings.HasPrefix(targetPath, destBasePath) {
-			panic(BreakoutError.New("invalid symlink %q -> %q", targetPath, hdr.Linkname))
-		}
+		// linkname can be anything you want.  it can be invalid, it can be absolute, whatever.
+		// the consumer had better know how to jail this filesystem before using;
+		// other PlaceFile calls know enough to refuse to traverse this.
 		if err := os.Symlink(hdr.Linkname, destPath); err != nil {
 			ioError(err)
 		}
