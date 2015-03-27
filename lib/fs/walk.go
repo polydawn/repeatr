@@ -7,6 +7,8 @@ import (
 	"polydawn.net/repeatr/lib/treewalk"
 )
 
+type WalkFunc func(filenode *FilewalkNode) error
+
 /*
 	Walks a filesystem.
 
@@ -21,13 +23,13 @@ import (
 
 	Caveat: calling `node.NextChild()` during your walk results in undefined behavior.
 */
-func Walk(basePath string, preVisit treewalk.WalkFunc, postVisit treewalk.WalkFunc) error {
+func Walk(basePath string, preVisit WalkFunc, postVisit WalkFunc) error {
 	return treewalk.Walk(
 		newFileWalkNode(basePath, "."),
 		func(node treewalk.Node) error {
 			filenode := node.(*FilewalkNode)
 			if preVisit != nil {
-				if err := preVisit(node); err != nil {
+				if err := preVisit(filenode); err != nil {
 					return err
 				}
 			}
@@ -37,7 +39,7 @@ func Walk(basePath string, preVisit treewalk.WalkFunc, postVisit treewalk.WalkFu
 			filenode := node.(*FilewalkNode)
 			var err error
 			if postVisit != nil {
-				err = postVisit(node)
+				err = postVisit(filenode)
 			}
 			filenode.forgetChildren()
 			return err

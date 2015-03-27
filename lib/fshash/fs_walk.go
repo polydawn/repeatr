@@ -10,15 +10,13 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
-	"polydawn.net/repeatr/lib/treewalk"
 )
 
 func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory func() hash.Hash) error {
 	// If copying: Dragons: you can set atime and you can set mtime, but you can't ever set ctime again.
 	// Filesystem APIs are constructed such that it's literally impossible to do an attribute-preserving copy in userland.
 
-	preVisit := func(node treewalk.Node) error {
-		filenode := node.(*fs.FilewalkNode)
+	preVisit := func(filenode *fs.FilewalkNode) error {
 		if filenode.Err != nil {
 			return filenode.Err
 		}
@@ -95,8 +93,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		}
 		return nil
 	}
-	postVisit := func(node treewalk.Node) error {
-		filenode := node.(*fs.FilewalkNode)
+	postVisit := func(filenode *fs.FilewalkNode) error {
 		if filenode.Info.IsDir() && destBasePath != "" {
 			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), def.Somewhen, filenode.Info.ModTime()); err != nil {
 				return err
