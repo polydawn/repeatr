@@ -18,7 +18,7 @@ var Alpha Fixture = Fixture{"Alpha",
 		{fs.Metadata{Name: "./b", Mode: 0750, ModTime: time.Unix(5000, 2000)}, nil},
 		{fs.Metadata{Name: "./b/c", Mode: 0664, ModTime: time.Unix(7000, 2000)}, []byte("zyx")},
 	},
-}
+}.defaults()
 
 var Beta Fixture = Fixture{"Beta",
 	[]FixtureFile{
@@ -27,17 +27,9 @@ var Beta Fixture = Fixture{"Beta",
 		{fs.Metadata{Name: "./2"}, []byte{}},
 		{fs.Metadata{Name: "./3"}, []byte{}},
 	},
-}
+}.defaults()
 
 var All []Fixture = []Fixture{
 	Alpha,
 	Beta,
-}
-
-func init() {
-	for _, fixture := range All {
-		for i, f := range fixture.Files {
-			fixture.Files[i] = defaults(f)
-		}
-	}
 }

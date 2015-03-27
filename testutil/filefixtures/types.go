@@ -3,6 +3,7 @@ package filefixture
 import (
 	"archive/tar"
 	"bytes"
+	"fmt"
 	"strings"
 	"time"
 
@@ -17,6 +18,29 @@ type FixtureFile struct {
 type Fixture struct {
 	Name  string
 	Files []FixtureFile
+}
+
+type ComparisonOptions uint32
+
+const (
+	ComparePerms = ComparisonOptions(0001)
+	CompareMtime = ComparisonOptions(0002)
+	CompareAtime = ComparisonOptions(0004)
+	CompareUid   = ComparisonOptions(0010)
+	CompareGid   = ComparisonOptions(0020)
+	CompareSize  = ComparisonOptions(0040)
+	CompareBody  = ComparisonOptions(0100)
+
+	CompareDefaults = ComparePerms | CompareMtime | CompareUid | CompareGid |
+		CompareSize | CompareBody
+	CompareAll = CompareDefaults | CompareAtime
+)
+
+func (f Fixture) defaults() Fixture {
+	for i, ff := range f.Files {
+		f.Files[i] = defaults(ff)
+	}
+	return f
 }
 
 func defaults(f FixtureFile) FixtureFile {
@@ -34,6 +58,9 @@ func defaults(f FixtureFile) FixtureFile {
 		default:
 			f.Metadata.Mode = 0644
 		}
+	}
+	if f.Metadata.Size == 0 {
+		f.Metadata.Size = int64(len(f.Body))
 	}
 	if f.Metadata.Uid == 0 {
 		f.Metadata.Uid = 10000
@@ -81,10 +108,10 @@ func Scan(basePath string) Fixture {
 
 
 */
-func (ffs Fixture) Describe() string {
+func (ffs Fixture) Describe(opts ComparisonOptions) string {
 	lines := make([]string, len(ffs.Files))
 	for i, f := range ffs.Files {
-		lines[i] = f.Describe()
+		lines[i] = f.Describe(opts)
 	}
 	return strings.Join(lines, "\n")
 }
@@ -92,6 +119,51 @@ func (ffs Fixture) Describe() string {
 /*
 	As per `FixtureFiles.Describe`, but this is for a single entry.
 */
-func (ff FixtureFile) Describe() string {
-	return "" // TODO
+func (ff FixtureFile) Describe(opts ComparisonOptions) string {
+	parts := []struct {
+		Key   string
+		Value interface{}
+	}{
+		{"Name:%q", ff.Metadata.Name},
+		{"Type:%q", ff.Metadata.Typeflag},
+		{"Perms:%q", ff.Metadata.FileMode()},
+		{"Mtime:%q", ff.Metadata.ModTime},
+		{"Atime:%q", ff.Metadata.AccessTime},
+		{"Uid:%d", ff.Metadata.Uid},
+		{"Gid:%d", ff.Metadata.Gid},
+		{"DM:%d", ff.Metadata.Devmajor},
+		{"Dm:%d", ff.Metadata.Devminor},
+		{"Link:%q", ff.Metadata.Linkname},
+		{"Size:%d", ff.Metadata.Size},
+		{"Body:%q", ff.Body},
+	}
+	// my kingdom for a ternary operator
+	if opts&ComparePerms == 0 {
+		parts[2].Value = "-"
+	}
+	if opts&CompareMtime == 0 {
+		parts[3].Value = "-"
+	}
+	if opts&CompareAtime == 0 {
+		parts[4].Value = "-"
+	}
+	if opts&CompareUid == 0 {
+		parts[5].Value = "-"
+	}
+	if opts&CompareGid == 0 {
+		parts[6].Value = "-"
+	}
+	if opts&CompareSize == 0 {
+		parts[10].Value = "-"
+	}
+	if opts&CompareBody == 0 {
+		parts[11].Value = "-"
+	}
+	var pattern string
+	var values []interface{}
+	for _, part := range parts {
+		pattern += "\t" + part.Key
+		values = append(values, part.Value)
+	}
+	return fmt.Sprintf(pattern, values...)
 }
