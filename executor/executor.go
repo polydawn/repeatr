@@ -9,7 +9,7 @@ type Executor interface {
 
 	/*
 
-		Returns a channel that will asyncronously return a reference to a running Job.
+		Validates the passed forumla and returns a Job that is or will soon be running.
 
 		An invalid formula (as far as can be determined without hitting the filesystem) will panic before returning.
 		Once this function has returned, the executor is presumed to be spinning up the job in a separate goroutine.
