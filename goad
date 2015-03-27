@@ -4,8 +4,12 @@ set -e
 # Where is this script located?
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$DIR"
+
 export GOPATH="$PWD"/.gopath/
 export BASEDIR="$PWD"
+
+# Right now we need nsinit on the PATH.
+PATH=$PWD/assets:$PATH
 
 # Highlights build failures. Setting to '^' will disable, could make configurable.
 highlighRegex='^|^# (.*/)+.*$'
@@ -111,7 +115,7 @@ else
 		;;
 	exec)
 		shift
-		PATH=$PWD/assets:$PATH $GOPATH/bin/$name "$@"
+		$GOPATH/bin/$name "$@"
 		;;
 	*)
 		echo "Usage: $0 {init|test|install|fmt|doc|cover|validate|clean}" 1>&2;
