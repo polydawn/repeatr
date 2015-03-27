@@ -32,6 +32,6 @@ type Input interface {
 	Apply(path string) <-chan error
 }
 
-var InputError *errors.ErrorClass = errors.NewClass("InputError") // grouping, do not instantiate
+var Error *errors.ErrorClass = errors.NewClass("InputError") // grouping, do not instantiate
 
-var InputHashMismatchError *errors.ErrorClass = InputError.NewClass("InputHashMismatchError")
+var InputHashMismatchError *errors.ErrorClass = Error.NewClass("InputHashMismatchError")

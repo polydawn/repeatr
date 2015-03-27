@@ -64,4 +64,4 @@ func (i Input) Apply(path string) <-chan error {
 	return done
 }
 
-var Error *errors.ErrorClass = input.InputError.NewClass("TarInputError") // currently contains little information because the returns of the subcommand are already opaque.  may become the root of a more expressive error hierarchy when we replace the tar implementation.
+var Error *errors.ErrorClass = input.Error.NewClass("TarInputError") // currently contains little information because the returns of the subcommand are already opaque.  may become the root of a more expressive error hierarchy when we replace the tar implementation.

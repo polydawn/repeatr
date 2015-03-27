@@ -37,7 +37,7 @@ func Test(t *testing.T) {
 			So(os.Mkdir(executor.workspacePath, 0755), ShouldBeNil)
 
 			Convey("We should get an InputError", func() {
-				So(func() { executor.Run(formula) }, testutil.ShouldPanicWith, input.InputError)
+				So(func() { executor.Run(formula) }, testutil.ShouldPanicWith, input.Error)
 			})
 		}),
 	)

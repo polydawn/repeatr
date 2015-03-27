@@ -30,7 +30,7 @@ func (e *Executor) Configure(workspacePath string) {
 func (x *Executor) Run(formula def.Formula) (job def.Job, outs []def.Output) {
 	try.Do(func() {
 		job, outs = x.run(formula)
-	}).Catch(input.InputError, func(e *errors.Error) {
+	}).Catch(input.Error, func(e *errors.Error) {
 		// REVIEW: also directly pass input/output system errors up?  or, since we may have to gather several, put them in a group and wrap them in a "prereqs failed" executor error?
 		panic(e)
 	}).Catch(Error, func(e *errors.Error) {
