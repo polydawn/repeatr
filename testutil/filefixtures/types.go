@@ -126,38 +126,16 @@ func (ff FixtureFile) Describe(opts ComparisonOptions) string {
 	}{
 		{"Name:%q", ff.Metadata.Name},
 		{"Type:%q", ff.Metadata.Typeflag},
-		{"Perms:%q", ff.Metadata.FileMode()},
-		{"Mtime:%q", ff.Metadata.ModTime},
-		{"Atime:%q", ff.Metadata.AccessTime},
-		{"Uid:%d", ff.Metadata.Uid},
-		{"Gid:%d", ff.Metadata.Gid},
+		{"Perms:%q", (map[bool]interface{}{true: "-", false: ff.Metadata.FileMode()})[opts&ComparePerms == 0]},
+		{"Mtime:%q", (map[bool]interface{}{true: "-", false: ff.Metadata.ModTime})[opts&CompareMtime == 0]},
+		{"Atime:%q", (map[bool]interface{}{true: "-", false: ff.Metadata.AccessTime})[opts&CompareAtime == 0]},
+		{"Uid:%d", (map[bool]interface{}{true: "-", false: ff.Metadata.Uid})[opts&CompareUid == 0]},
+		{"Gid:%d", (map[bool]interface{}{true: "-", false: ff.Metadata.Gid})[opts&CompareGid == 0]},
 		{"DM:%d", ff.Metadata.Devmajor},
 		{"Dm:%d", ff.Metadata.Devminor},
 		{"Link:%q", ff.Metadata.Linkname},
-		{"Size:%d", ff.Metadata.Size},
-		{"Body:%q", ff.Body},
-	}
-	// my kingdom for a ternary operator
-	if opts&ComparePerms == 0 {
-		parts[2].Value = "-"
-	}
-	if opts&CompareMtime == 0 {
-		parts[3].Value = "-"
-	}
-	if opts&CompareAtime == 0 {
-		parts[4].Value = "-"
-	}
-	if opts&CompareUid == 0 {
-		parts[5].Value = "-"
-	}
-	if opts&CompareGid == 0 {
-		parts[6].Value = "-"
-	}
-	if opts&CompareSize == 0 {
-		parts[10].Value = "-"
-	}
-	if opts&CompareBody == 0 {
-		parts[11].Value = "-"
+		{"Size:%d", (map[bool]interface{}{true: "-", false: ff.Metadata.Size})[opts&CompareSize == 0]},
+		{"Body:%q", (map[bool]interface{}{true: "-", false: ff.Body})[opts&CompareBody == 0]},
 	}
 	var pattern string
 	var values []interface{}
