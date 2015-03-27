@@ -111,6 +111,7 @@ func PlaceDirTime(destBasePath string, hdr Metadata) {
 
 func ScanFile(basePath, path string, optional ...os.FileInfo) (hdr Metadata, file io.ReadCloser) {
 	fullPath := filepath.Join(basePath, path)
+	// most of the heavy work is in ReadMetadata; this method just adds the file content
 	hdr = ReadMetadata(fullPath, optional...)
 	hdr.Name = path
 	switch hdr.Typeflag {

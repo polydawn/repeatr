@@ -11,6 +11,7 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/fspatch"
 )
 
 type Metadata tar.Header
@@ -48,8 +49,11 @@ func (m Metadata) FileMode() os.FileMode {
 /*
 	Scan file attributes into a repeatr Metadata struct.  FileInfo
 	may be provided if it is already available (this will save a stat call).
+	The path is expected to exist (nonexistence is a panicable offense, along
+	with all other IO errors).
 */
 func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
+	// get fileinfo (or reuse, if the caller was kind enough to already have it)
 	var fi os.FileInfo
 	var err error
 	if len(optional) > 0 {
@@ -57,23 +61,29 @@ func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
 	} else if len(optional) == 0 {
 		fi, err = os.Lstat(path)
 		if err != nil {
-			// also consider ENOEXIST a problem; this function is mostly
-			// used in testing where we really expect that path to exist.
+			// yes, also consider ENOEXIST a problem -- this is
+			// never used in a context where a race between the tree
+			// walker and the full attribute scan is considered acceptable.
 			panic(errors.IOError.Wrap(err))
 		}
 	} else {
 		panic(errors.ProgrammerError.New("optional fileinfo may only be one"))
 	}
-	// readlink needs the file path again  ヽ(´ー｀)ノ
-	var link string
-	if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
-		if link, err = os.Readlink(path); err != nil {
-			panic(errors.IOError.Wrap(err))
-		}
-	}
-	hdr, err := tar.FileInfoHeader(fi, link)
+	// use stdlib tar to lift most of the metadata from fileinfo format
+	hdr, err := tar.FileInfoHeader(fi, "")
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
+	}
+	// handle extra metadata on the interesting types
+	// not handled: hardlinks
+	switch hdr.Typeflag {
+	case tar.TypeSymlink:
+		// readlink needs the file path again  ヽ(´ー｀)ノ
+		if hdr.Linkname, err = os.Readlink(path); err != nil {
+			panic(errors.IOError.Wrap(err))
+		}
+	case tar.TypeBlock, tar.TypeChar:
+		hdr.Devmajor, hdr.Devminor = fspatch.ReadDev(fi)
 	}
 	// ctimes are uncontrollable, pave them (╯°□°）╯︵ ┻━┻
 	// atimes mutate on read, pave them

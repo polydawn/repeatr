@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
@@ -23,23 +22,12 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		destPath := filepath.Join(destBasePath, filenode.Path)
 		mode := filenode.Info.Mode()
 		hdr, file := fs.ScanFile(srcBasePath, filenode.Path, filenode.Info)
-		switch {
-		case mode&os.ModeDir == os.ModeDir:
-			fallthrough
-		case mode&os.ModeSymlink == os.ModeSymlink:
+		if file == nil {
 			if destBasePath != "" {
 				fs.PlaceFile(destBasePath, hdr, nil)
 			}
 			bucket.Record(hdr, nil)
-		case mode&os.ModeNamedPipe == os.ModeNamedPipe:
-			panic(errors.NotImplementedError.New("TODO"))
-		case mode&os.ModeSocket == os.ModeSocket:
-			panic(errors.NotImplementedError.New("TODO"))
-		case mode&os.ModeDevice == os.ModeDevice:
-			panic(errors.NotImplementedError.New("TODO"))
-		case mode&os.ModeCharDevice == os.ModeCharDevice:
-			panic(errors.NotImplementedError.New("TODO"))
-		case mode&os.ModeType == 0: // i.e. regular file
+		} else {
 			// TODO : rearrange hasher stream so we can call lib/fs.PlaceFile
 			// copy data into place and accumulate hash
 			defer file.Close()
@@ -70,12 +58,6 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			}
 			hash := hasher.Sum(nil)
 			bucket.Record(hdr, hash)
-		default:
-			panic(errors.NotImplementedError.New("The tennants of filesystems have changed!  We're not prepared for this file mode %d", mode))
-			// side note: i don't know how to check for hardlinks
-			// except for by `os.SameFile` but that obviously doesn't scale.
-			// so, none of our hashing definitions can accept hardlinks :/
-			// we could add a hash of inodes to bucket to address this.
 		}
 		return nil
 	}
