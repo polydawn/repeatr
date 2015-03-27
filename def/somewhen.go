@@ -4,5 +4,5 @@ import (
 	"time"
 )
 
-var Somewhen time.Time = time.Date(2000, time.January, 15, 0, 0, 0, 0, time.UTC)
-var SomewhenNano int64 = Somewhen.UnixNano()
+var Epochwhen time.Time = time.Unix(0, 0).UTC()
+var EpochwhenNano int64 = 0

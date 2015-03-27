@@ -87,8 +87,9 @@ func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
 	}
 	// ctimes are uncontrollable, pave them (╯°□°）╯︵ ┻━┻
 	// atimes mutate on read, pave them
-	hdr.ChangeTime = def.Somewhen
-	hdr.AccessTime = def.Somewhen
+	// we don't include these when hashing, but we wouldn't want uncontrolled bytes in a tar output either
+	hdr.ChangeTime = def.Epochwhen
+	hdr.AccessTime = def.Epochwhen
 	return Metadata(*hdr)
 }
 

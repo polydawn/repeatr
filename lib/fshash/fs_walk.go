@@ -49,7 +49,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			}
 			// marshal headers and save to bucket with hash
 			if destBasePath != "" {
-				if err := fspatch.UtimesNano(destPath, def.Somewhen, hdr.ModTime); err != nil {
+				if err := fspatch.UtimesNano(destPath, hdr.AccessTime, hdr.ModTime); err != nil {
 					return err
 				}
 				if err := os.Chown(destPath, hdr.Uid, hdr.Gid); err != nil {
@@ -63,7 +63,9 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 	}
 	postVisit := func(filenode *fs.FilewalkNode) error {
 		if filenode.Info.IsDir() && destBasePath != "" {
-			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), def.Somewhen, filenode.Info.ModTime()); err != nil {
+			// XXX: this is looking back on the fileinfo instead of the header and punting on atime with a hack.
+			// this would be better if fs.FilewalkNode supported an attachment so we could stick the header on, but in practice, same values.
+			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), def.Epochwhen, filenode.Info.ModTime()); err != nil {
 				return err
 			}
 		}
