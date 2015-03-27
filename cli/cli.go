@@ -68,21 +68,17 @@ func Run(c *cli.Context) {
 		Println("Job starting...")
 
 		result := job.Wait()
-		Println("Job finished")
+		Println("Job finished with code", result.ExitCode)
+		Println("Outputs:", result.Outputs)
 
-		Println(4, result)
+		if result.Error != nil {
+			Println("Problem executing job:", result.Error)
+			os.Exit(3)
+		}
 
-		// Println("Job returned with code", result.ExitCode)
-		// Println("Outputs:", result.Outputs)
-
-		// if result.Error != nil {
-		// 	Println("Problem executing job:", result.Error)
-		// 	os.Exit(3)
-		// }
-
-		// // DISCUSS: we could consider any non-zero exit a Error, but having that distinct from execution problems makes sense.
-		// // This is clearly silly and placeholder.
-		// os.Exit(result.ExitCode)
+		// DISCUSS: we could consider any non-zero exit a Error, but having that distinct from execution problems makes sense.
+		// This is clearly silly and placeholder.
+		os.Exit(result.ExitCode)
 
 	}).Catch(def.ValidationError, func(e *errors.Error) {
 		Println(e.Message())

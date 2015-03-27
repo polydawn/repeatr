@@ -1,7 +1,6 @@
 package basicjob
 
 import (
-	. "fmt"
 	"io"
 
 	"polydawn.net/repeatr/def"
@@ -21,25 +20,24 @@ type BasicJob struct {
 	WaitChan chan struct{}
 }
 
-func (j BasicJob) Id() def.JobID {
+func (j *BasicJob) Id() def.JobID {
 	return j.ID
 }
 
-func (j BasicJob) OutputReader() io.Reader {
+func (j *BasicJob) OutputReader() io.Reader {
 	return j.Reader
 }
 
-func (j BasicJob) Wait() def.JobResult {
+func (j *BasicJob) Wait() def.JobResult {
 	<-j.WaitChan
-	Println(3, j.Result)
 	return j.Result
 }
 
-func New() BasicJob {
+func New() *BasicJob {
 
 	gid := def.JobID(guid.New())
 
-	return BasicJob{
+	return &BasicJob{
 		ID: gid,
 		WaitChan: make(chan struct{}),
 	}

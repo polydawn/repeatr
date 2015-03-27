@@ -139,18 +139,11 @@ func (e *Executor) Start(f def.Formula) def.Job {
 	go func(){
 		// Run the formula in a temporary directory
 		flak.WithDir(func(dir string) {
-
 			job.Result = e.Execute(f, job, dir)
-			Println(1, job.Result)
-
 		}, e.workspacePath, "job", string(job.Id()))
-
-		Println(2, job.Result)
 
 		// Directory is clean; job complete
 		close(job.WaitChan)
-
-		Println("Done!")
 	}()
 
 	return def.Job(job)
