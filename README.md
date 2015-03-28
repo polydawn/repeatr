@@ -30,7 +30,7 @@ Build repeatr:
 ./goad install
 
 # See usage
-sudo ./goad exec
+./goad exec
 
 # Try an example!
 sudo ./goad exec run -i lib/integration/basic.json
