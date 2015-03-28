@@ -8,8 +8,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
+	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/input/fixtures"
-	"polydawn.net/repeatr/input/tar"
 	"polydawn.net/repeatr/testutil"
 )
 
@@ -38,7 +38,7 @@ func Test(t *testing.T) {
 
 			Convey("We should get an InputError", func() {
 				result := e.Start(formula).Wait()
-				So(result.Error, testutil.ShouldBeErrorClass, tar.Error)
+				So(result.Error, testutil.ShouldBeErrorClass, input.Error)
 			})
 		}),
 	)

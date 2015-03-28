@@ -13,7 +13,9 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/basicjob"
+	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/flak"
+	"polydawn.net/repeatr/output"
 )
 
 var _ executor.Executor = &Executor{} // interface assertion
@@ -49,10 +51,13 @@ func (e *Executor) Start(f def.Formula) def.Job {
 func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
 	var r def.JobResult
 
-	// TODO: wrap is bananas, wat do
 	try.Do(func() {
 		r = e.Execute(f, j, d)
-	}).Catch(errors.HierarchicalError, func(err *errors.Error) {
+	}).Catch(executor.Error, func(err *errors.Error) {
+		r.Error = err
+	}).Catch(input.Error, func(err *errors.Error) {
+		r.Error = err
+	}).Catch(output.Error, func(err *errors.Error) {
 		r.Error = err
 	}).CatchAll(func(err error) {
 		r.Error = executor.UnknownError.Wrap(err).(*errors.Error)
