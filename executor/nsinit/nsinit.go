@@ -7,13 +7,14 @@ import (
 	"path/filepath"
 
 	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
-	"polydawn.net/repeatr/input/dispatch"
+	"polydawn.net/repeatr/executor/basicjob"
+	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/flak"
-	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/output/dispatch"
+	"polydawn.net/repeatr/output"
 )
 
 // interface assertion
@@ -27,9 +28,52 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-// Execute a forumla in a specified directory.
-// Directory is assumed to exist.
-func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
+func (e *Executor) Start(f def.Formula) def.Job {
+	// Prepare the forumla for execution on this host
+	def.ValidateAll(&f)
+	job := basicjob.New()
+
+	go func() {
+		// Run the formula in a temporary directory
+		flak.WithDir(func(dir string) {
+			job.Result = e.Run(f, job, dir)
+		}, e.workspacePath, "job", string(job.Id()))
+
+		// Directory is clean; job complete
+		close(job.WaitChan)
+	}()
+
+	return def.Job(job)
+}
+
+// Executes a job, catching any panics.
+func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
+	var r def.JobResult
+
+	try.Do(func() {
+		r = e.Execute(f, j, d)
+	}).Catch(executor.Error, func(err *errors.Error) {
+		r.Error = err
+	}).Catch(input.Error, func(err *errors.Error) {
+		r.Error = err
+	}).Catch(output.Error, func(err *errors.Error) {
+		r.Error = err
+	}).CatchAll(func(err error) {
+		r.Error = executor.UnknownError.Wrap(err).(*errors.Error)
+	}).Done()
+
+	return r
+}
+
+// Execute a formula in a specified directory. MAY PANIC.
+func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
+
+	result := def.JobResult{
+		ID:       j.Id(),
+		Error:    nil,
+		ExitCode: 0, //TODO: gosh
+		Outputs:  []def.Output{},
+	}
 
 	// Dedicated rootfs folder to distinguish container from nsinit noise
 	rootfs := filepath.Join(d, "rootfs")
@@ -49,20 +93,19 @@ func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	// Subcommand, and tell nsinit to not desire a JSON file (instead just use many flergs)
 	args = append(args, "exec", "--create")
 
-	// Lol-networking, a giant glorious TODO.
+	// Use the host's networking (no bridge, no namespaces, etc)
 	args = append(args, "--net=host")
-	//args = append(args, "--veth-bridge", "docker0", "--veth-address", "172.17.0.101/16", "--veth-gateway", "172.17.42.1", "--veth-mtu", "1500")
 
 	// Where our system image exists
 	args = append(args, "--rootfs", rootfs)
 
 	// Add all desired environment variables
-	for k, v := range job.Accents.Env {
+	for k, v := range f.Accents.Env {
 		args = append(args, "--env", k+"="+v)
 	}
 
 	// Unroll command args
-	args = append(args, job.Accents.Entrypoint...)
+	args = append(args, f.Accents.Entrypoint...)
 
 	// For now, run in this terminal
 	cmd := exec.Command("nsinit", args...)
@@ -70,34 +113,9 @@ func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// Run inputs
-	for x, input := range job.Inputs {
-		Println("Provisioning input", x+1, input.Type, "to", input.Location)
-		path := filepath.Join(rootfs, input.Location)
-
-		// Ensure that the parent folder of this input exists
-		err := os.MkdirAll(filepath.Dir(path), 0755)
-		if err != nil {
-			panic(errors.IOError.Wrap(err))
-		}
-
-		// Run input
-		err = <-inputdispatch.Get(input).Apply(path)
-		if err != nil {
-			Println("Input", x+1, "failed:", err)
-			panic(err)
-		}
-	}
-
-	// Output folders should exist
-	// TODO: discussion
-	for _, output := range job.Outputs {
-		path := filepath.Join(rootfs, output.Location)
-		err := os.MkdirAll(path, 0755)
-		if err != nil {
-			panic(errors.IOError.Wrap(err))
-		}
-	}
+	// Prepare filesystem
+	flak.ProvisionInputs(f.Inputs, rootfs)
+	flak.ProvisionOutputs(f.Outputs, rootfs)
 
 	Println("Running formula...")
 	err := cmd.Run()
@@ -105,37 +123,7 @@ func (e *Executor) Execute(job def.Formula, d string) (def.Job, []def.Output) {
 		panic(err)
 	}
 
-	// Run outputs
-	for x, output := range job.Outputs {
-		Println("Persisting output", x+1, output.Type, "from", output.Location)
-		// path := filepath.Join(rootfs, output.Location)
-
-		err := <-outputdispatch.Get(output).Apply(rootfs)
-		if err != nil {
-			Println("Output", x+1, "failed:", err)
-			panic(err)
-		}
-	}
-
-	// Done... ish. No outputs. Womp womp!
-	return nil, nil
-}
-
-func (e *Executor) Run(job def.Formula) (def.Job, []def.Output) {
-	// Prepare the forumla for execution on this host
-	def.ValidateAll(&job)
-
-	var resultJob def.Job
-	var outputs []def.Output
-
-	// make up a job id
-	jobID := def.JobID(guid.New())
-
-	flak.WithDir(func(d string) {
-		resultJob, outputs = e.Execute(job, d)
-
-	}, e.workspacePath, "job", string(jobID))
-
-	Println("Done!")
-	return resultJob, outputs
+	// Save outputs
+	result.Outputs = flak.PreserveOutputs(f.Outputs, rootfs)
+	return result
 }
