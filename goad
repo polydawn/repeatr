@@ -25,8 +25,18 @@ pkg="polydawn.net/$name"
 if [ -z "$1" ] ; then
 	(
 		go fmt "$SUBSECTION"
-		go install "$pkg"     2> >(grep --color -E "$highlighRegex")
-		go test "$SUBSECTION" 2> >(grep --color -E "$highlighRegex")
+		go install "$pkg" 2> >(grep --color -E "$highlighRegex") && {
+			echo -e "\E[1;32minstall successful.\E[0;m\n"
+		} || {
+			echo -e "\E[1;41minstall failed!\E[0;m"
+			exit 8
+		}
+		go test "$SUBSECTION" 2> >(grep --color -E "$highlighRegex") && {
+			echo -e "\n\E[1;32mall tests green.\E[0;m"
+		} || {
+			echo -e "\n\E[1;41msome tests failed!\E[0;m"
+			exit 4
+		}
 	)
 else
 	case "$1" in
