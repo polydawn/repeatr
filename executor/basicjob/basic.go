@@ -8,7 +8,6 @@ import (
 )
 
 type BasicJob struct {
-
 	ID def.JobID
 
 	Reader io.Reader
@@ -38,7 +37,7 @@ func New() *BasicJob {
 	gid := def.JobID(guid.New())
 
 	return &BasicJob{
-		ID: gid,
+		ID:       gid,
 		WaitChan: make(chan struct{}),
 	}
 

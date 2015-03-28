@@ -26,13 +26,12 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-
 func (e *Executor) Start(f def.Formula) def.Job {
 	// Prepare the forumla for execution on this host
 	def.ValidateAll(&f)
 	job := basicjob.New()
 
-	go func(){
+	go func() {
 		// Run the formula in a temporary directory
 		flak.WithDir(func(dir string) {
 			job.Result = e.Run(f, job, dir)
@@ -44,7 +43,6 @@ func (e *Executor) Start(f def.Formula) def.Job {
 
 	return def.Job(job)
 }
-
 
 // Executes a job, catching any panics.
 func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
@@ -63,11 +61,11 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
 // Execute a formula in a specified directory. MAY PANIC.
 func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 
-	result := def.JobResult {
-		ID: j.Id(),
-		Error: nil,
+	result := def.JobResult{
+		ID:       j.Id(),
+		Error:    nil,
 		ExitCode: 0, //TODO: gosh
-		Outputs: []def.Output{},
+		Outputs:  []def.Output{},
 	}
 
 	// Dedicated rootfs folder to distinguish container from nsinit noise

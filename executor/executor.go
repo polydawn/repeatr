@@ -33,5 +33,5 @@ type Executor interface {
 
 		An executor should absolutely not be tied down, so leaving these implicit for now.
 		If your executor CAN follow this pattern, that would be good.
-	 */
+	*/
 }

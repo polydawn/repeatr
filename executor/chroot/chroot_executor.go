@@ -32,7 +32,7 @@ func (e *Executor) Start(f def.Formula) def.Job {
 	def.ValidateAll(&f)
 	job := basicjob.New()
 
-	go func(){
+	go func() {
 		// Run the formula in a temporary directory
 		flak.WithDir(func(dir string) {
 			job.Result = e.Run(f, job, dir)
@@ -64,11 +64,11 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
 // Execute a formula in a specified directory. MAY PANIC.
 func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 
-	result := def.JobResult {
-		ID: j.Id(),
-		Error: nil,
+	result := def.JobResult{
+		ID:       j.Id(),
+		Error:    nil,
 		ExitCode: 0, //TODO: gosh
-		Outputs: []def.Output{},
+		Outputs:  []def.Output{},
 	}
 
 	// Prepare filesystem

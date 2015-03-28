@@ -15,7 +15,6 @@ import (
 	"polydawn.net/repeatr/executor/dispatch"
 )
 
-
 var App *cli.App
 
 func init() {

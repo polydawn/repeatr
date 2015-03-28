@@ -70,7 +70,6 @@ func WithDir(f func(string), dirs ...string) {
 	}).Done()
 }
 
-
 func WaitAndHandleExit(cmd *exec.Cmd) int {
 	exitCode := -1
 	var err error

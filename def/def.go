@@ -186,7 +186,6 @@ type Job interface {
 	// probably provide.  the downside of course is this often forces a byte copy somewhere.
 	// however, we're going to store these streams anyway.  so the most useful thing to do actually turns out to be log outputs immediately, and just reexpose that readers to that stream.
 
-
 	Id() JobID // the ID of this job
 
 	/*
@@ -201,17 +200,14 @@ type Job interface {
 	Wait() JobResult
 }
 
-
-
 type JobID string // type def just to make it hard to accidentally get ids crossed.
 
 /*
 	Very much a work-in-progress.
 
 	Holds all information you might want from a completed Job.
- */
+*/
 type JobResult struct {
-
 	ID JobID
 
 	Error *errors.Error // if the executor experienced a problem running this job. REVIEW: type discussion? semantics?
