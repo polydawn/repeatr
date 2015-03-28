@@ -35,7 +35,7 @@ func (e *Executor) Start(f def.Formula) def.Job {
 	go func(){
 		// Run the formula in a temporary directory
 		flak.WithDir(func(dir string) {
-			job.Result = e.Execute(f, job, dir)
+			job.Result = e.Run(f, job, dir)
 		}, e.workspacePath, "job", string(job.Id()))
 
 		// Directory is clean; job complete
@@ -54,6 +54,8 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
 		r = e.Execute(f, j, d)
 	}).Catch(errors.HierarchicalError, func(err *errors.Error) {
 		r.Error = err
+	}).CatchAll(func(err error) {
+		r.Error = executor.UnknownError.Wrap(err).(*errors.Error)
 	}).Done()
 
 	return r
