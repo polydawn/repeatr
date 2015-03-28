@@ -38,6 +38,8 @@ package def
 
 import (
 	"io"
+
+	"github.com/spacemonkeygo/errors"
 )
 
 /*
@@ -212,7 +214,7 @@ type JobResult struct {
 
 	ID JobID
 
-	Error error // if the executor experienced a problem running this job. REVIEW: type discussion? semantics?
+	Error *errors.Error // if the executor experienced a problem running this job. REVIEW: type discussion? semantics?
 
 	ExitCode int // The return code of this job
 

@@ -19,4 +19,19 @@ type Executor interface {
 
 	*/
 	Start(def.Formula) def.Job
+
+	/*
+		ADDITIONALLY, we have some patterns that are merely conventions:
+
+
+		// Executes a job, catching any panics.
+		func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
+
+		// Execute a forumla in a specified directory. MAY PANIC.
+		func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
+
+
+		An executor should absolutely not be tied down, so leaving these implicit for now.
+		If your executor CAN follow this pattern, that would be good.
+	 */
 }

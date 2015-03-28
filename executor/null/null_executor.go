@@ -2,7 +2,7 @@ package null
 
 import (
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/basicjob"
+	"polydawn.net/repeatr/executor/basicjob"
 )
 
 type Executor struct {

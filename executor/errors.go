@@ -1,4 +1,4 @@
-package chroot
+package executor
 
 import (
 	"github.com/spacemonkeygo/errors"

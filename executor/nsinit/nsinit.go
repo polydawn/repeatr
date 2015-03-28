@@ -7,13 +7,12 @@ import (
 	"path/filepath"
 
 	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/basicjob"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
-	"polydawn.net/repeatr/input/dispatch"
+	"polydawn.net/repeatr/executor/basicjob"
 	"polydawn.net/repeatr/lib/flak"
-	"polydawn.net/repeatr/output/dispatch"
 )
 
 // interface assertion
@@ -27,8 +26,41 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-// Execute a forumla in a specified directory.
-// Directory is assumed to exist.
+
+func (e *Executor) Start(f def.Formula) def.Job {
+	// Prepare the forumla for execution on this host
+	def.ValidateAll(&f)
+	job := basicjob.New()
+
+	go func(){
+		// Run the formula in a temporary directory
+		flak.WithDir(func(dir string) {
+			job.Result = e.Run(f, job, dir)
+		}, e.workspacePath, "job", string(job.Id()))
+
+		// Directory is clean; job complete
+		close(job.WaitChan)
+	}()
+
+	return def.Job(job)
+}
+
+
+// Executes a job, catching any panics.
+func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
+	var r def.JobResult
+
+	// TODO: wrap is bananas, wat do
+	try.Do(func() {
+		r = e.Execute(f, j, d)
+	}).Catch(errors.HierarchicalError, func(err *errors.Error) {
+		r.Error = err
+	}).Done()
+
+	return r
+}
+
+// Execute a formula in a specified directory. MAY PANIC.
 func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 
 	result := def.JobResult {
@@ -56,9 +88,8 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 	// Subcommand, and tell nsinit to not desire a JSON file (instead just use many flergs)
 	args = append(args, "exec", "--create")
 
-	// Lol-networking, a giant glorious TODO.
+	// Use the host's networking (no bridge, no namespaces, etc)
 	args = append(args, "--net=host")
-	//args = append(args, "--veth-bridge", "docker0", "--veth-address", "172.17.0.101/16", "--veth-gateway", "172.17.42.1", "--veth-mtu", "1500")
 
 	// Where our system image exists
 	args = append(args, "--rootfs", rootfs)
@@ -77,34 +108,9 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// Run inputs
-	for x, input := range f.Inputs {
-		Println("Provisioning input", x+1, input.Type, "to", input.Location)
-		path := filepath.Join(rootfs, input.Location)
-
-		// Ensure that the parent folder of this input exists
-		err := os.MkdirAll(filepath.Dir(path), 0755)
-		if err != nil {
-			panic(errors.IOError.Wrap(err))
-		}
-
-		// Run input
-		err = <-inputdispatch.Get(input).Apply(path)
-		if err != nil {
-			Println("Input", x+1, "failed:", err)
-			panic(err)
-		}
-	}
-
-	// Output folders should exist
-	// TODO: discussion
-	for _, output := range f.Outputs {
-		path := filepath.Join(rootfs, output.Location)
-		err := os.MkdirAll(path, 0755)
-		if err != nil {
-			panic(errors.IOError.Wrap(err))
-		}
-	}
+	// Prepare filesystem
+	flak.ProvisionInputs(f.Inputs, rootfs)
+	flak.ProvisionOutputs(f.Outputs, rootfs)
 
 	Println("Running formula...")
 	err := cmd.Run()
@@ -112,39 +118,7 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 		panic(err)
 	}
 
-	// Run outputs
-	for x, output := range f.Outputs {
-		Println("Persisting output", x+1, output.Type, "from", output.Location)
-		// path := filepath.Join(rootfs, output.Location)
-
-		err := <-outputdispatch.Get(output).Apply(rootfs)
-		if err != nil {
-			Println("Output", x+1, "failed:", err)
-			panic(err)
-		}
-
-		// TODO: doesn't get hash info, etc
-		result.Outputs = append(result.Outputs, output)
-	}
-
+	// Save outputs
+	result.Outputs = flak.PreserveOutputs(f.Outputs, rootfs)
 	return result
-}
-
-func (e *Executor) Start(f def.Formula) def.Job {
-
-	// Prepare the forumla for execution on this host
-	def.ValidateAll(&f)
-	job := basicjob.New()
-
-	go func(){
-		// Run the formula in a temporary directory
-		flak.WithDir(func(dir string) {
-			job.Result = e.Execute(f, job, dir)
-		}, e.workspacePath, "job", string(job.Id()))
-
-		// Directory is clean; job complete
-		close(job.WaitChan)
-	}()
-
-	return def.Job(job)
 }
