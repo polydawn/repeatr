@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/treewalk"
 )
 
@@ -14,7 +15,7 @@ type MemoryBucket struct {
 	lines []Record
 }
 
-func (b *MemoryBucket) Record(metadata Metadata, contentHash []byte) {
+func (b *MemoryBucket) Record(metadata fs.Metadata, contentHash []byte) {
 	b.lines = append(b.lines, Record{metadata, contentHash})
 }
 

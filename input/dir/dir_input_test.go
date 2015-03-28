@@ -10,7 +10,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
-	"polydawn.net/repeatr/lib/fshash"
+	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
 	"polydawn.net/repeatr/testutil"
 )
@@ -57,11 +57,11 @@ func Test(t *testing.T) {
 			// remarkably, since the first read doesn't cause atimes to change,
 			// the inputter can capture it and we can recreate it.
 			// but that still doesn't make anything else about checking or handling it sane.
-			path0metadata := fshash.ReadMetadata("src")
+			path0metadata := fs.ReadMetadata("src")
 			path0metadata.Name = ""
-			path1metadata := fshash.ReadMetadata("src/a")
-			path2metadata := fshash.ReadMetadata("src/b")
-			path3metadata := fshash.ReadMetadata("src/b/c")
+			path1metadata := fs.ReadMetadata("src/a")
+			path2metadata := fs.ReadMetadata("src/b")
+			path3metadata := fs.ReadMetadata("src/b/c")
 
 			Convey("We can construct an input", func() {
 				inputter := New(def.Input{
@@ -87,11 +87,11 @@ func Test(t *testing.T) {
 							//one, _ := os.Lstat("src/a")
 							//two, _ := os.Lstat("dest/a")
 							//So(one, ShouldResemble, two)
-							So(fshash.ReadMetadata("dest/a"), ShouldResemble, path1metadata)
-							So(fshash.ReadMetadata("dest/b"), ShouldResemble, path2metadata)
-							So(fshash.ReadMetadata("dest/b/c"), ShouldResemble, path3metadata)
+							So(fs.ReadMetadata("dest/a"), ShouldResemble, path1metadata)
+							So(fs.ReadMetadata("dest/b"), ShouldResemble, path2metadata)
+							So(fs.ReadMetadata("dest/b/c"), ShouldResemble, path3metadata)
 							// the top dir should have the same attribs too!  but we have to fix the name.
-							destDirMeta := fshash.ReadMetadata("dest/")
+							destDirMeta := fs.ReadMetadata("dest/")
 							destDirMeta.Name = ""
 							So(destDirMeta, ShouldResemble, path0metadata)
 						})
@@ -192,16 +192,16 @@ func Test(t *testing.T) {
 						So(string(content), ShouldEqual, "zyx")
 
 						Convey("And all metadata matches", func() {
-							So(fshash.ReadMetadata("dest/a"), ShouldResemble, fshash.ReadMetadata("src/a"))
-							So(fshash.ReadMetadata("dest/b"), ShouldResemble, fshash.ReadMetadata("src/b"))
-							So(fshash.ReadMetadata("dest/b/c"), ShouldResemble, fshash.ReadMetadata("src/b/c"))
-							So(fshash.ReadMetadata("dest/b/d"), ShouldResemble, fshash.ReadMetadata("src/b/d"))
-							So(fshash.ReadMetadata("dest/b/d/link-rel"), ShouldResemble, fshash.ReadMetadata("src/b/d/link-rel"))
-							So(fshash.ReadMetadata("dest/link-abs"), ShouldResemble, fshash.ReadMetadata("src/link-abs"))
+							So(fs.ReadMetadata("dest/a"), ShouldResemble, fs.ReadMetadata("src/a"))
+							So(fs.ReadMetadata("dest/b"), ShouldResemble, fs.ReadMetadata("src/b"))
+							So(fs.ReadMetadata("dest/b/c"), ShouldResemble, fs.ReadMetadata("src/b/c"))
+							So(fs.ReadMetadata("dest/b/d"), ShouldResemble, fs.ReadMetadata("src/b/d"))
+							So(fs.ReadMetadata("dest/b/d/link-rel"), ShouldResemble, fs.ReadMetadata("src/b/d/link-rel"))
+							So(fs.ReadMetadata("dest/link-abs"), ShouldResemble, fs.ReadMetadata("src/link-abs"))
 							// the top dir should have the same attribs too!  but we have to fix the name.
-							srcDirMetadata := fshash.ReadMetadata("src/")
+							srcDirMetadata := fs.ReadMetadata("src/")
 							srcDirMetadata.Name = ""
-							destDirMeta := fshash.ReadMetadata("dest/")
+							destDirMeta := fs.ReadMetadata("dest/")
 							destDirMeta.Name = ""
 							So(destDirMeta, ShouldResemble, srcDirMetadata)
 						})
