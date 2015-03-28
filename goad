@@ -54,6 +54,10 @@ else
 	install)
 		go install "$pkg" 2> >(grep --color -E "$highlighRegex")
 		;;
+	exec)
+		shift
+		"$GOPATH/bin/$name" "$@"
+		;;
 	fmt)
 		go fmt "$SUBSECTION"
 		;;
@@ -111,14 +115,10 @@ else
 		}
 		;;
 	clean)
-		rm -rf $GOPATH/bin $GOPATH/pkg
-		;;
-	exec)
-		shift
-		$GOPATH/bin/$name "$@"
+		rm -rf "$GOPATH/bin" "$GOPATH/pkg" "$GOPATH/tmp"
 		;;
 	*)
-		echo "Usage: $0 {init|test|install|fmt|doc|cover|validate|clean}" 1>&2;
+		echo "Usage: $0 {init|test|install|exec|fmt|doc|cover|validate|clean}" 1>&2;
 		exit 1
 	;;
 esac
