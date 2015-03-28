@@ -1,13 +1,17 @@
 package tar2
 
 import (
+	"archive/tar"
 	"crypto/sha512"
 	"encoding/base64"
 	"hash"
+	"io"
+	"os"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fshash"
 	"polydawn.net/repeatr/output"
 )
@@ -36,9 +40,22 @@ func (o Output) Apply(basePath string) <-chan error {
 	go func() {
 		defer close(done)
 		try.Do(func() {
+			// open output location for writing
+			// currently this impl assumes a local file uri
+			file, err := os.OpenFile(o.spec.URI, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0755)
+			if err != nil {
+				panic(errors.IOError.Wrap(err))
+			}
+			defer file.Close()
+
 			// walk filesystem, copying and accumulating data for integrity check
 			bucket := &fshash.MemoryBucket{}
-			// TODO STUFF
+			tarWriter := tar.NewWriter(file)
+			defer tarWriter.Close()
+			if err := walk(basePath, tarWriter, bucket, o.hasherFactory); err != nil {
+				done <- err
+				return
+			}
 
 			// hash whole tree
 			actualTreeHash, _ := fshash.Hash(bucket, o.hasherFactory)
@@ -55,4 +72,29 @@ func (o Output) Apply(basePath string) <-chan error {
 		}).Done()
 	}()
 	return done
+}
+
+func walk(srcBasePath string, tw *tar.Writer, bucket fshash.Bucket, hasherFactory func() hash.Hash) error {
+	preVisit := func(filenode *fs.FilewalkNode) error {
+		if filenode.Err != nil {
+			return filenode.Err
+		}
+		hdr, file := fs.ScanFile(srcBasePath, filenode.Path, filenode.Info)
+		wat := tar.Header(hdr) // this line is... we're not gonna talk about this.
+		tw.WriteHeader(&wat)
+		if file == nil {
+			bucket.Record(hdr, nil)
+		} else {
+			defer file.Close()
+			hasher := hasherFactory()
+			tee := io.MultiWriter(tw, hasher)
+			_, err := io.Copy(tee, file)
+			if err != nil {
+				return err
+			}
+			bucket.Record(hdr, hasher.Sum(nil))
+		}
+		return nil
+	}
+	return fs.Walk(srcBasePath, preVisit, nil)
 }
