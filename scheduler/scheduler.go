@@ -1,0 +1,72 @@
+package scheduler
+
+import (
+	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/executor"
+)
+
+/*
+	"No one has ever looked at a cloud scheduler and thought, 'this is everything I need!'".
+
+	Schedulers manage a stream of Formulas and return running Jobs.
+	These Jobs might be scheduled locally or over an enormous cluster of remote machines.
+
+	Because these imply significant complexity, it would be naive to assume that a scheduler interface could be one-size-fits-all.
+	This interface comprises an optimistic starting point that schedulers can follow, but may surpass.
+
+	Schedulers are presumed to know environmental context that a Formula provider may not.
+	Any problems with a transport running on a remote host, for example, is the scheduler's problem.
+
+	REVIEW: our interfaces do not support returning a guid from scheduling, as executors create their guid when starting.
+	It would be cleaner to be able to refer to a scheduled Job without waiting arbitrarily long for the scheduler to start the job.
+
+	PROPOSAL: executors lose control of guid generation, are are instead handed a guid.
+
+		Currently: Start(def.Formula)            def.Job
+		Proposed:  Start(def.Formula, def.JobID) def.Job
+*/
+type Scheduler interface {
+
+	/*
+		Configure executor to use. Must be already configured.
+
+		It is guaranteed that calling Use() before scheduling work will behave as expected.
+		Calling Use() after scheduling work is left for the Scheduler to decide - it might change, panic, ignore, etc.
+	*/
+	Configure(*executor.Executor)
+
+	/*
+		Starts consuming formulas.
+		It is expected that you call Configure(), then Start(), before queuing formulas.
+	*/
+	Start()
+
+	/*
+		REVIEW: thoughts on exposing channels here?
+		We could add or substitute a Schedule(def.Formula)
+
+	*/
+
+	/*
+		Returns a channel that you can send Formulas to.
+		These will be asynchronously scheduled to run.
+
+		Channel semantics (blocking or buffer) behavior is currently unspecified.
+	*/
+	Queue() chan<- def.Formula
+
+	/*
+		Returns a channel that you can read Jobs from.
+		These may be sent before the relevant Formula is actually started.
+
+		Channel semantics (blocking or buffer) behavior is currently unspecified.
+	*/
+	Results() <-chan def.Job
+}
+
+/*
+	ADDITIONALLY, we have some patterns that are merely conventions:
+
+	// The run loop, which is ran in a dedicated goroutine when Start() is called.
+	func (s Scheduler) Run() {
+*/
