@@ -1,7 +1,6 @@
 package nsinit
 
 import (
-	. "fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -117,7 +116,6 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 	flak.ProvisionInputs(f.Inputs, rootfs)
 	flak.ProvisionOutputs(f.Outputs, rootfs)
 
-	Println("Running formula...")
 	err := cmd.Run()
 	if err != nil {
 		panic(err)

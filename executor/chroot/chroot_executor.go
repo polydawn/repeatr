@@ -1,7 +1,6 @@
 package chroot
 
 import (
-	. "fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -92,7 +91,6 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	Println("Running formula...")
 	if err := cmd.Start(); err != nil {
 		if err2, ok := err.(*exec.Error); ok && err2.Err == exec.ErrNotFound {
 			panic(executor.NoSuchCommandError.Wrap(err))
