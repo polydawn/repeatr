@@ -1,12 +1,11 @@
 #!/bin/bash
 set -e
 
-# Where is this script located?
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$DIR"
-
+# Set up gopath.  Autodetect go install if necessary.
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+[ -z "$GOROOT" ] && GOROOT="$(dirname "$(which go)")/../"
+export GOROOT
 export GOPATH="$PWD"/.gopath/
-export BASEDIR="$PWD"
 
 # Right now we need nsinit on the PATH.
 PATH=$PWD/assets:$PATH
