@@ -5,9 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
 
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
 	"github.com/ugorji/go/codec"
 
 	"polydawn.net/repeatr/def"
@@ -34,27 +33,20 @@ func LoadFormulaFromFile(path string) def.Formula {
 }
 
 func RunFormulae(s *scheduler.Scheduler, e *executor.Executor, f ...def.Formula) {
-	try.Do(func() {
+	(*s).Configure(e)
+	(*s).Start()
 
-		(*s).Configure(e)
-		(*s).Start()
+	var wg sync.WaitGroup
 
-		// Queue each job as the scheduler deigns to read from the channel
+	// Queue each job as the scheduler deigns to read from the channel
+	for x, formula := range f {
+		wg.Add(1)
+
 		go func() {
-			for _, formula := range f {
-				(*s).Queue() <- formula
-			}
-		}()
+			defer wg.Done()
+			job := <- (*s).Schedule(formula)
 
-		exitCode := 0
-
-		// Get job results in order
-		// Could obviously be improved by out-of-order
-		for x := 0; x < len(f); x++ {
-			if len(f) > 1 {
-				Println("Running formula", x+1)
-			}
-			job := <-(*s).Results()
+			Println("Job", x, job.Id(), "queued")
 			result := job.Wait()
 
 			Println("Job finished with code", result.ExitCode, "Outputs:", result.Outputs)
@@ -62,15 +54,8 @@ func RunFormulae(s *scheduler.Scheduler, e *executor.Executor, f ...def.Formula)
 			if result.Error != nil {
 				Println("Problem executing job:", result.Error)
 			}
-		}
+		}()
+	}
 
-		// DISCUSS: we could consider any non-zero exit a Error, but having that distinct from execution problems makes sense.
-		// This is clearly silly and placeholder.
-		os.Exit(exitCode)
-
-	}).Catch(def.ValidationError, func(e *errors.Error) {
-		// TODO: I think this is off the goroutine now, whelp
-		Println(e.Message())
-		os.Exit(2)
-	}).Done()
+	wg.Wait()
 }

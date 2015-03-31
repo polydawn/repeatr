@@ -36,32 +36,16 @@ type Scheduler interface {
 	Configure(*executor.Executor)
 
 	/*
-		Starts consuming formulas.
-		It is expected that you call Configure(), then Start(), before queuing formulas.
+		Start consuming Formulas.
+		It is expected that you call Configure(), then Start(), before scheduling Formulas.
 	*/
 	Start()
 
 	/*
-		REVIEW: thoughts on exposing channels here?
-		We could add or substitute a Schedule(def.Formula)
-
+		Schedules a Forumla to be ran, and returns a channel that will hand you a Job.
 	*/
+	Schedule(def.Formula) <-chan def.Job
 
-	/*
-		Returns a channel that you can send Formulas to.
-		These will be asynchronously scheduled to run.
-
-		Channel semantics (blocking or buffer) behavior is currently unspecified.
-	*/
-	Queue() chan<- def.Formula
-
-	/*
-		Returns a channel that you can read Jobs from.
-		These may be sent before the relevant Formula is actually started.
-
-		Channel semantics (blocking or buffer) behavior is currently unspecified.
-	*/
-	Results() <-chan def.Job
 }
 
 /*
