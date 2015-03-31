@@ -53,13 +53,12 @@ func PreserveOutputs(outputs []def.Output, rootfs string) []def.Output {
 		Println("Persisting output", x+1, output.Type, "from", output.Location)
 		// path := filepath.Join(rootfs, output.Location)
 
-		err := <-outputdispatch.Get(output).Apply(rootfs)
-		if err != nil {
-			Println("Output", x+1, "failed:", err)
-			panic(err)
+		report := <-outputdispatch.Get(output).Apply(rootfs)
+		if report.Err != nil {
+			Println("Output", x+1, "failed:", report.Err)
+			panic(report.Err)
 		}
-
-		// TODO: doesn't get hash info, etc
+		Println("Output", x+1, "hash:", report.Output.Hash)
 	}
 
 	return outputs

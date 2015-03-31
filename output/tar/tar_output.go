@@ -30,14 +30,14 @@ func New(spec def.Output) *Output {
 	}
 }
 
-func (i Output) Apply(rootPath string) <-chan error {
-	done := make(chan error)
+func (i Output) Apply(rootPath string) <-chan output.Report {
+	done := make(chan output.Report)
 	go func() {
 		defer close(done)
 
 		err := os.MkdirAll(rootPath, 0777)
 		if err != nil {
-			panic(errors.IOError.Wrap(err))
+			done <- output.Report{errors.IOError.Wrap(err).(*errors.Error), def.Output{}}
 		}
 
 		// Assumes output URI is a folder. Output transport impls should obviously be more robust
@@ -51,10 +51,9 @@ func (i Output) Apply(rootPath string) <-chan error {
 
 		err = tar.Run()
 		if err != nil {
-			done <- err
+			done <- output.Report{output.UnknownError.Wrap(err).(*errors.Error), def.Output{}}
 			return
 		}
-
 	}()
 	return done
 }

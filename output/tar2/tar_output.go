@@ -35,8 +35,8 @@ func New(spec def.Output) output.Output {
 	}
 }
 
-func (o Output) Apply(basePath string) <-chan error {
-	done := make(chan error)
+func (o Output) Apply(basePath string) <-chan output.Report {
+	done := make(chan output.Report)
 	go func() {
 		defer close(done)
 		try.Do(func() {
@@ -44,7 +44,7 @@ func (o Output) Apply(basePath string) <-chan error {
 			// currently this impl assumes a local file uri
 			file, err := os.OpenFile(o.spec.URI, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0755)
 			if err != nil {
-				panic(errors.IOError.Wrap(err))
+				done <- output.Report{errors.IOError.Wrap(err).(*errors.Error), def.Output{}}
 			}
 			defer file.Close()
 
@@ -53,22 +53,22 @@ func (o Output) Apply(basePath string) <-chan error {
 			tarWriter := tar.NewWriter(file)
 			defer tarWriter.Close()
 			if err := walk(basePath, tarWriter, bucket, o.hasherFactory); err != nil {
-				done <- err
+				done <- output.Report{err.(*errors.Error), def.Output{}}
 				return
 			}
 
 			// hash whole tree
 			actualTreeHash, _ := fshash.Hash(bucket, o.hasherFactory)
 
-			// report the hash by mutating our spec object.
-			// heh, see the problem there?  pointers
+			// report
 			o.spec.Hash = base64.URLEncoding.EncodeToString(actualTreeHash)
+			done <- output.Report{nil, o.spec}
 		}).Catch(output.Error, func(err *errors.Error) {
-			done <- err
+			done <- output.Report{err, def.Output{}}
 		}).CatchAll(func(err error) {
 			// All errors we emit will be under `output.Error`'s type.
 			// Every time we hit this UnknownError path, we should consider it a bug until that error is categorized.
-			done <- output.UnknownError.Wrap(err)
+			done <- output.Report{output.UnknownError.Wrap(err).(*errors.Error), def.Output{}}
 		}).Done()
 	}()
 	return done
