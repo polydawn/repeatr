@@ -37,3 +37,50 @@ func CheckScanWithoutMutation(t *testing.T, kind string, newOutput OutputFactory
 		}
 	})
 }
+
+func CheckScanProducesConsistentHash(t *testing.T, kind string, newOutput OutputFactory) {
+	testutil.Convey_IfHaveRoot("Applying the output to a filesystem twice should produce the same hash", t, func() {
+		for _, fixture := range filefixture.All {
+			Convey(fmt.Sprintf("- Fixture %q", fixture.Name), testutil.WithTmpdir(func() {
+				fixture.Create("./data")
+				scanner1 := newOutput((def.Output{
+					Type: kind,
+					URI:  "./output.dump",
+				}))
+				report1 := <-scanner1.Apply("./data")
+				So(report1.Err, ShouldBeNil)
+				os.Remove("./output.dump")
+				scanner2 := newOutput((def.Output{
+					Type: kind,
+					URI:  "./output.dump",
+				}))
+				report2 := <-scanner2.Apply("./data")
+				So(report2.Err, ShouldBeNil)
+				os.Remove("./output.dump")
+				So(report2.Output.Hash, ShouldEqual, report1.Output.Hash)
+			}))
+		}
+	})
+}
+
+func CheckScanProducesDistinctHashes(t *testing.T, kind string, newOutput OutputFactory) {
+	testutil.Convey_IfHaveRoot("Applying the output to two different filesystems should produce different hashes", t, testutil.WithTmpdir(func() {
+		filefixture.Alpha.Create("./alpha")
+		filefixture.Alpha.Create("./beta")
+		scanner1 := newOutput((def.Output{
+			Type: kind,
+			URI:  "./output.dump",
+		}))
+		report1 := <-scanner1.Apply("./alpha")
+		So(report1.Err, ShouldBeNil)
+		os.Remove("./output.dump")
+		scanner2 := newOutput((def.Output{
+			Type: kind,
+			URI:  "./output.dump",
+		}))
+		report2 := <-scanner2.Apply("./beta")
+		So(report2.Err, ShouldBeNil)
+		os.Remove("./output.dump")
+		So(report2.Output.Hash, ShouldEqual, report1.Output.Hash)
+	}))
+}
