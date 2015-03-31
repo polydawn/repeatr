@@ -25,7 +25,7 @@ type Output struct {
 	hasherFactory func() hash.Hash
 }
 
-func New(spec def.Output) *Output {
+func New(spec def.Output) output.Output {
 	if spec.Type != Type {
 		panic(errors.ProgrammerError.New("This output implementation supports definitions of type %q, not %q", Type, spec.Type))
 	}
