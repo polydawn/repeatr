@@ -78,7 +78,15 @@ func (a *cborMuxAppender) Write(msg []byte) (int, error) {
 }
 
 func (a *cborMuxAppender) Close() error {
-	// TODO write a special flagged event?
+	a.m.wmu.Lock()
+	defer a.m.wmu.Unlock()
+	const magic_UTF8 = 1
+	_, enc := codec.GenHelperEncoder(a.m.codec)
+	enc.EncodeMapStart(2)
+	enc.EncodeString(magic_UTF8, "l")
+	enc.EncodeInt(int64(a.label))
+	enc.EncodeString(magic_UTF8, "x")
+	enc.EncodeInt(int64(1))
 	return nil
 }
 
@@ -89,13 +97,13 @@ func (m *CborMux) Reader(labels ...int) io.Reader {
 	// TODO offset of one because that's the array open!
 	// do something much more sane than skip it, please
 	return &cborMuxReader{
-		labels: labels,
+		labels: &intset{labels},
 		codec:  codec.NewDecoder(r, new(codec.CborHandle)),
 	}
 }
 
 type cborMuxReader struct {
-	labels []int // remove them as we hit their close
+	labels *intset // remove them as we hit their close
 	codec  *codec.Decoder
 }
 
@@ -103,15 +111,52 @@ func (r *cborMuxReader) Read(msg []byte) (int, error) {
 	var row cborMuxRow
 	err := r.codec.Decode(&row)
 	if err == io.EOF {
-		return 0, err
+		// we don't pass EOF up unless our cbor says we're closed.
+		// this could be a "temporary" EOF and appends will still be incoming.
+		// TODO: we're also effectively required to block here, because otherwise the reader may spin.
+		return 0, nil
 	} else if err != nil {
 		panic(err)
 	}
-	for _, l := range r.labels {
-		if row.Label == l {
+	switch row.Sig {
+	case 1:
+		r.labels.Remove(row.Label)
+		if r.labels.Empty() {
+			return 0, io.EOF
+		}
+	default:
+		if r.labels.Contains(row.Label) {
 			// FIXME: handle overflow...
 			return copy(msg, row.Msg), nil
+
 		}
 	}
 	return 0, nil
+}
+
+type intset struct {
+	s []int
+}
+
+func (s *intset) Contains(i int) bool {
+	for _, v := range s.s {
+		if i == v {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *intset) Remove(i int) {
+	old := s.s
+	s.s = make([]int, 0, len(old))
+	for _, v := range old {
+		if v != i {
+			s.s = append(s.s, v)
+		}
+	}
+}
+
+func (s *intset) Empty() bool {
+	return len(s.s) == 0
 }

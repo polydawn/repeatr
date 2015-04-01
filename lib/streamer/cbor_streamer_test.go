@@ -4,11 +4,17 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/ugorji/go/codec"
 	"polydawn.net/repeatr/testutil"
 )
+
+type resp struct {
+	msg []byte
+	err error
+}
 
 func TestCborMux(t *testing.T) {
 	Convey("Using a cbor file-backed streamer mux", t, testutil.WithTmpdir(func() {
@@ -60,7 +66,48 @@ func TestCborMux(t *testing.T) {
 			// TODO read it back manually with tiny buffers
 		})
 
-		// TODO still need a zillion tests around EOF and blocking behavior near that.
+		Convey("Given two in-progress streams", func() {
+			a1 := strm.Appender(1)
+			a2 := strm.Appender(2)
+			a1.Write([]byte("asdf"))
+			a2.Write([]byte("qwer"))
+
+			Convey("Readall on one label should not return yet", FailureContinues, func() {
+				r1 := strm.Reader(1)
+				r1chan := make(chan resp)
+				go func() {
+					bytes, err := ioutil.ReadAll(r1)
+					r1chan <- resp{bytes, err}
+				}()
+				select {
+				case <-r1chan:
+					So(true, ShouldBeFalse)
+				default:
+					// should be blocked and bounce out here
+					So(true, ShouldBeTrue)
+				}
+
+				Convey("Sending more bytes and closing should be readable", func() {
+					a1.Write([]byte("zxcv"))
+					select {
+					case <-r1chan:
+						So(true, ShouldBeFalse)
+					default:
+						// should be blocked and bounce out here
+						So(true, ShouldBeTrue)
+					}
+
+					a1.Close()
+					select {
+					case resp := <-r1chan:
+						So(resp.err, ShouldBeNil)
+						So(string(resp.msg), ShouldEqual, "asdfzxcv")
+					case <-time.After(1 * time.Second):
+						So(true, ShouldBeFalse)
+					}
+				})
+			})
+		})
 
 		Convey("It should parse as regular cbor", func() {
 			a1 := strm.Appender(1)
@@ -79,6 +126,8 @@ func TestCborMux(t *testing.T) {
 			So(reheated, ShouldResemble, []cborMuxRow{
 				{Label: 1, Msg: []byte("asdf")},
 				{Label: 2, Msg: []byte("qwer")},
+				{Label: 1, Sig: 1},
+				{Label: 2, Sig: 1},
 			})
 		})
 	}))
