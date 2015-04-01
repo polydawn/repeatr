@@ -20,14 +20,44 @@ func TestCborMux(t *testing.T) {
 			a1.Write([]byte("qwer"))
 			a1.Close()
 
-			r1 := strm.Reader(1)
-			bytes, err := ioutil.ReadAll(r1)
-			So(err, ShouldBeNil)
-			So(string(bytes), ShouldEqual, "asdfqwer")
+			Convey("Readall should get the whole stream", func() {
+				r1 := strm.Reader(1)
+				bytes, err := ioutil.ReadAll(r1)
+				So(err, ShouldBeNil)
+				So(string(bytes), ShouldEqual, "asdfqwer")
+
+				Convey("Readall *again* should get the whole stream, from the beginning", func() {
+					r1 := strm.Reader(1)
+					bytes, err := ioutil.ReadAll(r1)
+					So(err, ShouldBeNil)
+					So(string(bytes), ShouldEqual, "asdfqwer")
+				})
+			})
 		})
 
 		Convey("Given two complete streams", func() {
+			a1 := strm.Appender(1)
+			a2 := strm.Appender(2)
+			a1.Write([]byte("asdf"))
+			a2.Write([]byte("qwer"))
+			a1.Write([]byte("asdf"))
+			a1.Close()
+			a2.Write([]byte("zxcv"))
+			a2.Close()
 
+			Convey("Readall on one label should get the whole stream for that label", func() {
+				r1 := strm.Reader(1)
+				bytes, err := ioutil.ReadAll(r1)
+				So(err, ShouldBeNil)
+				So(string(bytes), ShouldEqual, "asdfasdf")
+			})
+			Convey("Readall on both labels should get the whole stream", func() {
+				r12 := strm.Reader(1, 2)
+				bytes, err := ioutil.ReadAll(r12)
+				So(err, ShouldBeNil)
+				So(string(bytes), ShouldEqual, "asdfqwerasdfzxcv")
+			})
+			// TODO read it back manually with tiny buffers
 		})
 
 		// TODO still need a zillion tests around EOF and blocking behavior near that.
