@@ -45,7 +45,14 @@ func TestCborMux(t *testing.T) {
 			dec := codec.NewDecoder(&debugReader{file}, new(codec.CborHandle))
 			reheated := make([]interface{}, 0)
 			dec.MustDecode(&reheated)
-			Printf(":::: decoded as full slice: %#v\n", reheated)
+			SkipSo(reheated, ShouldResemble, []interface{}{
+				map[interface{}]interface{}{
+					byte(1): []byte("asdf"),
+				},
+				map[interface{}]interface{}{
+					byte(2): []byte("qwer"),
+				},
+			})
 		})
 	}))
 }
