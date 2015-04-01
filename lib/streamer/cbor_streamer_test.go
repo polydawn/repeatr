@@ -14,10 +14,11 @@ func TestCborMux(t *testing.T) {
 	Convey("Using a cbor file-backed streamer mux", t, testutil.WithTmpdir(func() {
 		strm := CborFileMux("./logfile")
 
-		Convey("It should be transparent with a single stream", func() {
+		Convey("Given a single complete stream", func() {
 			a1 := strm.Appender(1)
 			a1.Write([]byte("asdf"))
 			a1.Write([]byte("qwer"))
+			a1.Close()
 
 			r1 := strm.Reader(1)
 			bytes, err := ioutil.ReadAll(r1)
@@ -25,7 +26,7 @@ func TestCborMux(t *testing.T) {
 			So(string(bytes), ShouldEqual, "asdfqwer")
 		})
 
-		Convey("It should be transparent with two streams", func() {
+		Convey("Given two complete streams", func() {
 
 		})
 
@@ -42,16 +43,12 @@ func TestCborMux(t *testing.T) {
 
 			file, err := os.OpenFile("./logfile", os.O_RDONLY, 0)
 			So(err, ShouldBeNil)
-			dec := codec.NewDecoder(&debugReader{file}, new(codec.CborHandle))
-			reheated := make([]interface{}, 0)
+			dec := codec.NewDecoder(file, new(codec.CborHandle))
+			reheated := make([]cborMuxRow, 0)
 			dec.MustDecode(&reheated)
-			SkipSo(reheated, ShouldResemble, []interface{}{
-				map[interface{}]interface{}{
-					byte(1): []byte("asdf"),
-				},
-				map[interface{}]interface{}{
-					byte(2): []byte("qwer"),
-				},
+			So(reheated, ShouldResemble, []cborMuxRow{
+				{Label: 1, Msg: []byte("asdf")},
+				{Label: 2, Msg: []byte("qwer")},
 			})
 		})
 	}))

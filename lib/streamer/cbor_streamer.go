@@ -1,7 +1,6 @@
 package streamer
 
 import (
-	"fmt"
 	"io"
 	"math"
 	"os"
@@ -20,6 +19,12 @@ type CborMux struct {
 	wmu   sync.Mutex
 }
 
+type cborMuxRow struct {
+	Label int    `json:"l"`
+	Msg   []byte `json:"m,omitempty"`
+	Sig   int    `json:"x,omitempty"` // 1->closed
+}
+
 func CborFileMux(filePath string) Mux {
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR|os.O_EXCL, 0755)
 	if err != nil {
@@ -28,21 +33,26 @@ func CborFileMux(filePath string) Mux {
 	file.Write([]byte{codec.CborStreamArray})
 	return &CborMux{
 		file:  file,
-		codec: codec.NewEncoder(&debugWriter{file}, new(codec.CborHandle)),
+		codec: codec.NewEncoder(file, new(codec.CborHandle)),
 	}
-	// consider using runtime.SetFinalizer to close?  currently unhandled.
+	// consider using runtime.`SetFinalizer to close?  currently unhandled.
 }
 
 func (m *CborMux) write(label int, msg []byte) {
 	m.wmu.Lock()
 	defer m.wmu.Unlock()
 	const magic_RAW = 0
+	const magic_UTF8 = 1
+	//	m.codec.MustEncode(cborMuxRow{
+	//		Label: label,
+	//		Msg:   msg,
+	//	})
 	_, enc := codec.GenHelperEncoder(m.codec)
-	enc.EncodeMapStart(1)
+	enc.EncodeMapStart(2)
+	enc.EncodeString(magic_UTF8, "l")
 	enc.EncodeInt(int64(label))
+	enc.EncodeString(magic_UTF8, "m")
 	enc.EncodeStringBytes(magic_RAW, msg)
-	// REVIEW: we might need an extra flag for "close"
-	// could sneak it in as a different type here?  might be rude on parsers.
 }
 
 func (m *CborMux) Close() {
@@ -76,33 +86,12 @@ func (m *CborMux) Reader(labels ...int) io.Reader {
 	// asking for a reader for a label that was never used will never
 	// hit a close flag, so... don't do that?
 	r := io.NewSectionReader(m.file, 1, math.MaxInt64/2)
-	r2 := &debugReader{r}
 	// TODO offset of one because that's the array open!
 	// do something much more sane than skip it, please
 	return &cborMuxReader{
 		labels: labels,
-		codec:  codec.NewDecoder(r2, new(codec.CborHandle)),
+		codec:  codec.NewDecoder(r, new(codec.CborHandle)),
 	}
-}
-
-type debugReader struct {
-	r io.Reader
-}
-
-func (r *debugReader) Read(b []byte) (int, error) {
-	i, e := r.r.Read(b)
-	fmt.Printf(":: dbg read: %#v    %#v    %#v\n", i, b, e)
-	return i, e
-}
-
-type debugWriter struct {
-	w io.Writer
-}
-
-func (w *debugWriter) Write(b []byte) (int, error) {
-	i, e := w.w.Write(b)
-	fmt.Printf(":: dbg write: %#v    %#v    %#v\n", i, b, e)
-	return i, e
 }
 
 type cborMuxReader struct {
@@ -111,25 +100,17 @@ type cborMuxReader struct {
 }
 
 func (r *cborMuxReader) Read(msg []byte) (int, error) {
-	var row map[int]interface{}
+	var row cborMuxRow
 	err := r.codec.Decode(&row)
 	if err == io.EOF {
 		return 0, err
+	} else if err != nil {
+		panic(err)
 	}
-	fmt.Printf("::: read row: %#v\n", row)
-	// read the map bits
-	// read the key
-	// switch on the value type
-	//	switch {
-	//	case dec.IsContainerType(valueTypeInt):
-	//	case dec.IsContainerType(codec.valueTypeBytes)
-	//	}
-	for k, v := range row {
-		// this could be wildly more efficient with more handcoded parsing
-		for _, l := range r.labels {
-			if k == l {
-				return copy(msg, v.([]byte)), nil
-			}
+	for _, l := range r.labels {
+		if row.Label == l {
+			// FIXME: handle overflow...
+			return copy(msg, row.Msg), nil
 		}
 	}
 	return 0, nil
