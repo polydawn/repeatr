@@ -49,14 +49,14 @@ func CheckScanProducesConsistentHash(t *testing.T, kind string, newOutput Output
 				}))
 				report1 := <-scanner1.Apply("./data")
 				So(report1.Err, ShouldBeNil)
-				os.Remove("./output.dump")
+				os.RemoveAll("./output.dump")
 				scanner2 := newOutput((def.Output{
 					Type: kind,
 					URI:  "./output.dump",
 				}))
 				report2 := <-scanner2.Apply("./data")
 				So(report2.Err, ShouldBeNil)
-				os.Remove("./output.dump")
+				os.RemoveAll("./output.dump")
 				So(report2.Output.Hash, ShouldEqual, report1.Output.Hash)
 			}))
 		}
@@ -73,14 +73,14 @@ func CheckScanProducesDistinctHashes(t *testing.T, kind string, newOutput Output
 		}))
 		report1 := <-scanner1.Apply("./alpha")
 		So(report1.Err, ShouldBeNil)
-		os.Remove("./output.dump")
+		os.RemoveAll("./output.dump")
 		scanner2 := newOutput((def.Output{
 			Type: kind,
 			URI:  "./output.dump",
 		}))
 		report2 := <-scanner2.Apply("./beta")
 		So(report2.Err, ShouldBeNil)
-		os.Remove("./output.dump")
+		os.RemoveAll("./output.dump")
 		So(report2.Output.Hash, ShouldEqual, report1.Output.Hash)
 	}))
 }
