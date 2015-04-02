@@ -38,6 +38,7 @@ func (i Output) Apply(rootPath string) <-chan output.Report {
 		err := os.MkdirAll(rootPath, 0777)
 		if err != nil {
 			done <- output.Report{errors.IOError.Wrap(err).(*errors.Error), def.Output{}}
+			return
 		}
 
 		// Assumes output URI is a folder. Output transport impls should obviously be more robust

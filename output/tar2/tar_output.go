@@ -45,6 +45,7 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 			file, err := os.OpenFile(o.spec.URI, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0755)
 			if err != nil {
 				done <- output.Report{errors.IOError.Wrap(err).(*errors.Error), def.Output{}}
+				return
 			}
 			defer file.Close()
 
