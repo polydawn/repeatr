@@ -11,7 +11,7 @@ mkdir -p assets
 
 # Assets really ought to be in a DFS?
 # For now, canonical URL and mandated URL pattern for maximum portability.
-mirrorURL="http://storage.googleapis.com/scitran-dist/assets"
+mirrorURL="http://storage.googleapis.com/scitran-dist/assets/repeatr"
 
 # Takes a file and a sha384
 resolveAsset() {
@@ -24,7 +24,7 @@ resolveAsset() {
 		wget $mirrorURL/$hash-$1 -O $file || rm $file
 
 		# Confirm checksum
-		sha384sum $file | grep "$hash " || ( echo "ERROR DOWNLOADING $file - HASH MISMATCH"; rm $file; exit 1 )
+		sha384sum $file | grep "$hash " || ( echo "ERROR DOWNLOADING $file - HASH MISMATCH"; rm -f $file; exit 1 )
 	fi
 }
 
