@@ -16,3 +16,6 @@
 [submodule ".gopath/src/github.com/smartystreets/assertions"]
 	path = .gopath/src/github.com/smartystreets/assertions
 	url = http://github.com/smartystreets/assertions
+[submodule ".gopath/src/github.com/polydawn/gosh"]
+	path = .gopath/src/github.com/polydawn/gosh
+	url = https://github.com/polydawn/gosh.git
