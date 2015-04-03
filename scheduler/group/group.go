@@ -1,6 +1,8 @@
-package linear
+package group
 
 import (
+	"runtime"
+
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/scheduler"
@@ -16,17 +18,21 @@ type hold struct {
 }
 
 type Scheduler struct {
-	executor *executor.Executor
-	queue    chan *hold
+	groupSize int
+	executor  *executor.Executor
+	queue     chan *hold
 }
 
 func (s *Scheduler) Configure(e *executor.Executor) {
+	s.groupSize = runtime.NumCPU()
 	s.executor = e
 	s.queue = make(chan *hold)
 }
 
 func (s *Scheduler) Start() {
-	go s.Run()
+	for w := 1; w <= s.groupSize; w++ {
+		go s.Run()
+	}
 }
 
 func (s *Scheduler) Schedule(f def.Formula) <-chan def.Job {

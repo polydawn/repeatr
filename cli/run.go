@@ -32,9 +32,9 @@ func LoadFormulaFromFile(path string) def.Formula {
 	return formula
 }
 
-func RunFormulae(s *scheduler.Scheduler, e *executor.Executor, f ...def.Formula) {
-	(*s).Configure(e)
-	(*s).Start()
+func RunFormulae(s scheduler.Scheduler, e *executor.Executor, f ...def.Formula) {
+	s.Configure(e)
+	s.Start()
 
 	var wg sync.WaitGroup
 
@@ -44,7 +44,7 @@ func RunFormulae(s *scheduler.Scheduler, e *executor.Executor, f ...def.Formula)
 
 		go func() {
 			defer wg.Done()
-			job := <- (*s).Schedule(formula)
+			job := <-s.Schedule(formula)
 
 			Println("Job", x, job.Id(), "queued")
 			result := job.Wait()

@@ -45,7 +45,6 @@ type Scheduler interface {
 		Schedules a Forumla to be ran, and returns a channel that will hand you a Job.
 	*/
 	Schedule(def.Formula) <-chan def.Job
-
 }
 
 /*
