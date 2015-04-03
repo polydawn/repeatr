@@ -27,10 +27,10 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-func (e *Executor) Start(f def.Formula) def.Job {
+func (e *Executor) Start(f def.Formula, id def.JobID) def.Job {
 	// Prepare the forumla for execution on this host
 	def.ValidateAll(&f)
-	job := basicjob.New()
+	job := basicjob.New(id)
 
 	go func() {
 		// Run the formula in a temporary directory

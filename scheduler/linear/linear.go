@@ -3,6 +3,7 @@ package linear
 import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
+	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/scheduler"
 )
 
@@ -46,7 +47,8 @@ func (s *Scheduler) Schedule(f def.Formula) <-chan def.Job {
 // Run jobs one at a time
 func (s *Scheduler) Run() {
 	for h := range s.queue {
-		job := (*s.executor).Start(h.forumla)
+		id := def.JobID(guid.New())
+		job := (*s.executor).Start(h.forumla, id)
 		h.response <- job
 		job.Wait()
 	}

@@ -27,7 +27,7 @@ type Executor interface {
 		It is assumed that any job-specific filesystem state will be cleaned up by the executor.
 
 	*/
-	Start(def.Formula) def.Job
+	Start(def.Formula, def.JobID) def.Job
 
 	/*
 		ADDITIONALLY, we have some patterns that are merely conventions:

@@ -19,11 +19,6 @@ import (
 
 	REVIEW: our interfaces do not support returning a guid from scheduling, as executors create their guid when starting.
 	It would be cleaner to be able to refer to a scheduled Job without waiting arbitrarily long for the scheduler to start the job.
-
-	PROPOSAL: executors lose control of guid generation, are are instead handed a guid.
-
-		Currently: Start(def.Formula)            def.Job
-		Proposed:  Start(def.Formula, def.JobID) def.Job
 */
 type Scheduler interface {
 
