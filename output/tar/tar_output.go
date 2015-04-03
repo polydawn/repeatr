@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/spacemonkeygo/errors"
-
+	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/output"
 )
@@ -30,31 +30,41 @@ func New(spec def.Output) *Output {
 	}
 }
 
-func (i Output) Apply(rootPath string) <-chan output.Report {
+func (o Output) Apply(rootPath string) <-chan output.Report {
 	done := make(chan output.Report)
 	go func() {
 		defer close(done)
+		try.Do(func() {
+			err := os.MkdirAll(rootPath, 0777)
+			if err != nil {
+				panic(output.TargetFilesystemUnavailableIOError(err))
+			}
 
-		err := os.MkdirAll(rootPath, 0777)
-		if err != nil {
-			done <- output.Report{errors.IOError.Wrap(err).(*errors.Error), def.Output{}}
-			return
-		}
+			// Assumes output URI is a folder. Output transport impls should obviously be more robust
+			path := filepath.Join(rootPath, o.spec.Location)
+			tar := exec.Command("tar", "-cf", o.spec.URI, "--xform", "s,"+strings.TrimLeft(rootPath, "/")+",,", path)
 
-		// Assumes output URI is a folder. Output transport impls should obviously be more robust
-		path := filepath.Join(rootPath, i.spec.Location)
-		tar := exec.Command("tar", "-cf", i.spec.URI, "--xform", "s,"+strings.TrimLeft(rootPath, "/")+",,", path)
+			//  path
+			tar.Stdin = os.Stdin
+			tar.Stdout = os.Stdout
+			tar.Stderr = os.Stderr
 
-		//  path
-		tar.Stdin = os.Stdin
-		tar.Stdout = os.Stdout
-		tar.Stderr = os.Stderr
+			// exec
+			err = tar.Run()
+			if err != nil {
+				panic(err)
+			}
 
-		err = tar.Run()
-		if err != nil {
-			done <- output.Report{output.UnknownError.Wrap(err).(*errors.Error), def.Output{}}
-			return
-		}
+			// report
+			// note: indeed, we never set the hash field.  this is *not* a compliant implementation of an output.
+			done <- output.Report{nil, o.spec}
+		}).Catch(output.Error, func(err *errors.Error) {
+			done <- output.Report{err, o.spec}
+		}).CatchAll(func(err error) {
+			// All errors we emit will be under `output.Error`'s type.
+			// Every time we hit this UnknownError path, we should consider it a bug until that error is categorized.
+			done <- output.Report{output.UnknownError.Wrap(err).(*errors.Error), o.spec}
+		}).Done()
 	}()
 	return done
 }

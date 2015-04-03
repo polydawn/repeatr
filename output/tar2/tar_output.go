@@ -44,8 +44,7 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 			// currently this impl assumes a local file uri
 			file, err := os.OpenFile(o.spec.URI, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0755)
 			if err != nil {
-				done <- output.Report{errors.IOError.Wrap(err).(*errors.Error), def.Output{}}
-				return
+				panic(output.TargetFilesystemUnavailableIOError(err))
 			}
 			defer file.Close()
 
@@ -54,8 +53,7 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 			tarWriter := tar.NewWriter(file)
 			defer tarWriter.Close()
 			if err := walk(basePath, tarWriter, bucket, o.hasherFactory); err != nil {
-				done <- output.Report{err.(*errors.Error), def.Output{}}
-				return
+				panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
 			}
 
 			// hash whole tree
@@ -65,11 +63,11 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 			o.spec.Hash = base64.URLEncoding.EncodeToString(actualTreeHash)
 			done <- output.Report{nil, o.spec}
 		}).Catch(output.Error, func(err *errors.Error) {
-			done <- output.Report{err, def.Output{}}
+			done <- output.Report{err, o.spec}
 		}).CatchAll(func(err error) {
 			// All errors we emit will be under `output.Error`'s type.
 			// Every time we hit this UnknownError path, we should consider it a bug until that error is categorized.
-			done <- output.Report{output.UnknownError.Wrap(err).(*errors.Error), def.Output{}}
+			done <- output.Report{output.UnknownError.Wrap(err).(*errors.Error), o.spec}
 		}).Done()
 	}()
 	return done
