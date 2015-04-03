@@ -33,7 +33,7 @@ func LoadFormulaFromFile(path string) def.Formula {
 }
 
 func RunFormulae(s scheduler.Scheduler, e executor.Executor, f ...def.Formula) {
-	s.Configure(e)
+	s.Configure(e, len(f)) // we know exactly how many forumlae will be enqueued
 	s.Start()
 
 	var wg sync.WaitGroup

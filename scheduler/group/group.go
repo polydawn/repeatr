@@ -25,10 +25,10 @@ type Scheduler struct {
 	queue     chan *hold
 }
 
-func (s *Scheduler) Configure(e executor.Executor) {
+func (s *Scheduler) Configure(e executor.Executor, queueSize int) {
 	s.groupSize = runtime.NumCPU()
 	s.executor = e
-	s.queue = make(chan *hold)
+	s.queue = make(chan *hold, queueSize)
 }
 
 func (s *Scheduler) Start() {
@@ -46,9 +46,12 @@ func (s *Scheduler) Schedule(f def.Formula) (def.JobID, <-chan def.Job) {
 		response: make(chan def.Job),
 	}
 
-	go func() {
-		s.queue <- h
-	}()
+	// Non-blocking send, will panic if scheduler queue is full
+	select {
+	case s.queue <- h:
+	default:
+		panic(scheduler.QueueFullError)
+	}
 
 	return id, h.response
 }
