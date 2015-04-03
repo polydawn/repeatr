@@ -12,6 +12,7 @@ var _ scheduler.Scheduler = &Scheduler{}
 
 // Dumb struct to send job references back
 type hold struct {
+	id       def.JobID
 	forumla  def.Formula
 	response chan def.Job
 }
@@ -30,9 +31,11 @@ func (s *Scheduler) Start() {
 	go s.Run()
 }
 
-func (s *Scheduler) Schedule(f def.Formula) <-chan def.Job {
+func (s *Scheduler) Schedule(f def.Formula) (def.JobID, <-chan def.Job) {
+	id := def.JobID(guid.New())
 
 	h := &hold{
+		id:       id,
 		forumla:  f,
 		response: make(chan def.Job),
 	}
@@ -41,14 +44,14 @@ func (s *Scheduler) Schedule(f def.Formula) <-chan def.Job {
 		s.queue <- h
 	}()
 
-	return h.response
+	return id, h.response
 }
 
 // Run jobs one at a time
 func (s *Scheduler) Run() {
 	for h := range s.queue {
-		id := def.JobID(guid.New())
-		job := (*s.executor).Start(h.forumla, id)
+
+		job := (*s.executor).Start(h.forumla, h.id)
 		h.response <- job
 		job.Wait()
 	}

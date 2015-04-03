@@ -42,17 +42,22 @@ func RunFormulae(s scheduler.Scheduler, e *executor.Executor, f ...def.Formula) 
 	for x, formula := range f {
 		wg.Add(1)
 
+		// gofunc + range = race condition, whoops!
+		n := x + 1
+
 		go func() {
 			defer wg.Done()
-			job := <-s.Schedule(formula)
+			id, jobChan := s.Schedule(formula)
 
-			Println("Job", x, job.Id(), "queued")
+			Println("Job", n, id, "queued")
+			job := <-jobChan
+			Println("Job", n, id, "starting")
 			result := job.Wait()
 
-			Println("Job finished with code", result.ExitCode, "Outputs:", result.Outputs)
-
 			if result.Error != nil {
-				Println("Problem executing job:", result.Error)
+				Println("Job", n, id, "had an executor error:", result.Error)
+			} else {
+				Println("Job", n, id, "finished with code", result.ExitCode, "and outputs", result.Outputs)
 			}
 		}()
 	}

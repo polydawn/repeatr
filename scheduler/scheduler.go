@@ -16,9 +16,6 @@ import (
 
 	Schedulers are presumed to know environmental context that a Formula provider may not.
 	Any problems with a transport running on a remote host, for example, is the scheduler's problem.
-
-	REVIEW: our interfaces do not support returning a guid from scheduling, as executors create their guid when starting.
-	It would be cleaner to be able to refer to a scheduled Job without waiting arbitrarily long for the scheduler to start the job.
 */
 type Scheduler interface {
 
@@ -37,9 +34,9 @@ type Scheduler interface {
 	Start()
 
 	/*
-		Schedules a Forumla to be ran, and returns a channel that will hand you a Job.
+		Schedules a Forumla to run; returns the job ID and a channel that will hand you a Job instance.
 	*/
-	Schedule(def.Formula) <-chan def.Job
+	Schedule(def.Formula) (def.JobID, <-chan def.Job)
 }
 
 /*
