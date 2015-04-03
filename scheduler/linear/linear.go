@@ -18,11 +18,11 @@ type hold struct {
 }
 
 type Scheduler struct {
-	executor *executor.Executor
+	executor executor.Executor
 	queue    chan *hold
 }
 
-func (s *Scheduler) Configure(e *executor.Executor) {
+func (s *Scheduler) Configure(e executor.Executor) {
 	s.executor = e
 	s.queue = make(chan *hold)
 }
@@ -51,7 +51,7 @@ func (s *Scheduler) Schedule(f def.Formula) (def.JobID, <-chan def.Job) {
 func (s *Scheduler) Run() {
 	for h := range s.queue {
 
-		job := (*s.executor).Start(h.forumla, h.id)
+		job := s.executor.Start(h.forumla, h.id)
 		h.response <- job
 		job.Wait()
 	}

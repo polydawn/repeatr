@@ -32,7 +32,7 @@ func LoadFormulaFromFile(path string) def.Formula {
 	return formula
 }
 
-func RunFormulae(s scheduler.Scheduler, e *executor.Executor, f ...def.Formula) {
+func RunFormulae(s scheduler.Scheduler, e executor.Executor, f ...def.Formula) {
 	s.Configure(e)
 	s.Start()
 

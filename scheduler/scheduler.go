@@ -25,7 +25,7 @@ type Scheduler interface {
 		It is guaranteed that calling Use() before scheduling work will behave as expected.
 		Calling Use() after scheduling work is left for the Scheduler to decide - it might change, panic, ignore, etc.
 	*/
-	Configure(*executor.Executor)
+	Configure(executor.Executor)
 
 	/*
 		Start consuming Formulas.

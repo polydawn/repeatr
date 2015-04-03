@@ -15,7 +15,7 @@ import (
 // Should attempt to reflect-find, trying main package name first.
 // Will make simpler to use extended transports, etc.
 
-func Get(desire string) *executor.Executor {
+func Get(desire string) executor.Executor {
 	var executor executor.Executor
 
 	switch desire {
@@ -32,5 +32,5 @@ func Get(desire string) *executor.Executor {
 	// Set the base path to operate from
 	executor.Configure(filepath.Join(os.TempDir(), "repeatr", "executor", desire))
 
-	return &executor
+	return executor
 }
