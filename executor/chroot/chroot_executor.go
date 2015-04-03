@@ -1,7 +1,6 @@
 package chroot
 
 import (
-	. "fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,11 +27,11 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-func (e *Executor) Start(f def.Formula) def.Job {
+func (e *Executor) Start(f def.Formula, id def.JobID) def.Job {
 
 	// Prepare the forumla for execution on this host
 	def.ValidateAll(&f)
-	job := basicjob.New()
+	job := basicjob.New(id)
 
 	go func() {
 		// Run the formula in a temporary directory
@@ -92,7 +91,6 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	Println("Running formula...")
 	if err := cmd.Start(); err != nil {
 		if err2, ok := err.(*exec.Error); ok && err2.Err == exec.ErrNotFound {
 			panic(executor.NoSuchCommandError.Wrap(err))

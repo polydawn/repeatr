@@ -4,7 +4,16 @@ import (
 	"polydawn.net/repeatr/def"
 )
 
+/*
+	In general, executors are assumed to be running on the host that will run the Forumla.
+
+	Coordinating remote hosts is generally the responsibiltiy of a scheduler.
+*/
 type Executor interface {
+
+	/*
+		Prepare the Executor with information it needs to run.
+	*/
 	Configure(workspacePath string)
 
 	/*
@@ -18,7 +27,7 @@ type Executor interface {
 		It is assumed that any job-specific filesystem state will be cleaned up by the executor.
 
 	*/
-	Start(def.Formula) def.Job
+	Start(def.Formula, def.JobID) def.Job
 
 	/*
 		ADDITIONALLY, we have some patterns that are merely conventions:

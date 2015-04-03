@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/lib/guid"
 )
 
 type BasicJob struct {
@@ -32,13 +31,9 @@ func (j *BasicJob) Wait() def.JobResult {
 	return j.Result
 }
 
-func New() *BasicJob {
-
-	gid := def.JobID(guid.New())
-
+func New(id def.JobID) *BasicJob {
 	return &BasicJob{
-		ID:       gid,
+		ID:       id,
 		WaitChan: make(chan struct{}),
 	}
-
 }

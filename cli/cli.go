@@ -1,18 +1,11 @@
 package cli
 
 import (
-	. "fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-
 	"github.com/codegangsta/cli"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
-	"github.com/ugorji/go/codec"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/dispatch"
+	"polydawn.net/repeatr/scheduler/dispatch"
 )
 
 var App *cli.App
@@ -23,6 +16,8 @@ func init() {
 	App.Name = "repeatr"
 	App.Usage = "Run it. Run it again."
 	App.Version = "0.0.1"
+
+	bat := cli.StringSlice([]string{})
 
 	App.Commands = []cli.Command{
 		{
@@ -36,9 +31,14 @@ func init() {
 					Usage: "Which executor to use",
 				},
 				cli.StringFlag{
-					Name:  "input, i",
-					Value: "formula.json",
+					Name:  "scheduler, s",
+					Value: "linear",
 					Usage: "Location of input formula (json format)",
+				},
+				cli.StringSliceFlag{
+					Name:  "input, i",
+					Value: &bat,
+					Usage: "Location of input formulae (json format)",
 				},
 			},
 		},
@@ -46,41 +46,14 @@ func init() {
 }
 
 func Run(c *cli.Context) {
+	executor := executordispatch.Get(c.String("executor"))
+	scheduler := schedulerdispatch.Get(c.String("scheduler"))
+	paths := c.StringSlice("input")
 
-	try.Do(func() {
-		executor := *executordispatch.Get(c.String("executor"))
-		filename, _ := filepath.Abs(c.String("input"))
+	var formulae []def.Formula
+	for _, path := range paths {
+		formulae = append(formulae, LoadFormulaFromFile(path))
+	}
 
-		content, err := ioutil.ReadFile(filename)
-		if err != nil {
-			Println(err)
-			Println("Could not read file", filename)
-			os.Exit(1)
-		}
-
-		dec := codec.NewDecoderBytes(content, &codec.JsonHandle{})
-
-		formula := def.Formula{}
-		dec.MustDecode(&formula)
-
-		job := executor.Start(formula)
-		Println("Job starting...")
-
-		result := job.Wait()
-		Println("Job finished with code", result.ExitCode)
-		Println("Outputs:", result.Outputs)
-
-		if result.Error != nil {
-			Println("Problem executing job:", result.Error)
-			os.Exit(3)
-		}
-
-		// DISCUSS: we could consider any non-zero exit a Error, but having that distinct from execution problems makes sense.
-		// This is clearly silly and placeholder.
-		os.Exit(result.ExitCode)
-
-	}).Catch(def.ValidationError, func(e *errors.Error) {
-		Println(e.Message())
-		os.Exit(2)
-	}).Done()
+	RunFormulae(scheduler, executor, formulae...)
 }

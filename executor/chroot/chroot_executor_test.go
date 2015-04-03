@@ -10,6 +10,7 @@ import (
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/input/fixtures"
+	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/testutil"
 )
 
@@ -37,7 +38,7 @@ func Test(t *testing.T) {
 			So(os.Mkdir(e.workspacePath, 0755), ShouldBeNil)
 
 			Convey("We should get an InputError", func() {
-				result := e.Start(formula).Wait()
+				result := e.Start(formula, def.JobID(guid.New())).Wait()
 				So(result.Error, testutil.ShouldBeErrorClass, input.Error)
 			})
 		}),
@@ -67,7 +68,7 @@ func Test(t *testing.T) {
 					Entrypoint: []string{"echo", "echococo"},
 				}
 
-				job := e.Start(formula)
+				job := e.Start(formula, def.JobID(guid.New()))
 				So(job, ShouldNotBeNil)
 				So(job.Wait().ExitCode, ShouldEqual, 0) // TODO: this waits... the test should still pass if the reader happens first
 			})
@@ -77,7 +78,7 @@ func Test(t *testing.T) {
 					Entrypoint: []string{"sh", "-c", "exit 14"},
 				}
 
-				job := e.Start(formula)
+				job := e.Start(formula, def.JobID(guid.New()))
 				So(job, ShouldNotBeNil)
 				So(job.Wait().ExitCode, ShouldEqual, 14)
 			})
@@ -87,7 +88,7 @@ func Test(t *testing.T) {
 					Entrypoint: []string{"not a command"},
 				}
 
-				result := e.Start(formula).Wait()
+				result := e.Start(formula, def.JobID(guid.New())).Wait()
 				So(result.Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
 			})
 
@@ -100,7 +101,7 @@ func Test(t *testing.T) {
 						Entrypoint: []string{"ls", "/data/test"},
 					}
 
-					job := e.Start(formula)
+					job := e.Start(formula, def.JobID(guid.New()))
 					So(job, ShouldNotBeNil)
 					So(job.Wait().ExitCode, ShouldEqual, 0)
 				})
