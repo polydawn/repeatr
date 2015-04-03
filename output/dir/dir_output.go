@@ -1,62 +1,53 @@
-package tar
+package dir
 
 import (
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
+	"crypto/sha512"
+	"encoding/base64"
+	"hash"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/fshash"
 	"polydawn.net/repeatr/output"
 )
 
-const Type = "tar"
+const Type = "dir"
 
-// interface assertion
-var _ output.Output = &Output{}
+var _ output.Output = &Output{} // interface assertion
 
 type Output struct {
-	spec def.Output
+	spec          def.Output
+	hasherFactory func() hash.Hash
 }
 
-func New(spec def.Output) *Output {
+func New(spec def.Output) output.Output {
 	if spec.Type != Type {
 		panic(errors.ProgrammerError.New("This output implementation supports definitions of type %q, not %q", Type, spec.Type))
 	}
 	return &Output{
-		spec: spec,
+		spec:          spec,
+		hasherFactory: sha512.New384,
 	}
 }
 
-func (o Output) Apply(rootPath string) <-chan output.Report {
+func (o Output) Apply(basePath string) <-chan output.Report {
 	done := make(chan output.Report)
 	go func() {
 		defer close(done)
 		try.Do(func() {
-			err := os.MkdirAll(rootPath, 0777)
+			// walk filesystem, copying and accumulating data for integrity check
+			bucket := &fshash.MemoryBucket{}
+			err := fshash.FillBucket(basePath, o.spec.URI, bucket, o.hasherFactory)
 			if err != nil {
-				panic(output.TargetFilesystemUnavailableIOError(err))
+				panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
 			}
 
-			// Assumes output URI is a folder. Output transport impls should obviously be more robust
-			path := filepath.Join(rootPath, o.spec.Location)
-			tar := exec.Command("tar", "-cf", o.spec.URI, "--xform", "s,"+strings.TrimLeft(rootPath, "/")+",,", path)
-
-			//  path
-			tar.Stdin = os.Stdin
-			tar.Stdout = os.Stdout
-			tar.Stderr = os.Stderr
-
-			// exec
-			err = tar.Run()
-			if err != nil {
-				panic(err)
-			}
+			// hash whole tree
+			actualTreeHash, _ := fshash.Hash(bucket, o.hasherFactory)
 
 			// report
-			// note: indeed, we never set the hash field.  this is *not* a compliant implementation of an output.
+			o.spec.Hash = base64.URLEncoding.EncodeToString(actualTreeHash)
 			done <- output.Report{nil, o.spec}
 		}).Catch(output.Error, func(err *errors.Error) {
 			done <- output.Report{err, o.spec}
