@@ -44,10 +44,10 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, f ...def.Formula) {
 
 		// gofunc + range = race condition, whoops!
 		n := x + 1
+		id, jobChan := s.Schedule(formula)
 
 		go func() {
 			defer wg.Done()
-			id, jobChan := s.Schedule(formula)
 
 			Println("Job", n, id, "queued")
 			job := <-jobChan
