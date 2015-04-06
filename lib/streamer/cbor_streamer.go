@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
@@ -108,7 +109,31 @@ type cborMuxReader struct {
 	buf    []byte // any remaining bytes from the last incomplete read
 }
 
-func (r *cborMuxReader) Read(msg []byte) (int, error) {
+func (r *cborMuxReader) Read(msg []byte) (n int, err error) {
+	n, err = r.read(msg)
+	for n == 0 && err == nil {
+		// we're effectively required to block here, because otherwise the reader may spin;
+		// this is not a clueful wait; but it does prevent pegging a core.
+		// quite dumb in this case is also quite fool-proof.
+		time.Sleep(1 * time.Millisecond)
+		n, err = r.read(msg)
+	}
+	return
+}
+
+/*
+	Internal read method; may return `(0,nil)` in a number of occations,
+	all of which the public `Read` method will translate into a wait+retry
+	so that higher level consumers of the Reader interface don't get stuck
+	spin-looping.
+
+	Specifically, these situations cause empty reads:
+	  - hitting EOF on the backing file, but still having labelled streams
+	    that haven't been closed (i.e. we expect the file to still be growing)
+	  - absorbing a message that isn't selected by this reader's filters
+	  - absorbing a message that's a signal and has no body
+*/
+func (r *cborMuxReader) read(msg []byte) (int, error) {
 	// first, finish yielding any buffered bytes from prior incomplete reads.
 	if len(r.buf) > 0 {
 		n := copy(msg, r.buf)
@@ -121,7 +146,6 @@ func (r *cborMuxReader) Read(msg []byte) (int, error) {
 	if err == io.EOF {
 		// we don't pass EOF up unless our cbor says we're closed.
 		// this could be a "temporary" EOF and appends will still be incoming.
-		// TODO: we're also effectively required to block here, because otherwise the reader may spin.
 		return 0, nil
 	} else if err != nil {
 		panic(err)
@@ -131,15 +155,20 @@ func (r *cborMuxReader) Read(msg []byte) (int, error) {
 		r.labels.Remove(row.Label)
 		if r.labels.Empty() {
 			return 0, io.EOF
+		} else {
+			// still more labels must be closed before we're EOF
+			return 0, nil
 		}
 	default:
 		if r.labels.Contains(row.Label) {
 			n := copy(msg, row.Msg)
 			r.buf = row.Msg[n:]
 			return n, nil
+		} else {
+			// consuming an uninteresting label
+			return 0, nil
 		}
 	}
-	return 0, nil
 }
 
 type intset struct {
