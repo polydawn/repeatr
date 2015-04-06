@@ -105,9 +105,17 @@ func (m *CborMux) Reader(labels ...int) io.Reader {
 type cborMuxReader struct {
 	labels *intset // remove them as we hit their close
 	codec  *codec.Decoder
+	buf    []byte // any remaining bytes from the last incomplete read
 }
 
 func (r *cborMuxReader) Read(msg []byte) (int, error) {
+	// first, finish yielding any buffered bytes from prior incomplete reads.
+	if len(r.buf) > 0 {
+		n := copy(msg, r.buf)
+		r.buf = r.buf[n:]
+		return n, nil
+	}
+	// scan the file for more rows and work with any that match our labels.
 	var row cborMuxRow
 	err := r.codec.Decode(&row)
 	if err == io.EOF {
@@ -126,9 +134,9 @@ func (r *cborMuxReader) Read(msg []byte) (int, error) {
 		}
 	default:
 		if r.labels.Contains(row.Label) {
-			// FIXME: handle overflow...
-			return copy(msg, row.Msg), nil
-
+			n := copy(msg, row.Msg)
+			r.buf = row.Msg[n:]
+			return n, nil
 		}
 	}
 	return 0, nil

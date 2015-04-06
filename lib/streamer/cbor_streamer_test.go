@@ -39,6 +39,37 @@ func TestCborMux(t *testing.T) {
 					So(string(bytes), ShouldEqual, "asdfqwer")
 				})
 			})
+
+			Convey("Small reads shouldn't lose parts", func() {
+				// small reads should:
+				// 1. finish any previous chunks if buffered from a prior small read -- and then return, without starting a new chunk
+				// 2. return as much as they can
+				r1 := strm.Reader(1)
+				buf := make([]byte, 3)
+				n, err := r1.Read(buf)
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 3)
+				So(string(buf[:n]), ShouldEqual, "asd")
+				n, err = r1.Read(buf)
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 1)
+				So(string(buf[:n]), ShouldEqual, "f")
+
+				// make the buffer even more small, so it takes >2 reads
+				buf = make([]byte, 1)
+				n, err = r1.Read(buf)
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 1)
+				So(string(buf[:n]), ShouldEqual, "q")
+				n, err = r1.Read(buf)
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 1)
+				So(string(buf[:n]), ShouldEqual, "w")
+				n, err = r1.Read(buf)
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 1)
+				So(string(buf[:n]), ShouldEqual, "e")
+			})
 		})
 
 		Convey("Given two complete streams", func() {
@@ -63,7 +94,6 @@ func TestCborMux(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(string(bytes), ShouldEqual, "asdfqwerasdfzxcv")
 			})
-			// TODO read it back manually with tiny buffers
 		})
 
 		Convey("Given two in-progress streams", func() {
