@@ -50,11 +50,21 @@ func (i *memoryBucketIterator) NextChild() treewalk.Node {
 	if next >= len(i.lines) {
 		return nil
 	}
+	nextName := i.lines[next].Metadata.Name
+	thisName := i.lines[i.this].Metadata.Name
 	// is the next one still a child?
-	if strings.HasPrefix(i.lines[next].Metadata.Name, i.lines[i.this].Metadata.Name+"/") {
+	if strings.HasPrefix(nextName, thisName+"/") {
+		// check for missing trees
+		nextSplit := strings.LastIndex(nextName, "/")
+		if nextSplit == -1 || nextName[:nextSplit] != thisName {
+			panic(MissingTree.New("missing tree: %q followed %q", nextName, thisName))
+		}
+		// check for repeated names
+		if i.lines[*i.that].Metadata.Name == nextName {
+			panic(PathCollision.New("repeated path: %q", nextName))
+		}
+		// step forward
 		*i.that = next
-		// TODO: check for missing trees
-		// TODO: check for repeated names
 		return &memoryBucketIterator{i.lines, *i.that, i.that}
 	}
 	return nil

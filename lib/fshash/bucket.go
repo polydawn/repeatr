@@ -43,14 +43,14 @@ type RecordIterator interface {
 var InvalidFilesystem *errors.ErrorClass = errors.NewClass("InvalidFilesystem")
 
 /*
-	FileCollision is reported when the same file path is submitted to a `Bucket`
+	PathCollision is reported when the same file path is submitted to a `Bucket`
 	more than once.  (Some formats, for example tarballs, allow the same filename
 	to be recorded twice.  We consider this poor behavior since most actual
 	filesystems of course will not tolerate this, and also because it begs the
 	question of which should be sorted first when creating a deterministic
 	hash of the whole tree.)
 */
-var FileCollision *errors.ErrorClass = InvalidFilesystem.NewClass("FileCollision")
+var PathCollision *errors.ErrorClass = InvalidFilesystem.NewClass("PathCollision")
 
 /*
 	MissingTree is reported when iteration over a filled bucket encounters
