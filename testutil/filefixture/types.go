@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/spacemonkeygo/errors"
+	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
 )
 
@@ -83,10 +83,10 @@ func defaults(f FixtureFile) FixtureFile {
 		f.Metadata.Gid = 10000
 	}
 	if f.Metadata.ModTime.IsZero() {
-		f.Metadata.ModTime = time.Unix(0, 0).UTC()
+		f.Metadata.ModTime = def.Epochwhen
 	}
 	if f.Metadata.AccessTime.IsZero() {
-		f.Metadata.AccessTime = time.Unix(0, 0).UTC()
+		f.Metadata.AccessTime = def.Epochwhen
 	}
 	return f
 }
