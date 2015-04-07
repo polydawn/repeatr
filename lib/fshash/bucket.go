@@ -17,6 +17,7 @@ import (
 type Bucket interface {
 	Record(metadata fs.Metadata, contentHash []byte) // record a file into the bucket
 	Iterator() (rootRecord RecordIterator)           // return a treewalk root that does a traversal ordered by path
+	Length() int
 }
 
 type Record struct {

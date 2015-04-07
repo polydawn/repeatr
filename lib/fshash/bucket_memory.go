@@ -35,6 +35,10 @@ func (b *MemoryBucket) Iterator() RecordIterator {
 	return &memoryBucketIterator{b.lines, 0, &that}
 }
 
+func (b *MemoryBucket) Length() int {
+	return len(b.lines)
+}
+
 type memoryBucketIterator struct {
 	lines []Record
 	this  int  // pretending a linear structure is a tree is weird.

@@ -36,6 +36,8 @@ func Hash(bucket Bucket, hasherFactory func() hash.Hash) ([]byte, error) {
 	// Hack around codec not exporting things very usefully -.-
 	const magic_RAW = 0
 	const magic_UTF8 = 1
+	// Keep a count of how many nodes visited.  Cheap sanity check.
+	var visitCount int
 	// At every point in the visitation, children need to submit their hashes back up the tree.
 	// Prime the pump with a special reaction for when the root returns; every directory preVisit attaches hoppers for children thereon.
 	upsubs := make(upsubStack, 0)
@@ -48,6 +50,7 @@ func Hash(bucket Bucket, hasherFactory func() hash.Hash) ([]byte, error) {
 	// Visitor definitions
 	preVisit := func(node treewalk.Node) error {
 		record := node.(RecordIterator).Record()
+		visitCount++
 		hasher := hasherFactory()
 		_, enc := codec.GenHelperEncoder(codec.NewEncoder(hasher, new(codec.CborHandle)))
 		enc.EncodeMapStart(2) // either way it's header + one of leaves or contenthash
@@ -94,7 +97,10 @@ func Hash(bucket Bucket, hasherFactory func() hash.Hash) ([]byte, error) {
 	// Sanity check no node left behind
 	_ = upsubs.Pop()
 	if !upsubs.Empty() || !hashers.Empty() {
-		panic(errors.ProgrammerError.New("invariant failed after bucket records walk"))
+		panic(errors.ProgrammerError.New("invariant failed after bucket records walk: stacks not empty"))
+	}
+	if visitCount != bucket.Length() {
+		panic(errors.ProgrammerError.New("invariant failed after bucket records walk: visited %d of %d nodes", visitCount, bucket.Length()))
 	}
 	// return the result upsubbed by the root
 	return finalAnswer, nil
