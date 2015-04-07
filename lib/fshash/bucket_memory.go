@@ -24,13 +24,24 @@ func (b *MemoryBucket) Record(metadata fs.Metadata, contentHash []byte) {
 	The walk will be in deterministic, sorted order (and thus is appropriate
 	for hashing).
 
+	This applies some "finalization" operations before starting the walk:
+	  - All records will be sorted.
+	  - If there isn't a root node (i.e. Name = "."), one will be added.
+
 	This is only safe for non-concurrent use and depth-first traversal.
 	If the data structure is changed, or (sub)iterators used out of order,
 	behavior is undefined.
 */
 func (b *MemoryBucket) Iterator() RecordIterator {
 	sort.Sort(linesByFilepath(b.lines))
-	// TODO: check for rootedness
+	// check for rootedness.  make a reasonable default one if not present.
+	if len(b.lines) == 0 || b.lines[0].Metadata.Name != "." {
+		// this is stupidly expensive but checking for it without sorting would be even worse, so
+		lines := make([]Record, 1, len(b.lines))
+		lines[0] = DefaultRoot
+		copy(lines[1:], b.lines)
+		b.lines = lines
+	}
 	var that int
 	return &memoryBucketIterator{b.lines, 0, &that}
 }

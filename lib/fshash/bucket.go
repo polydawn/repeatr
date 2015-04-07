@@ -1,7 +1,10 @@
 package fshash
 
 import (
+	"archive/tar"
+
 	"github.com/spacemonkeygo/errors"
+	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/treewalk"
 )
@@ -59,6 +62,25 @@ var PathCollision *errors.ErrorClass = InvalidFilesystem.NewClass("PathCollision
 	and there's no entries for "./a", it's a MissingTree error.
 */
 var MissingTree *errors.ErrorClass = InvalidFilesystem.NewClass("MissingTree")
+
+/*
+	Node used for the root (Name = ".") path, if one isn't provided.
+*/
+var DefaultRoot Record
+
+func init() {
+	DefaultRoot = Record{
+		Metadata: fs.Metadata{
+			Name:       ".",
+			Typeflag:   tar.TypeDir,
+			Mode:       0755,
+			ModTime:    def.Epochwhen,
+			AccessTime: def.Epochwhen,
+			// other fields (uid, gid) have acceptable "zero" values.
+		},
+		ContentHash: nil,
+	}
+}
 
 // for sorting
 type linesByFilepath []Record
