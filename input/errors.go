@@ -14,6 +14,25 @@ var Error *errors.ErrorClass = errors.NewClass("InputError") // grouping, do not
 var InputHashMismatchError *errors.ErrorClass = Error.NewClass("InputHashMismatchError")
 
 /*
+	Indicates that an error getting the data an input described.
+	(As contrasted with a `TargetFilesystemUnavailableError`, which is
+	an error that comes while trying to unpack the data source onto a
+	local filesystem for use.)
+
+	Examples include a URI that specified a file that doesn't exist, or
+	an IO error later while reading from that source, etc.
+
+*/
+var DataSourceUnavailableError *errors.ErrorClass = Error.NewClass("InputDataSourceUnavailableError")
+
+// Convenience method for wrapping io errors.
+func DataSourceUnavailableIOError(err error) *errors.Error {
+	return DataSourceUnavailableError.Wrap(errors.IOError.Wrap(err)).(*errors.Error)
+}
+
+// REVIEW: should InputHashMismatchError be a subtype of DataSourceUnavailableError?  (leaning towards probably yes)
+
+/*
 	Indicates that the target filesystem (the one given to `Apply`) had some error.
 */
 var TargetFilesystemUnavailableError *errors.ErrorClass = Error.NewClass("InputTargetFilesystemUnavailableError")
