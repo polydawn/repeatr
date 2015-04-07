@@ -1,7 +1,7 @@
 package nsinit
 
 import (
-	"os"
+	"io"
 	"os/exec"
 	"path/filepath"
 
@@ -13,6 +13,7 @@ import (
 	"polydawn.net/repeatr/executor/basicjob"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/flak"
+	"polydawn.net/repeatr/lib/streamer"
 	"polydawn.net/repeatr/output"
 )
 
@@ -106,11 +107,22 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 	// Unroll command args
 	args = append(args, f.Accents.Entrypoint...)
 
-	// For now, run in this terminal
+	// Prepare command to exec
 	cmd := exec.Command("nsinit", args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+
+	// spool our output to a muxed stream
+	var strm streamer.Mux
+	strm = streamer.CborFileMux(filepath.Join(d, "log"))
+	cmd.Stdin = nil
+	cmd.Stdout = strm.Appender(1)
+	cmd.Stderr = strm.Appender(2)
+	j.(*basicjob.BasicJob).Reader = strm.Reader(1, 2)
+	defer func() {
+		// Close output streams.
+		// (I thought exec should do this already...?  But doesn't seem to.)
+		cmd.Stdout.(io.WriteCloser).Close()
+		cmd.Stderr.(io.WriteCloser).Close()
+	}()
 
 	// Prepare filesystem
 	flak.ProvisionInputs(f.Inputs, rootfs)

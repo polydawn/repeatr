@@ -1,6 +1,7 @@
 package chroot
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -70,7 +71,13 @@ func Test(t *testing.T) {
 
 				job := e.Start(formula, def.JobID(guid.New()))
 				So(job, ShouldNotBeNil)
-				So(job.Wait().ExitCode, ShouldEqual, 0) // TODO: this waits... the test should still pass if the reader happens first
+				// note that we can read output concurrently.
+				// no need to wait for job done.
+				msg, err := ioutil.ReadAll(job.OutputReader())
+				So(err, ShouldBeNil)
+				So(string(msg), ShouldEqual, "echococo\n")
+				So(job.Wait().ExitCode, ShouldEqual, 0)
+
 			})
 
 			Convey("The executor should be able to check exit codes", func() {
@@ -104,6 +111,9 @@ func Test(t *testing.T) {
 					job := e.Start(formula, def.JobID(guid.New()))
 					So(job, ShouldNotBeNil)
 					So(job.Wait().ExitCode, ShouldEqual, 0)
+					msg, err := ioutil.ReadAll(job.OutputReader())
+					So(err, ShouldBeNil)
+					So(string(msg), ShouldEqual, "1\n2\n3\n")
 				})
 			})
 		}),
