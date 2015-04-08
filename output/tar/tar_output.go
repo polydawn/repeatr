@@ -2,10 +2,10 @@ package tar
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
@@ -42,18 +42,17 @@ func (o Output) Apply(rootPath string) <-chan output.Report {
 
 			// Assumes output URI is a folder. Output transport impls should obviously be more robust
 			path := filepath.Join(rootPath, o.spec.Location)
-			tar := exec.Command("tar", "-cf", o.spec.URI, "--xform", "s,"+strings.TrimLeft(rootPath, "/")+",,", path)
 
-			//  path
-			tar.Stdin = os.Stdin
-			tar.Stdout = os.Stdout
-			tar.Stderr = os.Stderr
-
-			// exec
-			err = tar.Run()
-			if err != nil {
-				panic(err)
-			}
+			// exec tar.
+			// in case of a zero (a.k.a. success) exit, this returns silently.
+			// in case of a non-zero exit, this panics; the panic will include the output.
+			gosh.Gosh(
+				"tar",
+				"-cf", o.spec.URI,
+				"--xform", "s,"+strings.TrimLeft(rootPath, "/")+",,",
+				path,
+				gosh.NullIO,
+			).RunAndReport()
 
 			// report
 			// note: indeed, we never set the hash field.  this is *not* a compliant implementation of an output.

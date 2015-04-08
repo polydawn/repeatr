@@ -2,10 +2,10 @@ package tar
 
 import (
 	"os"
-	"os/exec"
 
+	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
-
+	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
 )
@@ -32,36 +32,30 @@ func (i Input) Apply(path string) <-chan error {
 	done := make(chan error)
 	go func() {
 		defer close(done)
+		try.Do(func() {
+			err := os.MkdirAll(path, 0777)
+			if err != nil {
+				panic(input.TargetFilesystemUnavailableIOError(err))
+			}
 
-		// Eventually:
-		// iterate along with the tar stream as long as possible
-		// if it's out of order, or we hit the same file twice, balk; start again later with the fs
-		// (we're not just doing a checksum of the tar as it stands;
-		// we want something that's unambiguously reproducable,
-		// and tarsum as made by docker isn't that since it just accepts whatever iteration order the tarball has.)
+			// exec tar.
+			// in case of a zero (a.k.a. success) exit, this returns silently.
+			// in case of a non-zero exit, this panics; the panic will include the output.
+			gosh.Gosh(
+				"tar",
+				"-xf", i.spec.URI,
+				"-C", path,
+				gosh.NullIO,
+			).RunAndReport()
 
-		// Currently:
-		// Exec-wrap tar, like a boss
-
-		err := os.MkdirAll(path, 0777)
-		if err != nil {
-			done <- Error.Wrap(errors.IOError.Wrap(err))
-			return
-		}
-
-		tar := exec.Command("tar", "-xf", i.spec.URI, "-C", path)
-		tar.Stdin = os.Stdin
-		tar.Stdout = os.Stdout
-		tar.Stderr = os.Stderr
-
-		err = tar.Run()
-		if err != nil {
-			done <- Error.Wrap(err)
-			return
-		}
-
+			// note: indeed, we never check the hash field.  this is *not* a compliant implementation of an input.
+		}).Catch(input.Error, func(err *errors.Error) {
+			done <- err
+		}).CatchAll(func(err error) {
+			// All errors we emit will be under `input.Error`'s type.
+			// Every time we hit this UnknownError path, we should consider it a bug until that error is categorized.
+			done <- input.UnknownError.Wrap(err)
+		}).Done()
 	}()
 	return done
 }
-
-var Error *errors.ErrorClass = input.Error.NewClass("TarInputError") // currently contains little information because the returns of the subcommand are already opaque.  may become the root of a more expressive error hierarchy when we replace the tar implementation.
