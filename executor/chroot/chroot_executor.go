@@ -32,27 +32,42 @@ func (e *Executor) Start(f def.Formula, id def.JobID) def.Job {
 
 	// Prepare the forumla for execution on this host
 	def.ValidateAll(&f)
+
 	job := basicjob.New(id)
+	jobReady := make(chan struct{})
 
 	go func() {
 		// Run the formula in a temporary directory
 		flak.WithDir(func(dir string) {
-			job.Result = e.Run(f, job, dir)
+
+			// spool our output to a muxed stream
+			var strm streamer.Mux
+			strm = streamer.CborFileMux(filepath.Join(dir, "log"))
+
+			outS := strm.Appender(1)
+			errS := strm.Appender(2)
+			job.Reader = strm.Reader(1, 2)
+
+			// Job is ready to stream process output
+			close(jobReady)
+
+			job.Result = e.Run(f, job, dir, outS, errS)
 		}, e.workspacePath, "job", string(job.Id()))
 
 		// Directory is clean; job complete
 		close(job.WaitChan)
 	}()
 
+	<-jobReady
 	return job
 }
 
 // Executes a job, catching any panics.
-func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
+func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser) def.JobResult {
 	var r def.JobResult
 
 	try.Do(func() {
-		r = e.Execute(f, j, d)
+		r = e.Execute(f, j, d, outS, errS)
 	}).Catch(executor.Error, func(err *errors.Error) {
 		r.Error = err
 	}).Catch(input.Error, func(err *errors.Error) {
@@ -67,7 +82,7 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
 }
 
 // Execute a formula in a specified directory. MAY PANIC.
-func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
+func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser) def.JobResult {
 
 	result := def.JobResult{
 		ID:      j.Id(),
@@ -87,13 +102,10 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 		Pdeathsig: syscall.SIGKILL,
 	}
 
-	// spool our output to a muxed stream
-	var strm streamer.Mux
-	strm = streamer.CborFileMux(filepath.Join(d, "log"))
 	cmd.Stdin = nil
-	cmd.Stdout = strm.Appender(1)
-	cmd.Stderr = strm.Appender(2)
-	j.(*basicjob.BasicJob).Reader = strm.Reader(1, 2)
+	cmd.Stdout = outS
+	cmd.Stderr = errS
+
 	defer func() {
 		// Close output streams.
 		// (I thought exec should do this already...?  But doesn't seem to.)
