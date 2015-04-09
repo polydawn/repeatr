@@ -19,5 +19,8 @@ func TargetFilesystemUnavailableIOError(err error) *errors.Error {
 /*
 	Wraps any other unknown errors just to emphasize the system that raised them;
 	any well known errors should use a different type.
+
+	If an error of this type is exposed to the user, it should be
+	considered a bug, and specific error detection added to the site.
 */
 var UnknownError *errors.ErrorClass = Error.NewClass("OutputUnknownError")
