@@ -48,7 +48,7 @@ func TestTarCompat(t *testing.T) {
 				// boy, that's entertaining though: gnu tar does all the same stuff,
 				// except it doesn't honor our nanosecond timings.
 				comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareMtime
-				So(rescan.Describe(comparisonLevel), ShouldResemble, fixture.Describe(comparisonLevel))
+				So(rescan.Describe(comparisonLevel), ShouldEqual, fixture.Describe(comparisonLevel))
 			}))
 		}
 	})
