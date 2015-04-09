@@ -16,7 +16,7 @@ var InputHashMismatchError *errors.ErrorClass = Error.NewClass("InputHashMismatc
 /*
 	Indicates that the target filesystem (the one given to `Apply`) had some error.
 */
-var TargetFilesystemUnavailableError *errors.ErrorClass = Error.NewClass("TargetFilesystemUnavailableError")
+var TargetFilesystemUnavailableError *errors.ErrorClass = Error.NewClass("InputTargetFilesystemUnavailableError")
 
 // Convenience method for wrapping io errors.
 func TargetFilesystemUnavailableIOError(err error) *errors.Error {
