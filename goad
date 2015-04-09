@@ -57,8 +57,9 @@ else
 		git submodule update --init
 		;;
 	test)
-		go test -i "$SUBSECTION" 2> >(grep --color -E "$highlighRegex") &&
-		go test -v "$SUBSECTION" 2> >(grep --color -E "$highlighRegex") && {
+		set +e ; shift ; shift ; set -e
+		go test -i "$SUBSECTION" "$@" 2> >(grep --color -E "$highlighRegex") &&
+		go test -v "$SUBSECTION" "$@" 2> >(grep --color -E "$highlighRegex") && {
 			echo -e "\n\E[1;32mall tests green.\E[0;m"
 		} || {
 			echo -e "\n\E[1;41msome tests failed!\E[0;m"
