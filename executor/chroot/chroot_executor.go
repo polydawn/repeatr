@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
-
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/basicjob"
@@ -69,10 +69,8 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
 func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 
 	result := def.JobResult{
-		ID:       j.Id(),
-		Error:    nil,
-		ExitCode: 0, //TODO: gosh
-		Outputs:  []def.Output{},
+		ID:      j.Id(),
+		Outputs: []def.Output{},
 	}
 
 	// Prepare filesystem
@@ -91,15 +89,27 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Start(); err != nil {
-		if err2, ok := err.(*exec.Error); ok && err2.Err == exec.ErrNotFound {
+	// launch execution.
+	// transform gosh's typed errors to repeatr's hierarchical errors.
+	var proc gosh.Proc
+	try.Do(func() {
+		proc = gosh.ExecProcCmd(cmd)
+	}).CatchAll(func(err error) {
+		switch err.(type) {
+		case gosh.NoSuchCommandError:
 			panic(executor.NoSuchCommandError.Wrap(err))
+		case gosh.NoArgumentsErr:
+			panic(executor.NoSuchCommandError.Wrap(err))
+		case gosh.ProcMonitorError:
+			panic(executor.TaskExecError.Wrap(err))
+		default:
+			panic(executor.UnknownError.Wrap(err))
 		}
-		panic(executor.TaskExecError.Wrap(err))
-	}
+	}).Done()
 
 	// Wait for the job to complete
-	result.ExitCode = flak.WaitAndHandleExit(cmd)
+	// REVIEW: consider exposing `gosh.Proc`'s interface as part of repeatr's job tracking api?
+	result.ExitCode = proc.GetExitCode()
 
 	// Save outputs
 	result.Outputs = flak.PreserveOutputs(f.Outputs, rootfs)
