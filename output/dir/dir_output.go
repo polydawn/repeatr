@@ -53,7 +53,6 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 			done <- output.Report{err, o.spec}
 		}).CatchAll(func(err error) {
 			// All errors we emit will be under `output.Error`'s type.
-			// Every time we hit this UnknownError path, we should consider it a bug until that error is categorized.
 			done <- output.Report{output.UnknownError.Wrap(err).(*errors.Error), o.spec}
 		}).Done()
 	}()

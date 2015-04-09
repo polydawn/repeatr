@@ -53,7 +53,6 @@ func (i Input) Apply(path string) <-chan error {
 			done <- err
 		}).CatchAll(func(err error) {
 			// All errors we emit will be under `input.Error`'s type.
-			// Every time we hit this UnknownError path, we should consider it a bug until that error is categorized.
 			done <- input.UnknownError.Wrap(err)
 		}).Done()
 	}()

@@ -5,14 +5,30 @@ import (
 )
 
 // grouping, do not instantiate
-var Error *errors.ErrorClass = errors.NewClass("ChrootExecutorError")
+var Error *errors.ErrorClass = errors.NewClass("ExecutorError")
 
-// wraps any other unknown errors just to emphasize the system that raised them; any well known errors should use a different type.
-var UnknownError *errors.ErrorClass = Error.NewClass("ChrootExecutorUnknownError")
+/*
+	Error raised when there are serious issues with task launch.
 
-// errors relating to task launch
-// REVIEW: probably more general to executors, should be one package up and maybe wrapped with chroot.Error to express origin system (or, maybe not even, much like we haven't decided if input&output errors get wrapped)
+	Occurance of TaskExecError may be due to OS-imposed resource limits
+	or other unexpected problems.  They should not be seen in normal,
+	healthy operation.
+*/
 var TaskExecError *errors.ErrorClass = Error.NewClass("ExecutorTaskExecError")
 
-// error when a command is not found.  generally indicative of user misconfiguration (and thus not a child of TaskExecError, which expresses serious system failures).
+/*
+	Error raised when a command is not found inside the execution environment.
+
+	Often just indicative of user misconfiguration (and thus this is not a
+	child of TaskExecError, which expresses serious system failures).
+*/
 var NoSuchCommandError *errors.ErrorClass = Error.NewClass("NoSuchCommandError")
+
+/*
+	Wraps any other unknown errors just to emphasize the system that raised them;
+	any well known errors should use a different type.
+
+	If an error of this type is exposed to the user, it should be
+	considered a bug, and specific error detection added to the site.
+*/
+var UnknownError *errors.ErrorClass = Error.NewClass("ExecutorUnknownError")
