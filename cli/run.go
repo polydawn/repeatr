@@ -55,7 +55,7 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, f ...def.Formula) {
 			result := job.Wait()
 
 			if result.Error != nil {
-				Println("Job", n, id, "had an executor error:", result.Error)
+				Println("Job", n, id, "failed with", result.Error.Message())
 			} else {
 				Println("Job", n, id, "finished with code", result.ExitCode, "and outputs", result.Outputs)
 			}

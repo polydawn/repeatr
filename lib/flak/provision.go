@@ -28,7 +28,6 @@ func ProvisionInputs(inputs []def.Input, rootfs string) {
 		// Run input
 		err = <-inputdispatch.Get(input).Apply(path)
 		if err != nil {
-			Println("Input", x+1, "failed:", err)
 			panic(err)
 		}
 	}
@@ -55,7 +54,6 @@ func PreserveOutputs(outputs []def.Output, rootfs string) []def.Output {
 
 		report := <-outputdispatch.Get(output).Apply(rootfs)
 		if report.Err != nil {
-			Println("Output", x+1, "failed:", report.Err)
 			panic(report.Err)
 		}
 		Println("Output", x+1, "hash:", report.Output.Hash)
