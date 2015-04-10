@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -54,7 +53,7 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, 
 
 			// Stream job output to terminal in real time
 			// TODO: This ruins stdout / stderr split. Job should probably just expose the Mux interface.
-			_, err := io.Copy(os.Stdout, job.OutputReader())
+			_, err := io.Copy(journal, job.OutputReader())
 			if err != nil {
 				// TODO: This is serious, how to handle in CLI context debatable
 				fmt.Fprintln(journal, "Error reading job stream")
