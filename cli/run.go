@@ -20,9 +20,7 @@ func LoadFormulaFromFile(path string) def.Formula {
 
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		Println(err)
-		Println("Could not read file", filename)
-		os.Exit(1)
+		panic(Error.Wrap(Errorf("Could not read formula file %q: %s", filename, err)))
 	}
 
 	dec := codec.NewDecoderBytes(content, &codec.JsonHandle{})
