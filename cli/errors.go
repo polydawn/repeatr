@@ -12,6 +12,8 @@ const (
 	EXIT_USER         = ExitCode(3) // grab bag for general user input errors (try to make a more specific code if possible/useful)
 )
 
+var ExitCodeKey = errors.GenSym()
+
 /*
 	CLI errors are the last line: they should be formatted to be user-facing.
 	The main method will convert a CLIError into a short and well-formatted
@@ -23,3 +25,13 @@ const (
 	a repeatr bug or unknown territory should *not* be mapped into a CLIError.
 */
 var Error *errors.ErrorClass = errors.NewClass("CLIError")
+
+/*
+	Use this to set a specific error code the process should exit with
+	when producing a `cli.Error`.
+
+	Example: `cli.Error.New("something terrible!", SetExitCode(EXIT_BADARGS))`
+*/
+func SetExitCode(code ExitCode) errors.ErrorOption {
+	return errors.SetData(ExitCodeKey, code)
+}

@@ -26,7 +26,12 @@ func main() {
 				"Repeatr was unable to complete your request!\n"+
 					"%s\n",
 				err)
-			os.Exit(int(cli.EXIT_USER))
+			// exit, taking the specified code if any.
+			code := errors.GetData(err, cli.ExitCodeKey)
+			if code == nil {
+				os.Exit(int(cli.EXIT_USER))
+			}
+			os.Exit(int(code.(cli.ExitCode)))
 		}
 	}).CatchAll(func(err error) {
 		// Errors that aren't marked as valid user-facing issues should be
