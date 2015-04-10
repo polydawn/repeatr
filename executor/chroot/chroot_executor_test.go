@@ -39,7 +39,7 @@ func Test(t *testing.T) {
 			So(os.Mkdir(e.workspacePath, 0755), ShouldBeNil)
 
 			Convey("We should get an InputError", func() {
-				result := e.Start(formula, def.JobID(guid.New())).Wait()
+				result := e.Start(formula, def.JobID(guid.New()), ioutil.Discard).Wait()
 				So(result.Error, testutil.ShouldBeErrorClass, input.Error)
 			})
 		}),
@@ -69,7 +69,7 @@ func Test(t *testing.T) {
 					Entrypoint: []string{"echo", "echococo"},
 				}
 
-				job := e.Start(formula, def.JobID(guid.New()))
+				job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
 				So(job, ShouldNotBeNil)
 				// note that we can read output concurrently.
 				// no need to wait for job done.
@@ -85,7 +85,7 @@ func Test(t *testing.T) {
 					Entrypoint: []string{"sh", "-c", "exit 14"},
 				}
 
-				job := e.Start(formula, def.JobID(guid.New()))
+				job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
 				So(job, ShouldNotBeNil)
 				So(job.Wait().ExitCode, ShouldEqual, 14)
 			})
@@ -95,7 +95,7 @@ func Test(t *testing.T) {
 					Entrypoint: []string{"not a command"},
 				}
 
-				result := e.Start(formula, def.JobID(guid.New())).Wait()
+				result := e.Start(formula, def.JobID(guid.New()), ioutil.Discard).Wait()
 				So(result.Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
 			})
 
@@ -108,7 +108,7 @@ func Test(t *testing.T) {
 						Entrypoint: []string{"ls", "/data/test"},
 					}
 
-					job := e.Start(formula, def.JobID(guid.New()))
+					job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
 					So(job, ShouldNotBeNil)
 					So(job.Wait().ExitCode, ShouldEqual, 0)
 					msg, err := ioutil.ReadAll(job.OutputReader())

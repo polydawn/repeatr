@@ -1,6 +1,8 @@
 package linear
 
 import (
+	"io/ioutil"
+
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/lib/guid"
@@ -54,7 +56,7 @@ func (s *Scheduler) Schedule(f def.Formula) (def.JobID, <-chan def.Job) {
 func (s *Scheduler) Run() {
 	for h := range s.queue {
 
-		job := s.executor.Start(h.forumla, h.id)
+		job := s.executor.Start(h.forumla, h.id, ioutil.Discard)
 		h.response <- job
 		job.Wait()
 	}

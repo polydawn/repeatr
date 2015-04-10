@@ -1,6 +1,7 @@
 package group
 
 import (
+	"io/ioutil"
 	"runtime"
 
 	"polydawn.net/repeatr/def"
@@ -59,8 +60,7 @@ func (s *Scheduler) Schedule(f def.Formula) (def.JobID, <-chan def.Job) {
 // Run jobs one at a time
 func (s *Scheduler) Run() {
 	for h := range s.queue {
-
-		job := s.executor.Start(h.forumla, h.id)
+		job := s.executor.Start(h.forumla, h.id, ioutil.Discard)
 		h.response <- job
 		job.Wait()
 	}

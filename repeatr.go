@@ -13,7 +13,7 @@ import (
 
 func main() {
 	try.Do(func() {
-		cli.App.Run(os.Args)
+		cli.Main(os.Args, os.Stderr)
 	}).Catch(cli.Error, func(err *errors.Error) {
 		// Errors marked as valid user-facing issues get a nice
 		// pretty-printed route out, and may include specified exit codes.
