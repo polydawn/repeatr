@@ -16,6 +16,8 @@ func Main(args []string, journal io.Writer) {
 	App.Usage = "Run it. Run it again."
 	App.Version = "0.0.1"
 
+	App.Writer = journal
+
 	bat := cli.StringSlice([]string{})
 
 	App.Commands = []cli.Command{
