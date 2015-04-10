@@ -7,7 +7,7 @@
 		}
 	],
 	"Accents": {
-		"Entrypoint": [ "echo", "Hello from repeatr!" ]
+		"Entrypoint": [ "bash", "-c", "echo hello1; sleep .5; echo hello2; sleep .5; echo hello3" ]
 	},
 	"Outputs": [
 		{
