@@ -2,6 +2,7 @@ package cli
 
 import (
 	. "fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -52,10 +53,19 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, f ...def.Formula) {
 			Println("Job", n, id, "queued")
 			job := <-jobChan
 			Println("Job", n, id, "starting")
-			result := job.Wait()
 
+			// Stream job output to terminal in real time
+			// TODO: This ruins stdout / stderr split. Job should probably just expose the Mux interface.
+			_, err := io.Copy(os.Stdout, job.OutputReader())
+			if err != nil {
+				// TODO: This is serious, how to handle in CLI context debatable
+				Println("Error reading job stream")
+				panic(err)
+			}
+
+			result := job.Wait()
 			if result.Error != nil {
-				Println("Job", n, id, "had an executor error:", result.Error)
+				Println("Job", n, id, "failed with", result.Error.Message())
 			} else {
 				Println("Job", n, id, "finished with code", result.ExitCode, "and outputs", result.Outputs)
 			}
