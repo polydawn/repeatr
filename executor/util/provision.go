@@ -1,4 +1,4 @@
-package flak
+package util
 
 import (
 	. "fmt"

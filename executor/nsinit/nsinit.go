@@ -11,6 +11,7 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/basicjob"
+	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/streamer"
@@ -137,8 +138,8 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.Wri
 	}()
 
 	// Prepare filesystem
-	flak.ProvisionInputs(f.Inputs, rootfs)
-	flak.ProvisionOutputs(f.Outputs, rootfs)
+	util.ProvisionInputs(f.Inputs, rootfs)
+	util.ProvisionOutputs(f.Outputs, rootfs)
 
 	err := cmd.Run()
 	if err != nil {
@@ -146,6 +147,6 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.Wri
 	}
 
 	// Save outputs
-	result.Outputs = flak.PreserveOutputs(f.Outputs, rootfs)
+	result.Outputs = util.PreserveOutputs(f.Outputs, rootfs)
 	return result
 }

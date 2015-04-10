@@ -12,6 +12,7 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/basicjob"
+	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/streamer"
@@ -91,8 +92,8 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.Wri
 
 	// Prepare filesystem
 	rootfs := filepath.Join(d, "rootfs")
-	flak.ProvisionInputs(f.Inputs, rootfs)
-	flak.ProvisionOutputs(f.Outputs, rootfs)
+	util.ProvisionInputs(f.Inputs, rootfs)
+	util.ProvisionOutputs(f.Outputs, rootfs)
 
 	// chroot's are pretty easy.
 	cmdName := f.Accents.Entrypoint[0]
@@ -136,7 +137,7 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.Wri
 	result.ExitCode = proc.GetExitCode()
 
 	// Save outputs
-	result.Outputs = flak.PreserveOutputs(f.Outputs, rootfs)
+	result.Outputs = util.PreserveOutputs(f.Outputs, rootfs)
 
 	return result
 }
