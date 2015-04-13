@@ -99,7 +99,7 @@ func (m *CborMux) Reader(labels ...int) io.Reader {
 	// do something much more sane than skip it, please
 	return &cborMuxReader{
 		labels: &intset{labels},
-		codec:  codec.NewDecoder(r, new(codec.CborHandle)),
+		codec:  codec.NewDecoder(newTailReader(r), new(codec.CborHandle)),
 	}
 }
 
@@ -110,12 +110,8 @@ type cborMuxReader struct {
 }
 
 func (r *cborMuxReader) Read(msg []byte) (n int, err error) {
-	n, err = r.read(msg)
+	// loop over read attempts to pump uninteresting messages
 	for n == 0 && err == nil {
-		// we're effectively required to block here, because otherwise the reader may spin;
-		// this is not a clueful wait; but it does prevent pegging a core.
-		// quite dumb in this case is also quite fool-proof.
-		time.Sleep(1 * time.Millisecond)
 		n, err = r.read(msg)
 	}
 	return
@@ -123,15 +119,17 @@ func (r *cborMuxReader) Read(msg []byte) (n int, err error) {
 
 /*
 	Internal read method; may return `(0,nil)` in a number of occations,
-	all of which the public `Read` method will translate into a wait+retry
+	all of which the public `Read` method will translate into a retry
 	so that higher level consumers of the Reader interface don't get stuck
 	spin-looping.
 
 	Specifically, these situations cause empty reads:
-	  - hitting EOF on the backing file, but still having labelled streams
-	    that haven't been closed (i.e. we expect the file to still be growing)
 	  - absorbing a message that isn't selected by this reader's filters
 	  - absorbing a message that's a signal and has no body
+
+	Hitting EOF on the backing file is handled by a `tailReader` before
+	data gets to this method, because the cbor decoder needs to be insulated
+	from seeing EOFs.
 */
 func (r *cborMuxReader) read(msg []byte) (int, error) {
 	// first, finish yielding any buffered bytes from prior incomplete reads.
@@ -196,4 +194,53 @@ func (s *intset) Remove(i int) {
 
 func (s *intset) Empty() bool {
 	return len(s.s) == 0
+}
+
+/*
+	Proxies another reader, disregarding EOFs and blocking instead until
+	the user closes.
+*/
+type tailReader struct {
+	r    io.Reader
+	quit chan struct{}
+}
+
+func newTailReader(r io.Reader) *tailReader {
+	return &tailReader{
+		r:    r,
+		quit: make(chan struct{}),
+	}
+}
+
+func (r *tailReader) Read(msg []byte) (n int, err error) {
+	for n == 0 && err == nil {
+		n, err = r.r.Read(msg)
+		if err == io.EOF {
+			// We don't pass EOF up until we're commanded to be closed.
+			// This could be a "temporary" EOF and appends will still be incoming.
+			if n > 0 {
+				// If any bytes, pass them up immediately.
+				return n, nil
+			}
+			// We're effectively required to block here, because otherwise the reader may spin;
+			// this is not a clueful wait; but it does prevent pegging a core.
+			// Quite dumb in this case is also quite fool-proof.
+			err = nil
+			select {
+			case <-time.After(1 * time.Millisecond):
+			case <-r.quit:
+				return 0, io.EOF
+			}
+		}
+	}
+	// anything other than an eof, we have no behavioral changes to make; pass up.
+	return n, err
+}
+
+/*
+	Breaks any readers currently blocked.
+*/
+func (r *tailReader) Close() error {
+	close(r.quit)
+	return nil
 }
