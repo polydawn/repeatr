@@ -1,10 +1,9 @@
 package cli
 
 import (
-	. "fmt"
+	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -20,9 +19,7 @@ func LoadFormulaFromFile(path string) def.Formula {
 
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		Println(err)
-		Println("Could not read file", filename)
-		os.Exit(1)
+		panic(Error.Wrap(fmt.Errorf("Could not read formula file %q: %s", filename, err)))
 	}
 
 	dec := codec.NewDecoderBytes(content, &codec.JsonHandle{})
@@ -33,7 +30,7 @@ func LoadFormulaFromFile(path string) def.Formula {
 	return formula
 }
 
-func RunFormulae(s scheduler.Scheduler, e executor.Executor, f ...def.Formula) {
+func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, f ...def.Formula) {
 	s.Configure(e, len(f)) // we know exactly how many forumlae will be enqueued
 	s.Start()
 
@@ -50,24 +47,24 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, f ...def.Formula) {
 		go func() {
 			defer wg.Done()
 
-			Println("Job", n, id, "queued")
+			fmt.Fprintln(journal, "Job", n, id, "queued")
 			job := <-jobChan
-			Println("Job", n, id, "starting")
+			fmt.Fprintln(journal, "Job", n, id, "starting")
 
 			// Stream job output to terminal in real time
 			// TODO: This ruins stdout / stderr split. Job should probably just expose the Mux interface.
-			_, err := io.Copy(os.Stdout, job.OutputReader())
+			_, err := io.Copy(journal, job.OutputReader())
 			if err != nil {
 				// TODO: This is serious, how to handle in CLI context debatable
-				Println("Error reading job stream")
+				fmt.Fprintln(journal, "Error reading job stream")
 				panic(err)
 			}
 
 			result := job.Wait()
 			if result.Error != nil {
-				Println("Job", n, id, "failed with", result.Error.Message())
+				fmt.Fprintln(journal, "Job", n, id, "failed with", result.Error.Message())
 			} else {
-				Println("Job", n, id, "finished with code", result.ExitCode, "and outputs", result.Outputs)
+				fmt.Fprintln(journal, "Job", n, id, "finished with code", result.ExitCode, "and outputs", result.Outputs)
 			}
 		}()
 	}

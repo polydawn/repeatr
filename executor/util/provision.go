@@ -1,12 +1,12 @@
-package flak
+package util
 
 import (
-	. "fmt"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/spacemonkeygo/errors"
-
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input/dispatch"
 	"polydawn.net/repeatr/output/dispatch"
@@ -14,9 +14,9 @@ import (
 
 // Run inputs
 // TODO: run all simultaneously, waitgroup out the errors
-func ProvisionInputs(inputs []def.Input, rootfs string) {
+func ProvisionInputs(inputs []def.Input, rootfs string, journal io.Writer) {
 	for x, input := range inputs {
-		Println("Provisioning input", x+1, input.Type, "to", input.Location)
+		fmt.Fprintln(journal, "Provisioning input", x+1, input.Type, "to", input.Location)
 		path := filepath.Join(rootfs, input.Location)
 
 		// Ensure that the parent folder of this input exists
@@ -35,7 +35,7 @@ func ProvisionInputs(inputs []def.Input, rootfs string) {
 
 // Output folders should exist
 // TODO: discussion
-func ProvisionOutputs(outputs []def.Output, rootfs string) {
+func ProvisionOutputs(outputs []def.Output, rootfs string, journal io.Writer) {
 	for _, output := range outputs {
 		path := filepath.Join(rootfs, output.Location)
 		err := os.MkdirAll(path, 0755)
@@ -47,16 +47,16 @@ func ProvisionOutputs(outputs []def.Output, rootfs string) {
 
 // Run outputs
 // TODO: run all simultaneously, waitgroup out the errors
-func PreserveOutputs(outputs []def.Output, rootfs string) []def.Output {
+func PreserveOutputs(outputs []def.Output, rootfs string, journal io.Writer) []def.Output {
 	for x, output := range outputs {
-		Println("Persisting output", x+1, output.Type, "from", output.Location)
+		fmt.Fprintln(journal, "Persisting output", x+1, output.Type, "from", output.Location)
 		// path := filepath.Join(rootfs, output.Location)
 
 		report := <-outputdispatch.Get(output).Apply(rootfs)
 		if report.Err != nil {
 			panic(report.Err)
 		}
-		Println("Output", x+1, "hash:", report.Output.Hash)
+		fmt.Fprintln(journal, "Output", x+1, "hash:", report.Output.Hash)
 	}
 
 	return outputs

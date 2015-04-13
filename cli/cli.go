@@ -2,20 +2,21 @@ package cli
 
 import (
 	"github.com/codegangsta/cli"
+	"io"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/dispatch"
 	"polydawn.net/repeatr/scheduler/dispatch"
 )
 
-var App *cli.App
-
-func init() {
-	App = cli.NewApp()
+func Main(args []string, journal io.Writer) {
+	App := cli.NewApp()
 
 	App.Name = "repeatr"
 	App.Usage = "Run it. Run it again."
 	App.Version = "0.0.1"
+
+	App.Writer = journal
 
 	bat := cli.StringSlice([]string{})
 
@@ -23,7 +24,7 @@ func init() {
 		{
 			Name:   "run",
 			Usage:  "Run a formula",
-			Action: Run,
+			Action: func(c *cli.Context) { Run(c, journal) },
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "executor, e",
@@ -43,9 +44,11 @@ func init() {
 			},
 		},
 	}
+
+	App.Run(args)
 }
 
-func Run(c *cli.Context) {
+func Run(c *cli.Context, journal io.Writer) {
 	executor := executordispatch.Get(c.String("executor"))
 	scheduler := schedulerdispatch.Get(c.String("scheduler"))
 	paths := c.StringSlice("input")
@@ -55,5 +58,5 @@ func Run(c *cli.Context) {
 		formulae = append(formulae, LoadFormulaFromFile(path))
 	}
 
-	RunFormulae(scheduler, executor, formulae...)
+	RunFormulae(scheduler, executor, journal, formulae...)
 }

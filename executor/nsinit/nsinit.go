@@ -11,6 +11,7 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/basicjob"
+	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/streamer"
@@ -28,7 +29,7 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-func (e *Executor) Start(f def.Formula, id def.JobID) def.Job {
+func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job {
 
 	// Prepare the forumla for execution on this host
 	def.ValidateAll(&f)
@@ -51,7 +52,7 @@ func (e *Executor) Start(f def.Formula, id def.JobID) def.Job {
 			// Job is ready to stream process output
 			close(jobReady)
 
-			job.Result = e.Run(f, job, dir, outS, errS)
+			job.Result = e.Run(f, job, dir, outS, errS, journal)
 		}, e.workspacePath, "job", string(job.Id()))
 
 		// Directory is clean; job complete
@@ -63,11 +64,11 @@ func (e *Executor) Start(f def.Formula, id def.JobID) def.Job {
 }
 
 // Executes a job, catching any panics.
-func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser) def.JobResult {
+func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser, journal io.Writer) def.JobResult {
 	var r def.JobResult
 
 	try.Do(func() {
-		r = e.Execute(f, j, d, outS, errS)
+		r = e.Execute(f, j, d, outS, errS, journal)
 	}).Catch(executor.Error, func(err *errors.Error) {
 		r.Error = err
 	}).Catch(input.Error, func(err *errors.Error) {
@@ -82,7 +83,7 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCl
 }
 
 // Execute a formula in a specified directory. MAY PANIC.
-func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser) def.JobResult {
+func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser, journal io.Writer) def.JobResult {
 
 	result := def.JobResult{
 		ID:       j.Id(),
@@ -137,8 +138,8 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.Wri
 	}()
 
 	// Prepare filesystem
-	flak.ProvisionInputs(f.Inputs, rootfs)
-	flak.ProvisionOutputs(f.Outputs, rootfs)
+	util.ProvisionInputs(f.Inputs, rootfs, journal)
+	util.ProvisionOutputs(f.Outputs, rootfs, journal)
 
 	err := cmd.Run()
 	if err != nil {
@@ -146,6 +147,6 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.Wri
 	}
 
 	// Save outputs
-	result.Outputs = flak.PreserveOutputs(f.Outputs, rootfs)
+	result.Outputs = util.PreserveOutputs(f.Outputs, rootfs, journal)
 	return result
 }

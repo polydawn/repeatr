@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -25,12 +26,12 @@ func Test(t *testing.T) {
 	}
 
 	Convey("It should not crash without args", t, func() {
-		App.Run(baseArgs)
+		Main(baseArgs, ioutil.Discard)
 	})
 
 	testutil.Convey_IfCanNS("Within an environment that can run namespaces", t, func() {
 		testutil.Convey_IfHaveRoot("It should run a basic example", func() {
-			App.Run(append(baseArgs, "run", "-i", "lib/integration/basic.json"))
+			Main(append(baseArgs, "run", "-i", "lib/integration/basic.json"), ioutil.Discard)
 		})
 	})
 
