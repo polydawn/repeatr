@@ -60,7 +60,7 @@ func main() {
 			)
 			os.Exit(int(cli.EXIT_UNKNOWNPANIC))
 		}
-	})
+	}).Done()
 }
 
 func isDebugMode() bool {
