@@ -28,7 +28,7 @@ func Main(args []string, journal io.Writer) {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "executor, e",
-					Value: "nsinit",
+					Value: "chroot",
 					Usage: "Which executor to use",
 				},
 				cli.StringFlag{
