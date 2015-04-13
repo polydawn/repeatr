@@ -51,11 +51,13 @@ func main() {
 			fmt.Fprintf(os.Stderr,
 				"Repeatr encountered a serious issue and was unable to complete your request!\n"+
 					"Please file an issue to help us fix it.\n"+
-					saveMsg+"\n"+
+					"%s\n"+
 					"\n"+
 					"This is the short version of the problem:\n"+
 					"%s\n",
-				err)
+				saveMsg,
+				errors.GetMessage(err),
+			)
 			os.Exit(int(cli.EXIT_UNKNOWNPANIC))
 		}
 	})
@@ -75,10 +77,15 @@ func saveErrorReport(caught error) (string, error) {
 	fmt.Fprintf(logFile, "Repeatr error report\n")
 	fmt.Fprintf(logFile, "====================\n")
 	fmt.Fprintf(logFile, "Date: %s\n", time.Now())
+	fmt.Fprintf(logFile, "Briefly: %s\n", errors.GetMessage(caught))
 	fmt.Fprintf(logFile, "\n")
 	fmt.Fprintf(logFile, "Full error:\n")
 	fmt.Fprintf(logFile, "-----------\n")
 	fmt.Fprintf(logFile, "%s\n", caught)
+	fmt.Fprintf(logFile, "\n")
+	fmt.Fprintf(logFile, "Structure:\n")
+	fmt.Fprintf(logFile, "-----------\n")
+	fmt.Fprintf(logFile, "%#v\n", caught)
 	fmt.Fprintf(logFile, "\n")
 	// TODO full stack viewed from here.  yank the formatting stuff from spacemonkey errors
 	return logFile.Name(), nil
