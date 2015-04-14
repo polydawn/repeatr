@@ -76,8 +76,8 @@ func Test(t *testing.T) {
 				msg, err := ioutil.ReadAll(job.OutputReader())
 				So(err, ShouldBeNil)
 				So(string(msg), ShouldEqual, "echococo\n")
+				So(job.Wait().Error, ShouldBeNil)
 				So(job.Wait().ExitCode, ShouldEqual, 0)
-
 			})
 
 			Convey("The executor should be able to check exit codes", func() {
@@ -87,6 +87,7 @@ func Test(t *testing.T) {
 
 				job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
 				So(job, ShouldNotBeNil)
+				So(job.Wait().Error, ShouldBeNil)
 				So(job.Wait().ExitCode, ShouldEqual, 14)
 			})
 
@@ -110,6 +111,7 @@ func Test(t *testing.T) {
 
 					job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
 					So(job, ShouldNotBeNil)
+					So(job.Wait().Error, ShouldBeNil)
 					So(job.Wait().ExitCode, ShouldEqual, 0)
 					msg, err := ioutil.ReadAll(job.OutputReader())
 					So(err, ShouldBeNil)
