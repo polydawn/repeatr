@@ -27,7 +27,7 @@ func GetTempDir(dirs ...string) string {
 	tempPath := filepath.Join(dir...)
 
 	// Tempdir wants parent path to exist
-	err := os.MkdirAll(tempPath, 0600)
+	err := os.MkdirAll(tempPath, 0755)
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
 	}
@@ -51,7 +51,7 @@ func WithDir(f func(string), dirs ...string) {
 	tempPath := filepath.Join(dirs...)
 
 	// Tempdir wants parent path to exist
-	err := os.MkdirAll(tempPath, 0600)
+	err := os.MkdirAll(tempPath, 0755)
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
 	}
