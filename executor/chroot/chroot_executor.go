@@ -69,10 +69,13 @@ func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job
 
 // Executes a job, catching any panics.
 func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser, journal io.Writer) def.JobResult {
-	var r def.JobResult
+	r := def.JobResult{
+		ID:       j.Id(),
+		ExitCode: -1,
+	}
 
 	try.Do(func() {
-		r = e.Execute(f, j, d, outS, errS, journal)
+		e.Execute(f, j, d, &r, outS, errS, journal)
 	}).Catch(executor.Error, func(err *errors.Error) {
 		r.Error = err
 	}).Catch(input.Error, func(err *errors.Error) {
@@ -87,13 +90,7 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCl
 }
 
 // Execute a formula in a specified directory. MAY PANIC.
-func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser, journal io.Writer) def.JobResult {
-
-	result := def.JobResult{
-		ID:      j.Id(),
-		Outputs: []def.Output{},
-	}
-
+func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobResult, outS, errS io.WriteCloser, journal io.Writer) {
 	// Prepare filesystem
 	rootfs := filepath.Join(d, "rootfs")
 	util.ProvisionInputs(f.Inputs, rootfs, journal)
@@ -135,6 +132,4 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, outS, errS io.Wri
 
 	// Save outputs
 	result.Outputs = util.PreserveOutputs(f.Outputs, rootfs, journal)
-
-	return result
 }
