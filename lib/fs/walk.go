@@ -19,10 +19,7 @@ type WalkFunc func(filenode *FilewalkNode) error
 
 	All paths begin in `./`, and directory names are slash-suffixed.
 	E.g. you'll see a series like `{"./", "./a/", "./a/b"}`, etc.
-	This is identical in behavior to `filepath.Clean` having been called on each path,
-	with the exception that prefix and directory suffixed.  (The reason for
-	these behaviors is to have the results naturally sort into a tree ordering;
-	see also the comments on buckets in the `lib/fshash` package.)
+	This matches the behaviors described by `Normalize` in the `lib/fshash`.
 
 	Symlinks are not followed.
 

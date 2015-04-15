@@ -17,10 +17,9 @@ type MemoryBucket struct {
 }
 
 func (b *MemoryBucket) Record(metadata fs.Metadata, contentHash []byte) {
-	if metadata.Typeflag == tar.TypeDir {
-		if !strings.HasSuffix(metadata.Name, "/") {
-			metadata.Name += "/"
-		}
+	normalized := Normalize(metadata.Name, metadata.Typeflag == tar.TypeDir)
+	if metadata.Name != normalized {
+		panic(InvalidParameter.New("bucket: non-normalized path: %q (normal: %q)", metadata.Name, normalized))
 	}
 	b.lines = append(b.lines, Record{metadata, contentHash})
 }

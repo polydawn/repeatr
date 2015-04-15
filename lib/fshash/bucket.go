@@ -2,6 +2,7 @@ package fshash
 
 import (
 	"archive/tar"
+	"path"
 
 	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/def"
@@ -10,16 +11,41 @@ import (
 )
 
 /*
+	Paths used in hashing must be normalized.
+
+	All paths must be "cleaned", must begin in `./`, and directory names must be slash-suffixed.
+	This is identical in behavior to `filepath.Clean` having been called on each path,
+	with the exception of the prefix and suffixed directories.
+
+	These behaviors results in outputs that naturally sort into a tree ordering:
+	slash-suffixed dirnames under a simple string sort become ordered such that
+	parent dirs come before their children, and **immediately** before their children,
+	which dramatically simplifies processing -- in-order traversals as both a list
+	and as a tree are possible as O(n) operations, and do not require the entire
+	dataset to be seekable in memory.
+*/
+func Normalize(p string, isDir bool) string {
+	p = path.Clean(p)
+	if p == "." {
+		return "./"
+	}
+	if path.IsAbs(p) {
+		p = p[1:]
+	}
+	if isDir {
+		return "./" + p + "/"
+	}
+	return "./" + p
+}
+
+/*
 	Bucket keeps hashes of file content and the set of metadata per file and dir.
 	This is to make it possible to range over the filesystem out of order and
 	construct a total hash of the system in order later.
 
-	Directory names must be slash-suffixed.
-	Note that this diverges with https://golang.org/pkg/path/#Clean behavior.
-	(Also note that this matches the specifications for tar formats, though that's a coincidence.)
-	The overriding consideration is that slash-suffixed dirnames
-	naturally sort such that parent dirs come (immediately) before their children,
-	which dramatically simplifies processing.
+	`metadata.Name` must be normalized before recording into the bucket --
+	see the `Normalize` function.  Use of the `Normalize` function specifically is not
+	required, but data outside of the normalized format may result in panics.
 
 	Currently this just has an in-memory implementation, but something backed by
 	e.g. boltdb for really large file trees would also make sense.
@@ -69,6 +95,14 @@ var PathCollision *errors.ErrorClass = InvalidFilesystem.NewClass("PathCollision
 	and there's no entries for "./a", it's a MissingTree error.
 */
 var MissingTree *errors.ErrorClass = InvalidFilesystem.NewClass("MissingTree")
+
+/*
+	Major error raised when (redundant) checks on input validation fail.
+	(Like all subtypes of `ProgrammerError`, it's not necessary for consumers
+	to check for these; in theory all checks that raise this kind of error
+	could be disabled in except in debug builds.)
+*/
+var InvalidParameter *errors.ErrorClass = errors.ProgrammerError.NewClass("InvalidParameter")
 
 /*
 	Node used for the root (Name = "./") path, if one isn't provided.
