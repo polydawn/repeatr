@@ -8,10 +8,16 @@ import (
 	"github.com/polydawn/gosh"
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/input/tests"
 	"polydawn.net/repeatr/lib/fspatch"
+	"polydawn.net/repeatr/output/tar2"
 	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
 )
+
+func TestCoreCompliance(t *testing.T) {
+	tests.CheckRoundTrip(t, "tar", tar2.New, New)
+}
 
 const ubuntuTarballHash = "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v"
 

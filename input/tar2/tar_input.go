@@ -28,7 +28,7 @@ type Input struct {
 	hasherFactory func() hash.Hash
 }
 
-func New(spec def.Input) *Input {
+func New(spec def.Input) input.Input {
 	if spec.Type != Type {
 		panic(errors.ProgrammerError.New("This input implementation supports definitions of type %q, not %q", Type, spec.Type))
 	}
