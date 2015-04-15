@@ -47,7 +47,7 @@ func DetectCompression(source []byte) Compression {
 }
 
 func Decompress(stream io.Reader) (io.Reader, error) {
-	buf := bufio.NewReaderSize(stream, 8*1024)
+	buf := bufio.NewReaderSize(stream, 32*1024)
 	bs, err := buf.Peek(10)
 	if err != nil {
 		return nil, err
