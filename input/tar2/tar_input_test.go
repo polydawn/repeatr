@@ -8,6 +8,7 @@ import (
 	"github.com/polydawn/gosh"
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/fspatch"
 	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
 )
@@ -41,6 +42,9 @@ func TestTarCompat(t *testing.T) {
 			gosh.NullIO,
 		).RunAndReport()
 		So(tarProc.GetExitCode(), ShouldEqual, 0)
+		// native untar does not have an opinion about the base dir...
+		// but our scans do, so, flatten that here
+		So(fspatch.LUtimesNano("./untar", def.Epochwhen, def.Epochwhen), ShouldBeNil)
 
 		// scan and compare
 		scan1 := filefixture.Scan("./data")
@@ -48,7 +52,7 @@ func TestTarCompat(t *testing.T) {
 		// boy, that's entertaining though: gnu tar does all the same stuff,
 		//  except it doesn't honor our nanosecond timings.
 		// also exclude bodies because they're *big*.
-		comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareMtime &^ filefixture.CompareBody
+		comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareSubsecond &^ filefixture.CompareBody
 		So(scan1.Describe(comparisonLevel), ShouldEqual, scan2.Describe(comparisonLevel))
 	}))
 }

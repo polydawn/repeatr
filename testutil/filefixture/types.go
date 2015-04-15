@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/def"
@@ -27,15 +28,16 @@ type Fixture struct {
 type ComparisonOptions uint32
 
 const (
-	ComparePerms = ComparisonOptions(0001)
-	CompareMtime = ComparisonOptions(0002)
-	CompareAtime = ComparisonOptions(0004)
-	CompareUid   = ComparisonOptions(0010)
-	CompareGid   = ComparisonOptions(0020)
-	CompareSize  = ComparisonOptions(0040)
-	CompareBody  = ComparisonOptions(0100)
+	ComparePerms     = ComparisonOptions(00001)
+	CompareMtime     = ComparisonOptions(00002)
+	CompareAtime     = ComparisonOptions(00004)
+	CompareSubsecond = ComparisonOptions(01000) // modifies atime and mtime
+	CompareUid       = ComparisonOptions(00010)
+	CompareGid       = ComparisonOptions(00020)
+	CompareSize      = ComparisonOptions(00040)
+	CompareBody      = ComparisonOptions(00100)
 
-	CompareDefaults = ComparePerms | CompareMtime | CompareUid | CompareGid |
+	CompareDefaults = ComparePerms | CompareMtime | CompareSubsecond | CompareUid | CompareGid |
 		CompareSize | CompareBody
 	CompareAll = CompareDefaults | CompareAtime
 )
@@ -173,6 +175,10 @@ func (ffs Fixture) Describe(opts ComparisonOptions) string {
 	As per `FixtureFiles.Describe`, but this is for a single entry.
 */
 func (ff FixtureFile) Describe(opts ComparisonOptions) string {
+	if opts&CompareSubsecond == 0 {
+		ff.Metadata.ModTime = ff.Metadata.ModTime.Truncate(time.Second)
+		ff.Metadata.AccessTime = ff.Metadata.AccessTime.Truncate(time.Second)
+	}
 	parts := []struct {
 		Key   string
 		Value interface{}
