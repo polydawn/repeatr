@@ -8,6 +8,7 @@ import (
 	"hash"
 	"io"
 	"os"
+	"path"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
@@ -103,7 +104,12 @@ func walk(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFacto
 		}
 		hdr := fs.Metadata(*thdr)
 		// filter/sanify values:
+		// names must be clean, relative dot-slash prefixed, and dirs slash-suffixed
 		// times should never be go's zero value; replace those with epoch
+		hdr.Name = path.Clean(hdr.Name)
+		if hdr.Name != "." {
+			hdr.Name = "./" + hdr.Name
+		}
 		if hdr.ModTime.IsZero() {
 			hdr.ModTime = def.Epochwhen
 		}
@@ -119,6 +125,9 @@ func walk(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFacto
 			}
 			fs.PlaceFile(destBasePath, hdr, reader)
 			bucket.Record(hdr, reader.hasher.Sum(nil))
+		case tar.TypeDir:
+			hdr.Name += "/"
+			fallthrough
 		default:
 			fs.PlaceFile(destBasePath, hdr, tr)
 			bucket.Record(hdr, nil)

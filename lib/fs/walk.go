@@ -3,6 +3,7 @@ package fs
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"polydawn.net/repeatr/lib/treewalk"
 )
@@ -16,8 +17,12 @@ type WalkFunc func(filenode *FilewalkNode) error
 	it's based on `treewalk`, which means it supports both pre- and post-order
 	traversals.
 
-	All paths begin in `.`, e.g. you'll see a series like	`{".", "./a", "./a/b"}`, etc.
-	This is identical in behavior to `filepath.Clean` having been called on each path.
+	All paths begin in `./`, and directory names are slash-suffixed.
+	E.g. you'll see a series like `{"./", "./a/", "./a/b"}`, etc.
+	This is identical in behavior to `filepath.Clean` having been called on each path,
+	with the exception that prefix and directory suffixed.  (The reason for
+	these behaviors is to have the results naturally sort into a tree ordering;
+	see also the comments on buckets in the `lib/fshash` package.)
 
 	Symlinks are not followed.
 
@@ -28,7 +33,7 @@ type WalkFunc func(filenode *FilewalkNode) error
 */
 func Walk(basePath string, preVisit WalkFunc, postVisit WalkFunc) error {
 	return treewalk.Walk(
-		newFileWalkNode(basePath, "."),
+		newFileWalkNode(basePath, "./"),
 		func(node treewalk.Node) error {
 			filenode := node.(*FilewalkNode)
 			if preVisit != nil {
@@ -72,6 +77,11 @@ func (t *FilewalkNode) NextChild() treewalk.Node {
 func newFileWalkNode(basePath, path string) (filenode *FilewalkNode) {
 	filenode = &FilewalkNode{Path: path}
 	filenode.Info, filenode.Err = os.Lstat(filepath.Join(basePath, path))
+	if filenode.Info.IsDir() {
+		if !strings.HasSuffix(filenode.Path, "/") {
+			filenode.Path += "/"
+		}
+	}
 	// don't expand the children until the previsit function
 	// we don't want them all crashing into memory at once
 	return

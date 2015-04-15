@@ -12,6 +12,8 @@ import (
 	"polydawn.net/repeatr/testutil/filefixture"
 )
 
+const ubuntuTarballHash = "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v"
+
 func TestTarCompat(t *testing.T) {
 	projPath, _ := os.Getwd()
 	projPath = filepath.Dir(filepath.Dir(projPath))
@@ -19,7 +21,7 @@ func TestTarCompat(t *testing.T) {
 	testutil.Convey_IfHaveRoot("Applying a full ubuntu tarball should produce a filesystem", t, testutil.WithTmpdir(func() {
 		inputSpec := def.Input{
 			Type: "tar",
-			Hash: "HlC6c5GvyYQkB8Jtb8UeNFnYgV83la-MBwp66pK73QMfDpz9ScjeYrLwudvtjWiP",
+			Hash: ubuntuTarballHash,
 			URI:  filepath.Join(projPath, "assets/ubuntu.tar.gz"),
 		}
 		input := New(inputSpec)

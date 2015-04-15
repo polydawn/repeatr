@@ -1,6 +1,7 @@
 package fshash
 
 import (
+	"archive/tar"
 	"sort"
 	"strings"
 
@@ -16,6 +17,11 @@ type MemoryBucket struct {
 }
 
 func (b *MemoryBucket) Record(metadata fs.Metadata, contentHash []byte) {
+	if metadata.Typeflag == tar.TypeDir {
+		if !strings.HasSuffix(metadata.Name, "/") {
+			metadata.Name += "/"
+		}
+	}
 	b.lines = append(b.lines, Record{metadata, contentHash})
 }
 
@@ -26,7 +32,7 @@ func (b *MemoryBucket) Record(metadata fs.Metadata, contentHash []byte) {
 
 	This applies some "finalization" operations before starting the walk:
 	  - All records will be sorted.
-	  - If there isn't a root node (i.e. Name = "."), one will be added.
+	  - If there isn't a root node (i.e. Name = "./"), one will be added.
 
 	This is only safe for non-concurrent use and depth-first traversal.
 	If the data structure is changed, or (sub)iterators used out of order,
@@ -35,9 +41,9 @@ func (b *MemoryBucket) Record(metadata fs.Metadata, contentHash []byte) {
 func (b *MemoryBucket) Iterator() RecordIterator {
 	sort.Sort(linesByFilepath(b.lines))
 	// check for rootedness.  make a reasonable default one if not present.
-	if len(b.lines) == 0 || b.lines[0].Metadata.Name != "." {
+	if len(b.lines) == 0 || b.lines[0].Metadata.Name != "./" {
 		// this is stupidly expensive but checking for it without sorting would be even worse, so
-		lines := make([]Record, 1, len(b.lines))
+		lines := make([]Record, len(b.lines)+1)
 		lines[0] = DefaultRoot
 		copy(lines[1:], b.lines)
 		b.lines = lines
@@ -68,10 +74,9 @@ func (i *memoryBucketIterator) NextChild() treewalk.Node {
 	nextName := i.lines[next].Metadata.Name
 	thisName := i.lines[i.this].Metadata.Name
 	// is the next one still a child?
-	if strings.HasPrefix(nextName, thisName+"/") {
+	if strings.HasPrefix(nextName, thisName) {
 		// check for missing trees
-		nextSplit := strings.LastIndex(nextName, "/")
-		if nextSplit == -1 || nextName[:nextSplit] != thisName {
+		if strings.ContainsRune(nextName[len(thisName):len(nextName)-1], '/') {
 			panic(MissingTree.New("missing tree: %q followed %q", nextName, thisName))
 		}
 		// check for repeated names

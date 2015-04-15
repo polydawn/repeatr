@@ -65,6 +65,12 @@ func defaults(f FixtureFile) FixtureFile {
 			f.Metadata.Typeflag = tar.TypeReg
 		}
 	}
+	switch f.Metadata.Typeflag {
+	case tar.TypeDir:
+		if !strings.HasSuffix(f.Metadata.Name, "/") {
+			f.Metadata.Name += "/"
+		}
+	}
 	if f.Metadata.Mode == 0 {
 		switch f.Metadata.Typeflag {
 		case tar.TypeDir:

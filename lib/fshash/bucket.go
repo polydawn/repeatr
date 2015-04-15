@@ -14,6 +14,13 @@ import (
 	This is to make it possible to range over the filesystem out of order and
 	construct a total hash of the system in order later.
 
+	Directory names must be slash-suffixed.
+	Note that this diverges with https://golang.org/pkg/path/#Clean behavior.
+	(Also note that this matches the specifications for tar formats, though that's a coincidence.)
+	The overriding consideration is that slash-suffixed dirnames
+	naturally sort such that parent dirs come (immediately) before their children,
+	which dramatically simplifies processing.
+
 	Currently this just has an in-memory implementation, but something backed by
 	e.g. boltdb for really large file trees would also make sense.
 */
@@ -64,14 +71,14 @@ var PathCollision *errors.ErrorClass = InvalidFilesystem.NewClass("PathCollision
 var MissingTree *errors.ErrorClass = InvalidFilesystem.NewClass("MissingTree")
 
 /*
-	Node used for the root (Name = ".") path, if one isn't provided.
+	Node used for the root (Name = "./") path, if one isn't provided.
 */
 var DefaultRoot Record
 
 func init() {
 	DefaultRoot = Record{
 		Metadata: fs.Metadata{
-			Name:       ".",
+			Name:       "./",
 			Typeflag:   tar.TypeDir,
 			Mode:       0755,
 			ModTime:    def.Epochwhen,

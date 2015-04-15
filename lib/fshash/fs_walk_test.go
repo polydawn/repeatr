@@ -33,9 +33,9 @@ func Test(t *testing.T) {
 				Convey("Then the bucket contains the file descriptions", func() {
 					So(len(bucket.lines), ShouldEqual, 5)
 					sort.Sort(linesByFilepath(bucket.lines))
-					So(bucket.lines[0].Metadata.Name, ShouldEqual, ".")
-					So(bucket.lines[1].Metadata.Name, ShouldEqual, "./a")
-					So(bucket.lines[2].Metadata.Name, ShouldEqual, "./b")
+					So(bucket.lines[0].Metadata.Name, ShouldEqual, "./")
+					So(bucket.lines[1].Metadata.Name, ShouldEqual, "./a/")
+					So(bucket.lines[2].Metadata.Name, ShouldEqual, "./b/")
 					So(bucket.lines[3].Metadata.Name, ShouldEqual, "./b/c")
 					So(bucket.lines[4].Metadata.Name, ShouldEqual, "./d")
 				})
@@ -55,12 +55,12 @@ func Test(t *testing.T) {
 
 				Convey("We can walk the bucket and touch all records", func() {
 					root := bucket.Iterator()
-					So(root.Record().Metadata.Name, ShouldEqual, ".")
+					So(root.Record().Metadata.Name, ShouldEqual, "./")
 					node_a := root.NextChild().(RecordIterator)
-					So(node_a.Record().Metadata.Name, ShouldEqual, "./a")
+					So(node_a.Record().Metadata.Name, ShouldEqual, "./a/")
 					So(node_a.NextChild(), ShouldBeNil)
 					node_b := root.NextChild().(RecordIterator)
-					So(node_b.Record().Metadata.Name, ShouldEqual, "./b")
+					So(node_b.Record().Metadata.Name, ShouldEqual, "./b/")
 					node_c := node_b.NextChild().(RecordIterator)
 					So(node_c.Record().Metadata.Name, ShouldEqual, "./b/c")
 					So(node_c.NextChild(), ShouldBeNil)
