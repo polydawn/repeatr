@@ -16,7 +16,7 @@ import (
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fshash"
-	"polydawn.net/repeatr/lib/fspatch"
+	"polydawn.net/repeatr/lib/treewalk"
 )
 
 const Type = "tar"
@@ -53,10 +53,9 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 			if err != nil {
 				panic(input.TargetFilesystemUnavailableIOError(err))
 			}
-			// daemon uid and gid are fine for now but force a constant mtime.
-			if err := fspatch.LUtimesNano(destinationRoot, def.Epochwhen, def.Epochwhen); err != nil {
-				panic(input.TargetFilesystemUnavailableIOError(err))
-			}
+			// daemon uid and gid are fine for now (they're always 0);
+			// forcing a constant time happens along with all the other dirs, since
+			// the bucket normalizes to include a root attribute set if the tar doesn't have one.
 
 			// open the tar file; preparing decompression as necessary
 			file, err := os.OpenFile(i.spec.URI, os.O_RDONLY, 0755)
@@ -129,10 +128,19 @@ func walk(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFacto
 			hdr.Name += "/"
 			fallthrough
 		default:
-			fs.PlaceFile(destBasePath, hdr, tr)
+			fs.PlaceFile(destBasePath, hdr, nil)
 			bucket.Record(hdr, nil)
-			// TODO fixup dir times afterwards
 		}
+	}
+	// cleanup dir times with a post-order traversal over the bucket
+	if err := treewalk.Walk(bucket.Iterator(), nil, func(node treewalk.Node) error {
+		record := node.(fshash.RecordIterator).Record()
+		if record.Metadata.Typeflag == tar.TypeDir {
+			fs.PlaceDirTime(destBasePath, record.Metadata)
+		}
+		return nil
+	}); err != nil {
+		panic(err)
 	}
 	return nil
 }
