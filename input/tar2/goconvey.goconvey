@@ -1,1 +1,2 @@
--timeout=30s
+#-timeout=30s
+-short
