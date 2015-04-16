@@ -46,7 +46,7 @@ import (
 
 // oh, hey.  look: the contents of the middle shit are actually the same shape.
 
-type Materializer func(dataHash string, destPath string, writable bool) <-chan error
+type Materializer func(dataHash string, siloURI string, destPath string, writable bool) <-chan error
 
 type Slurper func(scanPath string) <-chan SlurpReport
 
@@ -59,8 +59,8 @@ type Placer func(srcPath, destPath string, writable bool) <-chan error
 
 // n.b. dat errur handlin goonna be odd: placer errors, are they input or output?  wrap ur placer for conversion?  embarass.  but, work.
 
-func TarMaterializer(siloURI string) Materializer {
-	return func(dataHash string, destPath string, _ bool) <-chan error {
+func TarMaterializer() Materializer { // this doesn't need to be a factory anymore :/  all the parameters evaporated
+	return func(dataHash string, siloURI string, destPath string, _ bool) <-chan error {
 		return tarinput.New(def.Input{
 			Type: "tar",
 			Hash: dataHash,
@@ -69,25 +69,42 @@ func TarMaterializer(siloURI string) Materializer {
 	}
 }
 
-func AufsPlacer(srcPath, destPath string, _ bool) <-chan error {
-	return nil // ignore writable, COW it -- use in combo with bindmounter that understands ro
+func AufsPlacer(workDirPath string) Placer {
+	return func(srcPath, destPath string, _ bool) <-chan error {
+		// use workdir to host a tempdir to use as the "layer" dir
+		return nil // ignore writable, COW it -- use in combo with bindmounter that understands ro
+	}
+}
+
+func BindPlacer(writerIsolator Placer) Placer {
+	return func(srcPath, destPath string, writable bool) <-chan error {
+		if writable {
+			return writerIsolator(srcPath, destPath, writable)
+			// no need to do another bounce of bind; we're already mounting so we can just do it in place
+		} else {
+			// plain bind mount with ro bits
+			return nil
+		}
+	}
+
 }
 
 func AdaptMaterializer(c *Cacher, p Placer) Materializer {
-	return func(dataHash string, destPath string, writable bool) <-chan error {
-		cachePath := c.Get(dataHash, nil) // FIXME UHH.  so if you can set the backfill materializer per Cache, fine: i'm gonna assert that's *not* reasonable.
+	return func(dataHash string, siloURI string, destPath string, writable bool) <-chan error {
+		cachePath := c.Get(dataHash, siloURI)
 		return p(cachePath, destPath, writable)
 	}
 }
 
 type Cacher struct {
-	BasePath string // working dir
+	BasePath string       // working dir
+	filler   Materializer // NOTE you lost the ability to have another layer of disbatcher here, which might be handy if two different types of materializer happen to safely share a hash space (which, jussayin, several *do*)... though, no, that's sane since the get call just accepts a siloLocation... for now...
 }
 
-func (c *Cacher) Get(dataHash string, filler Materializer) (path string) { // blocks
+func (c *Cacher) Get(dataHash string, siloURI string) (path string) { // blocks
 	cachePath := filepath.Join(c.BasePath, dataHash)
 	// todo something with claims and joining waits too
-	fillErr := <-filler(dataHash, cachePath, false)
+	fillErr := <-c.filler(dataHash, siloURI, cachePath, false)
 	panic(fillErr)
 	return cachePath
 }
@@ -100,21 +117,25 @@ func example() {
 		URI:  "file://data/supplier",
 	}
 
-	var mat Materializer = func(kind string) Materializer {
-		switch kind {
-		case "tar":
-			return TarMaterializer(inSpec.URI)
-		default:
-			panic("baw")
-		}
-	}(inSpec.Type)
+	matDispatcher := MaterializerDispatcher{
+		"tar": TarMaterializer(),
+	}
+
+	var mat Materializer = matDispatcher[inSpec.Type]
+
+	mat(inSpec.Hash, inSpec.URI, inSpec.Location /* translated for rootfs, obvs */, true)
 
 	_ = mat
 }
 
 type MaterializerDispatcher map[string]Materializer
 
-func (matd MaterializerDispatcher) Get(kind string) Materializer {
-	// this is just ALL rong.  registration can only possible take... a materalizer factory -.-
-	return nil
-}
+// guess what else
+// guess what else
+
+// the last stage of placer needs to be in a different level of sync than anything else
+// because the executor might need to do some mkdirs in between the last couple placer operations
+// and it most definitely does not want to have a wildly variable and networked wait inbetween thoseS
+
+// bonus points: please remember that this is going to need progress reporting.
+// anyone returning an error chan right now should be returning a progress monitor instead.
