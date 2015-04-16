@@ -9,16 +9,14 @@ import (
 	"polydawn.net/repeatr/def"
 )
 
-type Materializer func(dataHash string, siloURI string, destPath string) <-chan error
+type Materializer func(dataHash string, siloURI string, destPath string) <-chan HaverReport
 
-type Slurper func(scanPath string) <-chan SlurpReport
+type Slurper func(scanPath string, siloURI string) <-chan SlurpReport
 
 type SlurpReport struct {
 	Hash string
 	Err  error
 }
-
-type Haver func(dataHash string, siloURI string) <-chan HaverReport // so... yes, we're almost certainly willing to compromize this to have a destPath param that may or may not be blatantly ignored.
 
 type HaverReport struct {
 	Path string
@@ -54,8 +52,8 @@ func (a Assembly) Less(i, j int) bool { return a[i].TargetPath < a[j].TargetPath
 // coersion stuff
 //
 
-func TmpdirHaver(workPath string, mat Materializer) Haver {
-	return func(dataHash string, siloURI string) <-chan HaverReport {
+func TmpdirHaver(workPath string, mat Materializer) Materializer {
+	return func(dataHash string, siloURI string, _ string) <-chan HaverReport {
 		done := make(chan HaverReport)
 		go func() {
 			defer close(done)
@@ -64,9 +62,9 @@ func TmpdirHaver(workPath string, mat Materializer) Haver {
 				done <- HaverReport{Err: err}
 				return
 			}
-			err = <-mat(dataHash, siloURI, path)
-			if err != nil {
-				done <- HaverReport{Err: err}
+			report := <-mat(dataHash, siloURI, path)
+			if report.Err != nil {
+				done <- report
 				return
 			}
 			done <- HaverReport{Path: path}
@@ -75,8 +73,8 @@ func TmpdirHaver(workPath string, mat Materializer) Haver {
 	}
 }
 
-func CachingHaver(workPath string, mat Materializer) Haver {
-	return func(dataHash string, siloURI string) <-chan HaverReport {
+func CachingHaver(workPath string, mat Materializer) Materializer {
+	return func(dataHash string, siloURI string, _ string) <-chan HaverReport {
 		permPath := filepath.Join(workPath, "committed", dataHash)
 		_, statErr := os.Stat(permPath)
 		done := make(chan HaverReport)
@@ -84,7 +82,7 @@ func CachingHaver(workPath string, mat Materializer) Haver {
 			stageBasePath := filepath.Join(workPath, "staging")
 			go func() {
 				defer close(done)
-				report := <-TmpdirHaver(stageBasePath, mat)(dataHash, siloURI)
+				report := <-TmpdirHaver(stageBasePath, mat)(dataHash, siloURI, "irrelevant, feels bad man")
 				// keep it around.
 				// build more realistic syncs around this later, but posix mv atomicity might actually do enough.
 				err := os.Rename(report.Path, permPath)
@@ -125,7 +123,7 @@ func example() {
 
 	// we start with materializers but always coerce them into acting like havers,
 	// just so we can have a consistent interface and drop the caching layer transparently.
-	var haver Haver
+	var haver Materializer
 
 	// materializers should be draftable into havers... with or without cachers
 	if wantCache {
@@ -139,7 +137,7 @@ func example() {
 	for _, input := range formula.Inputs {
 		//func(dataHash string, siloURI string) <-chan HaverReport
 		// do a for loop you fool
-		haver(input.Hash, input.URI)
+		haver(input.Hash, input.URI, "irrelevant, feels bad man")
 		// TODO collect
 	}
 	for _, output := range formula.Outputs {
