@@ -22,3 +22,14 @@ script:
 
 notifications:
   email: false
+  irc:
+    channels:
+      - "irc.freenode.org##polydawn"
+    on_success: always
+    on_failure: always
+    template:
+      - |-
+        %{repository_slug}: %{result} %{branch}:%{commit} by %{author}. took %{duration}. %{build_url} "%{commit_message}"
+    skip_join: true
+
+
