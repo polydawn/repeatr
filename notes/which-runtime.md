@@ -416,3 +416,5 @@ Not all ended up with extensive enough notes to warrant inclusion.
 Discussion PRs to this file accepted.
 
 https://github.com/jpetazzo/sekexe
+
+Ubuntu is working on a hypervisor: http://www.ubuntu.com/cloud/tools/lxd
