@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"sync"
 
 	"polydawn.net/repeatr/def"
@@ -77,7 +76,11 @@ func ProgressReporter(rep chan<- float32) MaterializerConfigurer {
 // GONE as a concept.  Any data installation can now be scanned, and output arenas are just denoted by the magic zero CommitID.
 // Well, maybe not quite that much magic value on CommitIDs.  That might be poor.
 
-type Placer func(srcPath, destPath string, writable bool)
+type Placer func(srcPath, destPath string, writable bool) Emplacement
+
+type Emplacement interface {
+	Teardown()
+}
 
 /*
 	Writable inputs get a COW.
@@ -86,21 +89,26 @@ type Placer func(srcPath, destPath string, writable bool)
 
 	Expect most assemblers to be constructed with a Haver and a Placer.
 */
-type Assembler func([]AssemblyPart)
+type Assembler func(basePath string, mounts []AssemblyPart) Assembly
+
+type Assembly interface {
+	Teardown()
+}
 
 type AssemblyPart struct {
 	TargetPath string // in the container fs context
 	SourcePath string // datasource which we want to respect
 	Writable   bool
 	// TODO make sure we get an example that sees how this reacts to outputs: not sure we have enough bits here yet
+	//  ... indeed, dealing with outputs does rather make it clear that a copying placer isn't an acceptable drop-in mechanism.
 }
 
 // sortable by target path (which is effectively mountability order)
-type Assembly []AssemblyPart
+type AssemblyPartsByPath []AssemblyPart
 
-func (a Assembly) Len() int           { return len(a) }
-func (a Assembly) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a Assembly) Less(i, j int) bool { return a[i].TargetPath < a[j].TargetPath }
+func (a AssemblyPartsByPath) Len() int           { return len(a) }
+func (a AssemblyPartsByPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a AssemblyPartsByPath) Less(i, j int) bool { return a[i].TargetPath < a[j].TargetPath }
 
 //
 // coersion stuff
@@ -218,17 +226,6 @@ func (ct *CachingTransmat) Materialize(kind TransmatKind, dataHash CommitID, sil
 	} else {
 		return nil // TODO return existing (which we should already have proxied ref to that has a noop teardown)
 	}
-}
-
-type TheAssembler struct {
-	Placer Placer
-}
-
-var _ Assembler = (&TheAssembler{}).Assemble
-
-func (a *TheAssembler) Assemble(mounts []AssemblyPart) {
-	sort.Sort(Assembly(mounts))
-	//	for
 }
 
 //
