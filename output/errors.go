@@ -7,6 +7,11 @@ import (
 var Error *errors.ErrorClass = errors.NewClass("OutputError") // grouping, do not instantiate
 
 /*
+	Raised to indicate that some configuration is missing or malformed.
+*/
+var ConfigError *errors.ErrorClass = Error.NewClass("OutputConfigError")
+
+/*
 	Indicates that the target filesystem (the one given to `Apply`) had some error.
 */
 var TargetFilesystemUnavailableError *errors.ErrorClass = Error.NewClass("OutputTargetFilesystemUnavailableError")

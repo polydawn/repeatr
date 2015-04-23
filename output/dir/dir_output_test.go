@@ -7,7 +7,7 @@ import (
 )
 
 func TestCoreCompliance(t *testing.T) {
-	tests.CheckScanWithoutMutation(t, "dir", New)
-	tests.CheckScanProducesConsistentHash(t, "dir", New)
-	tests.CheckScanProducesDistinctHashes(t, "dir", New)
+	tests.CheckScanWithoutMutation(t, "dir", New, "./output.dump")
+	tests.CheckScanProducesConsistentHash(t, "dir", New, "./output.dump")
+	tests.CheckScanProducesDistinctHashes(t, "dir", New, "./output.dump")
 }

@@ -14,9 +14,9 @@ import (
 )
 
 func TestCoreCompliance(t *testing.T) {
-	tests.CheckScanWithoutMutation(t, "tar", New)
-	tests.CheckScanProducesConsistentHash(t, "tar", New)
-	tests.CheckScanProducesDistinctHashes(t, "tar", New)
+	tests.CheckScanWithoutMutation(t, "tar", New, "./output.dump.tar")
+	tests.CheckScanProducesConsistentHash(t, "tar", New, "./output.dump.tar")
+	tests.CheckScanProducesDistinctHashes(t, "tar", New, "./output.dump.tar")
 }
 
 func TestTarCompat(t *testing.T) {

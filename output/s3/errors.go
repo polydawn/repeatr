@@ -8,7 +8,7 @@ import (
 /*
 	Raised if S3 credentials are not available.
 */
-var S3ConfigurationMissingError *errors.ErrorClass = output.Error.NewClass("OutputS3ConfigurationMissingError")
+var S3CredentialsMissingError *errors.ErrorClass = output.ConfigError.NewClass("OutputS3CredentialsMissingError")
 
 /*
 	Grouping for an error encountered while talking to the S3 API.
