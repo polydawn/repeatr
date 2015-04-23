@@ -18,4 +18,5 @@ func TestCoreCompliance(t *testing.T) {
 	testRunGuid := guid.New()
 
 	tests.CheckRoundTrip(t, "s3", s3.New, New, "s3://repeatr-test/test-"+testRunGuid+"/rt/obj.tar")
+	tests.CheckRoundTrip(t, "s3", s3.New, New, "s3+splay://repeatr-test/test-"+testRunGuid+"/rt-splay/heap/")
 }
