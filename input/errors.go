@@ -7,6 +7,11 @@ import (
 var Error *errors.ErrorClass = errors.NewClass("InputError") // grouping, do not instantiate
 
 /*
+	Raised to indicate that some configuration is missing or malformed.
+*/
+var ConfigError *errors.ErrorClass = Error.NewClass("InputConfigError")
+
+/*
 	Indicates that an error getting the data an input described.
 	(As contrasted with a `TargetFilesystemUnavailableError`, which is
 	an error that comes while trying to unpack the data source onto a
