@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/spacemonkeygo/errors"
+	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fspatch"
 )
 
@@ -178,4 +180,108 @@ func ScanFile(basePath, path string, optional ...os.FileInfo) (hdr Metadata, fil
 		}
 	}
 	return
+}
+
+/*
+	Alias for `MkdirAllWithAttribs` using sane defaults for metadata (epoch mtime, etc).
+*/
+func MkdirAll(path string) error {
+	return MkdirAllWithAttribs(path, Metadata{
+		Mode:       0755,
+		ModTime:    def.Epochwhen,
+		AccessTime: def.Epochwhen,
+		Uid:        0,
+		Gid:        0,
+	})
+}
+
+/*
+	Much like `os.MkdirAll`, but standardizes values (mtime, etc) to match the
+	given metadata as it goes.
+
+	Existing directories are not modified; the metadata is applied only to
+	newly created directories.
+
+	Note that "exising directories are not modified" should be read as "...intentionally".
+	As usual, a filesystem with mtime and atime behaviors enabled may change
+	those attributes on the top level dir.  If this function created any new dirs,
+	it attempt to modify the mtime of the parent to replace its original value; but
+	note that this is inherently a best-effort scenario and subject to races.
+*/
+func MkdirAllWithAttribs(path string, hdr Metadata) error {
+	stack, topMTime, err := mkdirAll(path, hdr)
+	if err != nil {
+		return err
+	}
+	if stack == nil {
+		return nil
+	}
+	for i := len(stack) - 1; i >= 0; i-- {
+		if err := fspatch.LUtimesNano(stack[i], hdr.AccessTime, hdr.ModTime); err != nil {
+			return err
+		}
+	}
+	if err := fspatch.LUtimesNano(filepath.Dir(stack[0]), def.Epochwhen, topMTime); err != nil {
+		// gave up and reset atime to epoch.  sue me.  atimes are ridiculous.
+		return err
+	}
+	return nil
+}
+
+func mkdirAll(path string, hdr Metadata) (stack []string, topMTime time.Time, err error) {
+	// Following code derives from the golang standard library, so you can consider it BSDish if you like.
+	// Our changes are licensed under Apache for the sake of overall license simplicity of the project.
+
+	// Fast path: if we can tell whether path is a directory or file, stop with success or error.
+	dir, err := os.Stat(path)
+	if err == nil {
+		if dir.IsDir() {
+			return nil, dir.ModTime(), nil
+		}
+		return nil, dir.ModTime(), &os.PathError{"mkdir", path, syscall.ENOTDIR}
+	}
+
+	// Slow path: make sure parent exists and then call Mkdir for path.
+	i := len(path)
+	for i > 0 && os.IsPathSeparator(path[i-1]) { // Skip trailing path separator.
+		i--
+	}
+
+	j := i
+	for j > 0 && !os.IsPathSeparator(path[j-1]) { // Scan backward over element.
+		j--
+	}
+
+	if j > 1 {
+		// Create parent
+		stack, topMTime, err = mkdirAll(path[0:j-1], hdr)
+		if err != nil {
+			return stack, topMTime, err
+		}
+	}
+
+	// Parent now exists; invoke Mkdir and use its result.
+	err = os.Mkdir(path, 0755)
+	if err != nil {
+		// Handle arguments like "foo/." by
+		// double-checking that directory doesn't exist.
+		dir, err1 := os.Lstat(path)
+		if err1 == nil && dir.IsDir() {
+			return stack, topMTime, nil
+		}
+		return stack, topMTime, err
+	}
+	stack = append(stack, path)
+
+	// Apply standardizations.
+	if err := os.Lchown(path, hdr.Uid, hdr.Gid); err != nil {
+		return stack, topMTime, err
+	}
+	if err := os.Chmod(path, hdr.FileMode()); err != nil {
+		return stack, topMTime, err
+	}
+	// Except for time, because as usual with dirs, that requires walking backwards again at the end.
+	// That'll be done one function out.
+
+	return stack, topMTime, nil
 }
