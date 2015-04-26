@@ -49,8 +49,8 @@ func CheckPlacementBasics(t *testing.T, assemblerFn integrity.Assembler) {
 						{fs.Metadata{Name: "./a/3"}, []byte{}},
 						{fs.Metadata{Name: "./b", Mode: 0750, ModTime: time.Unix(5000, 2000)}, nil},
 						{fs.Metadata{Name: "./b/c", Mode: 0664, ModTime: time.Unix(7000, 2000)}, []byte("zyx")},
-						{fs.Metadata{Name: "./d"}, nil}, // these should have been manifested by the assembler
-						{fs.Metadata{Name: "./d/d"}, nil},
+						{fs.Metadata{Name: "./d", Uid: -1, Gid: -1}, nil}, // these should have been manifested by the assembler
+						{fs.Metadata{Name: "./d/d", Uid: -1, Gid: -1}, nil},
 						{fs.Metadata{Name: "./d/d/d"}, nil},
 						{fs.Metadata{Name: "./d/d/d/1"}, []byte{}},
 						{fs.Metadata{Name: "./d/d/d/2"}, []byte{}},

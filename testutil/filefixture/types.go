@@ -85,10 +85,17 @@ func defaults(f FixtureFile) FixtureFile {
 	if f.Metadata.Size == 0 {
 		f.Metadata.Size = int64(len(f.Body))
 	}
-	if f.Metadata.Uid == 0 {
+	// it's reallllly unfortunate when golang's zero values overlap with your actual data domain
+	switch f.Metadata.Uid {
+	case -1:
+		f.Metadata.Uid = 0
+	case 0:
 		f.Metadata.Uid = 10000
 	}
-	if f.Metadata.Gid == 0 {
+	switch f.Metadata.Gid {
+	case -1:
+		f.Metadata.Gid = 0
+	case 0:
 		f.Metadata.Gid = 10000
 	}
 	if f.Metadata.ModTime.IsZero() {
