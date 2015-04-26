@@ -49,7 +49,7 @@ func (a filesByPath) Len() int           { return len(a) }
 func (a filesByPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a filesByPath) Less(i, j int) bool { return a[i].Metadata.Name < a[j].Metadata.Name }
 
-func (f Fixture) defaults() Fixture {
+func (f Fixture) Defaults() Fixture {
 	for i, ff := range f.Files {
 		f.Files[i] = defaults(ff)
 	}

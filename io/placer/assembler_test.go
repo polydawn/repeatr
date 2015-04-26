@@ -55,7 +55,7 @@ func CheckPlacementBasics(t *testing.T, assemblerFn integrity.Assembler) {
 						{fs.Metadata{Name: "./d/d/d/1"}, []byte{}},
 						{fs.Metadata{Name: "./d/d/d/2"}, []byte{}},
 						{fs.Metadata{Name: "./d/d/d/3"}, []byte{}},
-					}}.Describe(filefixture.CompareDefaults))
+					}}.Defaults().Describe(filefixture.CompareDefaults))
 
 				assembly.Teardown()
 			}),
