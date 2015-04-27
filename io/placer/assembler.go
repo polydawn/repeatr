@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/lib/fs"
 )
 
 type defaultAssembler struct {
@@ -17,7 +18,9 @@ func (a defaultAssembler) Assemble(basePath string, mounts []integrity.AssemblyP
 	sort.Sort(integrity.AssemblyPartsByPath(mounts))
 	housekeeping := &defaultAssembly{}
 	for _, mount := range mounts {
-		housekeeping.record(a.Placer(mount.SourcePath, filepath.Join(basePath, mount.TargetPath), mount.Writable))
+		destBasePath := filepath.Join(basePath, mount.TargetPath)
+		fs.MkdirAll(destBasePath)
+		housekeeping.record(a.Placer(mount.SourcePath, destBasePath, mount.Writable))
 	}
 	return housekeeping
 }

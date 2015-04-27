@@ -12,7 +12,6 @@ import (
 )
 
 func TestCopyingPlacerCompliance(t *testing.T) {
-	t.Skip("none of this is completed implementation yet!")
 	CheckPlacementBasics(t, defaultAssembler{Placer: CopyingPlacer}.Assemble)
 }
 
