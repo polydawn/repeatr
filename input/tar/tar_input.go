@@ -20,7 +20,9 @@ type Input struct {
 }
 
 func New(spec def.Input) *Input {
-	if spec.Type != Type {
+	switch spec.Type {
+	case Type, "exec-tar":
+	default:
 		panic(errors.ProgrammerError.New("This input implementation supports definitions of type %q, not %q", Type, spec.Type))
 	}
 	return &Input{
