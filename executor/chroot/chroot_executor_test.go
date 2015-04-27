@@ -42,6 +42,18 @@ func Test(t *testing.T) {
 				result := e.Start(formula, def.JobID(guid.New()), ioutil.Discard).Wait()
 				So(result.Error, testutil.ShouldBeErrorClass, input.Error)
 			})
+
+			Convey("The job exit code should clearly indicate failure", FailureContinues, func() {
+				formula.Accents = def.Accents{
+					Entrypoint: []string{"echo", "echococo"},
+				}
+				job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+				So(job, ShouldNotBeNil)
+				So(job.Wait().Error, ShouldNotBeNil)
+				// Even though one should clearly also check the error status,
+				//  zero here could be very confusing, so jobs that error before start should be -1.
+				So(job.Wait().ExitCode, ShouldEqual, -1)
+			})
 		}),
 	)
 
