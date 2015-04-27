@@ -3,6 +3,7 @@ package placer
 import (
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
@@ -57,7 +58,32 @@ func (e copyEmplacement) Teardown() {
 var _ integrity.Placer = BindPlacer
 
 func BindPlacer(srcPath, destPath string, writable bool) integrity.Emplacement {
-	return nil
+	srcStat, err := os.Stat(srcPath)
+	if err != nil || !srcStat.IsDir() {
+		panic(Error.New("bindplacer: srcPath %q must be dir: %s", srcPath, err))
+	}
+	destStat, err := os.Stat(destPath)
+	if err != nil || !destStat.IsDir() {
+		panic(Error.New("bindplacer: destPath %q must be dir: %s", destPath, err))
+	}
+	flags := syscall.MS_BIND | syscall.MS_REC
+	if !writable {
+		flags |= syscall.MS_RDONLY
+	}
+	if err := syscall.Mount(srcPath, destPath, "bind", uintptr(flags), ""); err != nil {
+		panic(Error.New("bindplacer: bind error: %s", err))
+	}
+	return bindEmplacement{path: destPath}
+}
+
+type bindEmplacement struct {
+	path string
+}
+
+func (e bindEmplacement) Teardown() {
+	if err := syscall.Unmount(e.path, 0); err != nil {
+		panic(Error.New("bindplacer: teardown failed: ", err))
+	}
 }
 
 var _ integrity.Placer = AufsPlacer

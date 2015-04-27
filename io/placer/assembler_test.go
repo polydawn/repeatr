@@ -15,6 +15,10 @@ func TestCopyingPlacerCompliance(t *testing.T) {
 	CheckPlacementBasics(t, defaultAssembler{Placer: CopyingPlacer}.Assemble)
 }
 
+func TestBindPlacerCompliance(t *testing.T) {
+	CheckPlacementBasics(t, defaultAssembler{Placer: BindPlacer}.Assemble)
+}
+
 // you probs want to create that assembler with a variety of placers
 func CheckPlacementBasics(t *testing.T, assemblerFn integrity.Assembler) {
 	Convey("Assembly a series of filesystems should produce a union", t,
