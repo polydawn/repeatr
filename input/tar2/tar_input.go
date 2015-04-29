@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
@@ -103,9 +104,13 @@ func walk(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFacto
 		}
 		hdr := fs.Metadata(*thdr)
 		// filter/sanify values:
-		// names must be clean, relative dot-slash prefixed, and dirs slash-suffixed
-		// times should never be go's zero value; replace those with epoch
+		// - names must be clean, relative dot-slash prefixed, and dirs slash-suffixed
+		// - times should never be go's zero value; replace those with epoch
+		// Note that names at this point should be handled by `path` (not `filepath`; these are canonical form for feed to hashing)
 		hdr.Name = path.Clean(hdr.Name)
+		if strings.HasPrefix(hdr.Name, "../") {
+			panic(input.DataSourceUnavailableError.New("corrupt tar: paths that use '../' to leave the base dir are invalid"))
+		}
 		if hdr.Name != "." {
 			hdr.Name = "./" + hdr.Name
 		}
