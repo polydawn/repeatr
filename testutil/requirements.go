@@ -69,14 +69,14 @@ func Requires(items ...interface{}) func(c convey.C) {
 		}
 	}
 	// check requirements
-	var whynot bytes.Buffer
+	var requirementsListing bytes.Buffer
 	var names []string
 	allSat := true
 	for _, req := range requirements {
 		sat := req.Predicate()
 		allSat = allSat && sat
 		names = append(names, req.Name)
-		fmt.Fprintf(&whynot, "requirement %*q: %v\n", widest+2, req.Name, sat)
+		fmt.Fprintf(&requirementsListing, "requirement %*q: %v\n", widest+2, req.Name, sat)
 	}
 	// act
 	if allSat {
@@ -98,7 +98,7 @@ func Requires(items ...interface{}) func(c convey.C) {
 		return func(c convey.C) {
 			convey.Convey(title, nil)
 			c.Println()
-			c.Print(whynot.String())
+			c.Print(requirementsListing.String())
 		}
 	}
 }
