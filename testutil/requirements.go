@@ -10,38 +10,37 @@ import (
 	"github.com/smartystreets/goconvey/convey"
 )
 
-func Convey_IfHaveRoot(items ...interface{}) {
-	if os.Getuid() == 0 {
-		convey.Convey(items...)
-	} else {
-		convey.SkipConvey(items...)
-	}
+type ConveyRequirement struct {
+	Name      string
+	Predicate func() bool
 }
 
 /*
-	Run tests if we think the environment supports namespaces; skip otherwise.
+	Require that the tests are not running with the "short" flag enabled.
+*/
+var RequiresLongRun = ConveyRequirement{"run long tests", func() bool { return !testing.Short() }}
+
+/*
+	Require that the tests are running as uid 0 ('root').
+*/
+var RequiresRoot = ConveyRequirement{"running as root", func() bool { return os.Getuid() == 0 }}
+
+/*
+	Require the environment supports namespaces; skip otherwise.
 
 	(This is super rough; really it just expresses whether or not
 	ns-init runs, based on trial and error.)
 */
-func Convey_IfCanNS(items ...interface{}) {
-	// Travis's own virtualization appears to deny some of the magic bits we'd
-	// like to set when exec'ing into a container.
+var RequiresNamespaces = ConveyRequirement{"can namespace", func() bool {
 	switch {
 	case os.Getenv("TRAVIS") != "":
-		convey.SkipConvey(items...)
+		// Travis's own virtualization appears to deny some of the magic bits we'd
+		// like to set when exec'ing into a container.
+		return false
 	default:
-		convey.Convey(items...)
+		return true
 	}
-}
-
-func Convey_IfSlowTests(items ...interface{}) {
-	if testing.Short() {
-		convey.SkipConvey(items...)
-	} else {
-		convey.Convey(items...)
-	}
-}
+}}
 
 /*
 	Decorates a GoConvey test to check a set of `ConveyRequirement`s,
@@ -103,26 +102,3 @@ func Requires(items ...interface{}) func(c convey.C) {
 		}
 	}
 }
-
-type ConveyRequirement struct {
-	Name      string
-	Predicate func() bool
-}
-
-// Require that the tests are not running with the "short" flag enabled.
-var RequiresLongRun = ConveyRequirement{"run long tests", func() bool { return !testing.Short() }}
-
-// Require that the tests are running as uid 0 ('root').
-var RequiresRoot = ConveyRequirement{"running as root", func() bool { return os.Getuid() == 0 }}
-
-// Require the environment supports namespaces.  (Warning: rough, based on blacklisting and guesswork.)
-var RequiresNamespaces = ConveyRequirement{"can namespace", func() bool {
-	switch {
-	case os.Getenv("TRAVIS") != "":
-		// Travis's own virtualization appears to deny some of the magic bits we'd
-		// like to set when exec'ing into a container.
-		return false
-	default:
-		return true
-	}
-}}
