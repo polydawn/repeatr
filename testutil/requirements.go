@@ -98,13 +98,13 @@ type ConveyRequirement struct {
 }
 
 // Require that the tests are not running with the "short" flag enabled.
-var LongRunRequirement = ConveyRequirement{"run long tests", func() bool { return !testing.Short() }}
+var RequiresLongRun = ConveyRequirement{"run long tests", func() bool { return !testing.Short() }}
 
 // Require that the tests are running as uid 0 ('root').
-var RootRequirement = ConveyRequirement{"running as root", func() bool { return os.Getuid() == 0 }}
+var RequiresRoot = ConveyRequirement{"running as root", func() bool { return os.Getuid() == 0 }}
 
 // Require the environment supports namespaces.  (Warning: rough, based on blacklisting and guesswork.)
-var CanNSRequirement = ConveyRequirement{"can namespace", func() bool {
+var RequiresNamespaces = ConveyRequirement{"can namespace", func() bool {
 	switch {
 	case os.Getenv("TRAVIS") != "":
 		// Travis's own virtualization appears to deny some of the magic bits we'd
