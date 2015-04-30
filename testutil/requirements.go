@@ -47,9 +47,21 @@ func Convey_IfSlowTests(items ...interface{}) {
 	Decorates a GoConvey test to check a set of `ConveyRequirement`s,
 	returning a dummy test func that skips (with an explanation!) if any
 	of the requirements are unsatisfied; if all is well, it yields
-	the real test function unchanged.
+	the real test function unchanged.  Provide the `...ConveyRequirement`s
+	first, followed by the `func()` (like the argument order in `Convey`).
 */
-func Requires(action interface{}, requirements ...ConveyRequirement) func(c convey.C) {
+func Requires(items ...interface{}) func(c convey.C) {
+	// parse args
+	// not the most robust parsing.  just panics if there's weird stuff
+	var requirements []ConveyRequirement
+	for _, it := range items {
+		if req, ok := it.(ConveyRequirement); ok {
+			requirements = append(requirements, req)
+		} else {
+			break
+		}
+	}
+	action := items[len(items)-1]
 	// examine requirements
 	var widest int
 	for _, req := range requirements {
