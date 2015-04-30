@@ -1,6 +1,7 @@
 package fshash
 
 import (
+	"archive/tar"
 	"sort"
 	"strings"
 
@@ -16,6 +17,10 @@ type MemoryBucket struct {
 }
 
 func (b *MemoryBucket) Record(metadata fs.Metadata, contentHash []byte) {
+	normalized := Normalize(metadata.Name, metadata.Typeflag == tar.TypeDir)
+	if metadata.Name != normalized {
+		panic(InvalidParameter.New("bucket: non-normalized path: %q (normal: %q)", metadata.Name, normalized))
+	}
 	b.lines = append(b.lines, Record{metadata, contentHash})
 }
 
@@ -24,15 +29,30 @@ func (b *MemoryBucket) Record(metadata fs.Metadata, contentHash []byte) {
 	The walk will be in deterministic, sorted order (and thus is appropriate
 	for hashing).
 
+	This applies some "finalization" operations before starting the walk:
+	  - All records will be sorted.
+	  - If there isn't a root node (i.e. Name = "./"), one will be added.
+
 	This is only safe for non-concurrent use and depth-first traversal.
 	If the data structure is changed, or (sub)iterators used out of order,
 	behavior is undefined.
 */
 func (b *MemoryBucket) Iterator() RecordIterator {
 	sort.Sort(linesByFilepath(b.lines))
-	// TODO: check for rootedness
+	// check for rootedness.  make a reasonable default one if not present.
+	if len(b.lines) == 0 || b.lines[0].Metadata.Name != "./" {
+		// this is stupidly expensive but checking for it without sorting would be even worse, so
+		lines := make([]Record, len(b.lines)+1)
+		lines[0] = DefaultRoot
+		copy(lines[1:], b.lines)
+		b.lines = lines
+	}
 	var that int
 	return &memoryBucketIterator{b.lines, 0, &that}
+}
+
+func (b *MemoryBucket) Length() int {
+	return len(b.lines)
 }
 
 type memoryBucketIterator struct {
@@ -50,11 +70,20 @@ func (i *memoryBucketIterator) NextChild() treewalk.Node {
 	if next >= len(i.lines) {
 		return nil
 	}
+	nextName := i.lines[next].Metadata.Name
+	thisName := i.lines[i.this].Metadata.Name
 	// is the next one still a child?
-	if strings.HasPrefix(i.lines[next].Metadata.Name, i.lines[i.this].Metadata.Name+"/") {
+	if strings.HasPrefix(nextName, thisName) {
+		// check for missing trees
+		if strings.ContainsRune(nextName[len(thisName):len(nextName)-1], '/') {
+			panic(MissingTree.New("missing tree: %q followed %q", nextName, thisName))
+		}
+		// check for repeated names
+		if i.lines[*i.that].Metadata.Name == nextName {
+			panic(PathCollision.New("repeated path: %q", nextName))
+		}
+		// step forward
 		*i.that = next
-		// TODO: check for missing trees
-		// TODO: check for repeated names
 		return &memoryBucketIterator{i.lines, *i.that, i.that}
 	}
 	return nil

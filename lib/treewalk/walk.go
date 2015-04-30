@@ -27,12 +27,14 @@ var SkipNode = errors.New("skip this node")
 	(and probably should, to reduce memory use on large trees).
 */
 func Walk(node Node, preVisit WalkFunc, postVisit WalkFunc) error {
-	err := preVisit(node)
-	if err != nil {
-		if err == SkipNode {
-			return nil
+	if preVisit != nil {
+		err := preVisit(node)
+		if err != nil {
+			if err == SkipNode {
+				return nil
+			}
+			return err
 		}
-		return err
 	}
 
 	for next := node.NextChild(); next != nil; next = node.NextChild() {
@@ -41,12 +43,14 @@ func Walk(node Node, preVisit WalkFunc, postVisit WalkFunc) error {
 		}
 	}
 
-	err = postVisit(node)
-	if err != nil {
-		if err == SkipNode {
-			return nil
+	if postVisit != nil {
+		err := postVisit(node)
+		if err != nil {
+			if err == SkipNode {
+				return nil
+			}
+			return err
 		}
-		return err
 	}
 
 	return nil

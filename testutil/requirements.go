@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"os"
+	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
 )
@@ -27,6 +28,14 @@ func Convey_IfCanNS(items ...interface{}) {
 	case os.Getenv("TRAVIS") != "":
 		convey.SkipConvey(items...)
 	default:
+		convey.Convey(items...)
+	}
+}
+
+func Convey_IfSlowTests(items ...interface{}) {
+	if testing.Short() {
+		convey.SkipConvey(items...)
+	} else {
 		convey.Convey(items...)
 	}
 }

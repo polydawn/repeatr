@@ -67,7 +67,7 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 
 	switch hdr.Typeflag {
 	case tar.TypeDir:
-		if hdr.Name == "." {
+		if hdr.Name == "./" {
 			// for the base dir only:
 			// the dir may exist; we'll just chown+chmod+chtime it.
 			// there is no race-free path through this btw, unless you know of a way to lstat and mkdir in the same syscall.

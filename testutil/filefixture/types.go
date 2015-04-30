@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/spacemonkeygo/errors"
+	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
 )
 
@@ -27,15 +28,16 @@ type Fixture struct {
 type ComparisonOptions uint32
 
 const (
-	ComparePerms = ComparisonOptions(0001)
-	CompareMtime = ComparisonOptions(0002)
-	CompareAtime = ComparisonOptions(0004)
-	CompareUid   = ComparisonOptions(0010)
-	CompareGid   = ComparisonOptions(0020)
-	CompareSize  = ComparisonOptions(0040)
-	CompareBody  = ComparisonOptions(0100)
+	ComparePerms     = ComparisonOptions(00001)
+	CompareMtime     = ComparisonOptions(00002)
+	CompareAtime     = ComparisonOptions(00004)
+	CompareSubsecond = ComparisonOptions(01000) // modifies atime and mtime
+	CompareUid       = ComparisonOptions(00010)
+	CompareGid       = ComparisonOptions(00020)
+	CompareSize      = ComparisonOptions(00040)
+	CompareBody      = ComparisonOptions(00100)
 
-	CompareDefaults = ComparePerms | CompareMtime | CompareUid | CompareGid |
+	CompareDefaults = ComparePerms | CompareMtime | CompareSubsecond | CompareUid | CompareGid |
 		CompareSize | CompareBody
 	CompareAll = CompareDefaults | CompareAtime
 )
@@ -65,6 +67,12 @@ func defaults(f FixtureFile) FixtureFile {
 			f.Metadata.Typeflag = tar.TypeReg
 		}
 	}
+	switch f.Metadata.Typeflag {
+	case tar.TypeDir:
+		if !strings.HasSuffix(f.Metadata.Name, "/") {
+			f.Metadata.Name += "/"
+		}
+	}
 	if f.Metadata.Mode == 0 {
 		switch f.Metadata.Typeflag {
 		case tar.TypeDir:
@@ -83,10 +91,10 @@ func defaults(f FixtureFile) FixtureFile {
 		f.Metadata.Gid = 10000
 	}
 	if f.Metadata.ModTime.IsZero() {
-		f.Metadata.ModTime = time.Unix(0, 0).UTC()
+		f.Metadata.ModTime = def.Epochwhen
 	}
 	if f.Metadata.AccessTime.IsZero() {
-		f.Metadata.AccessTime = time.Unix(0, 0).UTC()
+		f.Metadata.AccessTime = def.Epochwhen
 	}
 	return f
 }
@@ -167,6 +175,10 @@ func (ffs Fixture) Describe(opts ComparisonOptions) string {
 	As per `FixtureFiles.Describe`, but this is for a single entry.
 */
 func (ff FixtureFile) Describe(opts ComparisonOptions) string {
+	if opts&CompareSubsecond == 0 {
+		ff.Metadata.ModTime = ff.Metadata.ModTime.Truncate(time.Second)
+		ff.Metadata.AccessTime = ff.Metadata.AccessTime.Truncate(time.Second)
+	}
 	parts := []struct {
 		Key   string
 		Value interface{}

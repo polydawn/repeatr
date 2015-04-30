@@ -7,6 +7,7 @@ import (
 	"hash"
 	"io"
 	"os"
+	"time"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
@@ -78,6 +79,10 @@ func walk(srcBasePath string, tw *tar.Writer, bucket fshash.Bucket, hasherFactor
 			return filenode.Err
 		}
 		hdr, file := fs.ScanFile(srcBasePath, filenode.Path, filenode.Info)
+		// flaten time to seconds.  this tar writer impl doesn't do subsecond precision.
+		// the writer will flatten it internally of course, but we need to do it here as well
+		// so that the hash and the serial form are describing the same thing.
+		hdr.ModTime = hdr.ModTime.Truncate(time.Second)
 		wat := tar.Header(hdr) // this line is... we're not gonna talk about this.
 		tw.WriteHeader(&wat)
 		if file == nil {

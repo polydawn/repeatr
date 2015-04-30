@@ -47,8 +47,8 @@ func TestTarCompat(t *testing.T) {
 				rescan := filefixture.Scan("./untar")
 				// boy, that's entertaining though: gnu tar does all the same stuff,
 				// except it doesn't honor our nanosecond timings.
-				comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareMtime
-				So(rescan.Describe(comparisonLevel), ShouldResemble, fixture.Describe(comparisonLevel))
+				comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareSubsecond
+				So(rescan.Describe(comparisonLevel), ShouldEqual, fixture.Describe(comparisonLevel))
 			}))
 		}
 	})
