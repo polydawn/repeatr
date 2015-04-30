@@ -60,77 +60,80 @@ func Test(t *testing.T) {
 	projPath, _ := os.Getwd()
 	projPath = filepath.Dir(filepath.Dir(projPath))
 
-	testutil.Convey_IfHaveRoot("Given a rootfs", t,
-		testutil.WithTmpdir(func() {
-			formula := def.Formula{
-				Inputs: []def.Input{
-					{
-						Type:     "tar",
-						Location: "/",
-						Hash:     "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v",
-						URI:      filepath.Join(projPath, "assets/ubuntu.tar.gz"),
+	Convey("Given a rootfs", t,
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				formula := def.Formula{
+					Inputs: []def.Input{
+						{
+							Type:     "tar",
+							Location: "/",
+							Hash:     "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v",
+							URI:      filepath.Join(projPath, "assets/ubuntu.tar.gz"),
+						},
 					},
-				},
-			}
-			e := &Executor{
-				workspacePath: "chroot_workspace",
-			}
-			So(os.Mkdir(e.workspacePath, 0755), ShouldBeNil)
-
-			Convey("The executor should be able to invoke echo", FailureContinues, func() {
-				formula.Accents = def.Accents{
-					Entrypoint: []string{"echo", "echococo"},
 				}
-
-				job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
-				So(job, ShouldNotBeNil)
-				// note that we can read output concurrently.
-				// no need to wait for job done.
-				msg, err := ioutil.ReadAll(job.OutputReader())
-				So(err, ShouldBeNil)
-				So(string(msg), ShouldEqual, "echococo\n")
-				So(job.Wait().Error, ShouldBeNil)
-				So(job.Wait().ExitCode, ShouldEqual, 0)
-			})
-
-			Convey("The executor should be able to check exit codes", func() {
-				formula.Accents = def.Accents{
-					Entrypoint: []string{"sh", "-c", "exit 14"},
+				e := &Executor{
+					workspacePath: "chroot_workspace",
 				}
+				So(os.Mkdir(e.workspacePath, 0755), ShouldBeNil)
 
-				job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
-				So(job, ShouldNotBeNil)
-				So(job.Wait().Error, ShouldBeNil)
-				So(job.Wait().ExitCode, ShouldEqual, 14)
-			})
-
-			Convey("The executor should report command not found clearly", func() {
-				formula.Accents = def.Accents{
-					Entrypoint: []string{"not a command"},
-				}
-
-				result := e.Start(formula, def.JobID(guid.New()), ioutil.Discard).Wait()
-				So(result.Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
-			})
-
-			Convey("Given another input", func() {
-				inputfixtures.DirInput2.Location = "/data/test"
-				formula.Inputs = append(formula.Inputs, inputfixtures.DirInput2)
-
-				Convey("The executor should be able to see the mounted files", FailureContinues, func() {
+				Convey("The executor should be able to invoke echo", FailureContinues, func() {
 					formula.Accents = def.Accents{
-						Entrypoint: []string{"ls", "/data/test"},
+						Entrypoint: []string{"echo", "echococo"},
+					}
+
+					job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+					So(job, ShouldNotBeNil)
+					// note that we can read output concurrently.
+					// no need to wait for job done.
+					msg, err := ioutil.ReadAll(job.OutputReader())
+					So(err, ShouldBeNil)
+					So(string(msg), ShouldEqual, "echococo\n")
+					So(job.Wait().Error, ShouldBeNil)
+					So(job.Wait().ExitCode, ShouldEqual, 0)
+				})
+
+				Convey("The executor should be able to check exit codes", func() {
+					formula.Accents = def.Accents{
+						Entrypoint: []string{"sh", "-c", "exit 14"},
 					}
 
 					job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
 					So(job, ShouldNotBeNil)
 					So(job.Wait().Error, ShouldBeNil)
-					So(job.Wait().ExitCode, ShouldEqual, 0)
-					msg, err := ioutil.ReadAll(job.OutputReader())
-					So(err, ShouldBeNil)
-					So(string(msg), ShouldEqual, "1\n2\n3\n")
+					So(job.Wait().ExitCode, ShouldEqual, 14)
 				})
-			})
-		}),
+
+				Convey("The executor should report command not found clearly", func() {
+					formula.Accents = def.Accents{
+						Entrypoint: []string{"not a command"},
+					}
+
+					result := e.Start(formula, def.JobID(guid.New()), ioutil.Discard).Wait()
+					So(result.Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
+				})
+
+				Convey("Given another input", func() {
+					inputfixtures.DirInput2.Location = "/data/test"
+					formula.Inputs = append(formula.Inputs, inputfixtures.DirInput2)
+
+					Convey("The executor should be able to see the mounted files", FailureContinues, func() {
+						formula.Accents = def.Accents{
+							Entrypoint: []string{"ls", "/data/test"},
+						}
+
+						job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+						So(job, ShouldNotBeNil)
+						So(job.Wait().Error, ShouldBeNil)
+						So(job.Wait().ExitCode, ShouldEqual, 0)
+						msg, err := ioutil.ReadAll(job.OutputReader())
+						So(err, ShouldBeNil)
+						So(string(msg), ShouldEqual, "1\n2\n3\n")
+					})
+				})
+			}),
+		),
 	)
 }

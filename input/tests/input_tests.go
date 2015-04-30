@@ -29,35 +29,37 @@ type OutputFactory func(def.Output) output.Output
 	- Checks the new filesystem matches the original
 */
 func CheckRoundTrip(t *testing.T, kind string, newOutput OutputFactory, newInput InputFactory) {
-	testutil.Convey_IfHaveRoot("Scanning and replacing a filesystem should agree on hash and content", t, func() {
-		for _, fixture := range filefixture.All {
-			Convey(fmt.Sprintf("- Fixture %q", fixture.Name), FailureContinues, testutil.WithTmpdir(func() {
-				// setup fixture
-				fixture.Create("./fixture")
+	Convey("Scanning and replacing a filesystem should agree on hash and content", t,
+		testutil.Requires(testutil.RequiresRoot, func() {
+			for _, fixture := range filefixture.All {
+				Convey(fmt.Sprintf("- Fixture %q", fixture.Name), FailureContinues, testutil.WithTmpdir(func() {
+					// setup fixture
+					fixture.Create("./fixture")
 
-				// scan with output
-				scanner := newOutput((def.Output{
-					Type: kind,
-					URI:  "./output.dump",
+					// scan with output
+					scanner := newOutput((def.Output{
+						Type: kind,
+						URI:  "./output.dump",
+					}))
+					report := <-scanner.Apply("./fixture")
+					So(report.Err, ShouldBeNil)
+
+					// place with input (along the way, requires hash match)
+					input := newInput((def.Input{
+						Type: kind,
+						Hash: report.Output.Hash,
+						URI:  "./output.dump",
+					}))
+					err := <-input.Apply("./unpack")
+					So(err, ShouldBeNil)
+
+					// check filesystem to match original fixture
+					// (do this check even if the input raised a hash mismatch, because it can help show why)
+					rescan := filefixture.Scan("./unpack")
+					comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareSubsecond
+					So(rescan.Describe(comparisonLevel), ShouldEqual, fixture.Describe(comparisonLevel))
 				}))
-				report := <-scanner.Apply("./fixture")
-				So(report.Err, ShouldBeNil)
-
-				// place with input (along the way, requires hash match)
-				input := newInput((def.Input{
-					Type: kind,
-					Hash: report.Output.Hash,
-					URI:  "./output.dump",
-				}))
-				err := <-input.Apply("./unpack")
-				So(err, ShouldBeNil)
-
-				// check filesystem to match original fixture
-				// (do this check even if the input raised a hash mismatch, because it can help show why)
-				rescan := filefixture.Scan("./unpack")
-				comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareSubsecond
-				So(rescan.Describe(comparisonLevel), ShouldEqual, fixture.Describe(comparisonLevel))
-			}))
-		}
-	})
+			}
+		}),
+	)
 }

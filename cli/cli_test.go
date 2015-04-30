@@ -29,10 +29,13 @@ func Test(t *testing.T) {
 		Main(baseArgs, ioutil.Discard)
 	})
 
-	testutil.Convey_IfCanNS("Within an environment that can run namespaces", t, func() {
-		testutil.Convey_IfHaveRoot("It should run a basic example", func() {
-			Main(append(baseArgs, "run", "-i", "lib/integration/basic.json"), ioutil.Discard)
-		})
-	})
-
+	Convey("It should run a basic example", t,
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.RequiresNamespaces,
+			func() {
+				Main(append(baseArgs, "run", "-i", "lib/integration/basic.json"), ioutil.Discard)
+			},
+		),
+	)
 }
