@@ -36,31 +36,42 @@ func CheckPlacementBasics(t *testing.T, assemblerFn integrity.Assembler) {
 				// - failure path: placement that overlaps a file somewhere
 				// - everything about changes and ensuring they're isolated... deserves a whole battery
 
-				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
-					{TargetPath: "/", SourcePath: "./material/alpha"},
-					{TargetPath: "/a", SourcePath: "./material/beta"},
-					{TargetPath: "/d/d/d", SourcePath: "./material/beta"},
+				Convey("Assembly should not blow up", FailureContinues, func() {
+					var assembly integrity.Assembly
+					So(func() {
+						assembly = assemblerFn("./assembled", []integrity.AssemblyPart{
+							{TargetPath: "/", SourcePath: "./material/alpha"},
+							{TargetPath: "/a", SourcePath: "./material/beta"},
+							{TargetPath: "/d/d/d", SourcePath: "./material/beta"},
+						})
+					}, ShouldNotPanic)
+
+					Convey("Filesystem should scan as the expected union", func() {
+						scan := filefixture.Scan("./assembled")
+						So(scan.Describe(filefixture.CompareDefaults), ShouldEqual,
+							filefixture.Fixture{Files: []filefixture.FixtureFile{
+								{fs.Metadata{Name: ".", Mode: 0755, ModTime: time.Unix(1000, 2000)}, nil}, // even though the basedir was made by the assembler, this should have the rootfs's properties overlayed onto it
+								{fs.Metadata{Name: "./a"}, nil},                                           // this one's mode and times should be overlayed by the second mount
+								{fs.Metadata{Name: "./a/1"}, []byte{}},
+								{fs.Metadata{Name: "./a/2"}, []byte{}},
+								{fs.Metadata{Name: "./a/3"}, []byte{}},
+								{fs.Metadata{Name: "./b", Mode: 0750, ModTime: time.Unix(5000, 2000)}, nil},
+								{fs.Metadata{Name: "./b/c", Mode: 0664, ModTime: time.Unix(7000, 2000)}, []byte("zyx")},
+								{fs.Metadata{Name: "./d", Uid: -1, Gid: -1}, nil}, // these should have been manifested by the assembler
+								{fs.Metadata{Name: "./d/d", Uid: -1, Gid: -1}, nil},
+								{fs.Metadata{Name: "./d/d/d"}, nil},
+								{fs.Metadata{Name: "./d/d/d/1"}, []byte{}},
+								{fs.Metadata{Name: "./d/d/d/2"}, []byte{}},
+								{fs.Metadata{Name: "./d/d/d/3"}, []byte{}},
+							}}.Defaults().Describe(filefixture.CompareDefaults),
+						)
+
+						if assembly != nil {
+							// conditional only because we may have continued moving after an error earlier.
+							assembly.Teardown()
+						}
+					})
 				})
-
-				scan := filefixture.Scan("./assembled")
-				So(scan.Describe(filefixture.CompareDefaults), ShouldEqual,
-					filefixture.Fixture{Files: []filefixture.FixtureFile{
-						{fs.Metadata{Name: ".", Mode: 0755, ModTime: time.Unix(1000, 2000)}, nil}, // even though the basedir was made by the assembler, this should have the rootfs's properties overlayed onto it
-						{fs.Metadata{Name: "./a"}, nil},                                           // this one's mode and times should be overlayed by the second mount
-						{fs.Metadata{Name: "./a/1"}, []byte{}},
-						{fs.Metadata{Name: "./a/2"}, []byte{}},
-						{fs.Metadata{Name: "./a/3"}, []byte{}},
-						{fs.Metadata{Name: "./b", Mode: 0750, ModTime: time.Unix(5000, 2000)}, nil},
-						{fs.Metadata{Name: "./b/c", Mode: 0664, ModTime: time.Unix(7000, 2000)}, []byte("zyx")},
-						{fs.Metadata{Name: "./d", Uid: -1, Gid: -1}, nil}, // these should have been manifested by the assembler
-						{fs.Metadata{Name: "./d/d", Uid: -1, Gid: -1}, nil},
-						{fs.Metadata{Name: "./d/d/d"}, nil},
-						{fs.Metadata{Name: "./d/d/d/1"}, []byte{}},
-						{fs.Metadata{Name: "./d/d/d/2"}, []byte{}},
-						{fs.Metadata{Name: "./d/d/d/3"}, []byte{}},
-					}}.Defaults().Describe(filefixture.CompareDefaults))
-
-				assembly.Teardown()
 			}),
 		),
 	)
