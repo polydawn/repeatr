@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
+	"polydawn.net/repeatr/lib/fshash"
 )
 
 type FixtureFile struct {
@@ -105,6 +107,43 @@ func defaults(f FixtureFile) FixtureFile {
 		f.Metadata.AccessTime = def.Epochwhen
 	}
 	return f
+}
+
+type FixtureAssemblyPart struct {
+	TargetPath string
+	Fixture    Fixture
+}
+
+// you know, at some point these tiny little variations in structs that i keep having to define swap methods for... get rather old
+type fixtureAssemblyPartsByPath []FixtureAssemblyPart
+
+func (a fixtureAssemblyPartsByPath) Len() int           { return len(a) }
+func (a fixtureAssemblyPartsByPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a fixtureAssemblyPartsByPath) Less(i, j int) bool { return a[i].TargetPath < a[j].TargetPath }
+
+func ConjoinFixtures(fixtureParts []FixtureAssemblyPart) (result Fixture) {
+	sort.Sort(fixtureAssemblyPartsByPath(fixtureParts))
+	for _, fixturePart := range fixtureParts {
+		landingPath := "." + path.Clean(fixturePart.TargetPath)
+		// do a full new result array.  easiest to filter this way.
+		prevResultFiles := result.Files
+		result.Files = make([]FixtureFile, 0, len(prevResultFiles)+len(fixturePart.Fixture.Files)+3) // 3 as a fudge factor for implicit mkdirs
+		// check for implicit mkdirs
+		// TODO
+		// check for blowing away
+		for _, file := range prevResultFiles {
+			if !strings.HasPrefix(file.Metadata.Name, landingPath) {
+				result.Files = append(result.Files, file)
+			}
+		}
+		// append
+		for _, file := range fixturePart.Fixture.Files {
+			file.Metadata.Name = fshash.Normalize(path.Join(landingPath, file.Metadata.Name), file.Metadata.Typeflag == tar.TypeDir)
+			result.Files = append(result.Files, file)
+		}
+	}
+	sort.Sort(filesByPath(result.Files))
+	return
 }
 
 /*

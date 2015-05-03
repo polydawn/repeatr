@@ -1,17 +1,12 @@
 package placer
 
 import (
-	"archive/tar"
-	"path"
-	"sort"
-	"strings"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/fs"
-	"polydawn.net/repeatr/lib/fshash"
 	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
 )
@@ -52,7 +47,17 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 			testutil.WithTmpdir(func() {
 				filefixture.Alpha.Create("./material/alpha")
 				filefixture.Beta.Create("./material/beta")
-				// TODO
+				assembleAndScan(
+					assemblerFn,
+					[]integrity.AssemblyPart{
+						{TargetPath: "/", SourcePath: "./material/alpha"},
+						{TargetPath: "/a", SourcePath: "./material/beta"},
+					},
+					filefixture.ConjoinFixtures([]filefixture.FixtureAssemblyPart{
+						{TargetPath: "/", Fixture: filefixture.Alpha},
+						{TargetPath: "/a", Fixture: filefixture.Beta},
+					}),
+				)
 			}),
 		),
 	)
@@ -63,7 +68,17 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 			testutil.WithTmpdir(func() {
 				filefixture.Alpha.Create("./material/alpha")
 				filefixture.Beta.Create("./material/beta")
-				// TODO
+				assembleAndScan(
+					assemblerFn,
+					[]integrity.AssemblyPart{
+						{TargetPath: "/", SourcePath: "./material/alpha"},
+						{TargetPath: "/q", SourcePath: "./material/beta"},
+					},
+					filefixture.ConjoinFixtures([]filefixture.FixtureAssemblyPart{
+						{TargetPath: "/", Fixture: filefixture.Alpha},
+						{TargetPath: "/q", Fixture: filefixture.Beta},
+					}),
+				)
 			}),
 		),
 	)
@@ -92,7 +107,7 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 						{TargetPath: "/q", SourcePath: "./material/beta"},
 						{TargetPath: "/w", SourcePath: "./material/beta"},
 					},
-					conjoinFixtures([]fixtureAssemblyPart{
+					filefixture.ConjoinFixtures([]filefixture.FixtureAssemblyPart{
 						{TargetPath: "/", Fixture: filefixture.Alpha},
 						{TargetPath: "/q", Fixture: filefixture.Beta},
 						{TargetPath: "/w", Fixture: filefixture.Beta},
@@ -138,42 +153,6 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 	// additional coverage todos:
 	// - failure path: placement that overlaps a file somewhere
 	// - everything about changes and ensuring they're isolated... deserves a whole battery
-}
-
-type fixtureAssemblyPart struct {
-	TargetPath string
-	Fixture    filefixture.Fixture
-}
-
-// you know, at some point these tiny little variations in structs that i keep having to define swap methods for... get rather old
-type fixtureAssemblyPartsByPath []fixtureAssemblyPart
-
-func (a fixtureAssemblyPartsByPath) Len() int           { return len(a) }
-func (a fixtureAssemblyPartsByPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a fixtureAssemblyPartsByPath) Less(i, j int) bool { return a[i].TargetPath < a[j].TargetPath }
-
-func conjoinFixtures(fixtureParts []fixtureAssemblyPart) (result filefixture.Fixture) {
-	sort.Sort(fixtureAssemblyPartsByPath(fixtureParts))
-	for _, fixturePart := range fixtureParts {
-		landingPath := "." + path.Clean(fixturePart.TargetPath)
-		// do a full new result array.  easiest to filter this way.
-		prevResultFiles := result.Files
-		result.Files = make([]filefixture.FixtureFile, 0, len(prevResultFiles)+len(fixturePart.Fixture.Files)+3) // 3 as a fudge factor for implicit mkdirs
-		// check for implicit mkdirs
-		// TODO
-		// check for blowing away
-		for _, file := range prevResultFiles {
-			if !strings.HasPrefix(file.Metadata.Name, landingPath) {
-				result.Files = append(result.Files, file)
-			}
-		}
-		// append
-		for _, file := range fixturePart.Fixture.Files {
-			file.Metadata.Name = fshash.Normalize(path.Join(landingPath, file.Metadata.Name), file.Metadata.Typeflag == tar.TypeDir)
-			result.Files = append(result.Files, file)
-		}
-	}
-	return
 }
 
 func assembleAndScan(assemblerFn integrity.Assembler, parts []integrity.AssemblyPart, expected filefixture.Fixture) {
