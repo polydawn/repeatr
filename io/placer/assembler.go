@@ -19,7 +19,9 @@ func (a defaultAssembler) Assemble(basePath string, mounts []integrity.AssemblyP
 	housekeeping := &defaultAssembly{}
 	for _, mount := range mounts {
 		destBasePath := filepath.Join(basePath, mount.TargetPath)
-		fs.MkdirAll(destBasePath)
+		if err := fs.MkdirAll(destBasePath); err != nil {
+			panic(Error.Wrap(err)) // REVIEW: not clear if placers and assemblers should get separate error hierarchies.  have yet to think of a useful scenario for it.
+		}
 		housekeeping.record(a.Placer(mount.SourcePath, destBasePath, mount.Writable))
 	}
 	return housekeeping
