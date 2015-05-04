@@ -18,9 +18,14 @@ func TestCopyingPlacerCompliance(t *testing.T) {
 }
 
 func TestBindPlacerCompliance(t *testing.T) {
-	Convey("Bind placers make data appear into place", t, func() {
-		CheckAssemblerGetsDataIntoPlace(defaultAssembler{Placer: BindPlacer}.Assemble)
-	})
+	Convey("Bind placers make data appear into place", t,
+		testutil.Requires(
+			testutil.RequiresMounts,
+			func() {
+				CheckAssemblerGetsDataIntoPlace(defaultAssembler{Placer: BindPlacer}.Assemble)
+			},
+		),
+	)
 }
 
 // you probs want to create that assembler with a variety of placers
