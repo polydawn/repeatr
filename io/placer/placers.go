@@ -15,6 +15,31 @@ import (
 var _ integrity.Placer = CopyingPlacer
 
 func CopyingPlacer(srcBasePath, destBasePath string, _ bool) integrity.Emplacement {
+	srcBaseStat, err := os.Stat(srcBasePath)
+	if err != nil || !srcBaseStat.IsDir() {
+		panic(Error.New("copyingplacer: srcPath %q must be dir: %s", srcBasePath, err))
+	}
+	destBaseStat, err := os.Stat(destBasePath)
+	if err != nil || !destBaseStat.IsDir() {
+		panic(Error.New("copyingplacer: destPath %q must be dir: %s", destBasePath, err))
+	}
+	// remove any files already here (to emulate behavior like an overlapping mount)
+	// (can't take the easy route and just `os.RemoveAll(destBasePath)` because that propagates times changes onto the parent.)
+	d, err := os.Open(destBasePath)
+	if err != nil {
+		panic(Error.New("copyingplacer: io error: %s", err))
+	}
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		panic(Error.New("copyingplacer: io error: %s", err))
+	}
+	for _, name := range names {
+		err := os.RemoveAll(filepath.Join(destBasePath, name))
+		if err != nil {
+			panic(Error.New("copyingplacer: io error: %s", err))
+		}
+	}
+	// walk and copy
 	preVisit := func(filenode *fs.FilewalkNode) error {
 		if filenode.Err != nil {
 			return filenode.Err

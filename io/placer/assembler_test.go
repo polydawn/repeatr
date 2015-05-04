@@ -89,7 +89,18 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 			testutil.WithTmpdir(func() {
 				filefixture.Alpha.Create("./material/alpha")
 				filefixture.Beta.Create("./material/beta")
-				// TODO
+				assembleAndScan(
+					assemblerFn,
+					[]integrity.AssemblyPart{
+						{TargetPath: "/", SourcePath: "./material/alpha"},
+						// this one's interesting because ./b/c is already a file
+						{TargetPath: "/b", SourcePath: "./material/beta"},
+					},
+					filefixture.ConjoinFixtures([]filefixture.FixtureAssemblyPart{
+						{TargetPath: "/", Fixture: filefixture.Alpha},
+						{TargetPath: "/b", Fixture: filefixture.Beta},
+					}),
+				)
 			}),
 		),
 	)
