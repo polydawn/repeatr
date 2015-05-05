@@ -23,12 +23,13 @@ type CommitID string
 
 type Arena interface {
 	Path() string
-	Archive(siloURIs []SiloURI) CommitID
 	Teardown()
 }
 
 type Transmat interface {
 	Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena
+
+	Scan(kind TransmatKind, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID
 
 	/*
 		Returns a list of all active Arenas managed by this Transmat.
@@ -111,10 +112,7 @@ type teardownDelegatingArena struct {
 }
 
 func (a *teardownDelegatingArena) Path() string { return a.Delegate.Path() }
-func (a *teardownDelegatingArena) Archive(siloURIs []SiloURI) CommitID {
-	return a.Delegate.Archive(siloURIs)
-}
-func (a *teardownDelegatingArena) Teardown() { defer a.TeardownFn(); a.Delegate.Teardown() }
+func (a *teardownDelegatingArena) Teardown()    { defer a.TeardownFn(); a.Delegate.Teardown() }
 
 var _ Transmat = &DispatchingTransmat{}
 
@@ -150,6 +148,14 @@ func (dt *DispatchingTransmat) Materialize(kind TransmatKind, dataHash CommitID,
 		panic(fmt.Errorf("no transmat of kind %q available to satisfy request", kind))
 	}
 	return transmat.Materialize(kind, dataHash, siloURIs, options...)
+}
+
+func (dt *DispatchingTransmat) Scan(kind TransmatKind, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID {
+	transmat := dt.dispatch[kind]
+	if transmat == nil {
+		panic(fmt.Errorf("no transmat of kind %q available to satisfy request", kind))
+	}
+	return transmat.Scan(kind, siloURIs, options...)
 }
 
 var _ Transmat = &CachingTransmat{}
