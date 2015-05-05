@@ -201,10 +201,6 @@ func assembleAndScan(assemblerFn integrity.Assembler, parts []integrity.Assembly
 	})
 }
 
-func CheckAssemblerSequestersData(assemblerFn integrity.Assembler) {
-	// TODO outputs will rely on these behaviors
-}
-
 func CheckAssemblerRespectsReadonly(assemblerFn integrity.Assembler) {
 	// TODO
 }
