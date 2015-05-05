@@ -1,6 +1,8 @@
 package placer
 
 import (
+	"os"
+	"syscall"
 	"testing"
 	"time"
 
@@ -15,6 +17,7 @@ func TestCopyingPlacerCompliance(t *testing.T) {
 	Convey("Copying placers make data appear into place", t, func() {
 		CheckAssemblerGetsDataIntoPlace(defaultAssembler{Placer: CopyingPlacer}.Assemble)
 	})
+	// Not Supported: CheckAssemblerRespectsReadonly
 }
 
 func TestBindPlacerCompliance(t *testing.T) {
@@ -26,6 +29,14 @@ func TestBindPlacerCompliance(t *testing.T) {
 			},
 		),
 	)
+	Convey("Bind placers support readonly placement", t,
+		testutil.Requires(
+			testutil.RequiresMounts,
+			func() {
+				CheckAssemblerRespectsReadonly(defaultAssembler{Placer: BindPlacer}.Assemble)
+			},
+		),
+	)
 }
 
 func TestAufsPlacerCompliance(t *testing.T) {
@@ -34,6 +45,14 @@ func TestAufsPlacerCompliance(t *testing.T) {
 			testutil.RequiresMounts,
 			testutil.WithTmpdir(func() {
 				CheckAssemblerGetsDataIntoPlace(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
+			}),
+		),
+	)
+	Convey("Aufs placers support readonly placement", t,
+		testutil.Requires(
+			testutil.RequiresMounts,
+			testutil.WithTmpdir(func() {
+				CheckAssemblerRespectsReadonly(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
 			}),
 		),
 	)
@@ -66,8 +85,8 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				assembleAndScan(
 					assemblerFn,
 					[]integrity.AssemblyPart{
-						{TargetPath: "/", SourcePath: "./material/alpha"},
-						{TargetPath: "/a", SourcePath: "./material/beta"},
+						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
+						{TargetPath: "/a", SourcePath: "./material/beta", Writable: true},
 					},
 					filefixture.ConjoinFixtures([]filefixture.FixtureAssemblyPart{
 						{TargetPath: "/", Fixture: filefixture.Alpha},
@@ -87,8 +106,8 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				assembleAndScan(
 					assemblerFn,
 					[]integrity.AssemblyPart{
-						{TargetPath: "/", SourcePath: "./material/alpha"},
-						{TargetPath: "/q", SourcePath: "./material/beta"},
+						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
+						{TargetPath: "/q", SourcePath: "./material/beta", Writable: true},
 					},
 					filefixture.ConjoinFixtures([]filefixture.FixtureAssemblyPart{
 						{TargetPath: "/", Fixture: filefixture.Alpha},
@@ -108,9 +127,9 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				assembleAndScan(
 					assemblerFn,
 					[]integrity.AssemblyPart{
-						{TargetPath: "/", SourcePath: "./material/alpha"},
+						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
 						// this one's interesting because ./b/c is already a file
-						{TargetPath: "/b", SourcePath: "./material/beta"},
+						{TargetPath: "/b", SourcePath: "./material/beta", Writable: true},
 					},
 					filefixture.ConjoinFixtures([]filefixture.FixtureAssemblyPart{
 						{TargetPath: "/", Fixture: filefixture.Alpha},
@@ -130,9 +149,9 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				assembleAndScan(
 					assemblerFn,
 					[]integrity.AssemblyPart{
-						{TargetPath: "/", SourcePath: "./material/alpha"},
-						{TargetPath: "/q", SourcePath: "./material/beta"},
-						{TargetPath: "/w", SourcePath: "./material/beta"},
+						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
+						{TargetPath: "/q", SourcePath: "./material/beta", Writable: true},
+						{TargetPath: "/w", SourcePath: "./material/beta", Writable: true},
 					},
 					filefixture.ConjoinFixtures([]filefixture.FixtureAssemblyPart{
 						{TargetPath: "/", Fixture: filefixture.Alpha},
@@ -153,9 +172,9 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				assembleAndScan(
 					assemblerFn,
 					[]integrity.AssemblyPart{
-						{TargetPath: "/", SourcePath: "./material/alpha"},
-						{TargetPath: "/a", SourcePath: "./material/beta"},
-						{TargetPath: "/d/d/d", SourcePath: "./material/beta"},
+						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
+						{TargetPath: "/a", SourcePath: "./material/beta", Writable: true},
+						{TargetPath: "/d/d/d", SourcePath: "./material/beta", Writable: true},
 					},
 					filefixture.Fixture{Files: []filefixture.FixtureFile{
 						{fs.Metadata{Name: ".", Mode: 0755, ModTime: time.Unix(1000, 2000)}, nil}, // even though the basedir was made by the assembler, this should have the rootfs's properties overlayed onto it
@@ -202,5 +221,21 @@ func assembleAndScan(assemblerFn integrity.Assembler, parts []integrity.Assembly
 }
 
 func CheckAssemblerRespectsReadonly(assemblerFn integrity.Assembler) {
-	// TODO
+	Convey("Writing to a readonly placement should return EROFS",
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				filefixture.Alpha.Create("./material/alpha")
+				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+					{TargetPath: "/", SourcePath: "./material/alpha", Writable: false},
+				})
+				defer assembly.Teardown()
+				f, err := os.OpenFile("./assembled/newfile", os.O_CREATE, 0644)
+				defer f.Close()
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveSameTypeAs, &os.PathError{})
+				So(err.(*os.PathError).Err, ShouldEqual, syscall.EROFS)
+			}),
+		),
+	)
 }

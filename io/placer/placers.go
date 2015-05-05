@@ -95,11 +95,14 @@ func BindPlacer(srcPath, destPath string, writable bool) integrity.Emplacement {
 		panic(Error.New("bindplacer: destPath %q must be dir: %s", destPath, err))
 	}
 	flags := syscall.MS_BIND | syscall.MS_REC
-	if !writable {
-		flags |= syscall.MS_RDONLY
-	}
 	if err := syscall.Mount(srcPath, destPath, "bind", uintptr(flags), ""); err != nil {
 		panic(Error.New("bindplacer: bind error: %s", err))
+	}
+	if !writable {
+		flags |= syscall.MS_RDONLY | syscall.MS_REMOUNT
+		if err := syscall.Mount(srcPath, destPath, "bind", uintptr(flags), ""); err != nil {
+			panic(Error.New("bindplacer: bind error: %s", err))
+		}
 	}
 	return bindEmplacement{path: destPath}
 }
@@ -115,7 +118,11 @@ func (e bindEmplacement) Teardown() {
 }
 
 func NewAufsPlacer(workPath string) integrity.Placer {
-	workPath, err := filepath.Abs(workPath)
+	err := os.MkdirAll(workPath, 0755)
+	if err != nil {
+		panic(errors.IOError.Wrap(err))
+	}
+	workPath, err = filepath.Abs(workPath)
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
 	}
@@ -148,6 +155,9 @@ func NewAufsPlacer(workPath string) integrity.Placer {
 			destBasePath,
 			gosh.NullIO,
 		)
+		// fix props on layerPath; otherwise they instantly leak through
+		hdr, _ := fs.ScanFile(srcBasePath, "./", srcBaseStat)
+		fs.PlaceFile(layerPath, hdr, nil)
 		// that's it; setting up COW also mounted it into destination.
 		return aufsEmplacement{
 			layerPath:   layerPath,
