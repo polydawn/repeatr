@@ -27,18 +27,6 @@ type Arena interface {
 	Teardown()
 }
 
-// You *need* some Transmat interface to gather these.
-// You *might* get some use out of having them as free-floating functional interfaces, but it's frankly not clear.
-// This has a factory interface with a workdir, and that's it: it's expected to double-time it as a recovery recognizer and a fresh starter.
-// We're not gonna do a recognizer disbatcher because I can't think of a legitmate situation where we'd be
-//   - barreling into a filesystem like that with no preexisting expectations
-//   - and reasonably be able to reuse anything there.
-// Cleanup of things we *don't* recognize should, I think, be pretty consistently a series of umount and rm's; I don't know of any exceptions to that, and these can be done without knowing what set the stuff up.
-//
-// Patterns of use:
-//   - Any time you see a dispatcher, it's going to be talking about transmats.
-//   - Any time you're *building* a dispatcher, you're going to be talking about transmat factories -- you invoke them as you're setting up the dispatcher, and also you might be chaining them into each other.
-//
 type Transmat interface {
 	Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena
 
@@ -52,6 +40,13 @@ type Transmat interface {
 	Arenas() []Arena
 }
 
+/*
+	Factory function interface for Transmats.  Plugins must implement this.
+
+	Takes a workdir path, and that's it.  This is may be expected to double-time
+	it both as a fresh starter, and be able to recognize and attempt to
+	recover ruins from a prior run.
+*/
 type TransmatFactory func(workPath string) Transmat
 
 type MaterializerOptions struct {
@@ -72,10 +67,6 @@ func ProgressReporter(rep chan<- float32) MaterializerConfigurer {
 	}
 }
 
-//type Slurper func(scanPath string, siloURI string) <-chan SlurpReport
-// GONE as a concept.  Any data installation can now be scanned, and output arenas are just denoted by the magic zero CommitID.
-// Well, maybe not quite that much magic value on CommitIDs.  That might be poor.
-
 type Placer func(srcPath, destPath string, writable bool) Emplacement
 
 type Emplacement interface {
@@ -83,11 +74,11 @@ type Emplacement interface {
 }
 
 /*
-	Writable inputs get a COW.
-	RO inputs just bind.
-	Outputs (always writable) don't have input, so also can just bind.
-
-	Expect most assemblers to be constructed with a Haver and a Placer.
+	Assembles a filesystem from a bunch of scattered filesystem pieces.
+	The source pieces will be rearranged into the single tree as fast as
+	possible, and will not be modified.  (The fast systems use bind mounts
+	and COW filesystems to isolate and rearrange; worst-case scenario,
+	plain ol' byte copies get the job done.)
 */
 type Assembler func(basePath string, mounts []AssemblyPart) Assembly
 
@@ -99,8 +90,6 @@ type AssemblyPart struct {
 	TargetPath string // in the container fs context
 	SourcePath string // datasource which we want to respect
 	Writable   bool
-	// TODO make sure we get an example that sees how this reacts to outputs: not sure we have enough bits here yet
-	//  ... indeed, dealing with outputs does rather make it clear that a copying placer isn't an acceptable drop-in mechanism.
 }
 
 // sortable by target path (which is effectively mountability order)
@@ -183,6 +172,11 @@ var _ Transmat = &CachingTransmat{}
 	a CachingTransmat that proxies more than one Transmat that *doesn't* share the same "space"
 	is undefined and unwise.
 
+	This caching implementation assumes that everyone's working with plain
+	directories, that we can move them, and that posix semantics fly.  In return,
+	it's stateless and survives daemon reboots by pure coincidence with no
+	additional persistence than the normal filesystem provides.
+
 	Filesystems returned are presumed *not* to be modified, or behavior is undefined and the
 	cache becomes unsafe to use.  Use should be combined with some kind of `Placer`
 	that preserves integrity of the cached filesystem.
@@ -209,9 +203,6 @@ func NewCachingTransmat(workPath string, transmats map[TransmatKind]TransmatFact
 
 func (ct *CachingTransmat) Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena {
 	permPath := filepath.Join(ct.workPath, "committed", string(dataHash))
-	// TODO everything about this prototype that mentions os.Stat and os.Rename needs to be replaced.
-	// We can't use the filesystem as the primary data storage; we can't do the rename trick for
-	// all possibile systems, so we're going to need our own state tracking system.
 	_, statErr := os.Stat(permPath)
 	if os.IsNotExist(statErr) {
 		// TODO implement some terribly clever stateful parking mechanism, and do the real fetch in another routine.
