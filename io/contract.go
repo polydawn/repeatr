@@ -104,16 +104,6 @@ func (a AssemblyPartsByPath) Less(i, j int) bool { return a[i].TargetPath < a[j]
 // coersion stuff
 //
 
-var _ Arena = &teardownDelegatingArena{}
-
-type teardownDelegatingArena struct {
-	Delegate   Arena
-	TeardownFn func()
-}
-
-func (a *teardownDelegatingArena) Path() string { return a.Delegate.Path() }
-func (a *teardownDelegatingArena) Teardown()    { defer a.TeardownFn(); a.Delegate.Teardown() }
-
 var _ Transmat = &DispatchingTransmat{}
 
 /*
@@ -216,11 +206,16 @@ func (ct *CachingTransmat) Materialize(kind TransmatKind, dataHash CommitID, sil
 		if err != nil {
 			panic(err)
 		}
-		return arena
-	} else {
-		return nil // TODO return existing (which we should already have proxied ref to that has a noop teardown)
 	}
+	return catchingTransmatArena{permPath}
 }
+
+type catchingTransmatArena struct {
+	path string
+}
+
+func (a catchingTransmatArena) Path() string { return a.path }
+func (a catchingTransmatArena) Teardown()    { /* none */ }
 
 //
 // exapmle
