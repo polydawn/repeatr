@@ -128,13 +128,10 @@ type DispatchingTransmat struct {
 	dispatch map[TransmatKind]Transmat
 }
 
-func NewDispatchingTransmat(workPath string, transmats map[TransmatKind]TransmatFactory) *DispatchingTransmat {
+func NewDispatchingTransmat(workPath string, transmats map[TransmatKind]Transmat) *DispatchingTransmat {
 	dt := &DispatchingTransmat{
 		workPath: workPath,
-		dispatch: make(map[TransmatKind]Transmat, len(transmats)),
-	}
-	for kind, factoryFn := range transmats {
-		dt.dispatch[kind] = factoryFn(filepath.Join(workPath, "stg", string(kind)))
+		dispatch: transmats,
 	}
 	return dt
 }
@@ -239,10 +236,10 @@ func example() {
 		TransmatKind("dir"): dirTransmat,
 		TransmatKind("tar"): tarTransmat,
 	})
-	universalTransmat := NewDispatchingTransmat(workDir, map[TransmatKind]TransmatFactory{
-		TransmatKind("dir"):  func(_ string) Transmat { return dirCacher }, // REVIEW this seems odd; maybe these things shouldn't take factories at all.
-		TransmatKind("tar"):  func(_ string) Transmat { return dirCacher },
-		TransmatKind("ipfs"): ipfsTransmat,
+	universalTransmat := NewDispatchingTransmat(workDir, map[TransmatKind]Transmat{
+		TransmatKind("dir"):  dirCacher,
+		TransmatKind("tar"):  dirCacher,
+		TransmatKind("ipfs"): ipfsTransmat(filepath.Join(workDir, "ipfs")),
 	})
 
 	// start having all filesystems
