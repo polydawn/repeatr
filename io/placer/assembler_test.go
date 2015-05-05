@@ -207,15 +207,16 @@ func assembleAndScan(assemblerFn integrity.Assembler, parts []integrity.Assembly
 		So(func() {
 			assembly = assemblerFn("./assembled", parts)
 		}, ShouldNotPanic)
-
-		Convey("Filesystem should scan as the expected union", func() {
-			scan := filefixture.Scan("./assembled")
-			So(scan.Describe(filefixture.CompareDefaults), ShouldEqual, expected.Describe(filefixture.CompareDefaults))
-
+		Reset(func() {
 			if assembly != nil {
 				// conditional only because we may have continued moving after an error earlier.
 				assembly.Teardown()
 			}
+		})
+
+		Convey("Filesystem should scan as the expected union", func() {
+			scan := filefixture.Scan("./assembled")
+			So(scan.Describe(filefixture.CompareDefaults), ShouldEqual, expected.Describe(filefixture.CompareDefaults))
 		})
 	})
 }
