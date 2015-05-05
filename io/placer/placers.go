@@ -146,6 +146,7 @@ func NewAufsPlacer(workPath string) integrity.Placer {
 			"-o", "br="+layerPath+":"+srcBasePath,
 			"none",
 			destBasePath,
+			gosh.NullIO,
 		)
 		// that's it; setting up COW also mounted it into destination.
 		return aufsEmplacement{
