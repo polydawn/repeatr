@@ -67,7 +67,7 @@ func CopyingPlacer(srcBasePath, destBasePath string, _ bool) integrity.Emplaceme
 			panic(err)
 		}
 	}).CatchAll(func(err error) {
-		panic(Error.New("copyingplacer: io failed: ", err))
+		panic(Error.New("copyingplacer: io failed: %s", err))
 	}).Done()
 
 	return copyEmplacement{path: destBasePath}
@@ -79,7 +79,7 @@ type copyEmplacement struct {
 
 func (e copyEmplacement) Teardown() {
 	if err := os.RemoveAll(e.path); err != nil {
-		panic(Error.New("copyingplacer: teardown failed: ", err))
+		panic(Error.New("copyingplacer: teardown failed: %s", err))
 	}
 }
 
@@ -110,7 +110,7 @@ type bindEmplacement struct {
 
 func (e bindEmplacement) Teardown() {
 	if err := syscall.Unmount(e.path, 0); err != nil {
-		panic(Error.New("bindplacer: teardown failed: ", err))
+		panic(Error.New("bindplacer: teardown failed: %s", err))
 	}
 }
 
@@ -163,10 +163,10 @@ type aufsEmplacement struct {
 func (e aufsEmplacement) Teardown() {
 	// first tear down the mount
 	if err := syscall.Unmount(e.landingPath, 0); err != nil {
-		panic(Error.New("aufsplacer: teardown failed: ", err))
+		panic(Error.New("aufsplacer: teardown failed: %s", err))
 	}
 	// now throw away the layer contents
 	if err := os.RemoveAll(e.layerPath); err != nil {
-		panic(Error.New("aufsplacer: teardown failed: ", err))
+		panic(Error.New("aufsplacer: teardown failed: %s", err))
 	}
 }
