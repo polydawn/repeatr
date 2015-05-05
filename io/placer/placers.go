@@ -1,10 +1,13 @@
 package placer
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"syscall"
 
+	"github.com/polydawn/gosh"
+	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
@@ -111,8 +114,59 @@ func (e bindEmplacement) Teardown() {
 	}
 }
 
-var _ integrity.Placer = AufsPlacer
+func NewAufsPlacer(workPath string) integrity.Placer {
+	workPath, err := filepath.Abs(workPath)
+	if err != nil {
+		panic(errors.IOError.Wrap(err))
+	}
+	return func(srcBasePath, destBasePath string, writable bool) integrity.Emplacement {
+		srcBaseStat, err := os.Stat(srcBasePath)
+		if err != nil || !srcBaseStat.IsDir() {
+			panic(Error.New("aufsplacer: srcPath %q must be dir: %s", srcBasePath, err))
+		}
+		destBaseStat, err := os.Stat(destBasePath)
+		if err != nil || !destBaseStat.IsDir() {
+			panic(Error.New("aufsplacer: destPath %q must be dir: %s", destBasePath, err))
+		}
+		// if a RO mount is requested, no need to set up COW; just hand off to bind.
+		if !writable {
+			return BindPlacer(srcBasePath, destBasePath, writable)
+		}
+		// make work dir for the overlay layer
+		layerPath, err := ioutil.TempDir(workPath, "layer-")
+		if err != nil {
+			panic(errors.IOError.Wrap(err))
+		}
+		// set up COW
+		// if you were doing this in a shell, it'd be roughly `mount -t aufs -o br="$layer":"$base" none "$composite"`.
+		// yes, this may behave oddly in the event of paths containing ":".
+		gosh.Sh(
+			"mount",
+			"-t", "aufs",
+			"-o", "br="+layerPath+":"+srcBasePath,
+			"none",
+			destBasePath,
+		)
+		// that's it; setting up COW also mounted it into destination.
+		return aufsEmplacement{
+			layerPath:   layerPath,
+			landingPath: destBasePath,
+		}
+	}
+}
 
-func AufsPlacer(srcPath, destPath string, writable bool) integrity.Emplacement {
-	return nil
+type aufsEmplacement struct {
+	layerPath   string
+	landingPath string
+}
+
+func (e aufsEmplacement) Teardown() {
+	// first tear down the mount
+	if err := syscall.Unmount(e.landingPath, 0); err != nil {
+		panic(Error.New("aufsplacer: teardown failed: ", err))
+	}
+	// now throw away the layer contents
+	if err := os.RemoveAll(e.layerPath); err != nil {
+		panic(Error.New("aufsplacer: teardown failed: ", err))
+	}
 }

@@ -28,6 +28,17 @@ func TestBindPlacerCompliance(t *testing.T) {
 	)
 }
 
+func TestAufsPlacerCompliance(t *testing.T) {
+	Convey("Aufs placers make data appear into place", t,
+		testutil.Requires(
+			testutil.RequiresMounts,
+			testutil.WithTmpdir(func() {
+				CheckAssemblerGetsDataIntoPlace(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
+			}),
+		),
+	)
+}
+
 // you probs want to create that assembler with a variety of placers
 func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 	Convey("Assembly with just a root fs works",
