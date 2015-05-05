@@ -18,6 +18,9 @@ func TestCopyingPlacerCompliance(t *testing.T) {
 		CheckAssemblerGetsDataIntoPlace(defaultAssembler{Placer: CopyingPlacer}.Assemble)
 	})
 	// Not Supported: CheckAssemblerRespectsReadonly
+	Convey("Copying placers support source isolation", t, func() {
+		CheckAssemblerIsolatesSource(defaultAssembler{Placer: CopyingPlacer}.Assemble)
+	})
 }
 
 func TestBindPlacerCompliance(t *testing.T) {
@@ -37,6 +40,7 @@ func TestBindPlacerCompliance(t *testing.T) {
 			},
 		),
 	)
+	// Not Supported: CheckAssemblerIsolatesSource // (use AufsPlacer for that)
 }
 
 func TestAufsPlacerCompliance(t *testing.T) {
@@ -53,6 +57,14 @@ func TestAufsPlacerCompliance(t *testing.T) {
 			testutil.RequiresMounts,
 			testutil.WithTmpdir(func() {
 				CheckAssemblerRespectsReadonly(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
+			}),
+		),
+	)
+	Convey("Aufs placers support source isolation", t,
+		testutil.Requires(
+			testutil.RequiresMounts,
+			testutil.WithTmpdir(func() {
+				CheckAssemblerIsolatesSource(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
 			}),
 		),
 	)
@@ -236,6 +248,26 @@ func CheckAssemblerRespectsReadonly(assemblerFn integrity.Assembler) {
 				So(err, ShouldNotBeNil)
 				So(err, ShouldHaveSameTypeAs, &os.PathError{})
 				So(err.(*os.PathError).Err, ShouldEqual, syscall.EROFS)
+			}),
+		),
+	)
+}
+
+func CheckAssemblerIsolatesSource(assemblerFn integrity.Assembler) {
+	Convey("Writing to a placement should not alter the source",
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				filefixture.Alpha.Create("./material/alpha")
+				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+					{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
+				})
+				defer assembly.Teardown()
+				f, err := os.OpenFile("./assembled/newfile", os.O_CREATE, 0644)
+				defer f.Close()
+				So(err, ShouldBeNil)
+				scan := filefixture.Scan("./material/alpha")
+				So(scan.Describe(filefixture.CompareDefaults), ShouldEqual, filefixture.Alpha.Describe(filefixture.CompareDefaults))
 			}),
 		),
 	)
