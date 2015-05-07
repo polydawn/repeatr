@@ -8,6 +8,10 @@ import (
 	"polydawn.net/repeatr/lib/fs"
 )
 
+func NewAssembler(p integrity.Placer) integrity.Assembler {
+	return defaultAssembler{p}.Assemble
+}
+
 type defaultAssembler struct {
 	Placer integrity.Placer
 }

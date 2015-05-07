@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
+	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 )
 
@@ -245,28 +245,60 @@ func example() {
 
 	// start having all filesystems
 	// large amounts of this would maybe make sense to get DRY and shoved in the assembler
-	filesystems := make([]Arena, len(formula.Inputs))
-	var inputWg sync.WaitGroup
-	for i, input := range formula.Inputs {
-		inputWg.Add(1)
+	filesystems := make(map[def.Input]Arena, len(formula.Inputs))
+	fsGather := make(chan map[def.Input]Arena)
+	// this is a bit of a hash at the moment, but you need to:
+	// - collect these in some way that almost certainly requires a sync (whether mutex or channels, i don't care)
+	// - *keep* the arenas around
+	// - take a map[def.Input]Arena and map that into `[]AssemblyPart`
+	for _, input := range formula.Inputs {
 		go func() {
-			filesystems[i] = universalTransmat.Materialize(TransmatKind(input.Type), CommitID(input.Hash), []SiloURI{SiloURI(input.URI)})
-			// TODO these are now synchronous and emit errors here; need try block
-			// could: do something clever with errors here instant emit cancels to everything else.
-			inputWg.Done()
+			try.Do(func() {
+				fsGather <- map[def.Input]Arena{
+					input: universalTransmat.Materialize(TransmatKind(input.Type), CommitID(input.Hash), []SiloURI{SiloURI(input.URI)}),
+				}
+			}).CatchAll(func(err error) {
+				fsGather <- map[def.Input]Arena{
+					input: nil, // FIXME
+				}
+			}).Done()
 		}()
 	}
-	for _, output := range formula.Outputs {
-		_ = output
-		// TODO output setups
+	// (we don't have any output setup at this point, but if we do in the future, that'll be here.)
+	// gather materialized inputs
+	for range formula.Inputs {
+		for input, arena := range <-fsGather {
+			// TODO error gathering branch
+			filesystems[input] = arena
+		}
 	}
-	inputWg.Wait()
 
 	// assemble them into the final tree
-	// TODO
+	assemblyParts := make([]AssemblyPart, 0, len(filesystems))
+	for input, arena := range filesystems {
+		assemblyParts = append(assemblyParts, AssemblyPart{
+			SourcePath: arena.Path(),
+			TargetPath: input.Location,
+			Writable:   true, // TODO input config should have a word about this
+		})
+	}
+	// FIXME at this point the example needs to move somewhere that's not a cyclic dep...
+	//assemblerFn := placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(workDir, "aufs")))
+	//assembly := assemblerFn(filepath.Join(workDir, "rootfs/{jobguid}"), assemblyParts)
 
 	// "run something", if this were a real executor
 
 	// run commit on the outputs
-	// TODO
+	scanGather := make(chan def.Output)
+	for _, output := range formula.Outputs {
+		go func() {
+			try.Do(func() {
+				commitID := universalTransmat.Scan(TransmatKind(output.Type), []SiloURI{SiloURI(output.Location)})
+				output.Hash = string(commitID)
+				scanGather <- output
+			}).CatchAll(func(err error) {
+				fsGather <- nil // FIXME
+			}).Done()
+		}()
+	}
 }
