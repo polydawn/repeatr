@@ -38,7 +38,9 @@ type Transmat interface {
 		materializer method, but it *is* critical for having the ability to do
 		cleanup on a system that suffered an unexpected halt.
 	*/
-	Arenas() []Arena
+	//Arenas() []Arena
+	// REMOVED: this doesn't seem to be very useful in general.  just for caching transmats.
+	// subject to review, but a use case needs to be demonstrated, because this makes a bunch of things stateful that have no reason to be.
 }
 
 /*
@@ -122,14 +124,6 @@ func NewDispatchingTransmat(workPath string, transmats map[TransmatKind]Transmat
 		dispatch: transmats,
 	}
 	return dt
-}
-
-func (dt *DispatchingTransmat) Arenas() []Arena {
-	var a []Arena
-	for _, transmat := range dt.dispatch {
-		a = append(a, transmat.Arenas()...)
-	}
-	return a
 }
 
 func (dt *DispatchingTransmat) Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena {
