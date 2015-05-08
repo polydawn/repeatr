@@ -29,7 +29,7 @@ type Arena interface {
 type Transmat interface {
 	Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena
 
-	Scan(kind TransmatKind, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID
+	Scan(kind TransmatKind, subjectPath string, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID
 
 	/*
 		Returns a list of all active Arenas managed by this Transmat.
@@ -140,12 +140,12 @@ func (dt *DispatchingTransmat) Materialize(kind TransmatKind, dataHash CommitID,
 	return transmat.Materialize(kind, dataHash, siloURIs, options...)
 }
 
-func (dt *DispatchingTransmat) Scan(kind TransmatKind, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID {
+func (dt *DispatchingTransmat) Scan(kind TransmatKind, subjectPath string, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID {
 	transmat := dt.dispatch[kind]
 	if transmat == nil {
 		panic(fmt.Errorf("no transmat of kind %q available to satisfy request", kind))
 	}
-	return transmat.Scan(kind, siloURIs, options...)
+	return transmat.Scan(kind, subjectPath, siloURIs, options...)
 }
 
 var _ Transmat = &CachingTransmat{}
@@ -293,7 +293,7 @@ func example() {
 	for _, output := range formula.Outputs {
 		go func() {
 			try.Do(func() {
-				commitID := universalTransmat.Scan(TransmatKind(output.Type), []SiloURI{SiloURI(output.Location)})
+				commitID := universalTransmat.Scan(TransmatKind(output.Type), output.Location, []SiloURI{SiloURI(output.Location)})
 				output.Hash = string(commitID)
 				scanGather <- output
 			}).CatchAll(func(err error) {
