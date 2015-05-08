@@ -19,8 +19,7 @@ func CheckScanWithoutMutation(kind integrity.TransmatKind, transmatFabFn integri
 					// set up fixture
 					fixture.Create("./data")
 					// scan it with the transmat
-					silos := []integrity.SiloURI{"./dump"} // TODO this should be empty/nil for non-uploads, but we haven't taught implementations about that yet
-					transmat.Scan(kind, "./data", silos)
+					transmat.Scan(kind, "./data", nil)
 					// rescan it with the test system
 					rescan := filefixture.Scan("./data")
 					// should be unchanged
