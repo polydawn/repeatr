@@ -35,7 +35,7 @@ func (o Output) Apply(rootPath string) <-chan output.Report {
 	go func() {
 		defer close(done)
 		try.Do(func() {
-			err := os.MkdirAll(rootPath, 0777)
+			err := os.MkdirAll(rootPath, 0755)
 			if err != nil {
 				panic(output.TargetFilesystemUnavailableIOError(err))
 			}
