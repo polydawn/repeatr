@@ -30,7 +30,7 @@ func New(spec def.Output) *Output {
 	}
 }
 
-func (o Output) Apply(rootPath string) <-chan output.Report {
+func (o Output) Apply(basePath string) <-chan output.Report {
 	done := make(chan output.Report)
 	go func() {
 		defer close(done)
@@ -40,17 +40,14 @@ func (o Output) Apply(rootPath string) <-chan output.Report {
 				panic(output.TargetFilesystemUnavailableIOError(err))
 			}
 
-			// Assumes output URI is a folder. Output transport impls should obviously be more robust
-			path := filepath.Join(rootPath, o.spec.Location)
-
 			// exec tar.
 			// in case of a zero (a.k.a. success) exit, this returns silently.
 			// in case of a non-zero exit, this panics; the panic will include the output.
 			gosh.Gosh(
 				"tar",
 				"-cf", o.spec.URI,
-				"--xform", "s,"+strings.TrimLeft(rootPath, "/")+",,",
-				path,
+				"--xform", "s,"+strings.TrimLeft(basePath, "/")+",.,",
+				basePath,
 				gosh.NullIO,
 			).RunAndReport()
 
