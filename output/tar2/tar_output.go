@@ -43,7 +43,7 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 		try.Do(func() {
 			// open output location for writing
 			// currently this impl assumes a local file uri
-			file, err := os.OpenFile(o.spec.URI, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0644)
+			file, err := os.OpenFile(o.spec.URI, os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
 				panic(output.TargetFilesystemUnavailableIOError(err))
 			}
