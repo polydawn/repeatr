@@ -50,9 +50,9 @@ func ProvisionOutputs(outputs []def.Output, rootfs string, journal io.Writer) {
 func PreserveOutputs(outputs []def.Output, rootfs string, journal io.Writer) []def.Output {
 	for x, output := range outputs {
 		fmt.Fprintln(journal, "Persisting output", x+1, output.Type, "from", output.Location)
-		// path := filepath.Join(rootfs, output.Location)
+		path := filepath.Join(rootfs, output.Location)
 
-		report := <-outputdispatch.Get(output).Apply(rootfs)
+		report := <-outputdispatch.Get(output).Apply(path)
 		if report.Err != nil {
 			panic(report.Err)
 		}
