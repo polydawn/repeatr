@@ -23,6 +23,7 @@ type CommitID string
 
 type Arena interface {
 	Path() string
+	Hash() CommitID
 	Teardown()
 }
 
@@ -55,9 +56,9 @@ type TransmatFactory func(workPath string) Transmat
 type MaterializerOptions struct {
 	// TODO play more with how this pattern works (or doesn't) with embedding n stuff.
 	// I'd be nice to have just one ProgressReporter configurator for both input and output systems, for example.
-	// TODO probably also needs exported symbols so any third party systems can read the config too!
 
-	progressReporter chan<- float32
+	ProgressReporter   chan<- float32
+	AcceptHashMismatch bool
 }
 
 type MaterializerConfigurer func(*MaterializerOptions)
@@ -66,8 +67,20 @@ type MaterializerConfigurer func(*MaterializerOptions)
 
 func ProgressReporter(rep chan<- float32) MaterializerConfigurer {
 	return func(opts *MaterializerOptions) {
-		opts.progressReporter = rep
+		opts.ProgressReporter = rep
 	}
+}
+
+var AcceptHashMismatch = func(opts *MaterializerOptions) {
+	opts.AcceptHashMismatch = true
+}
+
+func EvaluateConfig(options ...MaterializerConfigurer) MaterializerOptions {
+	var opts MaterializerOptions
+	for _, each := range options {
+		each(&opts)
+	}
+	return opts
 }
 
 type Placer func(srcPath, destPath string, writable bool) Emplacement
@@ -208,8 +221,9 @@ type catchingTransmatArena struct {
 	path string
 }
 
-func (a catchingTransmatArena) Path() string { return a.path }
-func (a catchingTransmatArena) Teardown()    { /* none */ }
+func (a catchingTransmatArena) Path() string   { return a.path }
+func (a catchingTransmatArena) Hash() CommitID { return a.Hash() }
+func (a catchingTransmatArena) Teardown()      { /* none */ }
 
 //
 // exapmle

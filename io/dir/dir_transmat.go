@@ -33,12 +33,14 @@ func (t *DirTransmat) Materialize(
 	siloURIs []integrity.SiloURI,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.Arena {
+	config := integrity.EvaluateConfig(options...)
 	var err error
 	var arena dirArena
 	arena.path, err = ioutil.TempDir(t.workPath, "")
 	if err != nil {
 		panic(input.TargetFilesystemUnavailableIOError(err))
 	}
+	arena.hash = dataHash // until proven otherwise
 	err = <-dir_in.New(def.Input{
 		// Wrapping around previous implementations until we migrate it all.
 		// Ugly, but will let us migrate consumer apis next, then unwind these wrappers,
@@ -50,7 +52,13 @@ func (t *DirTransmat) Materialize(
 	// Also ugly!  When we unwind these wrappers, everything will
 	// consistently be blocking behaviors, and this will clean up substantially.
 	if err != nil {
-		panic(err)
+		if config.AcceptHashMismatch && errors.GetClass(err).Is(input.InputHashMismatchError) {
+			// if we're tolerating mismatches, report the actual hash through different mechanisms.
+			// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
+			arena.hash = integrity.CommitID(errors.GetData(err, input.HashActualKey).(string))
+		} else {
+			panic(err)
+		}
 	}
 	return arena
 }
@@ -78,10 +86,15 @@ func (t DirTransmat) Scan(
 
 type dirArena struct {
 	path string
+	hash integrity.CommitID
 }
 
 func (a dirArena) Path() string {
 	return a.path
+}
+
+func (a dirArena) Hash() integrity.CommitID {
+	return a.hash
 }
 
 // rm's.
