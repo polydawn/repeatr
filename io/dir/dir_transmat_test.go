@@ -11,5 +11,7 @@ import (
 func TestCoreCompliance(t *testing.T) {
 	Convey("Spec Compliance: Dir Transmat", t, func() {
 		tests.CheckScanWithoutMutation(integrity.TransmatKind("dir"), New)
+		tests.CheckScanProducesConsistentHash(integrity.TransmatKind("dir"), New)
+		tests.CheckScanProducesDistinctHashes(integrity.TransmatKind("dir"), New)
 	})
 }
