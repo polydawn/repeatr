@@ -206,6 +206,11 @@ func NewCachingTransmat(workPath string, transmats map[TransmatKind]TransmatFact
 }
 
 func (ct *CachingTransmat) Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena {
+	if dataHash == "" {
+		// if you can't give us a hash, we can't cache.
+		// also this is almost certainly doomed unless one of your options is `AcceptHashMismatch`, but that's not ours to check.
+		return ct.DispatchingTransmat.Materialize(kind, dataHash, siloURIs, options...)
+	}
 	permPath := filepath.Join(ct.workPath, "committed", string(dataHash))
 	_, statErr := os.Stat(permPath)
 	if os.IsNotExist(statErr) {

@@ -27,8 +27,8 @@ func ProvisionInputs(inputs []def.Input, rootfs string, journal io.Writer) integ
 	})
 	_ = dirCacher
 	universalTransmat := integrity.NewDispatchingTransmat(workDir, map[integrity.TransmatKind]integrity.Transmat{
-		integrity.TransmatKind("dir"): dir.New(workDir), // dirCacher,
-		integrity.TransmatKind("tar"): tar.New(workDir), // dirCacher,
+		integrity.TransmatKind("dir"): dirCacher,
+		integrity.TransmatKind("tar"): dirCacher,
 	})
 
 	// start having all filesystems

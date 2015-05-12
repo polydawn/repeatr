@@ -23,7 +23,11 @@ func Test(t *testing.T) {
 					{
 						Type:     "tar",
 						Location: "/",
-						URI:      "/nonexistance/in/its/most/essential/unform.tar.gz",
+						// Funny thing is, the URI isn't even necessarily where the buck stops;
+						// Remote URIs need not be checked if caches are in play, etc.
+						// So the hash needs to be set (and needs to be invalid).
+						URI:  "/nonexistance/in/its/most/essential/unform.tar.gz",
+						Hash: "defnot",
 					},
 				},
 			}
