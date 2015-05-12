@@ -198,6 +198,10 @@ func NewCachingTransmat(workPath string, transmats map[TransmatKind]TransmatFact
 	for kind, factoryFn := range transmats {
 		ct.dispatch[kind] = factoryFn(filepath.Join(workPath, "stg", string(kind)))
 	}
+	err := os.MkdirAll(filepath.Join(ct.workPath, "committed"), 0755)
+	if err != nil {
+		panic(err) // TODO type.  migrate input/output errors
+	}
 	return ct
 }
 
