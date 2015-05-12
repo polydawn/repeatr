@@ -18,7 +18,6 @@ import (
 )
 
 // Run inputs
-// TODO: run all simultaneously, waitgroup out the errors
 func ProvisionInputs(inputs []def.Input, rootfs string, journal io.Writer) integrity.Assembly {
 	workDir := "/tmp/repeatr" // TODO cleanup, this will probably make more sense to be set up earlier
 	dirCacher := integrity.NewCachingTransmat(filepath.Join(workDir, "dircacher"), map[integrity.TransmatKind]integrity.TransmatFactory{
@@ -32,13 +31,8 @@ func ProvisionInputs(inputs []def.Input, rootfs string, journal io.Writer) integ
 	})
 
 	// start having all filesystems
-	// large amounts of this would maybe make sense to get DRY and shoved in the assembler
 	filesystems := make(map[def.Input]integrity.Arena, len(inputs))
 	fsGather := make(chan map[def.Input]materializerReport)
-	// this is a bit of a hash at the moment, but you need to:
-	// - collect these in some way that almost certainly requires a sync (whether mutex or channels, i don't care)
-	// - *keep* the arenas around
-	// - take a map[def.Input]Arena and map that into `[]AssemblyPart`
 	for _, in := range inputs {
 		go func(in def.Input) {
 			try.Do(func() {
@@ -56,7 +50,9 @@ func ProvisionInputs(inputs []def.Input, rootfs string, journal io.Writer) integ
 			}).Done()
 		}(in)
 	}
+
 	// (we don't have any output setup at this point, but if we do in the future, that'll be here.)
+
 	// gather materialized inputs
 	for range inputs {
 		for in, report := range <-fsGather {
