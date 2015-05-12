@@ -55,7 +55,12 @@ func (t *DirTransmat) Materialize(
 	return arena
 }
 
-func (t DirTransmat) Scan(kind integrity.TransmatKind, subjectPath string, siloURIs []integrity.SiloURI, options ...integrity.MaterializerConfigurer) integrity.CommitID {
+func (t DirTransmat) Scan(
+	kind integrity.TransmatKind,
+	subjectPath string,
+	siloURIs []integrity.SiloURI,
+	options ...integrity.MaterializerConfigurer,
+) integrity.CommitID {
 	if len(siloURIs) <= 0 {
 		// odd hack, replace with actual comprehensive of uri lists when finishing migrating.
 		// empty strings here make it all the way to the fshash walker, which sees that as a "don't copy" instruction.
