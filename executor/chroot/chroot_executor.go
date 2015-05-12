@@ -93,7 +93,8 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCl
 func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobResult, outS, errS io.WriteCloser, journal io.Writer) {
 	// Prepare filesystem
 	rootfs := filepath.Join(d, "rootfs")
-	util.ProvisionInputs(f.Inputs, rootfs, journal)
+	assembly := util.ProvisionInputs(f.Inputs, rootfs, journal)
+	defer assembly.Teardown() // What ever happens: Disassemble filesystem
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)
 
 	// chroot's are pretty easy.
