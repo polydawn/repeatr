@@ -3,10 +3,10 @@ package fshash
 import (
 	"hash"
 	"io"
-	"os"
 	"path/filepath"
 
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
 )
@@ -19,8 +19,6 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 		if filenode.Err != nil {
 			return filenode.Err
 		}
-		destPath := filepath.Join(destBasePath, filenode.Path)
-		mode := filenode.Info.Mode()
 		hdr, file := fs.ScanFile(srcBasePath, filenode.Path, filenode.Info)
 		if file == nil {
 			if destBasePath != "" {
@@ -28,36 +26,15 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, hasherFactory f
 			}
 			bucket.Record(hdr, nil)
 		} else {
-			// TODO : rearrange hasher stream so we can call lib/fs.PlaceFile
-			// copy data into place and accumulate hash
 			defer file.Close()
 			hasher := hasherFactory()
-			var tee io.Writer
 			if destBasePath != "" {
-				dest, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode&os.ModePerm)
-				if err != nil {
-					return err
-				}
-				defer dest.Close()
-				tee = io.MultiWriter(dest, hasher)
+				reader := &flak.HashingReader{file, hasher}
+				fs.PlaceFile(destBasePath, hdr, reader)
 			} else {
-				tee = hasher
+				io.Copy(hasher, file)
 			}
-			_, err := io.Copy(tee, file)
-			if err != nil {
-				return err
-			}
-			// marshal headers and save to bucket with hash
-			if destBasePath != "" {
-				if err := fspatch.UtimesNano(destPath, hdr.AccessTime, hdr.ModTime); err != nil {
-					return err
-				}
-				if err := os.Chown(destPath, hdr.Uid, hdr.Gid); err != nil {
-					return err
-				}
-			}
-			hash := hasher.Sum(nil)
-			bucket.Record(hdr, hash)
+			bucket.Record(hdr, hasher.Sum(nil))
 		}
 		return nil
 	}

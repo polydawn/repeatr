@@ -15,6 +15,7 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
+	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fshash"
 	"polydawn.net/repeatr/lib/treewalk"
@@ -123,12 +124,9 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 		// place the file
 		switch hdr.Typeflag {
 		case tar.TypeReg:
-			reader := &hashingReader{
-				r:      tr,
-				hasher: hasherFactory(),
-			}
+			reader := &flak.HashingReader{tr, hasherFactory()}
 			fs.PlaceFile(destBasePath, hdr, reader)
-			bucket.Record(hdr, reader.hasher.Sum(nil))
+			bucket.Record(hdr, reader.Hasher.Sum(nil))
 		case tar.TypeDir:
 			hdr.Name += "/"
 			fallthrough
@@ -148,21 +146,4 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 		panic(err)
 	}
 	return nil
-}
-
-/*
-	Proxies a reader, hashing the stream as it's read.
-	(This is useful if using `io.Copy` to move bytes from a reader to
-	a writer, and you want to use that goroutine to power the hashing as
-	well but replacing the writer with a multiwriter is out of bounds.)
-*/
-type hashingReader struct {
-	r      io.Reader
-	hasher hash.Hash
-}
-
-func (r *hashingReader) Read(b []byte) (int, error) {
-	n, err := r.r.Read(b)
-	r.hasher.Write(b[:n])
-	return n, err
 }
