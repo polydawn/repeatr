@@ -26,25 +26,6 @@ const Type = "s3"
 
 var _ output.Output = &Output{} // interface assertion
 
-/*
-	Amazon S3 silos are used by this transport in a very MVP-oriented way:
-	tarballs streamed in and out, because we know how to preserve file
-	attributes in a widely-understood way by doing this.
-
-	This IO system happens to share the same hash-space as the Tar IO system,
-	and may thus safely share a cache with Tar IO systems.
-
-	Working with S3 permissions: good luck; be advised that in many configurations,
-	accounts may be able to write data which they then instantly lose permission to
-	manage or even read back; this will result in permission denied errors from this
-	system, and may result in dirty state left behind (because we have to permission
-	to clean it up once we've created this, and cannot discover this until it's
-	too late!).  PRs for improving this behavior deeply welcome; this author
-	is not an S3/AWS/IAM professional.
-
-	Try the docs here: https://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html --
-	these describe attaching policies to a bucket that can grant permissions to a user account.
-*/
 type Output struct {
 	spec          def.Output
 	hasherFactory func() hash.Hash
