@@ -5,6 +5,7 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
 	dir_in "polydawn.net/repeatr/input/dir"
@@ -21,6 +22,10 @@ type DirTransmat struct {
 var _ integrity.TransmatFactory = New
 
 func New(workPath string) integrity.Transmat {
+	err := os.MkdirAll(workPath, 0755)
+	if err != nil {
+		panic(input.TargetFilesystemUnavailableIOError(err)) // TODO these errors should migrate
+	}
 	return &DirTransmat{workPath}
 }
 
