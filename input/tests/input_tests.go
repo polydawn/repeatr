@@ -28,7 +28,7 @@ type OutputFactory func(def.Output) output.Output
 	- Places it in a new filesystem with the input system and the scanned hash
 	- Checks the new filesystem matches the original
 */
-func CheckRoundTrip(t *testing.T, kind string, newOutput OutputFactory, newInput InputFactory) {
+func CheckRoundTrip(t *testing.T, kind string, newOutput OutputFactory, newInput InputFactory, bounceURI string) {
 	Convey("Scanning and replacing a filesystem should agree on hash and content", t,
 		testutil.Requires(testutil.RequiresRoot, func() {
 			for _, fixture := range filefixture.All {
@@ -39,7 +39,7 @@ func CheckRoundTrip(t *testing.T, kind string, newOutput OutputFactory, newInput
 					// scan with output
 					scanner := newOutput((def.Output{
 						Type: kind,
-						URI:  "./output.dump",
+						URI:  bounceURI,
 					}))
 					report := <-scanner.Apply("./fixture")
 					So(report.Err, ShouldBeNil)
@@ -48,7 +48,7 @@ func CheckRoundTrip(t *testing.T, kind string, newOutput OutputFactory, newInput
 					input := newInput((def.Input{
 						Type: kind,
 						Hash: report.Output.Hash,
-						URI:  "./output.dump",
+						URI:  bounceURI,
 					}))
 					err := <-input.Apply("./unpack")
 					So(err, ShouldBeNil)

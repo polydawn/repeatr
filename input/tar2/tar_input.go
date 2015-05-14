@@ -72,7 +72,7 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 
 			// unroll the tar, copying and accumulating data for integrity check
 			bucket := &fshash.MemoryBucket{}
-			walk(tarReader, destinationRoot, bucket, i.hasherFactory)
+			Extract(tarReader, destinationRoot, bucket, i.hasherFactory)
 
 			// hash whole tree
 			actualTreeHash, _ := fshash.Hash(bucket, i.hasherFactory)
@@ -93,7 +93,7 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 	return done
 }
 
-func walk(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFactory func() hash.Hash) error {
+func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFactory func() hash.Hash) error {
 	for {
 		thdr, err := tr.Next()
 		if err == io.EOF {

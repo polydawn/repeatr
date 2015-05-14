@@ -12,6 +12,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/output"
 	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
@@ -19,14 +20,14 @@ import (
 
 type OutputFactory func(def.Output) output.Output
 
-func CheckScanWithoutMutation(t *testing.T, kind string, newOutput OutputFactory) {
+func CheckScanWithoutMutation(t *testing.T, kind string, newOutput OutputFactory, bounceURI string) {
 	Convey("Applying the output to a filesystem shouldn't change it", t,
 		testutil.Requires(testutil.RequiresRoot, func() {
 			for _, fixture := range filefixture.All {
 				Convey(fmt.Sprintf("- Fixture %q", fixture.Name), testutil.WithTmpdir(func() {
 					subject := newOutput((def.Output{
 						Type: kind,
-						URI:  "./output.dump", // assumes your output supports local file for throwaway :/
+						URI:  bounceURI,
 					}))
 					fixture.Create("./data")
 					report := <-subject.Apply("./data")
@@ -40,7 +41,7 @@ func CheckScanWithoutMutation(t *testing.T, kind string, newOutput OutputFactory
 	)
 }
 
-func CheckScanProducesConsistentHash(t *testing.T, kind string, newOutput OutputFactory) {
+func CheckScanProducesConsistentHash(t *testing.T, kind string, newOutput OutputFactory, bounceURI string) {
 	Convey("Applying the output to a filesystem twice should produce the same hash", t,
 		testutil.Requires(testutil.RequiresRoot, func() {
 			for _, fixture := range filefixture.All {
@@ -48,44 +49,43 @@ func CheckScanProducesConsistentHash(t *testing.T, kind string, newOutput Output
 					fixture.Create("./data")
 					scanner1 := newOutput((def.Output{
 						Type: kind,
-						URI:  "./output.dump",
+						URI:  bounceURI + "." + guid.New(), // janky assumption that we can brute-suffix the URI.  may break cleanup on more advanced stuff.  reconsider after io-reboot.
 					}))
 					report1 := <-scanner1.Apply("./data")
 					So(report1.Err, ShouldBeNil)
 					os.RemoveAll("./output.dump")
 					scanner2 := newOutput((def.Output{
 						Type: kind,
-						URI:  "./output.dump",
+						URI:  bounceURI + "." + guid.New(),
 					}))
 					report2 := <-scanner2.Apply("./data")
 					So(report2.Err, ShouldBeNil)
-					os.RemoveAll("./output.dump")
 					So(report2.Output.Hash, ShouldEqual, report1.Output.Hash)
+
 				}))
 			}
 		}),
 	)
 }
 
-func CheckScanProducesDistinctHashes(t *testing.T, kind string, newOutput OutputFactory) {
+func CheckScanProducesDistinctHashes(t *testing.T, kind string, newOutput OutputFactory, bounceURI string) {
 	Convey("Applying the output to two different filesystems should produce different hashes", t,
 		testutil.Requires(testutil.RequiresRoot, testutil.WithTmpdir(func() {
 			filefixture.Alpha.Create("./alpha")
 			filefixture.Alpha.Create("./beta")
 			scanner1 := newOutput((def.Output{
 				Type: kind,
-				URI:  "./output.dump",
+				URI:  bounceURI + "." + guid.New(), // janky assumption that we can brute-suffix the URI.  may break cleanup on more advanced stuff.  reconsider after io-reboot.
 			}))
 			report1 := <-scanner1.Apply("./alpha")
 			So(report1.Err, ShouldBeNil)
 			os.RemoveAll("./output.dump")
 			scanner2 := newOutput((def.Output{
 				Type: kind,
-				URI:  "./output.dump",
+				URI:  bounceURI + "." + guid.New(),
 			}))
 			report2 := <-scanner2.Apply("./beta")
 			So(report2.Err, ShouldBeNil)
-			os.RemoveAll("./output.dump")
 			So(report2.Output.Hash, ShouldEqual, report1.Output.Hash)
 		})),
 	)

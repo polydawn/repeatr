@@ -49,19 +49,9 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 			}
 			defer file.Close()
 
-			// walk filesystem, copying and accumulating data for integrity check
-			bucket := &fshash.MemoryBucket{}
-			tarWriter := tar.NewWriter(file)
-			defer tarWriter.Close()
-			if err := walk(basePath, tarWriter, bucket, o.hasherFactory); err != nil {
-				panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
-			}
+			// walk, fwrite, hash
+			o.spec.Hash = Save(file, basePath, o.hasherFactory)
 
-			// hash whole tree
-			actualTreeHash, _ := fshash.Hash(bucket, o.hasherFactory)
-
-			// report
-			o.spec.Hash = base64.URLEncoding.EncodeToString(actualTreeHash)
 			done <- output.Report{nil, o.spec}
 		}).Catch(output.Error, func(err *errors.Error) {
 			done <- output.Report{err, o.spec}
@@ -71,6 +61,23 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 		}).Done()
 	}()
 	return done
+}
+
+// Walks `basePath`, hashing it, pushing the encoded tar to `file`, and returning the final hash.
+func Save(file io.Writer, basePath string, hasherFactory func() hash.Hash) string {
+	// walk filesystem, copying and accumulating data for integrity check
+	bucket := &fshash.MemoryBucket{}
+	tarWriter := tar.NewWriter(file)
+	defer tarWriter.Close()
+	if err := walk(basePath, tarWriter, bucket, hasherFactory); err != nil {
+		panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
+	}
+
+	// hash whole tree
+	actualTreeHash, _ := fshash.Hash(bucket, hasherFactory)
+
+	// report
+	return base64.URLEncoding.EncodeToString(actualTreeHash)
 }
 
 func walk(srcBasePath string, tw *tar.Writer, bucket fshash.Bucket, hasherFactory func() hash.Hash) error {

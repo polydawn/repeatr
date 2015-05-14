@@ -16,7 +16,7 @@ import (
 )
 
 func TestCoreCompliance(t *testing.T) {
-	tests.CheckRoundTrip(t, "tar", tar2.New, New)
+	tests.CheckRoundTrip(t, "tar", tar2.New, New, "./output.dump.tar")
 }
 
 const ubuntuTarballHash = "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v"

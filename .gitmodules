@@ -19,3 +19,6 @@
 [submodule ".gopath/src/github.com/polydawn/gosh"]
 	path = .gopath/src/github.com/polydawn/gosh
 	url = https://github.com/polydawn/gosh.git
+[submodule ".gopath/src/github.com/rlmcpherson/s3gof3r"]
+	path = .gopath/src/github.com/rlmcpherson/s3gof3r
+	url = https://github.com/rlmcpherson/s3gof3r.git
