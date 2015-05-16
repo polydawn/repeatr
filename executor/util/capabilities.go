@@ -1,11 +1,13 @@
 package util
 
 import (
+	"os"
 	"path/filepath"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/dir"
+	"polydawn.net/repeatr/io/placer"
 	"polydawn.net/repeatr/io/tar"
 )
 
@@ -31,4 +33,16 @@ func DefaultTransmat() integrity.Transmat {
 	return universalTransmat
 }
 
-// TODO the one we're *really* worried about is "pick the best assembler available"
+func BestAssembler() integrity.Assembler {
+	if os.Getuid() != 0 {
+		// Can't mount without root.
+		return placer.NewAssembler(placer.CopyingPlacer)
+	}
+	if os.Getenv("TRAVIS") != "" {
+		// Travis's own virtualization denies mounting.  whee.
+		return placer.NewAssembler(placer.CopyingPlacer)
+	}
+	// If we *can* mount, AUFS+Bind is The Winner.
+	return placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(def.Base(), "aufs")))
+	// TODO: fallbacks for mount but not aufs.
+}
