@@ -25,7 +25,7 @@ func main() {
 			fmt.Fprintf(os.Stderr,
 				"Repeatr was unable to complete your request!\n"+
 					"%s\n",
-				err)
+				err.Message())
 			// exit, taking the specified code if any.
 			code := errors.GetData(err, cli.ExitCodeKey)
 			if code == nil {
