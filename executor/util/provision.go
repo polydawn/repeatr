@@ -11,25 +11,11 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/io/dir"
-	"polydawn.net/repeatr/io/placer"
-	"polydawn.net/repeatr/io/tar"
 	"polydawn.net/repeatr/output/dispatch"
 )
 
 // Run inputs
-func ProvisionInputs(inputs []def.Input, rootfs string, journal io.Writer) integrity.Assembly {
-	workDir := "/tmp/repeatr" // TODO cleanup, this will probably make more sense to be set up earlier
-	dirCacher := integrity.NewCachingTransmat(filepath.Join(workDir, "dircacher"), map[integrity.TransmatKind]integrity.TransmatFactory{
-		integrity.TransmatKind("dir"): dir.New,
-		integrity.TransmatKind("tar"): tar.New,
-	})
-	_ = dirCacher
-	universalTransmat := integrity.NewDispatchingTransmat(workDir, map[integrity.TransmatKind]integrity.Transmat{
-		integrity.TransmatKind("dir"): dirCacher,
-		integrity.TransmatKind("tar"): dirCacher,
-	})
-
+func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assembler, inputs []def.Input, rootfs string, journal io.Writer) integrity.Assembly {
 	// start having all filesystems
 	filesystems := make(map[def.Input]integrity.Arena, len(inputs))
 	fsGather := make(chan map[def.Input]materializerReport)
@@ -37,7 +23,7 @@ func ProvisionInputs(inputs []def.Input, rootfs string, journal io.Writer) integ
 		go func(in def.Input) {
 			try.Do(func() {
 				fsGather <- map[def.Input]materializerReport{
-					in: materializerReport{Arena: universalTransmat.Materialize(
+					in: materializerReport{Arena: transmat.Materialize(
 						integrity.TransmatKind(in.Type),
 						integrity.CommitID(in.Hash),
 						[]integrity.SiloURI{integrity.SiloURI(in.URI)},
@@ -72,7 +58,6 @@ func ProvisionInputs(inputs []def.Input, rootfs string, journal io.Writer) integ
 			Writable:   true, // TODO input config should have a word about this
 		})
 	}
-	assemblerFn := placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(workDir, "aufs")))
 	assembly := assemblerFn(rootfs, assemblyParts)
 	return assembly
 }

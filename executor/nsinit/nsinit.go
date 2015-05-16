@@ -13,6 +13,7 @@ import (
 	"polydawn.net/repeatr/executor/basicjob"
 	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/input"
+	"polydawn.net/repeatr/io/placer"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/streamer"
 	"polydawn.net/repeatr/output"
@@ -131,7 +132,11 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	cmd.Stderr = errS
 
 	// Prepare filesystem
-	util.ProvisionInputs(f.Inputs, rootfs, journal)
+	util.ProvisionInputs(
+		util.DefaultTransmat,
+		placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(def.Base(), "aufs"))),
+		f.Inputs, rootfs, journal,
+	)
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)
 
 	err := cmd.Run()
