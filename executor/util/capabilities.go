@@ -18,9 +18,7 @@ import (
 	`integrity.DispatchingTransmat` is good for composing them so you can still
 	use one interface to get any kind of data you want.
 */
-var DefaultTransmat integrity.Transmat
-
-func init() {
+func DefaultTransmat() integrity.Transmat {
 	workDir := filepath.Join(def.Base(), "io")
 	dirCacher := integrity.NewCachingTransmat(filepath.Join(workDir, "dircacher"), map[integrity.TransmatKind]integrity.TransmatFactory{
 		integrity.TransmatKind("dir"): dir.New,
@@ -30,7 +28,7 @@ func init() {
 		integrity.TransmatKind("dir"): dirCacher,
 		integrity.TransmatKind("tar"): dirCacher,
 	})
-	DefaultTransmat = universalTransmat
+	return universalTransmat
 }
 
 // TODO the one we're *really* worried about is "pick the best assembler available"

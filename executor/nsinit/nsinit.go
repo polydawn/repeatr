@@ -133,7 +133,7 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 
 	// Prepare filesystem
 	util.ProvisionInputs(
-		util.DefaultTransmat,
+		util.DefaultTransmat(),
 		placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(def.Base(), "aufs"))),
 		f.Inputs, rootfs, journal,
 	)
