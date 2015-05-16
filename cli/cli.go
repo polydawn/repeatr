@@ -43,6 +43,7 @@ func Main(args []string, journal io.Writer) {
 				},
 			},
 		},
+		ScanCommand,
 	}
 
 	App.Run(args)
