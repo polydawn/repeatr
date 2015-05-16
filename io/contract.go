@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
@@ -220,6 +221,14 @@ func (ct *CachingTransmat) Materialize(kind TransmatKind, dataHash CommitID, sil
 		// build more realistic syncs around this later, but posix mv atomicity might actually do enough.
 		err := os.Rename(arena.Path(), permPath)
 		if err != nil {
+			if err2, ok := err.(*os.LinkError); ok &&
+				err2.Err == syscall.EBUSY || err2.Err == syscall.ENOTEMPTY {
+				// oh, fine.  somebody raced us to it.
+				if err := os.RemoveAll(arena.Path()); err != nil {
+					panic(err) // not systemically fatal, but like, wtf mate.
+				}
+				return catchingTransmatArena{permPath}
+			}
 			panic(err)
 		}
 	}
