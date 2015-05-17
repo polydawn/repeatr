@@ -1,15 +1,16 @@
 package cli
 
 import (
-	"github.com/codegangsta/cli"
 	"io"
+
+	"github.com/codegangsta/cli"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/dispatch"
 	"polydawn.net/repeatr/scheduler/dispatch"
 )
 
-func Main(args []string, journal io.Writer) {
+func Main(args []string, journal, output io.Writer) {
 	App := cli.NewApp()
 
 	App.Name = "repeatr"
@@ -43,7 +44,7 @@ func Main(args []string, journal io.Writer) {
 				},
 			},
 		},
-		ScanCommand,
+		ScanCommandPattern(journal, output),
 	}
 
 	App.Run(args)

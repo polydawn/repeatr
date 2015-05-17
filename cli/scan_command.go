@@ -3,7 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 
 	"github.com/codegangsta/cli"
 
@@ -12,52 +12,52 @@ import (
 	"polydawn.net/repeatr/io"
 )
 
-var ScanCommand = cli.Command{
-	Name:  "scan",
-	Usage: "Scan a local filesystem, optionally storing the data into a silo",
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "kind",
-			Usage: "What kind of data storage format to work with.",
+func ScanCommandPattern(journal, output io.Writer) cli.Command {
+	return cli.Command{
+		Name:  "scan",
+		Usage: "Scan a local filesystem, optionally storing the data into a silo",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "kind",
+				Usage: "What kind of data storage format to work with.",
+			},
+			cli.StringFlag{
+				Name:  "path",
+				Value: ".",
+				Usage: "Optional.  The local filesystem path to scan.  Defaults to your current directory.",
+			},
+			cli.StringFlag{
+				Name:  "uri",
+				Usage: "Optional.  A Silo URI to upload data to.",
+			},
 		},
-		cli.StringFlag{
-			Name:  "path",
-			Value: ".",
-			Usage: "Optional.  The local filesystem path to scan.  Defaults to your current directory.",
+		Action: func(ctx *cli.Context) {
+			// args parse
+			outputSpec := def.Output{
+				Type: ctx.String("kind"),
+				URI:  ctx.String("uri"),
+				// Filters: might want
+				Location: ctx.String("path"),
+			}
+			if outputSpec.Type == "" {
+				panic(Error.NewWith("Missing argument: \"kind\" is a required parameter for scan", SetExitCode(EXIT_BADARGS)))
+			}
+			if outputSpec.Location == "" {
+				outputSpec.Location = "."
+			}
+			// invoke
+			outputResult := Scan(outputSpec)
+			// output
+			// FIXME serialization format.
+			//  should be especially pretty and human-friendly; deserves custom code.
+			//    really, you want that anyway for things like hassle-free syntax in practice for single URIs without an array, etc.
+			msg, err := json.Marshal(outputResult)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Fprintf(output, "%s\n", string(msg))
 		},
-		cli.StringFlag{
-			Name:  "uri",
-			Usage: "Optional.  A Silo URI to upload data to.",
-		},
-	},
-	Action: func(ctx *cli.Context) {
-		// args parse
-		outputSpec := def.Output{
-			Type: ctx.String("kind"),
-			URI:  ctx.String("uri"),
-			// Filters: might want
-			Location: ctx.String("path"),
-		}
-		if outputSpec.Type == "" {
-			panic(Error.NewWith("Missing argument: \"kind\" is a required parameter for scan", SetExitCode(EXIT_BADARGS)))
-		}
-		if outputSpec.Location == "" {
-			outputSpec.Location = "."
-		}
-		// invoke
-		outputResult := Scan(outputSpec)
-		// output
-		// FIXME serialization format.
-		//  also golang is shuffling values and That Is So Annoying to read as a human.
-		//   give up and write a custom marshal method.
-		//    really, you want that anyway for things like hassle-free syntax in practice for single URIs without an array, etc.
-		msg, err := json.Marshal(outputResult)
-		if err != nil {
-			panic(err)
-		}
-		// FIXME turn this back into a function so we can pass down chosen output streams
-		fmt.Fprintf(os.Stdout, "%s\n", string(msg))
-	},
+	}
 }
 
 /*

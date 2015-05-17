@@ -26,7 +26,7 @@ func Test(t *testing.T) {
 	}
 
 	Convey("It should not crash without args", t, func() {
-		Main(baseArgs, ioutil.Discard)
+		Main(baseArgs, ioutil.Discard, ioutil.Discard)
 	})
 
 	Convey("It should run a basic example", t,
@@ -34,7 +34,7 @@ func Test(t *testing.T) {
 			testutil.RequiresRoot,
 			testutil.RequiresNamespaces,
 			func() {
-				Main(append(baseArgs, "run", "-i", "lib/integration/basic.json"), ioutil.Discard)
+				Main(append(baseArgs, "run", "-i", "lib/integration/basic.json"), ioutil.Discard, ioutil.Discard)
 			},
 		),
 	)
