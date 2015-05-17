@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/codegangsta/cli"
-
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/io"
