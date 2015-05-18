@@ -9,6 +9,7 @@ import (
 	"polydawn.net/repeatr/io/placer"
 	"polydawn.net/repeatr/io/transmat/dir"
 	"polydawn.net/repeatr/io/transmat/tar"
+	"polydawn.net/repeatr/io/transmat/tarexec"
 )
 
 /*
@@ -27,8 +28,9 @@ func DefaultTransmat() integrity.Transmat {
 		integrity.TransmatKind("tar"): tar.New,
 	})
 	universalTransmat := integrity.NewDispatchingTransmat(workDir, map[integrity.TransmatKind]integrity.Transmat{
-		integrity.TransmatKind("dir"): dirCacher,
-		integrity.TransmatKind("tar"): dirCacher,
+		integrity.TransmatKind("dir"):      dirCacher,
+		integrity.TransmatKind("tar"):      dirCacher,
+		integrity.TransmatKind("exec-tar"): tarexec.New(filepath.Join(workDir, "tarexec")),
 	})
 	return universalTransmat
 }
