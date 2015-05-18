@@ -23,6 +23,7 @@ rm -rf "$demodir"
 mkdir -p "$demodir" && cd "$demodir" && demodir="$(pwd)"
 echo "$demodir"
 
+export REPEATR_BASE="$demodir/repeatr_base"
 
 
 
@@ -62,10 +63,10 @@ echo -e "${clblue}#  Stdout goes to your terminal; any 'output' specifications a
 	{
 		"Inputs": [
 			{
-				"Type": "tar",
+				"Type": "s3",
 				"Location": "/",
-				"Hash": "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v",
-				"URI": "assets/ubuntu.tar.gz"
+				"Hash": "l-I1HXpvEDIOCcd1leNW7vdxh7UrUbCdjZaWiflvB8kp4DM91STRXm1gYG4K8Cm2",
+				"URI": "s3+splay://repeatr/assets/"
 			}
 		],
 		"Accents": {
