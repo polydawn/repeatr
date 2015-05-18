@@ -57,6 +57,7 @@ awaitack
 
 echo -e "${clblue}# The \`repeatr run\` command takes a job description and executes it.${cnone}"
 echo -e "${clblue}#  Stdout goes to your terminal; any 'output' specifications are saved/uploaded.${cnone}"
+echo -e "${clblue}#  This first run might take a while -- it's downloading an operating system image first!${cnone}"
 (
 	tellRunning "repeatr run -i some-json-config-files.conf"
 	repeatr run -i <(cat <<-EOF
@@ -83,6 +84,42 @@ echo -e "${clblue}#  Stdout goes to your terminal; any 'output' specifications a
 EOF
 	)
 )
+echo -e "${clblue} ----------------------------${cnone}\n\n"
+awaitack
+
+
+
+
+echo -e "${clblue}# The \`repeatr run\` command can used cached assets to start jobs faster.${cnone}"
+echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts instantly.${cnone}"
+(
+	tellRunning "time repeatr run -i some-json-config-files.conf"
+	time repeatr run -i <(cat <<-EOF
+	{
+		"Inputs": [
+			{
+				"Type": "s3",
+				"Location": "/",
+				"Hash": "l-I1HXpvEDIOCcd1leNW7vdxh7UrUbCdjZaWiflvB8kp4DM91STRXm1gYG4K8Cm2",
+				"URI": "s3+splay://repeatr/assets/"
+			}
+		],
+		"Accents": {
+			"Entrypoint": [ "echo", "Hello from repeatr!" ]
+		},
+		"Outputs": [
+			{
+				"Type": "tar",
+				"Location": "/var/log",
+				"URI": "basic.tar"
+			}
+		]
+	}
+EOF
+	)
+)
+echo -e "${clblue}# Also, note that the output is the same hash?${cnone}"
+echo -e "${clblue}#  Given the same inputs, this command produces the same outputs, every time. ;)${cnone}"
 echo -e "${clblue} ----------------------------${cnone}\n\n"
 awaitack
 
