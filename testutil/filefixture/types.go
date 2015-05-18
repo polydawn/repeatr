@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -105,6 +106,9 @@ func defaults(f FixtureFile) FixtureFile {
 func (ffs Fixture) Create(basePath string) {
 	basePath, err := filepath.Abs(basePath)
 	if err != nil {
+		panic(errors.IOError.Wrap(err))
+	}
+	if err := os.MkdirAll(basePath, 0755); err != nil {
 		panic(errors.IOError.Wrap(err))
 	}
 	for _, f := range ffs.Files {
