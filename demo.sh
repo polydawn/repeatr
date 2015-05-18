@@ -22,6 +22,7 @@ tellRunning() {
 rm -rf "$demodir"
 mkdir -p "$demodir" && cd "$demodir" && demodir="$(pwd)"
 echo "$demodir"
+echo "$(which repeatr)"
 
 export REPEATR_BASE="$demodir/repeatr_base"
 
