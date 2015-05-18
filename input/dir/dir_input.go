@@ -58,7 +58,7 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 			// verify total integrity
 			expectedTreeHash, err := base64.URLEncoding.DecodeString(i.spec.Hash)
 			if !bytes.Equal(actualTreeHash, expectedTreeHash) {
-				done <- input.InputHashMismatchError.New("expected hash %q, got %q", i.spec.Hash, base64.URLEncoding.EncodeToString(actualTreeHash))
+				done <- input.NewHashMismatchError(i.spec.Hash, base64.URLEncoding.EncodeToString(actualTreeHash))
 			}
 		}).CatchAll(func(e error) {
 			// any errors should be caught and forwarded through a channel for management rather than killing the whole sytem unexpectedly.

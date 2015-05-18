@@ -1,6 +1,7 @@
 package input
 
 import (
+	"fmt"
 	"github.com/spacemonkeygo/errors"
 )
 
@@ -36,6 +37,20 @@ func DataSourceUnavailableIOError(err error) *errors.Error {
 	active attack (i.e. MITM).
 */
 var InputHashMismatchError *errors.ErrorClass = DataSourceUnavailableError.NewClass("InputHashMismatchError")
+
+func NewHashMismatchError(expectedHash, actualHash string) *errors.Error {
+	return InputHashMismatchError.NewWith(
+		fmt.Sprintf("expected hash %q, got %q", expectedHash, actualHash),
+		errors.SetData(HashExpectedKey, expectedHash),
+		errors.SetData(HashActualKey, actualHash),
+	).(*errors.Error)
+}
+
+// Found on `InputHashMismatchError`
+var HashExpectedKey errors.DataKey = errors.GenSym()
+
+// Found on `InputHashMismatchError`
+var HashActualKey errors.DataKey = errors.GenSym()
 
 /*
 	Indicates that the target filesystem (the one given to `Apply`) had some error.
