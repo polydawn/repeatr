@@ -74,7 +74,7 @@ func (t *FilewalkNode) NextChild() treewalk.Node {
 func newFileWalkNode(basePath, path string) (filenode *FilewalkNode) {
 	filenode = &FilewalkNode{Path: path}
 	filenode.Info, filenode.Err = os.Lstat(filepath.Join(basePath, path))
-	if filenode.Info.IsDir() {
+	if filenode.Err == nil && filenode.Info.IsDir() {
 		if !strings.HasSuffix(filenode.Path, "/") {
 			filenode.Path += "/"
 		}
