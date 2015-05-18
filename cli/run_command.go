@@ -48,5 +48,8 @@ func Run(executor executor.Executor, scheduler scheduler.Scheduler, formulaPaths
 		formulae = append(formulae, LoadFormulaFromFile(path))
 	}
 
+	// TODO Don't reeeeally want the 'run once' command going through the schedulers.
+	//  Having a path that doesn't invoke that complexity unnecessarily, and also is more clearly allowed to use the current terminal, is want.
+
 	RunFormulae(scheduler, executor, journal, formulae...)
 }

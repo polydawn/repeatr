@@ -1,7 +1,7 @@
 package group
 
 import (
-	"io/ioutil"
+	"io"
 	"runtime"
 
 	"polydawn.net/repeatr/def"
@@ -21,15 +21,17 @@ type hold struct {
 }
 
 type Scheduler struct {
-	groupSize int
-	executor  executor.Executor
-	queue     chan *hold
+	groupSize        int
+	executor         executor.Executor
+	queue            chan *hold
+	jobLoggerFactory func(def.JobID) io.Writer
 }
 
-func (s *Scheduler) Configure(e executor.Executor, queueSize int) {
+func (s *Scheduler) Configure(e executor.Executor, queueSize int, jobLoggerFactory func(def.JobID) io.Writer) {
 	s.groupSize = runtime.NumCPU()
 	s.executor = e
 	s.queue = make(chan *hold, queueSize)
+	s.jobLoggerFactory = jobLoggerFactory
 }
 
 func (s *Scheduler) Start() {
@@ -60,7 +62,8 @@ func (s *Scheduler) Schedule(f def.Formula) (def.JobID, <-chan def.Job) {
 // Run jobs one at a time
 func (s *Scheduler) Run() {
 	for h := range s.queue {
-		job := s.executor.Start(h.forumla, h.id, ioutil.Discard)
+		journal := s.jobLoggerFactory(h.id) // TODO replace with real logging framework
+		job := s.executor.Start(h.forumla, h.id, journal)
 		h.response <- job
 		job.Wait()
 	}
