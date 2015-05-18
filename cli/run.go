@@ -56,6 +56,7 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, 
 
 			fmt.Fprintln(journal, "Job", n, id, "queued")
 			job := <-jobChan
+			// TODO need better lifecycle events here.  "starting" here means we might still be in provisioning stage.
 			fmt.Fprintln(journal, "Job", n, id, "starting")
 
 			// Stream job output to terminal in real time

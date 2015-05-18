@@ -52,6 +52,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 			filesystems[in] = report.Arena
 		}
 	}
+	fmt.Fprintf(journal, "All inputs acquired... starting assembly\n")
 
 	// assemble them into the final tree
 	assemblyParts := make([]integrity.AssemblyPart, 0, len(filesystems))
@@ -63,6 +64,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 		})
 	}
 	assembly := assemblerFn(rootfs, assemblyParts)
+	fmt.Fprintf(journal, "Assembly complete!\n")
 	return assembly
 }
 
