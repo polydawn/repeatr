@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -84,24 +85,29 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 	// run commit on the outputs
 	scanGather := make(chan scanReport)
 	for _, out := range outputs {
-		go func() {
+		go func(out def.Output) {
+			scanPath := filepath.Join(rootfs, out.Location)
+			fmt.Fprintf(journal, "Starting scan on %q\n", scanPath)
 			try.Do(func() {
 				commitID := transmat.Scan(
 					integrity.TransmatKind(out.Type),
-					filepath.Join(rootfs, out.Location),
+					scanPath,
 					[]integrity.SiloURI{integrity.SiloURI(out.URI)},
 				)
 				out.Hash = string(commitID)
+				fmt.Fprintf(journal, "Finished scan on %q\n", scanPath)
 				scanGather <- scanReport{Output: out}
 			}).Catch(output.Error, func(err *errors.Error) {
+				fmt.Fprintf(journal, "Errored scan on %q\n", scanPath)
 				scanGather <- scanReport{Err: err}
 			}).Done()
-		}()
+		}(out)
 	}
 
 	// gather reports
 	var results []def.Output
-	for report := range scanGather {
+	for range outputs {
+		report := <-scanGather
 		if report.Err != nil {
 			panic(report.Err)
 		}
