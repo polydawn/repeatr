@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,7 +10,7 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/output/dispatch"
+	"polydawn.net/repeatr/output"
 )
 
 // Run inputs
@@ -81,17 +80,38 @@ func ProvisionOutputs(outputs []def.Output, rootfs string, journal io.Writer) {
 
 // Run outputs
 // TODO: run all simultaneously, waitgroup out the errors
-func PreserveOutputs(outputs []def.Output, rootfs string, journal io.Writer) []def.Output {
-	for x, output := range outputs {
-		fmt.Fprintln(journal, "Persisting output", x+1, output.Type, "from", output.Location)
-		path := filepath.Join(rootfs, output.Location)
+func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs string, journal io.Writer) []def.Output {
+	// run commit on the outputs
+	scanGather := make(chan scanReport)
+	for _, out := range outputs {
+		go func() {
+			try.Do(func() {
+				commitID := transmat.Scan(
+					integrity.TransmatKind(out.Type),
+					filepath.Join(rootfs, out.Location),
+					[]integrity.SiloURI{integrity.SiloURI(out.URI)},
+				)
+				out.Hash = string(commitID)
+				scanGather <- scanReport{Output: out}
+			}).Catch(output.Error, func(err *errors.Error) {
+				scanGather <- scanReport{Err: err}
+			}).Done()
+		}()
+	}
 
-		report := <-outputdispatch.Get(output).Apply(path)
+	// gather reports
+	var results []def.Output
+	for report := range scanGather {
 		if report.Err != nil {
 			panic(report.Err)
 		}
-		fmt.Fprintln(journal, "Output", x+1, "hash:", report.Output.Hash)
+		results = append(results, report.Output)
 	}
 
-	return outputs
+	return results
+}
+
+type scanReport struct {
+	Output def.Output    // now including the hash
+	Err    *errors.Error // subtype of output.Error.  (others are forbidden by contract and treated as fatal.)
 }

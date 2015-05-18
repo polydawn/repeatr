@@ -5,9 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
-
-	"github.com/spacemonkeygo/errors/try"
-	"polydawn.net/repeatr/def"
 )
 
 /*
@@ -242,89 +239,3 @@ type catchingTransmatArena struct {
 func (a catchingTransmatArena) Path() string   { return a.path }
 func (a catchingTransmatArena) Hash() CommitID { return a.Hash() }
 func (a catchingTransmatArena) Teardown()      { /* none */ }
-
-//
-// exapmle
-//
-
-func example() {
-	var formula def.Formula
-	var workDir string // probably one per executor; whatever
-
-	// pretend we have a bunch of diverse transmat systems implemented.
-	// these'll be things we have as registerable pluginnable systems.
-	var dirTransmat TransmatFactory
-	var tarTransmat TransmatFactory
-	var ipfsTransmat TransmatFactory
-
-	// transmats have a consistent interface so we can drop cachers in or out, transparently.
-	// and we can assemble dispatchers covering the whole spectrum.
-	dirCacher := NewCachingTransmat(filepath.Join(workDir, "dircacher"), map[TransmatKind]TransmatFactory{
-		TransmatKind("dir"): dirTransmat,
-		TransmatKind("tar"): tarTransmat,
-	})
-	universalTransmat := NewDispatchingTransmat(workDir, map[TransmatKind]Transmat{
-		TransmatKind("dir"):  dirCacher,
-		TransmatKind("tar"):  dirCacher,
-		TransmatKind("ipfs"): ipfsTransmat(filepath.Join(workDir, "ipfs")),
-	})
-
-	// start having all filesystems
-	// large amounts of this would maybe make sense to get DRY and shoved in the assembler
-	filesystems := make(map[def.Input]Arena, len(formula.Inputs))
-	fsGather := make(chan map[def.Input]Arena)
-	// this is a bit of a hash at the moment, but you need to:
-	// - collect these in some way that almost certainly requires a sync (whether mutex or channels, i don't care)
-	// - *keep* the arenas around
-	// - take a map[def.Input]Arena and map that into `[]AssemblyPart`
-	for _, input := range formula.Inputs {
-		go func() {
-			try.Do(func() {
-				fsGather <- map[def.Input]Arena{
-					input: universalTransmat.Materialize(TransmatKind(input.Type), CommitID(input.Hash), []SiloURI{SiloURI(input.URI)}),
-				}
-			}).CatchAll(func(err error) {
-				fsGather <- map[def.Input]Arena{
-					input: nil, // FIXME
-				}
-			}).Done()
-		}()
-	}
-	// (we don't have any output setup at this point, but if we do in the future, that'll be here.)
-	// gather materialized inputs
-	for range formula.Inputs {
-		for input, arena := range <-fsGather {
-			// TODO error gathering branch
-			filesystems[input] = arena
-		}
-	}
-
-	// assemble them into the final tree
-	assemblyParts := make([]AssemblyPart, 0, len(filesystems))
-	for input, arena := range filesystems {
-		assemblyParts = append(assemblyParts, AssemblyPart{
-			SourcePath: arena.Path(),
-			TargetPath: input.Location,
-			Writable:   true, // TODO input config should have a word about this
-		})
-	}
-	// FIXME at this point the example needs to move somewhere that's not a cyclic dep...
-	//assemblerFn := placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(workDir, "aufs")))
-	//assembly := assemblerFn(filepath.Join(workDir, "rootfs/{jobguid}"), assemblyParts)
-
-	// "run something", if this were a real executor
-
-	// run commit on the outputs
-	scanGather := make(chan def.Output)
-	for _, output := range formula.Outputs {
-		go func() {
-			try.Do(func() {
-				commitID := universalTransmat.Scan(TransmatKind(output.Type), output.Location, []SiloURI{SiloURI(output.Location)})
-				output.Hash = string(commitID)
-				scanGather <- output
-			}).CatchAll(func(err error) {
-				fsGather <- nil // FIXME
-			}).Done()
-		}()
-	}
-}
