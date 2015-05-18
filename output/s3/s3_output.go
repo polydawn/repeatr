@@ -57,48 +57,60 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 			bucketName := u.Host
 			storePath := u.Path
 			var splay bool
+			var nullroute bool
 			switch u.Scheme {
 			case "s3":
 				splay = false
 			case "s3+splay":
 				splay = true
+			case "null": // this will probably be a placeholder and replaced by comprehension of zero-len uri slices
+				nullroute = true
 			default:
 				panic(output.ConfigError.New("unrecognized scheme: %q", u.Scheme))
 			}
 
-			// load keys from env
-			// TODO someday URIs should grow smart enough to control this in a more general fashion -- but for now, host ENV is actually pretty feasible and plays easily with others.
-			keys, err := s3gof3r.EnvKeys()
-			if err != nil {
-				panic(S3CredentialsMissingError.Wrap(err))
-			}
+			var s3writer io.Writer
+			var putPath string
+			var keys s3gof3r.Keys
+			if !nullroute {
+				// load keys from env
+				// TODO someday URIs should grow smart enough to control this in a more general fashion -- but for now, host ENV is actually pretty feasible and plays easily with others.
+				keys, err = s3gof3r.EnvKeys()
+				if err != nil {
+					panic(S3CredentialsMissingError.Wrap(err))
+				}
 
-			// initialize writer to s3!
-			// if the URI indicated splay behavior, first stream data to {$bucketName}:{dirname($storePath)}/.tmp.upload.{basename($storePath)}.{random()};
-			// this allows us to start uploading before the final hash is determined and relocate it later.
-			// for direct paths, upload into place, because aws already manages atomicity at that scale (and they don't have a rename or copy operation that's free, because uh...?  no time to implement it since 2006, apparently).
-			putPath := storePath
-			if splay {
-				putPath = path.Join(path.Dir(storePath), ".tmp.upload."+path.Base(storePath)+"."+guid.New())
+				// initialize writer to s3!
+				// if the URI indicated splay behavior, first stream data to {$bucketName}:{dirname($storePath)}/.tmp.upload.{basename($storePath)}.{random()};
+				// this allows us to start uploading before the final hash is determined and relocate it later.
+				// for direct paths, upload into place, because aws already manages atomicity at that scale (and they don't have a rename or copy operation that's free, because uh...?  no time to implement it since 2006, apparently).
+				putPath = storePath
+				if splay {
+					putPath = path.Join(path.Dir(storePath), ".tmp.upload."+path.Base(storePath)+"."+guid.New())
+				}
+				s3writer = makeS3writer(bucketName, putPath, keys)
+			} else {
+				s3writer = ioutil.Discard
 			}
-			s3writer := makeS3writer(bucketName, putPath, keys)
 
 			// walk, fwrite, hash
 			o.spec.Hash = tar2.Save(s3writer, basePath, o.hasherFactory)
 
-			// flush and check errors on the final write to s3.
-			// be advised that this close method does *a lot* of work aside from connection termination.
-			// also calling it twice causes the library to wigg out and delete things, i don't even.
-			err = s3writer.Close()
-			if err != nil {
-				panic(S3Error.Wrap(err))
-			}
+			if !nullroute {
+				// flush and check errors on the final write to s3.
+				// be advised that this close method does *a lot* of work aside from connection termination.
+				// also calling it twice causes the library to wigg out and delete things, i don't even.
+				err = s3writer.(io.Closer).Close()
+				if err != nil {
+					panic(S3Error.Wrap(err))
+				}
 
-			// if the URI indicated splay behavior, rename the temp filepath to the real one;
-			// the upload location is suffixed to make a CA resting place.
-			if splay {
-				finalPath := path.Join(storePath, o.spec.Hash)
-				reloc(bucketName, putPath, finalPath, keys)
+				// if the URI indicated splay behavior, rename the temp filepath to the real one;
+				// the upload location is suffixed to make a CA resting place.
+				if splay {
+					finalPath := path.Join(storePath, o.spec.Hash)
+					reloc(bucketName, putPath, finalPath, keys)
+				}
 			}
 
 			done <- output.Report{nil, o.spec}
