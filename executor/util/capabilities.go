@@ -6,9 +6,9 @@ import (
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/io/dir"
 	"polydawn.net/repeatr/io/placer"
-	"polydawn.net/repeatr/io/tar"
+	"polydawn.net/repeatr/io/transmat/dir"
+	"polydawn.net/repeatr/io/transmat/tar"
 )
 
 /*
