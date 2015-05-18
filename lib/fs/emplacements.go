@@ -231,6 +231,7 @@ func MkdirAllWithAttribs(path string, hdr Metadata) error {
 func mkdirAll(path string, hdr Metadata) (stack []string, topMTime time.Time, err error) {
 	// Following code derives from the golang standard library, so you can consider it BSDish if you like.
 	// Our changes are licensed under Apache for the sake of overall license simplicity of the project.
+	// Ref: https://github.com/golang/go/blob/883bc6ed0ea815293fe6309d66f967ea60630e87/src/os/path.go#L12
 
 	// Fast path: if we can tell whether path is a directory or file, stop with success or error.
 	dir, err := os.Stat(path)
