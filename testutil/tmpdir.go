@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/smartystreets/goconvey/convey"
+	"polydawn.net/repeatr/def"
 )
 
 /*
@@ -24,9 +25,10 @@ func WithTmpdir(fn func()) func() {
 			os.Chdir(retreat)
 		})
 
-		tmpBase := os.Getenv("TMPDIR")
-		if len(tmpBase) == 0 {
-			tmpBase = os.TempDir()
+		tmpBase := def.Base()
+		err = os.MkdirAll(tmpBase, 0755)
+		if err != nil {
+			panic(err)
 		}
 		err = os.Chdir(tmpBase)
 		if err != nil {
