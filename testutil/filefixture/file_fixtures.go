@@ -35,6 +35,8 @@ var Beta Fixture = Fixture{"Beta",
 	},
 }.defaults()
 
+var Beta_Hash string = "9GYDihlrhHQRNPV10lms35kogosBekjqJVYzTj0O5H-QJYTU7vf0YAgh3XBWKKBC"
+
 // describes a file where part of the path to it contains a symlink.  should be rejected by sane systems.
 var Breakout Fixture = Fixture{"Breakout",
 	[]FixtureFile{
