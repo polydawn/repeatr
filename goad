@@ -21,6 +21,9 @@ highlighRegex='^|^# (.*/)+.*$'
 name="repeatr"
 pkg="polydawn.net/$name"
 
+# For demo runs and tests, ask them to lump all their state in one, unique dir.
+export REPEATR_BASE="/tmp/repeatr-test/$(date +%Y.%m.%d..%H.%M.%S)..$RANDOM$RANDOM"
+
 if [ -z "$1" ] ; then
 	(
 		go fmt "$SUBSECTION"

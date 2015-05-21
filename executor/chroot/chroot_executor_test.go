@@ -10,16 +10,10 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/input"
-	"polydawn.net/repeatr/input/fixtures"
 	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/testutil/filefixture"
 )
-
-func TestMain(m *testing.M) {
-	code := m.Run()
-	inputfixtures.Cleanup()
-	os.Exit(code)
-}
 
 func Test(t *testing.T) {
 	Convey("Given a rootfs input that errors", t,
@@ -116,8 +110,13 @@ func Test(t *testing.T) {
 				})
 
 				Convey("Given another input", func() {
-					inputfixtures.DirInput2.Location = "/data/test"
-					formula.Inputs = append(formula.Inputs, inputfixtures.DirInput2)
+					filefixture.Beta.Create("./fixture/beta")
+					formula.Inputs = append(formula.Inputs, (def.Input{
+						Type:     "dir",
+						Hash:     filefixture.Beta_Hash,
+						URI:      "./fixture/beta",
+						Location: "/data/test",
+					}))
 
 					Convey("The executor should be able to see the mounted files", FailureContinues, func() {
 						formula.Accents = def.Accents{

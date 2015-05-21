@@ -1,7 +1,6 @@
 package executordispatch
 
 import (
-	"os"
 	"path/filepath"
 
 	"polydawn.net/repeatr/def"
@@ -30,7 +29,7 @@ func Get(desire string) executor.Executor {
 	}
 
 	// Set the base path to operate from
-	executor.Configure(filepath.Join(os.TempDir(), "repeatr", "executor", desire))
+	executor.Configure(filepath.Join(def.Base(), "executor", desire))
 
 	return executor
 }
