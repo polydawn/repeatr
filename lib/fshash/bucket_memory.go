@@ -51,6 +51,10 @@ func (b *MemoryBucket) Iterator() RecordIterator {
 	return &memoryBucketIterator{b.lines, 0, &that}
 }
 
+func (b *MemoryBucket) Root() Record {
+	return b.lines[0]
+}
+
 func (b *MemoryBucket) Length() int {
 	return len(b.lines)
 }

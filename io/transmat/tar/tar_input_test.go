@@ -1,4 +1,4 @@
-package tar2
+package tar
 
 import (
 	"os"
@@ -8,37 +8,33 @@ import (
 	"github.com/polydawn/gosh"
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/input/tests"
+	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/fspatch"
-	"polydawn.net/repeatr/output/tar2"
 	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
 )
-
-func TestCoreCompliance(t *testing.T) {
-	tests.CheckRoundTrip(t, "tar", tar2.New, New, "./output.dump.tar")
-}
 
 const ubuntuTarballHash = "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v"
 
 func TestTarCompat(t *testing.T) {
 	projPath, _ := os.Getwd()
-	projPath = filepath.Dir(filepath.Dir(projPath))
+	projPath = filepath.Dir(filepath.Dir(filepath.Dir(projPath)))
 
 	Convey("Unpacking tars should match exec untar", t,
 		testutil.Requires(testutil.RequiresRoot, testutil.WithTmpdir(func() {
 			Convey("Given a fixture tarball containing ubuntu",
 				testutil.Requires(testutil.RequiresLongRun, func() {
-					inputSpec := def.Input{
-						Type: "tar",
-						Hash: ubuntuTarballHash,
-						URI:  filepath.Join(projPath, "assets/ubuntu.tar.gz"),
-					}
-					input := New(inputSpec)
+					transmat := New("./workdir/tar")
 
 					// apply it; hope it doesn't blow up
-					err := <-input.Apply("data")
-					So(err, ShouldBeNil)
+					arena := transmat.Materialize(
+						integrity.TransmatKind("tar"),
+						integrity.CommitID(ubuntuTarballHash),
+						[]integrity.SiloURI{
+							integrity.SiloURI(filepath.Join(projPath, "assets/ubuntu.tar.gz")),
+						},
+					)
+					defer arena.Teardown()
 
 					// do a native untar; since we don't have an upfront fixture
 					//  for this thing, we'll compare the two as filesystems.
@@ -56,7 +52,7 @@ func TestTarCompat(t *testing.T) {
 					So(fspatch.LUtimesNano("./untar", def.Epochwhen, def.Epochwhen), ShouldBeNil)
 
 					// scan and compare
-					scan1 := filefixture.Scan("./data")
+					scan1 := filefixture.Scan(arena.Path())
 					scan2 := filefixture.Scan("./untar")
 					// boy, that's entertaining though: gnu tar does all the same stuff,
 					//  except it doesn't honor our nanosecond timings.
