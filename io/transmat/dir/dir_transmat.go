@@ -1,17 +1,23 @@
 package dir
 
 import (
+	"bytes"
+	"crypto/sha512"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"syscall"
 
 	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
-	dir_in "polydawn.net/repeatr/input/dir"
 	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/lib/fshash"
 	dir_out "polydawn.net/repeatr/output/dir"
 )
+
+const Kind = integrity.TransmatKind("dir")
 
 var _ integrity.Transmat = &DirTransmat{}
 
@@ -38,33 +44,79 @@ func (t *DirTransmat) Materialize(
 	siloURIs []integrity.SiloURI,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.Arena {
-	config := integrity.EvaluateConfig(options...)
-	var err error
 	var arena dirArena
-	arena.path, err = ioutil.TempDir(t.workPath, "")
-	if err != nil {
-		panic(input.TargetFilesystemUnavailableIOError(err))
-	}
-	arena.hash = dataHash // until proven otherwise
-	err = <-dir_in.New(def.Input{
-		// Wrapping around previous implementations until we migrate it all.
-		// Ugly, but will let us migrate consumer apis next, then unwind these wrappers,
-		// and thus never break things while in flight.
-		Type: string(kind),
-		Hash: string(dataHash),
-		URI:  string(siloURIs[0]),
-	}).Apply(arena.path)
-	// Also ugly!  When we unwind these wrappers, everything will
-	// consistently be blocking behaviors, and this will clean up substantially.
-	if err != nil {
-		if config.AcceptHashMismatch && errors.GetClass(err).Is(input.InputHashMismatchError) {
-			// if we're tolerating mismatches, report the actual hash through different mechanisms.
-			// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
-			arena.hash = integrity.CommitID(errors.GetData(err, input.HashActualKey).(string))
-		} else {
+	try.Do(func() {
+		// Basic validation and config
+		config := integrity.EvaluateConfig(options...)
+		if kind != Kind {
+			panic(errors.ProgrammerError.New("This input implementation supports definitions of type %q, not %q", Kind, kind))
+		}
+
+		// Ping silos
+		if len(siloURIs) < 1 {
+			panic(integrity.ConfigError.New("Materialization requires at least one data source!"))
+			// Note that it's possible a caching layer will satisfy things even without data sources...
+			//  but if that was going to happen, it already would have by now.
+		}
+		// Our policy is to take the first path that exists.
+		//  This lets you specify a series of potential locations,
+		var siloURI integrity.SiloURI
+		for _, givenURI := range siloURIs {
+			// TODO still assuming all local paths and not doing real uri parsing
+			localPath := string(givenURI)
+			_, err := os.Stat(localPath)
+			if os.IsNotExist(err) {
+				continue
+			}
+			siloURI = givenURI
+			break
+		}
+
+		// Create staging arena to produce data into.
+		var err error
+		arena.path, err = ioutil.TempDir(t.workPath, "")
+		if err != nil {
+			panic(input.TargetFilesystemUnavailableIOError(err))
+		}
+
+		arena.hash = dataHash // until proven otherwise
+
+		// walk filesystem, copying and accumulating data for integrity check
+		hasherFactory := sha512.New384
+		bucket := &fshash.MemoryBucket{}
+		localPath := string(siloURI)
+		if err := fshash.FillBucket(localPath, arena.Path(), bucket, hasherFactory); err != nil {
 			panic(err)
 		}
-	}
+
+		// hash whole tree
+		actualTreeHash, err := fshash.Hash(bucket, hasherFactory)
+		if err != nil {
+			panic(err)
+		}
+
+		// verify total integrity
+		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
+		if !bytes.Equal(actualTreeHash, expectedTreeHash) {
+			// this may or may not be grounds for panic, depending on configuration.
+			if config.AcceptHashMismatch && errors.GetClass(err).Is(input.InputHashMismatchError) {
+				// if we're tolerating mismatches, report the actual hash through different mechanisms.
+				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
+				arena.hash = integrity.CommitID(actualTreeHash)
+			} else {
+				panic(input.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
+			}
+		}
+
+		// Also ugly!  When we unwind these wrappers, everything will
+		// consistently be blocking behaviors, and this will clean up substantially.
+		if err != nil {
+		}
+	}).Catch(integrity.Error, func(err *errors.Error) {
+		panic(err)
+	}).CatchAll(func(err error) {
+		panic(integrity.UnknownError.Wrap(err))
+	}).Done()
 	return arena
 }
 
