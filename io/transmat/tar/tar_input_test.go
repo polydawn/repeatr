@@ -1,4 +1,4 @@
-package tar2
+package tar
 
 import (
 	"os"
@@ -8,36 +8,32 @@ import (
 	"github.com/polydawn/gosh"
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/input/tests"
+	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/fspatch"
-	"polydawn.net/repeatr/output/tar2"
 	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
 )
-
-func TestCoreCompliance(t *testing.T) {
-	tests.CheckRoundTrip(t, "tar", tar2.New, New, "./output.dump.tar")
-}
 
 const ubuntuTarballHash = "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL"
 
 func TestTarCompat(t *testing.T) {
 	projPath, _ := os.Getwd()
-	projPath = filepath.Dir(filepath.Dir(projPath))
+	projPath = filepath.Dir(filepath.Dir(filepath.Dir(projPath)))
 
 	Convey("Unpacking tars should match exec untar", t,
 		testutil.Requires(testutil.RequiresRoot, testutil.WithTmpdir(func() {
 			checkEquivalence := func(hash, filename string, paveBase bool) {
-				inputSpec := def.Input{
-					Type: "tar",
-					Hash: hash,
-					URI:  filename,
-				}
-				input := New(inputSpec)
+				transmat := New("./workdir/tar")
 
 				// apply it; hope it doesn't blow up
-				err := <-input.Apply("data")
-				So(err, ShouldBeNil)
+				arena := transmat.Materialize(
+					integrity.TransmatKind("tar"),
+					integrity.CommitID(hash),
+					[]integrity.SiloURI{
+						integrity.SiloURI(filename),
+					},
+				)
+				defer arena.Teardown()
 
 				// do a native untar; since we don't have an upfront fixture
 				//  for this thing, we'll compare the two as filesystems.
@@ -57,11 +53,11 @@ func TestTarCompat(t *testing.T) {
 				}
 
 				// scan and compare
-				scan1 := filefixture.Scan("./data")
+				scan1 := filefixture.Scan(arena.Path())
 				scan2 := filefixture.Scan("./untar")
 				// boy, that's entertaining though: gnu tar does all the same stuff,
 				//  except it doesn't honor our nanosecond timings.
-				// also exclude bodies because they're *big* in the case of the full ubuntu image test.
+				// also exclude bodies because they're *big*.
 				comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareSubsecond &^ filefixture.CompareBody
 				So(scan1.Describe(comparisonLevel), ShouldEqual, scan2.Describe(comparisonLevel))
 			}
@@ -100,26 +96,22 @@ func TestTarCompat(t *testing.T) {
 			testutil.RequiresRoot,
 			testutil.WithTmpdir(func() {
 				checkBounce := func(hash, filename string) {
-					inputSpec := def.Input{
-						Type: "tar",
-						Hash: hash,
-						URI:  filename,
-					}
-					input := New(inputSpec)
+					transmat := New("./workdir/tar")
 
 					// apply it; hope it doesn't blow up
-					err := <-input.Apply("./data")
-					So(err, ShouldBeNil)
+					arena := transmat.Materialize(
+						integrity.TransmatKind("tar"),
+						integrity.CommitID(hash),
+						[]integrity.SiloURI{
+							integrity.SiloURI(filename),
+						},
+					)
+					defer arena.Teardown()
 
 					// scan and compare
-					output := tar2.New(def.Output{
-						Type: "tar",
-						URI:  "./lol.tgz",
-					})
-					report := <-output.Apply("./data")
+					commitID := transmat.Scan(integrity.TransmatKind("tar"), arena.Path(), nil)
 					// debug: gosh.Sh("tar", "--utc", "-xOvf", filename)
-					So(report.Err, ShouldBeNil)
-					So(report.Output.Hash, ShouldEqual, inputSpec.Hash)
+					So(commitID, ShouldEqual, integrity.CommitID(hash))
 
 				}
 
