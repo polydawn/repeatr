@@ -23,7 +23,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 		go func(in def.Input) {
 			try.Do(func() {
 				fsGather <- map[def.Input]materializerReport{
-					in: materializerReport{Arena: transmat.Materialize(
+					in: {Arena: transmat.Materialize(
 						integrity.TransmatKind(in.Type),
 						integrity.CommitID(in.Hash),
 						[]integrity.SiloURI{integrity.SiloURI(in.URI)},
@@ -31,7 +31,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 				}
 			}).Catch(input.Error, func(err *errors.Error) {
 				fsGather <- map[def.Input]materializerReport{
-					in: materializerReport{Err: err},
+					in: {Err: err},
 				}
 			}).Done()
 		}(in)
