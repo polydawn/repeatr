@@ -132,11 +132,12 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 
 	// Prepare filesystem
 	transmat := util.DefaultTransmat()
-	util.ProvisionInputs(
+	assembly := util.ProvisionInputs(
 		transmat,
 		util.BestAssembler(),
 		f.Inputs, rootfs, journal,
 	)
+	defer assembly.Teardown() // What ever happens: Disassemble filesystem
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)
 
 	err := cmd.Run()
