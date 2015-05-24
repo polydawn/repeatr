@@ -131,7 +131,12 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	cmd.Stderr = errS
 
 	// Prepare filesystem
-	util.ProvisionInputs(f.Inputs, rootfs, journal)
+	transmat := util.DefaultTransmat()
+	util.ProvisionInputs(
+		transmat,
+		util.BestAssembler(),
+		f.Inputs, rootfs, journal,
+	)
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)
 
 	err := cmd.Run()
@@ -140,5 +145,5 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	}
 
 	// Save outputs
-	result.Outputs = util.PreserveOutputs(f.Outputs, rootfs, journal)
+	result.Outputs = util.PreserveOutputs(transmat, f.Outputs, rootfs, journal)
 }

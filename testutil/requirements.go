@@ -43,6 +43,23 @@ var RequiresNamespaces = ConveyRequirement{"can namespace", func() bool {
 }}
 
 /*
+	Require the environment allows mounting (specifically, binds); skip otherwise.
+
+	A *lot* of modern CI services have issues with this.  This github issue
+	comment has great coverage on the state of the world:
+	https://github.com/coreos/rkt/issues/600#issuecomment-87655911
+*/
+var RequiresMounts = ConveyRequirement{"can mount", func() bool {
+	switch {
+	case os.Getenv("TRAVIS") != "":
+		// Travis's own virtualization denies mounting.  whee.
+		return false
+	default:
+		return true
+	}
+}}
+
+/*
 	Decorates a GoConvey test to check a set of `ConveyRequirement`s,
 	returning a dummy test func that skips (with an explanation!) if any
 	of the requirements are unsatisfied; if all is well, it yields

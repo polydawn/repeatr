@@ -221,9 +221,12 @@ func MkdirAllWithAttribs(path string, hdr Metadata) error {
 			return err
 		}
 	}
-	if err := fspatch.LUtimesNano(filepath.Dir(stack[0]), def.Epochwhen, topMTime); err != nil {
-		// gave up and reset atime to epoch.  sue me.  atimes are ridiculous.
-		return err
+	top := filepath.Dir(stack[0])
+	if top != "." {
+		if err := fspatch.LUtimesNano(top, def.Epochwhen, topMTime); err != nil {
+			// gave up and reset atime to epoch.  sue me.  atimes are ridiculous.
+			return err
+		}
 	}
 	return nil
 }

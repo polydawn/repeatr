@@ -86,7 +86,6 @@ func Hash(bucket Bucket, hasherFactory func() hash.Hash) ([]byte, error) {
 			upsubs.Pop()
 			// hash and upsub
 			upsubs.Peek()(hasher.Sum(nil))
-
 		}
 		return nil
 	}

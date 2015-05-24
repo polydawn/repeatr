@@ -23,7 +23,7 @@ var Alpha Fixture = Fixture{"Alpha",
 		{fs.Metadata{Name: "./b", Mode: 0750, ModTime: time.Unix(5000, 2000)}, nil},
 		{fs.Metadata{Name: "./b/c", Mode: 0664, ModTime: time.Unix(7000, 2000)}, []byte("zyx")},
 	},
-}.defaults()
+}.Defaults()
 
 // flat structure.  all files.  convenient for checking mounts work with plain 'ls' output.
 var Beta Fixture = Fixture{"Beta",
@@ -33,7 +33,7 @@ var Beta Fixture = Fixture{"Beta",
 		{fs.Metadata{Name: "./2"}, []byte{}},
 		{fs.Metadata{Name: "./3"}, []byte{}},
 	},
-}.defaults()
+}.Defaults()
 
 var Beta_Hash string = "9GYDihlrhHQRNPV10lms35kogosBekjqJVYzTj0O5H-QJYTU7vf0YAgh3XBWKKBC"
 
@@ -45,7 +45,7 @@ var Breakout Fixture = Fixture{"Breakout",
 		{fs.Metadata{Name: "./danger/dangerzone"}, nil},
 		{fs.Metadata{Name: "./danger/dangerzone/laaaaanaaa"}, []byte("WHAT")},
 	},
-}.defaults() // this is *not* included in `All` because it's actually a little scary.
+}.Defaults() // this is *not* included in `All` because it's actually a little scary.
 
 // deep and varied structures.  files and dirs.
 // subtle: a dir with a sibling that's a suffix of its name (can trip up dir/child adjacency sorting).
@@ -64,7 +64,7 @@ var Gamma Fixture = Fixture{"Gamma",
 		{fs.Metadata{Name: "./var"}, nil},
 		{fs.Metadata{Name: "./var/fun"}, []byte("zyx")},
 	},
-}.defaults()
+}.Defaults()
 
 var All []Fixture = []Fixture{
 	Alpha,

@@ -93,7 +93,13 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCl
 func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobResult, outS, errS io.WriteCloser, journal io.Writer) {
 	// Prepare filesystem
 	rootfs := filepath.Join(d, "rootfs")
-	util.ProvisionInputs(f.Inputs, rootfs, journal)
+	transmat := util.DefaultTransmat()
+	assembly := util.ProvisionInputs(
+		transmat,
+		util.BestAssembler(),
+		f.Inputs, rootfs, journal,
+	)
+	defer assembly.Teardown() // What ever happens: Disassemble filesystem
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)
 
 	// chroot's are pretty easy.
@@ -131,5 +137,5 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	result.ExitCode = proc.GetExitCode()
 
 	// Save outputs
-	result.Outputs = util.PreserveOutputs(f.Outputs, rootfs, journal)
+	result.Outputs = util.PreserveOutputs(transmat, f.Outputs, rootfs, journal)
 }

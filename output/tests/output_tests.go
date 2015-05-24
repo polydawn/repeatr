@@ -72,7 +72,7 @@ func CheckScanProducesDistinctHashes(t *testing.T, kind string, newOutput Output
 	Convey("Applying the output to two different filesystems should produce different hashes", t,
 		testutil.Requires(testutil.RequiresRoot, testutil.WithTmpdir(func() {
 			filefixture.Alpha.Create("./alpha")
-			filefixture.Alpha.Create("./beta")
+			filefixture.Beta.Create("./beta")
 			scanner1 := newOutput((def.Output{
 				Type: kind,
 				URI:  bounceURI + "." + guid.New(), // janky assumption that we can brute-suffix the URI.  may break cleanup on more advanced stuff.  reconsider after io-reboot.
@@ -86,7 +86,7 @@ func CheckScanProducesDistinctHashes(t *testing.T, kind string, newOutput Output
 			}))
 			report2 := <-scanner2.Apply("./beta")
 			So(report2.Err, ShouldBeNil)
-			So(report2.Output.Hash, ShouldEqual, report1.Output.Hash)
+			So(report2.Output.Hash, ShouldNotEqual, report1.Output.Hash)
 		})),
 	)
 }
