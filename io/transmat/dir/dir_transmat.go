@@ -79,8 +79,6 @@ func (t *DirTransmat) Materialize(
 			panic(input.TargetFilesystemUnavailableIOError(err))
 		}
 
-		arena.hash = dataHash // until proven otherwise
-
 		// walk filesystem, copying and accumulating data for integrity check
 		hasherFactory := sha512.New384
 		bucket := &fshash.MemoryBucket{}
@@ -97,7 +95,10 @@ func (t *DirTransmat) Materialize(
 
 		// verify total integrity
 		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
-		if !bytes.Equal(actualTreeHash, expectedTreeHash) {
+		if bytes.Equal(actualTreeHash, expectedTreeHash) {
+			// excellent, got what we asked for.
+			arena.hash = dataHash
+		} else {
 			// this may or may not be grounds for panic, depending on configuration.
 			if config.AcceptHashMismatch && errors.GetClass(err).Is(input.InputHashMismatchError) {
 				// if we're tolerating mismatches, report the actual hash through different mechanisms.
