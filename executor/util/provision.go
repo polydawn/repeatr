@@ -22,14 +22,18 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 	for _, in := range inputs {
 		go func(in def.Input) {
 			try.Do(func() {
+				fmt.Fprintf(journal, "Starting materialize for %s hash=%s\n", in.Type, in.Hash)
+				arena := transmat.Materialize(
+					integrity.TransmatKind(in.Type),
+					integrity.CommitID(in.Hash),
+					[]integrity.SiloURI{integrity.SiloURI(in.URI)},
+				)
+				fmt.Fprintf(journal, "Finished materialize for %s hash=%s\n", in.Type, in.Hash)
 				fsGather <- map[def.Input]materializerReport{
-					in: {Arena: transmat.Materialize(
-						integrity.TransmatKind(in.Type),
-						integrity.CommitID(in.Hash),
-						[]integrity.SiloURI{integrity.SiloURI(in.URI)},
-					)},
+					in: {Arena: arena},
 				}
 			}).Catch(input.Error, func(err *errors.Error) {
+				fmt.Fprintf(journal, "Errored during materialize for %s hash=%s\n", in.Type, in.Hash)
 				fsGather <- map[def.Input]materializerReport{
 					in: {Err: err},
 				}
@@ -48,6 +52,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 			filesystems[in] = report.Arena
 		}
 	}
+	fmt.Fprintf(journal, "All inputs acquired... starting assembly\n")
 
 	// assemble them into the final tree
 	assemblyParts := make([]integrity.AssemblyPart, 0, len(filesystems))
@@ -59,6 +64,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 		})
 	}
 	assembly := assemblerFn(rootfs, assemblyParts)
+	fmt.Fprintf(journal, "Assembly complete!\n")
 	return assembly
 }
 

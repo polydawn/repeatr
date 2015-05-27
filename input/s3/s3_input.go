@@ -71,6 +71,8 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 
 			// load keys from env
 			// TODO someday URIs should grow smart enough to control this in a more general fashion -- but for now, host ENV is actually pretty feasible and plays easily with others.
+			// TODO should not require keys!  we're just reading, after all; anon access is 100% valid.
+			//   Buuuuut s3gof3r doesn't seem to understand empty keys; it still sends them as if to login, and AWS says 403.  So, foo.
 			keys, err := s3gof3r.EnvKeys()
 			if err != nil {
 				panic(S3CredentialsMissingError.Wrap(err))

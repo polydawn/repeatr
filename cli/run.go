@@ -31,7 +31,14 @@ func LoadFormulaFromFile(path string) def.Formula {
 }
 
 func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, f ...def.Formula) {
-	s.Configure(e, len(f)) // we know exactly how many forumlae will be enqueued
+	jobLoggerFactory := func(_ def.JobID) io.Writer {
+		// All job progress reporting actually still copy to our shared journal stream.
+		// This should be replaced with a real logging framework,
+		//  at which point we can add tags for jobID before handing out specialized loggers.
+		return journal
+	}
+
+	s.Configure(e, len(f), jobLoggerFactory) // we know exactly how many forumlae will be enqueued
 	s.Start()
 
 	var wg sync.WaitGroup
@@ -49,6 +56,7 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, 
 
 			fmt.Fprintln(journal, "Job", n, id, "queued")
 			job := <-jobChan
+			// TODO need better lifecycle events here.  "starting" here means we might still be in provisioning stage.
 			fmt.Fprintln(journal, "Job", n, id, "starting")
 
 			// Stream job output to terminal in real time
