@@ -56,6 +56,7 @@ func Hash(bucket Bucket, hasherFactory func() hash.Hash) ([]byte, error) {
 		enc.EncodeMapStart(2) // either way it's header + one of leaves or contenthash
 		enc.EncodeString(magic_UTF8, "m")
 		record.Metadata.Marshal(hasher)
+		//fmt.Printf(":::: %q ->\n\t%#v\n\t%s\n", record.Metadata.Name, record.Metadata, base64.URLEncoding.EncodeToString(hasher.Sum(nil))) // non-cascading
 		if record.Metadata.Typeflag == tar.TypeDir {
 			// open the "leaves" array
 			// this may end up being an empty dir, but we act the same regardless
@@ -82,10 +83,15 @@ func Hash(bucket Bucket, hasherFactory func() hash.Hash) ([]byte, error) {
 			// close off the "leaves" array
 			// No map-close necessary because we used a fixed length map.
 			hasher.Write([]byte{0xff}) // should be `codec.CborStreamBreak` but upstream has an export bug :/
+			hash := hasher.Sum(nil)
+			// debug
+			//	if len(strings.Split(record.Metadata.Name, "/")) == 3 {
+			//		fmt.Printf("::: hashing -- %q \t=> %s\n", record.Metadata.Name, base64.URLEncoding.EncodeToString(hash))
+			//	}
 			// pop out this dir's hoppers for children data
 			upsubs.Pop()
 			// hash and upsub
-			upsubs.Peek()(hasher.Sum(nil))
+			upsubs.Peek()(hash)
 		}
 		return nil
 	}
