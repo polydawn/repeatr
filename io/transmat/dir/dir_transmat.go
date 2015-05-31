@@ -49,7 +49,7 @@ func (t *DirTransmat) Materialize(
 		// Basic validation and config
 		config := integrity.EvaluateConfig(options...)
 		if kind != Kind {
-			panic(errors.ProgrammerError.New("This input implementation supports definitions of type %q, not %q", Kind, kind))
+			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
 		// Ping silos
