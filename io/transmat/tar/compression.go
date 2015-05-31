@@ -1,4 +1,4 @@
-package tar2
+package tar
 
 import (
 	"bufio"

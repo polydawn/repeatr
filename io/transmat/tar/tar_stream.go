@@ -5,10 +5,16 @@ import (
 	"encoding/base64"
 	"hash"
 	"io"
+	"path"
+	"strings"
 	"time"
 
+	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/input"
+	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fshash"
+	"polydawn.net/repeatr/lib/treewalk"
 )
 
 // Walks `basePath`, hashing it, pushing the encoded tar to `file`, and returning the final hash.
@@ -55,4 +61,57 @@ func saveWalk(srcBasePath string, tw *tar.Writer, bucket fshash.Bucket, hasherFa
 		return nil
 	}
 	return fs.Walk(srcBasePath, preVisit, nil)
+}
+
+func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFactory func() hash.Hash) {
+	for {
+		thdr, err := tr.Next()
+		if err == io.EOF {
+			break // end of archive
+		}
+		if err != nil {
+			panic(input.DataSourceUnavailableError.New("corrupt tar: %s", err))
+		}
+		hdr := fs.Metadata(*thdr)
+		// filter/sanify values:
+		// - names must be clean, relative dot-slash prefixed, and dirs slash-suffixed
+		// - times should never be go's zero value; replace those with epoch
+		// Note that names at this point should be handled by `path` (not `filepath`; these are canonical form for feed to hashing)
+		hdr.Name = path.Clean(hdr.Name)
+		if strings.HasPrefix(hdr.Name, "../") {
+			panic(input.DataSourceUnavailableError.New("corrupt tar: paths that use '../' to leave the base dir are invalid"))
+		}
+		if hdr.Name != "." {
+			hdr.Name = "./" + hdr.Name
+		}
+		if hdr.ModTime.IsZero() {
+			hdr.ModTime = def.Epochwhen
+		}
+		if hdr.AccessTime.IsZero() {
+			hdr.AccessTime = def.Epochwhen
+		}
+		// place the file
+		switch hdr.Typeflag {
+		case tar.TypeReg:
+			reader := &flak.HashingReader{tr, hasherFactory()}
+			fs.PlaceFile(destBasePath, hdr, reader)
+			bucket.Record(hdr, reader.Hasher.Sum(nil))
+		case tar.TypeDir:
+			hdr.Name += "/"
+			fallthrough
+		default:
+			fs.PlaceFile(destBasePath, hdr, nil)
+			bucket.Record(hdr, nil)
+		}
+	}
+	// cleanup dir times with a post-order traversal over the bucket
+	if err := treewalk.Walk(bucket.Iterator(), nil, func(node treewalk.Node) error {
+		record := node.(fshash.RecordIterator).Record()
+		if record.Metadata.Typeflag == tar.TypeDir {
+			fs.PlaceDirTime(destBasePath, record.Metadata)
+		}
+		return nil
+	}); err != nil {
+		panic(err)
+	}
 }

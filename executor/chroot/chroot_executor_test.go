@@ -9,14 +9,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
-	"polydawn.net/repeatr/input"
+	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
 )
 
 func Test(t *testing.T) {
-	Convey("Given a rootfs input that errors", t,
+	Convey("Given a rootfs input that doesn't exist", t,
 		testutil.WithTmpdir(func() {
 			formula := def.Formula{
 				Inputs: []def.Input{
@@ -36,9 +36,9 @@ func Test(t *testing.T) {
 			}
 			So(os.Mkdir(e.workspacePath, 0755), ShouldBeNil)
 
-			Convey("We should get an InputError", func() {
+			Convey("We should get an error from the warehouse", func() {
 				result := e.Start(formula, def.JobID(guid.New()), ioutil.Discard).Wait()
-				So(result.Error, testutil.ShouldBeErrorClass, input.Error)
+				So(result.Error, testutil.ShouldBeErrorClass, integrity.WarehouseError)
 			})
 
 			Convey("The job exit code should clearly indicate failure", FailureContinues, func() {

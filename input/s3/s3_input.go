@@ -17,7 +17,7 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
-	"polydawn.net/repeatr/input/tar2"
+	tartrans "polydawn.net/repeatr/io/transmat/tar"
 	"polydawn.net/repeatr/lib/fshash"
 )
 
@@ -87,7 +87,7 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 			defer s3reader.Close()
 
 			// prepare decompression as necessary
-			reader, err := tar2.Decompress(s3reader)
+			reader, err := tartrans.Decompress(s3reader)
 			if err != nil {
 				panic(input.DataSourceUnavailableError.New("could not start decompressing: %s", err))
 			}
@@ -95,7 +95,7 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 
 			// unroll the tar, copying and accumulating data for integrity check
 			bucket := &fshash.MemoryBucket{}
-			tar2.Extract(tarReader, destinationRoot, bucket, i.hasherFactory)
+			tartrans.Extract(tarReader, destinationRoot, bucket, i.hasherFactory)
 
 			// hash whole tree
 			actualTreeHash, _ := fshash.Hash(bucket, i.hasherFactory)

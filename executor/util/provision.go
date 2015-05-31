@@ -32,7 +32,12 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 				fsGather <- map[def.Input]materializerReport{
 					in: {Arena: arena},
 				}
-			}).Catch(input.Error, func(err *errors.Error) {
+			}).Catch(integrity.Error, func(err *errors.Error) {
+				fmt.Fprintf(journal, "Errored during materialize for %s hash=%s\n", in.Type, in.Hash)
+				fsGather <- map[def.Input]materializerReport{
+					in: {Err: err},
+				}
+			}).Catch(input.Error, func(err *errors.Error) { // TODO remove at end of io migration
 				fmt.Fprintf(journal, "Errored during materialize for %s hash=%s\n", in.Type, in.Hash)
 				fsGather <- map[def.Input]materializerReport{
 					in: {Err: err},
