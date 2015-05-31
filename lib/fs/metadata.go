@@ -125,7 +125,7 @@ func (m Metadata) Marshal(out io.Writer) {
 	enc.EncodeString(magic_UTF8, "t") // type
 	enc.EncodeInt(int64(m.Typeflag))
 	enc.EncodeString(magic_UTF8, "m") // mode -- note this is *not* `os.FileMode`, it's just the perm bits
-	enc.EncodeInt(m.Mode)
+	enc.EncodeInt(m.Mode & 07777)
 	enc.EncodeString(magic_UTF8, "u") // uid
 	enc.EncodeInt(int64(m.Uid))
 	enc.EncodeString(magic_UTF8, "g") // gid

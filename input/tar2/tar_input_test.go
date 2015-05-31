@@ -19,7 +19,7 @@ func TestCoreCompliance(t *testing.T) {
 	tests.CheckRoundTrip(t, "tar", tar2.New, New, "./output.dump.tar")
 }
 
-const ubuntuTarballHash = "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v"
+const ubuntuTarballHash = "hy8bpLT0zPCnroXHx6YFP-KqKAh1i3A_buXs6euGcCoBeUTIoWzo3_i38B2buRaE"
 
 func TestTarCompat(t *testing.T) {
 	projPath, _ := os.Getwd()
@@ -92,5 +92,61 @@ func TestTarCompat(t *testing.T) {
 				}),
 			)
 		})),
+	)
+
+	Convey("Bouncing unusual tars should match hash", t,
+		// where really all "unusual" means is "valid tar, but not from our own cannonical output".
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				checkBounce := func(hash, filename string) {
+					inputSpec := def.Input{
+						Type: "tar",
+						Hash: hash,
+						URI:  filename,
+					}
+					input := New(inputSpec)
+
+					// apply it; hope it doesn't blow up
+					err := <-input.Apply("./data")
+					So(err, ShouldBeNil)
+
+					// scan and compare
+					output := tar2.New(def.Output{
+						Type: "tar",
+						URI:  "./lol.tgz",
+					})
+					report := <-output.Apply("./data")
+					// debug: gosh.Sh("tar", "--utc", "-xOvf", filename)
+					So(report.Err, ShouldBeNil)
+					So(report.Output.Hash, ShouldEqual, inputSpec.Hash)
+
+				}
+
+				Convey("Given a fixture tarball complete with base dir", func() {
+					checkBounce(
+						"BX0jm4jRNCg1KMbZfv4zp7ZaShx9SUXKaDrO-Xy6mWIoWOCFP5VnDHDDR3nU4PrR",
+						filepath.Join(projPath, "data/fixture/tar_withBase.tgz"),
+					)
+				})
+
+				Convey("Given a fixture tarball lacking base dir", func() {
+					checkBounce(
+						"ZdV3xhCGWeJmsfeHpDF4nF9stwvdskYwcepKMcOf7a2ziax1YGjQvGTJjRWFkvG1",
+						filepath.Join(projPath, "data/fixture/tar_sansBase.tgz"),
+					)
+				})
+
+				// this won't fly until we support hardlinks; the original asset uses them.
+				//	Convey("Given a fixture tarball containing ubuntu",
+				//		testutil.Requires(testutil.RequiresLongRun, func() {
+				//			checkBounce(
+				//				ubuntuTarballHash,
+				//				filepath.Join(projPath, "assets/ubuntu.tar.gz"),
+				//			)
+				//		}),
+				//	)
+			}),
+		),
 	)
 }

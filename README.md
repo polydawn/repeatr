@@ -95,7 +95,7 @@ A formula starts with an "input":
 "Inputs": [{
 	"Type": "tar",
 	"Mountpoint": "/",
-	"Hash": "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v",
+	"Hash": "hy8bpLT0zPCnroXHx6YFP-KqKAh1i3A_buXs6euGcCoBeUTIoWzo3_i38B2buRaE",
 	"SiloURI": "s3+ca://mybucket/prefix/" // content-addressable!
 }]
 ```
@@ -137,13 +137,13 @@ Now, here's where things really get interesting: you can have *lots* of inputs!
 	{
 		"Type": "s3",
 		"Mountpoint": "/",
-		"Hash": "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v",
+		"Hash": "hy8bpLT0zPCnroXHx6YFP-KqKAh1i3A_buXs6euGcCoBeUTIoWzo3_i38B2buRaE",
 		"SiloURI": "s3+ca://mybucket/prefix/" // content-addressable!
 	},
 	{
 		"Type": "dir",
 		"Mountpoint": "/mnt/addtnl-data",
-		"Hash": "9GYDihlrhHQRNPV10lms35kogosBekjqJVYzTj0O5H-QJYTU7vf0YAgh3XBWKKBC",
+		"Hash": "uwRHqe4dnfg-gWLjmUR6vYT-0Y-ch8FmjYZ9biW4ghYfMSD7EhQzRfXoaor3xLg8",
 		"SiloURI": "file://mybucket/prefix/" // use local resources
 	},
 	{
