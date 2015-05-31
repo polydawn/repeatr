@@ -70,6 +70,9 @@ func (t *DirTransmat) Materialize(
 			siloURI = givenURI
 			break
 		}
+		if siloURI == "" {
+			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
+		}
 
 		// Create staging arena to produce data into.
 		var err error
