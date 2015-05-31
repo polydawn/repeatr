@@ -95,7 +95,7 @@ A formula starts with an "input":
 "Inputs": [{
 	"Type": "tar",
 	"Mountpoint": "/",
-	"Hash": "hy8bpLT0zPCnroXHx6YFP-KqKAh1i3A_buXs6euGcCoBeUTIoWzo3_i38B2buRaE",
+	"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
 	"SiloURI": "s3+ca://mybucket/prefix/" // content-addressable!
 }]
 ```
@@ -137,7 +137,7 @@ Now, here's where things really get interesting: you can have *lots* of inputs!
 	{
 		"Type": "s3",
 		"Mountpoint": "/",
-		"Hash": "hy8bpLT0zPCnroXHx6YFP-KqKAh1i3A_buXs6euGcCoBeUTIoWzo3_i38B2buRaE",
+		"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
 		"SiloURI": "s3+ca://mybucket/prefix/" // content-addressable!
 	},
 	{

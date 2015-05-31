@@ -19,7 +19,7 @@ func TestCoreCompliance(t *testing.T) {
 	tests.CheckRoundTrip(t, "tar", tar2.New, New, "./output.dump.tar")
 }
 
-const ubuntuTarballHash = "hy8bpLT0zPCnroXHx6YFP-KqKAh1i3A_buXs6euGcCoBeUTIoWzo3_i38B2buRaE"
+const ubuntuTarballHash = "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL"
 
 func TestTarCompat(t *testing.T) {
 	projPath, _ := os.Getwd()
