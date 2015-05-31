@@ -10,7 +10,6 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/input"
 	tar_in "polydawn.net/repeatr/input/tar2"
 	"polydawn.net/repeatr/io"
 )
@@ -28,7 +27,7 @@ var _ integrity.TransmatFactory = New
 func New(workPath string) integrity.Transmat {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
-		panic(input.TargetFilesystemUnavailableIOError(err)) // TODO these errors should migrate
+		panic(integrity.TransmatError.New("Unable to set up workspace: %s", err))
 	}
 	return &TarTransmat{workPath}
 }
@@ -49,7 +48,7 @@ func (t *TarTransmat) Materialize(
 	var arena tarArena
 	arena.path, err = ioutil.TempDir(t.workPath, "")
 	if err != nil {
-		panic(input.TargetFilesystemUnavailableIOError(err))
+		panic(integrity.TransmatError.New("Unable to create arena: %s", err))
 	}
 	arena.hash = dataHash // until proven otherwise
 	err = <-tar_in.New(def.Input{
@@ -63,10 +62,10 @@ func (t *TarTransmat) Materialize(
 	// Also ugly!  When we unwind these wrappers, everything will
 	// consistently be blocking behaviors, and this will clean up substantially.
 	if err != nil {
-		if config.AcceptHashMismatch && errors.GetClass(err).Is(input.InputHashMismatchError) {
+		if config.AcceptHashMismatch && errors.GetClass(err).Is(integrity.HashMismatchError) {
 			// if we're tolerating mismatches, report the actual hash through different mechanisms.
 			// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
-			arena.hash = integrity.CommitID(errors.GetData(err, input.HashActualKey).(string))
+			arena.hash = integrity.CommitID(errors.GetData(err, integrity.HashActualKey).(string))
 		} else {
 			panic(err)
 		}
@@ -96,7 +95,7 @@ func (t TarTransmat) Scan(
 			// TODO still assuming all local paths and not doing real uri parsing
 			file, err := os.OpenFile(string(givenURI), os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
-				panic(input.TargetFilesystemUnavailableIOError(err))
+				panic(integrity.WarehouseConnectionError.New("Unable to write file: %s", err))
 			}
 			writers = append(writers, file)
 			closers = append(closers, file)
@@ -104,7 +103,7 @@ func (t TarTransmat) Scan(
 		defer func() {
 			for _, closer := range closers {
 				if err := closer.Close(); err != nil {
-					panic("todo")
+					panic(integrity.WarehouseConnectionError.New("Unable to close file: %s", err))
 				}
 			}
 		}()

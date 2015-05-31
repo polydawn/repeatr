@@ -11,7 +11,6 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/fshash"
 	dir_out "polydawn.net/repeatr/output/dir"
@@ -30,7 +29,7 @@ var _ integrity.TransmatFactory = New
 func New(workPath string) integrity.Transmat {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
-		panic(input.TargetFilesystemUnavailableIOError(err)) // TODO these errors should migrate
+		panic(integrity.TransmatError.New("Unable to set up workspace: %s", err))
 	}
 	return &DirTransmat{workPath}
 }
@@ -76,7 +75,7 @@ func (t *DirTransmat) Materialize(
 		var err error
 		arena.path, err = ioutil.TempDir(t.workPath, "")
 		if err != nil {
-			panic(input.TargetFilesystemUnavailableIOError(err))
+			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
 		}
 
 		// walk filesystem, copying and accumulating data for integrity check
@@ -100,12 +99,12 @@ func (t *DirTransmat) Materialize(
 			arena.hash = dataHash
 		} else {
 			// this may or may not be grounds for panic, depending on configuration.
-			if config.AcceptHashMismatch && errors.GetClass(err).Is(input.InputHashMismatchError) {
+			if config.AcceptHashMismatch && errors.GetClass(err).Is(integrity.HashMismatchError) {
 				// if we're tolerating mismatches, report the actual hash through different mechanisms.
 				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
 				arena.hash = integrity.CommitID(actualTreeHash)
 			} else {
-				panic(input.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
+				panic(err)
 			}
 		}
 	}).Catch(integrity.Error, func(err *errors.Error) {
