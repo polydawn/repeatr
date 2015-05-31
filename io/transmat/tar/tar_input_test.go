@@ -16,7 +16,7 @@ import (
 
 const ubuntuTarballHash = "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL"
 
-func TestTarCompat(t *testing.T) {
+func TestTarInputCompat(t *testing.T) {
 	projPath, _ := os.Getwd()
 	projPath = filepath.Dir(filepath.Dir(filepath.Dir(projPath)))
 

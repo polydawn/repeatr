@@ -13,6 +13,8 @@ import (
 	tar_out "polydawn.net/repeatr/output/tar2"
 )
 
+const Kind = integrity.TransmatKind("tar")
+
 var _ integrity.Transmat = &TarTransmat{}
 
 type TarTransmat struct {
