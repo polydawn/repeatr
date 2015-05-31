@@ -17,9 +17,9 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/io/transmat/tar"
 	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/output"
-	"polydawn.net/repeatr/output/tar2"
 )
 
 const Type = "s3"
@@ -94,7 +94,7 @@ func (o Output) Apply(basePath string) <-chan output.Report {
 			}
 
 			// walk, fwrite, hash
-			o.spec.Hash = tar2.Save(s3writer, basePath, o.hasherFactory)
+			o.spec.Hash = tar.Save(s3writer, basePath, o.hasherFactory)
 
 			if !nullroute {
 				// flush and check errors on the final write to s3.

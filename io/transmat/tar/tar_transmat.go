@@ -1,16 +1,18 @@
 package tar
 
 import (
+	"crypto/sha512"
+	"io"
 	"io/ioutil"
 	"os"
 	"syscall"
 
 	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/input"
 	tar_in "polydawn.net/repeatr/input/tar2"
 	"polydawn.net/repeatr/io"
-	tar_out "polydawn.net/repeatr/output/tar2"
 )
 
 const Kind = integrity.TransmatKind("tar")
@@ -30,6 +32,8 @@ func New(workPath string) integrity.Transmat {
 	}
 	return &TarTransmat{workPath}
 }
+
+var hasherFactory = sha512.New384
 
 /*
 	Arenas produced by Tar Transmats may be relocated by simple `mv`.
@@ -76,18 +80,47 @@ func (t TarTransmat) Scan(
 	siloURIs []integrity.SiloURI,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.CommitID {
-	if len(siloURIs) <= 0 {
-		// odd hack, replace with actual comprehensive of uri lists when finishing migrating.
-		siloURIs = []integrity.SiloURI{"/dev/null"}
-	}
-	report := <-tar_out.New(def.Output{
-		Type: string(kind),
-		URI:  string(siloURIs[0]),
-	}).Apply(subjectPath)
-	if report.Err != nil {
-		panic(report.Err)
-	}
-	return integrity.CommitID(report.Output.Hash)
+	var commitID integrity.CommitID
+	try.Do(func() {
+		// Basic validation and config
+		if kind != Kind {
+			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
+		}
+
+		// Open output streams for writing.
+		// Since these are all behaving as just one `io.Writer` stream, this could maybe be factored out.
+		// Error handling is currently "anything -> panic".  This should probably be more resilient.  (That might need another refactor so we have an upload call per remote.)
+		writers := make([]io.Writer, 0)
+		closers := make([]io.Closer, 0)
+		for _, givenURI := range siloURIs {
+			// TODO still assuming all local paths and not doing real uri parsing
+			file, err := os.OpenFile(string(givenURI), os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				panic(input.TargetFilesystemUnavailableIOError(err))
+			}
+			writers = append(writers, file)
+			closers = append(closers, file)
+		}
+		defer func() {
+			for _, closer := range closers {
+				if err := closer.Close(); err != nil {
+					panic("todo")
+				}
+			}
+		}()
+		stream := io.MultiWriter(writers...)
+		if len(writers) < 1 {
+			stream = ioutil.Discard
+		}
+
+		// walk, fwrite, hash
+		commitID = integrity.CommitID(Save(stream, subjectPath, hasherFactory))
+	}).Catch(integrity.Error, func(err *errors.Error) {
+		panic(err)
+	}).CatchAll(func(err error) {
+		panic(integrity.UnknownError.Wrap(err))
+	}).Done()
+	return commitID
 }
 
 type tarArena struct {
