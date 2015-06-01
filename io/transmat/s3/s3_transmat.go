@@ -13,6 +13,8 @@ import (
 	s3_out "polydawn.net/repeatr/output/s3"
 )
 
+const Kind = integrity.TransmatKind("s3")
+
 var _ integrity.Transmat = &DirTransmat{}
 
 type DirTransmat struct {

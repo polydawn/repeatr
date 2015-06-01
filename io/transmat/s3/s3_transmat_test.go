@@ -5,8 +5,8 @@ import (
 
 	"github.com/rlmcpherson/s3gof3r"
 	. "github.com/smartystreets/goconvey/convey"
-	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/tests"
+	"polydawn.net/repeatr/lib/guid"
 )
 
 func TestCoreCompliance(t *testing.T) {
@@ -14,12 +14,16 @@ func TestCoreCompliance(t *testing.T) {
 		t.Skipf("skipping s3 output tests; no s3 credentials loaded (err: %s)", err)
 	}
 
+	// group all effects of this test run under one "dir" for human reader sanity and cleanup in extremis.
+	testRunGuid := guid.New()
+
 	Convey("Spec Compliance: S3 Transmat", t, func() {
 		// scanning
-		tests.CheckScanWithoutMutation(integrity.TransmatKind("s3"), New)
-		tests.CheckScanProducesConsistentHash(integrity.TransmatKind("s3"), New)
-		tests.CheckScanProducesDistinctHashes(integrity.TransmatKind("s3"), New)
+		tests.CheckScanWithoutMutation(Kind, New)
+		tests.CheckScanProducesConsistentHash(Kind, New)
+		tests.CheckScanProducesDistinctHashes(Kind, New)
 		// round-trip
-		tests.CheckRoundTrip(integrity.TransmatKind("s3"), New, "s3://repeatr-test/bounce")
+		tests.CheckRoundTrip(Kind, New, "s3://repeatr-test/test-"+testRunGuid+"/rt/obj.tar", "literal path")
+		tests.CheckRoundTrip(Kind, New, "s3+splay://repeatr-test/test-"+testRunGuid+"/rt-splay/heap/", "content addressible path")
 	})
 }
