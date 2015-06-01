@@ -6,14 +6,13 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"syscall"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/fshash"
-	dir_out "polydawn.net/repeatr/output/dir"
 )
 
 const Kind = integrity.TransmatKind("dir")
@@ -33,6 +32,8 @@ func New(workPath string) integrity.Transmat {
 	}
 	return &DirTransmat{workPath}
 }
+
+var hasherFactory = sha512.New384
 
 /*
 	Arenas produced by Dir Transmats may be relocated by simple `mv`.
@@ -124,19 +125,48 @@ func (t DirTransmat) Scan(
 	siloURIs []integrity.SiloURI,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.CommitID {
-	if len(siloURIs) <= 0 {
-		// odd hack, replace with actual comprehensive of uri lists when finishing migrating.
-		// empty strings here make it all the way to the fshash walker, which sees that as a "don't copy" instruction.
-		siloURIs = []integrity.SiloURI{""}
-	}
-	report := <-dir_out.New(def.Output{
-		Type: string(kind),
-		URI:  string(siloURIs[0]),
-	}).Apply(subjectPath)
-	if report.Err != nil {
-		panic(report.Err)
-	}
-	return integrity.CommitID(report.Output.Hash)
+	var commitID integrity.CommitID
+	try.Do(func() {
+		// Basic validation and config
+		if kind != Kind {
+			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
+		}
+
+		// Parse save locations.
+		// This transmat only supports one output location at a time due
+		//  to Old code we haven't invested in refactoring yet.
+		var localPath string
+		if len(siloURIs) == 0 {
+			localPath = "" // empty string is a well known value to `fshash.FillBucket`: means just hash, don't copy.
+		} else if len(siloURIs) == 1 {
+			// TODO still assuming all local paths and not doing real uri parsing
+			localPath = string(siloURIs[0])
+			err := os.MkdirAll(filepath.Dir(localPath), 0755)
+			if err != nil {
+				panic(integrity.WarehouseConnectionError.New("Unable to write file: %s", err))
+			}
+		} else {
+			panic(integrity.ConfigError.New("%s transmat only supports shipping to 1 warehouse", Kind))
+		}
+
+		// walk filesystem, copying and accumulating data for integrity check
+		bucket := &fshash.MemoryBucket{}
+		err := fshash.FillBucket(subjectPath, localPath, bucket, hasherFactory)
+		if err != nil {
+			panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
+		}
+
+		// hash whole tree
+		actualTreeHash, _ := fshash.Hash(bucket, hasherFactory)
+
+		// report
+		commitID = integrity.CommitID(base64.URLEncoding.EncodeToString(actualTreeHash))
+	}).Catch(integrity.Error, func(err *errors.Error) {
+		panic(err)
+	}).CatchAll(func(err error) {
+		panic(integrity.UnknownError.Wrap(err))
+	}).Done()
+	return commitID
 }
 
 type dirArena struct {
