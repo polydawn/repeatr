@@ -53,6 +53,7 @@ func Normalize(p string, isDir bool) string {
 type Bucket interface {
 	Record(metadata fs.Metadata, contentHash []byte) // record a file into the bucket
 	Iterator() (rootRecord RecordIterator)           // return a treewalk root that does a traversal ordered by path
+	Root() Record                                    // return the 0'th record; is the root if `Iterator` has already been invoked.
 	Length() int
 }
 

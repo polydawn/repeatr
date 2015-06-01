@@ -53,7 +53,7 @@ func Test(t *testing.T) {
 				So(os.Chown("src/b", 10000, 10000), ShouldBeNil)
 				So(os.Chown("src/b/c", 10000, 10000), ShouldBeNil)
 
-				fixtureHash := "nIf-ikfYp83OWWc_y2D-IGC9WOMYdfMA0l_11TL3VCeFq4QtsU6bBWeXyevujYr4"
+				fixtureHash := "pLsKtwCg2iNMT1kSFnDOrjP_pfJbVdcwcegzUpIaCJ0TC1HMzzFHNaf8Ae9vs8My"
 
 				// save attributes first because access times are conceptually insane
 				// remarkably, since the first read doesn't cause atimes to change,
@@ -175,7 +175,7 @@ func Test(t *testing.T) {
 				So(os.Lchown("src/b/d/link-rel", 10002, 10002), ShouldBeNil)
 				So(os.Lchown("src/link-abs", 10000, 10000), ShouldBeNil)
 
-				fixtureHash := "SQ013PmxYZ6ofOZ_sFm4fx_bQDmJAjSMn88OZ7gm_Z-Vo_iGhlEt-fVYafp1aJXz"
+				fixtureHash := "MLvQntyGZhGLKGp3ZXn-uVjHkKksnNXga6vnmRhJKK5v-nT4ehaPGiVbOq-xNTdY"
 
 				Convey("We can construct an input", func() {
 					inputter := New(def.Input{

@@ -67,7 +67,7 @@ func Test(t *testing.T) {
 						{
 							Type:     "tar",
 							Location: "/",
-							Hash:     "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v",
+							Hash:     "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
 							URI:      filepath.Join(projPath, "assets/ubuntu.tar.gz"),
 						},
 					},

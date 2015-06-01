@@ -116,6 +116,9 @@ func (m Metadata) Marshal(out io.Writer) {
 	if xattrsLen > 0 {
 		fieldCount++
 	}
+	if m.Typeflag == tar.TypeBlock || m.Typeflag == tar.TypeChar {
+		fieldCount += 2 // devmajor and devminor will be included for these types
+	}
 	// Let us begin!
 	enc.EncodeMapStart(fieldCount)
 	enc.EncodeString(magic_UTF8, "n") // name
@@ -124,8 +127,9 @@ func (m Metadata) Marshal(out io.Writer) {
 	// tar format magic numbers for file type  aren't particularly human readable but they're no more or less arbitrary than anyone else's
 	enc.EncodeString(magic_UTF8, "t") // type
 	enc.EncodeInt(int64(m.Typeflag))
+	// mode bits whitelisted, matching `FileMode()`.  basic perms (0777) and setuid/setgid/sticky (07000) only.
 	enc.EncodeString(magic_UTF8, "m") // mode -- note this is *not* `os.FileMode`, it's just the perm bits
-	enc.EncodeInt(m.Mode)
+	enc.EncodeInt(m.Mode & 07777)
 	enc.EncodeString(magic_UTF8, "u") // uid
 	enc.EncodeInt(int64(m.Uid))
 	enc.EncodeString(magic_UTF8, "g") // gid
@@ -144,7 +148,13 @@ func (m Metadata) Marshal(out io.Writer) {
 		enc.EncodeString(magic_UTF8, m.Linkname)
 	}
 	// disregard uname and gname because they're not very helpful
-	// disregard dev numbers -- not because we should, but because golang stdlib tar isn't reading them at the moment anyway, so there's More Work to be done for these
+	// dev numbers only if relevant
+	if m.Typeflag == tar.TypeBlock || m.Typeflag == tar.TypeChar {
+		enc.EncodeString(magic_UTF8, "dM") // dev major
+		enc.EncodeInt(m.Devmajor)
+		enc.EncodeString(magic_UTF8, "dm") // dev minor
+		enc.EncodeInt(m.Devminor)
+	}
 	// Xattrs are a mite more complicated because we have to handle unknown keys:
 	if xattrsLen > 0 {
 		enc.EncodeString(magic_UTF8, "x")

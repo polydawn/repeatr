@@ -19,7 +19,7 @@ func TestCoreCompliance(t *testing.T) {
 	tests.CheckRoundTrip(t, "tar", tar2.New, New, "./output.dump.tar")
 }
 
-const ubuntuTarballHash = "b6nXWuXamKB3TfjdzUSL82Gg1avuvTk0mWQP4wgegscZ_ZzG9GfHDwKXQ9BfCx6v"
+const ubuntuTarballHash = "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL"
 
 func TestTarCompat(t *testing.T) {
 	projPath, _ := os.Getwd()
@@ -27,44 +27,126 @@ func TestTarCompat(t *testing.T) {
 
 	Convey("Unpacking tars should match exec untar", t,
 		testutil.Requires(testutil.RequiresRoot, testutil.WithTmpdir(func() {
+			checkEquivalence := func(hash, filename string, paveBase bool) {
+				inputSpec := def.Input{
+					Type: "tar",
+					Hash: hash,
+					URI:  filename,
+				}
+				input := New(inputSpec)
+
+				// apply it; hope it doesn't blow up
+				err := <-input.Apply("data")
+				So(err, ShouldBeNil)
+
+				// do a native untar; since we don't have an upfront fixture
+				//  for this thing, we'll compare the two as filesystems.
+				// this is not well isolated from the host; consider improving that a todo.
+				os.Mkdir("./untar", 0755)
+				tarProc := gosh.Gosh(
+					"tar",
+					"-xf", filename,
+					"-C", "./untar",
+					gosh.NullIO,
+				).RunAndReport()
+				So(tarProc.GetExitCode(), ShouldEqual, 0)
+				// native untar may or may not have an opinion about the base dir, depending on how it was formed.
+				// but our scans do, so, if the `paveBase` flag was set to warn us that the tar was missing an "./" entry, flatten that here.
+				if paveBase {
+					So(fspatch.LUtimesNano("./untar", def.Epochwhen, def.Epochwhen), ShouldBeNil)
+				}
+
+				// scan and compare
+				scan1 := filefixture.Scan("./data")
+				scan2 := filefixture.Scan("./untar")
+				// boy, that's entertaining though: gnu tar does all the same stuff,
+				//  except it doesn't honor our nanosecond timings.
+				// also exclude bodies because they're *big* in the case of the full ubuntu image test.
+				comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareSubsecond &^ filefixture.CompareBody
+				So(scan1.Describe(comparisonLevel), ShouldEqual, scan2.Describe(comparisonLevel))
+			}
+
+			Convey("Given a fixture tarball complete with base dir", func() {
+				checkEquivalence(
+					"BX0jm4jRNCg1KMbZfv4zp7ZaShx9SUXKaDrO-Xy6mWIoWOCFP5VnDHDDR3nU4PrR",
+					filepath.Join(projPath, "data/fixture/tar_withBase.tgz"),
+					false,
+				)
+			})
+
+			Convey("Given a fixture tarball lacking base dir", func() {
+				checkEquivalence(
+					"ZdV3xhCGWeJmsfeHpDF4nF9stwvdskYwcepKMcOf7a2ziax1YGjQvGTJjRWFkvG1",
+					filepath.Join(projPath, "data/fixture/tar_sansBase.tgz"),
+					true,
+				)
+			})
+
 			Convey("Given a fixture tarball containing ubuntu",
 				testutil.Requires(testutil.RequiresLongRun, func() {
+					checkEquivalence(
+						ubuntuTarballHash,
+						filepath.Join(projPath, "assets/ubuntu.tar.gz"),
+						true,
+					)
+				}),
+			)
+		})),
+	)
+
+	Convey("Bouncing unusual tars should match hash", t,
+		// where really all "unusual" means is "valid tar, but not from our own cannonical output".
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				checkBounce := func(hash, filename string) {
 					inputSpec := def.Input{
 						Type: "tar",
-						Hash: ubuntuTarballHash,
-						URI:  filepath.Join(projPath, "assets/ubuntu.tar.gz"),
+						Hash: hash,
+						URI:  filename,
 					}
 					input := New(inputSpec)
 
 					// apply it; hope it doesn't blow up
-					err := <-input.Apply("data")
+					err := <-input.Apply("./data")
 					So(err, ShouldBeNil)
 
-					// do a native untar; since we don't have an upfront fixture
-					//  for this thing, we'll compare the two as filesystems.
-					// this is not well isolated from the host; consider improving that a todo.
-					os.Mkdir("./untar", 0755)
-					tarProc := gosh.Gosh(
-						"tar",
-						"-xf", filepath.Join(projPath, "assets/ubuntu.tar.gz"),
-						"-C", "./untar",
-						gosh.NullIO,
-					).RunAndReport()
-					So(tarProc.GetExitCode(), ShouldEqual, 0)
-					// native untar does not have an opinion about the base dir...
-					// but our scans do, so, flatten that here
-					So(fspatch.LUtimesNano("./untar", def.Epochwhen, def.Epochwhen), ShouldBeNil)
-
 					// scan and compare
-					scan1 := filefixture.Scan("./data")
-					scan2 := filefixture.Scan("./untar")
-					// boy, that's entertaining though: gnu tar does all the same stuff,
-					//  except it doesn't honor our nanosecond timings.
-					// also exclude bodies because they're *big*.
-					comparisonLevel := filefixture.CompareDefaults &^ filefixture.CompareSubsecond &^ filefixture.CompareBody
-					So(scan1.Describe(comparisonLevel), ShouldEqual, scan2.Describe(comparisonLevel))
-				}),
-			)
-		})),
+					output := tar2.New(def.Output{
+						Type: "tar",
+						URI:  "./lol.tgz",
+					})
+					report := <-output.Apply("./data")
+					// debug: gosh.Sh("tar", "--utc", "-xOvf", filename)
+					So(report.Err, ShouldBeNil)
+					So(report.Output.Hash, ShouldEqual, inputSpec.Hash)
+
+				}
+
+				Convey("Given a fixture tarball complete with base dir", func() {
+					checkBounce(
+						"BX0jm4jRNCg1KMbZfv4zp7ZaShx9SUXKaDrO-Xy6mWIoWOCFP5VnDHDDR3nU4PrR",
+						filepath.Join(projPath, "data/fixture/tar_withBase.tgz"),
+					)
+				})
+
+				Convey("Given a fixture tarball lacking base dir", func() {
+					checkBounce(
+						"ZdV3xhCGWeJmsfeHpDF4nF9stwvdskYwcepKMcOf7a2ziax1YGjQvGTJjRWFkvG1",
+						filepath.Join(projPath, "data/fixture/tar_sansBase.tgz"),
+					)
+				})
+
+				// this won't fly until we support hardlinks; the original asset uses them.
+				//	Convey("Given a fixture tarball containing ubuntu",
+				//		testutil.Requires(testutil.RequiresLongRun, func() {
+				//			checkBounce(
+				//				ubuntuTarballHash,
+				//				filepath.Join(projPath, "assets/ubuntu.tar.gz"),
+				//			)
+				//		}),
+				//	)
+			}),
+		),
 	)
 }

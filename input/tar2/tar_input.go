@@ -75,6 +75,9 @@ func (i Input) Apply(destinationRoot string) <-chan error {
 			bucket := &fshash.MemoryBucket{}
 			Extract(tarReader, destinationRoot, bucket, i.hasherFactory)
 
+			// bucket processing may have created a root node if missing.  if so, we need to apply its props.
+			fs.PlaceFile(destinationRoot, bucket.Root().Metadata, nil)
+
 			// hash whole tree
 			actualTreeHash, _ := fshash.Hash(bucket, i.hasherFactory)
 
