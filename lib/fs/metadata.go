@@ -117,7 +117,7 @@ func (m Metadata) Marshal(out io.Writer) {
 		fieldCount++
 	}
 	if m.Typeflag == tar.TypeBlock || m.Typeflag == tar.TypeChar {
-		fieldCount += 2
+		fieldCount += 2 // devmajor and devminor will be included for these types
 	}
 	// Let us begin!
 	enc.EncodeMapStart(fieldCount)
@@ -127,6 +127,7 @@ func (m Metadata) Marshal(out io.Writer) {
 	// tar format magic numbers for file type  aren't particularly human readable but they're no more or less arbitrary than anyone else's
 	enc.EncodeString(magic_UTF8, "t") // type
 	enc.EncodeInt(int64(m.Typeflag))
+	// mode bits whitelisted, matching `FileMode()`.  basic perms (0777) and setuid/setgid/sticky (07000) only.
 	enc.EncodeString(magic_UTF8, "m") // mode -- note this is *not* `os.FileMode`, it's just the perm bits
 	enc.EncodeInt(m.Mode & 07777)
 	enc.EncodeString(magic_UTF8, "u") // uid
