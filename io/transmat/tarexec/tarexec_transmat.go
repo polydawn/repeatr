@@ -10,9 +10,6 @@ import (
 	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
-	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/input"
-	tar_in "polydawn.net/repeatr/input/tar"
 	"polydawn.net/repeatr/io"
 )
 
@@ -43,33 +40,65 @@ func (t *TarExecTransmat) Materialize(
 	siloURIs []integrity.SiloURI,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.Arena {
-	config := integrity.EvaluateConfig(options...)
-	var err error
 	var arena dirArena
-	arena.path, err = ioutil.TempDir(t.workPath, "")
-	if err != nil {
-		panic(input.TargetFilesystemUnavailableIOError(err))
-	}
-	arena.hash = dataHash // until proven otherwise
-	err = <-tar_in.New(def.Input{
-		// Wrapping around previous implementations until we migrate it all.
-		// Ugly, but will let us migrate consumer apis next, then unwind these wrappers,
-		// and thus never break things while in flight.
-		Type: string(kind),
-		Hash: string(dataHash),
-		URI:  string(siloURIs[0]),
-	}).Apply(arena.path)
-	// Also ugly!  When we unwind these wrappers, everything will
-	// consistently be blocking behaviors, and this will clean up substantially.
-	if err != nil {
-		if config.AcceptHashMismatch && errors.GetClass(err).Is(input.InputHashMismatchError) {
-			// if we're tolerating mismatches, report the actual hash through different mechanisms.
-			// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
-			arena.hash = integrity.CommitID(errors.GetData(err, input.HashActualKey).(string))
-		} else {
-			panic(err)
+	try.Do(func() {
+		// Basic validation and config
+		if kind != Kind {
+			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
-	}
+
+		// Ping silos
+		if len(siloURIs) < 1 {
+			panic(integrity.ConfigError.New("Materialization requires at least one data source!"))
+			// Note that it's possible a caching layer will satisfy things even without data sources...
+			//  but if that was going to happen, it already would have by now.
+		}
+		// Our policy is to take the first path that exists.
+		//  This lets you specify a series of potential locations, and if one is unavailable we'll just take the next.
+		var siloURI integrity.SiloURI
+		for _, givenURI := range siloURIs {
+			// TODO still assuming all local paths and not doing real uri parsing
+			localPath := string(givenURI)
+			_, err := os.Stat(localPath)
+			if os.IsNotExist(err) {
+				// TODO it'd be awfully lovely if we could log the attempt somewhere
+				continue
+			}
+			siloURI = givenURI
+			break
+		}
+		if siloURI == "" {
+			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
+		}
+		// Open the input stream; preparing decompression as necessary
+		file, err := os.OpenFile(string(siloURI), os.O_RDONLY, 0755)
+		if err != nil {
+			panic(integrity.WarehouseConnectionError.New("Unable to read file: %s", err))
+		}
+		file.Close() // just checking, so we can (try to) give a more pleasant error than tar barf
+
+		// Create staging arena to produce data into.
+		arena.path, err = ioutil.TempDir(t.workPath, "")
+		if err != nil {
+			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
+		}
+
+		// exec tar.
+		// in case of a zero (a.k.a. success) exit, this returns silently.
+		// in case of a non-zero exit, this panics; the panic will include the output.
+		gosh.Gosh(
+			"tar",
+			"-xf", string(siloURI),
+			"-C", arena.Path(),
+			gosh.NullIO,
+		).RunAndReport()
+
+		// note: indeed, we never check the hash field.  this is *not* a compliant implementation of an input.
+	}).Catch(integrity.Error, func(err *errors.Error) {
+		panic(err)
+	}).CatchAll(func(err error) {
+		panic(integrity.UnknownError.Wrap(err))
+	}).Done()
 	return arena
 }
 
