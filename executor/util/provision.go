@@ -10,7 +10,6 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/output"
 )
 
 // Run inputs
@@ -102,7 +101,7 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 				out.Hash = string(commitID)
 				fmt.Fprintf(journal, "Finished scan on %q\n", scanPath)
 				scanGather <- scanReport{Output: out}
-			}).Catch(output.Error, func(err *errors.Error) {
+			}).Catch(integrity.Error, func(err *errors.Error) {
 				fmt.Fprintf(journal, "Errored scan on %q\n", scanPath)
 				scanGather <- scanReport{Err: err}
 			}).Done()
