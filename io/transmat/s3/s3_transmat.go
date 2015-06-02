@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/sha512"
 	"encoding/base64"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -14,12 +15,11 @@ import (
 	"github.com/rlmcpherson/s3gof3r"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
 	tartrans "polydawn.net/repeatr/io/transmat/tar"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fshash"
-	s3_out "polydawn.net/repeatr/output/s3"
+	"polydawn.net/repeatr/lib/guid"
 )
 
 const Kind = integrity.TransmatKind("s3")
@@ -164,18 +164,110 @@ func (t S3Transmat) Scan(
 	siloURIs []integrity.SiloURI,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.CommitID {
-	if len(siloURIs) <= 0 {
-		// odd hack, replace with actual comprehensive of uri lists when finishing migrating.
-		siloURIs = []integrity.SiloURI{"null://"}
+	var commitID integrity.CommitID
+	try.Do(func() {
+		// Basic validation and config
+		if kind != Kind {
+			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
+		}
+
+		// load keys from env
+		// TODO someday URIs should grow smart enough to control this in a more general fashion -- but for now, host ENV is actually pretty feasible and plays easily with others.
+		keys, err := s3gof3r.EnvKeys()
+		if err != nil {
+			panic(S3CredentialsMissingError.Wrap(err))
+		}
+
+		// Parse URI; Find warehouses; Open output streams for writing.
+		// Since these are all behaving as just one `io.Writer` stream, this could maybe be factored out.
+		// Error handling is currently "anything -> panic".  This should probably be more resilient.  (That might need another refactor so we have an upload call per remote.)
+		// TODO : both this and the tar code that has a similar single stream idea should use an interface
+		//  And that interface should have a concept of mv so we can make atomic commits.
+		//  I'm not doing multiple URIs here until we get that, because the io.Writer interface just
+		//   doesn't cut it like it did for tars (and really, it's ignoring a major issue to use it there, too).
+		//  ...Fuck it, we're gonna do it
+		controllers := make([]*s3warehousePut, 0)
+		writers := make([]io.Writer, 0) // this is dumb, but we end up making one of these to satisfy the type conversation for MultiWriter anyway
+		for _, givenURI := range siloURIs {
+			u, err := url.Parse(string(givenURI))
+			if err != nil {
+				panic(integrity.ConfigError.New("failed to parse URI: %s", err))
+			}
+			controller := &s3warehousePut{}
+			controller.bucketName = u.Host
+			controller.pathPrefix = u.Path
+			var ctntAddr bool
+			switch u.Scheme {
+			case "s3":
+				ctntAddr = false
+			case "s3+splay":
+				ctntAddr = true
+			default:
+				panic(integrity.ConfigError.New("unrecognized scheme: %q", u.Scheme))
+			}
+			// dial it and initialize writer to s3!
+			// if the URI indicated splay behavior, first stream data to {$bucketName}:{dirname($storePath)}/.tmp.upload.{basename($storePath)}.{random()};
+			// this allows us to start uploading before the final hash is determined and relocate it later.
+			// for direct paths, upload into place, because aws already manages atomicity at that scale (and they don't have a rename or copy operation that's free, because uh...?  no time to implement it since 2006, apparently).
+			controller.keys = keys
+			if ctntAddr {
+				controller.tmpPath = path.Join(
+					path.Dir(controller.pathPrefix),
+					".tmp.upload."+path.Base(controller.pathPrefix)+"."+guid.New(),
+				)
+				controller.stream = makeS3writer(controller.bucketName, controller.tmpPath, keys)
+			} else {
+				controller.stream = makeS3writer(controller.bucketName, controller.pathPrefix, keys)
+			}
+			controllers = append(controllers, controller)
+			writers = append(writers, controller.stream)
+		}
+		stream := io.MultiWriter(writers...)
+		if len(writers) < 1 {
+			stream = ioutil.Discard
+		}
+
+		// walk, fwrite, hash
+		commitID = integrity.CommitID(tartrans.Save(stream, subjectPath, hasherFactory))
+
+		// commit
+		for _, controller := range controllers {
+			controller.Commit(string(commitID))
+		}
+	}).Catch(integrity.Error, func(err *errors.Error) {
+		panic(err)
+	}).CatchAll(func(err error) {
+		panic(integrity.UnknownError.Wrap(err))
+	}).Done()
+	return commitID
+}
+
+type s3warehousePut struct {
+	stream     io.WriteCloser
+	keys       s3gof3r.Keys
+	bucketName string
+	pathPrefix string
+	tmpPath    string // if set, using content-addressible mode.
+}
+
+/*
+	Fsync's the stream, and does the commit mv into place
+	using `hash` if in content-addressable mode.
+*/
+func (wp *s3warehousePut) Commit(hash string) {
+	// flush and check errors on the final write to s3.
+	// be advised that this close method does *a lot* of work aside from connection termination.
+	// also calling it twice causes the library to wigg out and delete things, i don't even.
+	if err := wp.stream.Close(); err != nil {
+		panic(integrity.WarehouseConnectionError.Wrap(err))
 	}
-	report := <-s3_out.New(def.Output{
-		Type: string(kind),
-		URI:  string(siloURIs[0]),
-	}).Apply(subjectPath)
-	if report.Err != nil {
-		panic(report.Err)
+
+	// if the URI indicated splay behavior, rename the temp filepath to the real one;
+	// the upload location is suffixed to make a CA resting place.
+	if wp.tmpPath != "" {
+		finalPath := path.Join(wp.pathPrefix, hash)
+		reloc(wp.bucketName, wp.tmpPath, finalPath, wp.keys)
 	}
-	return integrity.CommitID(report.Output.Hash)
 }
 
 type dirArena struct {

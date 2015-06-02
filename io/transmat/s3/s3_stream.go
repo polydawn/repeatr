@@ -1,7 +1,13 @@
 package s3
 
 import (
+	"bytes"
+	"encoding/xml"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
+	"path"
 	"time"
 
 	"github.com/rlmcpherson/s3gof3r"
@@ -24,4 +30,53 @@ func makeS3reader(bucketName string, path string, keys s3gof3r.Keys) io.ReadClos
 		panic(integrity.WarehouseConnectionError.Wrap(err))
 	}
 	return w
+}
+
+func makeS3writer(bucketName string, path string, keys s3gof3r.Keys) io.WriteCloser {
+	s3 := s3gof3r.New("s3.amazonaws.com", keys)
+	w, err := s3.Bucket(bucketName).PutWriter(path, nil, s3Conf)
+	if err != nil {
+		panic(integrity.WarehouseConnectionError.Wrap(err))
+	}
+	return w
+}
+
+func reloc(bucketName, oldPath, newPath string, keys s3gof3r.Keys) {
+	s3 := s3gof3r.New("s3.amazonaws.com", keys)
+	bucket := s3.Bucket(bucketName)
+	// this is a POST at the bottom, and copies are a PUT.  whee.
+	//w, err := s3.Bucket(bucketName).PutWriter(newPath, copyInstruction, s3Conf)
+	// So, implement our own aws copy API.
+	req, err := http.NewRequest("PUT", "", &bytes.Buffer{})
+	if err != nil {
+		panic(integrity.WarehouseConnectionError.Wrap(err))
+	}
+	req.URL.Scheme = s3Conf.Scheme
+	req.URL.Host = fmt.Sprintf("%s.%s", bucketName, s3.Domain)
+	req.URL.Path = path.Clean(fmt.Sprintf("/%s", newPath))
+	// Communicate the copy source object with a header.
+	// Be advised that if this object doesn't exist, amazon reports that as a 404... yes, a 404 that has nothing to do with the query URI.
+	req.Header.Add("x-amz-copy-source", path.Join("/", bucketName, oldPath))
+	bucket.Sign(req)
+	resp, err := s3Conf.Client.Do(req)
+	if err != nil {
+		panic(integrity.WarehouseConnectionError.Wrap(err))
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		panic(integrity.WarehouseConnectionError.Wrap(newRespError(resp)))
+	}
+	// delete previous location
+	if err := bucket.Delete(oldPath); err != nil {
+		panic(integrity.WarehouseConnectionError.Wrap(err))
+	}
+}
+
+func newRespError(r *http.Response) *s3gof3r.RespError {
+	e := new(s3gof3r.RespError)
+	e.StatusCode = r.StatusCode
+	b, _ := ioutil.ReadAll(r.Body)
+	xml.NewDecoder(bytes.NewReader(b)).Decode(e) // parse error from response
+	r.Body.Close()
+	return e
 }
