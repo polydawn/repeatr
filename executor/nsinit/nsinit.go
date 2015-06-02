@@ -12,7 +12,6 @@ import (
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/basicjob"
 	"polydawn.net/repeatr/executor/util"
-	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/streamer"
@@ -80,8 +79,6 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCl
 	}).Catch(executor.Error, func(err *errors.Error) {
 		r.Error = err
 	}).Catch(integrity.Error, func(err *errors.Error) {
-		r.Error = err
-	}).Catch(input.Error, func(err *errors.Error) { // TODO remove at end of io migration
 		r.Error = err
 	}).Catch(output.Error, func(err *errors.Error) { // TODO remove at end of io migration
 		r.Error = err

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/input"
+	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fshash"
@@ -70,7 +70,7 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 			break // end of archive
 		}
 		if err != nil {
-			panic(input.DataSourceUnavailableError.New("corrupt tar: %s", err))
+			panic(integrity.WarehouseConnectionError.New("corrupt tar: %s", err))
 		}
 		hdr := fs.Metadata(*thdr)
 		// filter/sanify values:
@@ -79,7 +79,7 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 		// Note that names at this point should be handled by `path` (not `filepath`; these are canonical form for feed to hashing)
 		hdr.Name = path.Clean(hdr.Name)
 		if strings.HasPrefix(hdr.Name, "../") {
-			panic(input.DataSourceUnavailableError.New("corrupt tar: paths that use '../' to leave the base dir are invalid"))
+			panic(integrity.WarehouseConnectionError.New("corrupt tar: paths that use '../' to leave the base dir are invalid"))
 		}
 		if hdr.Name != "." {
 			hdr.Name = "./" + hdr.Name

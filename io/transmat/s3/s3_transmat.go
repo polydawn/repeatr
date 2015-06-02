@@ -15,7 +15,6 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/input"
 	"polydawn.net/repeatr/io"
 	tartrans "polydawn.net/repeatr/io/transmat/tar"
 	"polydawn.net/repeatr/lib/fs"
@@ -113,7 +112,7 @@ func (t *S3Transmat) Materialize(
 		// prepare decompression as necessary
 		reader, err := tartrans.Decompress(s3reader)
 		if err != nil {
-			panic(input.DataSourceUnavailableError.New("could not start decompressing: %s", err))
+			panic(integrity.WarehouseConnectionError.New("could not start decompressing: %s", err))
 		}
 		tarReader := tar.NewReader(reader)
 
