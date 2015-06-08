@@ -15,6 +15,11 @@ func TestCoreCompliance(t *testing.T) {
 		tests.CheckScanProducesConsistentHash(integrity.TransmatKind("tar"), New)
 		tests.CheckScanProducesDistinctHashes(integrity.TransmatKind("tar"), New)
 		// round-trip
-		tests.CheckRoundTrip(integrity.TransmatKind("tar"), New, "./bounce")
+		tests.CheckRoundTrip(integrity.TransmatKind("tar"), New, "file://bounce", "file literal", "relative")
+		// FIXME REQUIRES TEST REFACTOR // cwd, _ := os.Getwd() // WRONG CWD.
+		// tests.CheckRoundTrip(integrity.TransmatKind("tar"), New, "file://"+filepath.Join(cwd, "bounce"), "file literal", "absolute")
+		// round-trip using content-addressible "warehouse"
+		// FIXME REQUIRES TEST REFACTOR // os.Mkdir("bounce", 0755) // WRONG CWD.
+		tests.CheckRoundTrip(integrity.TransmatKind("tar"), New, "file+ca://bounce", "content-addressible")
 	})
 }

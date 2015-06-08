@@ -78,7 +78,7 @@ echo -e "${clblue}#  This first run might take a while -- it's downloading an op
 			{
 				"Type": "tar",
 				"Location": "/var/log",
-				"URI": "basic.tar"
+				"URI": "file://basic.tar"
 			}
 		]
 	}
@@ -112,7 +112,7 @@ echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts i
 			{
 				"Type": "tar",
 				"Location": "/var/log",
-				"URI": "basic.tar"
+				"URI": "file://basic.tar"
 			}
 		]
 	}

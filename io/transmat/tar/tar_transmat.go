@@ -62,28 +62,28 @@ func (t *TarTransmat) Materialize(
 		}
 		// Our policy is to take the first path that exists.
 		//  This lets you specify a series of potential locations, and if one is unavailable we'll just take the next.
-		var siloURI integrity.SiloURI
-		for _, givenURI := range siloURIs {
-			// TODO still assuming all local paths and not doing real uri parsing
-			localPath := string(givenURI)
-			_, err := os.Stat(localPath)
-			if os.IsNotExist(err) {
-				// TODO it'd be awfully lovely if we could log the attempt somewhere
-				continue
+		var stream io.Reader
+		for _, uri := range siloURIs {
+			try.Do(func() {
+				stream = makeReader(dataHash, uri)
+			}).Catch(integrity.DataDNE, func(err *errors.Error) {
+				// fine, we'll just try the next one
+				// TODO LOGGING
+			}).Catch(integrity.WarehouseConnectionError, func(err *errors.Error) {
+				// ... this does kind of seem to indicate we should have "warehouse offline or DNE" be separate from "tcp flaked after we shook on it yo"
+				// for now we consider both fatal.  revist this when we get smarter logging, etc
+				panic(err)
+			}).Done()
+			if stream != nil {
+				break
 			}
-			siloURI = givenURI
-			break
 		}
-		if siloURI == "" {
+		if stream == nil {
 			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
 		}
-		// Open the input stream; preparing decompression as necessary
-		file, err := os.OpenFile(string(siloURI), os.O_RDONLY, 0755)
-		if err != nil {
-			panic(integrity.WarehouseConnectionError.New("Unable to read file: %s", err))
-		}
-		defer file.Close()
-		reader, err := Decompress(file)
+
+		// Wrap input stream with decompression as necessary
+		reader, err := Decompress(stream)
 		if err != nil {
 			panic(integrity.WarehouseConnectionError.New("could not start decompressing: %s", err))
 		}
@@ -147,24 +147,13 @@ func (t TarTransmat) Scan(
 		// Open output streams for writing.
 		// Since these are all behaving as just one `io.Writer` stream, this could maybe be factored out.
 		// Error handling is currently "anything -> panic".  This should probably be more resilient.  (That might need another refactor so we have an upload call per remote.)
+		controllers := make([]StreamingWarehouseWriteController, 0)
 		writers := make([]io.Writer, 0)
-		closers := make([]io.Closer, 0)
-		for _, givenURI := range siloURIs {
-			// TODO still assuming all local paths and not doing real uri parsing
-			file, err := os.OpenFile(string(givenURI), os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				panic(integrity.WarehouseConnectionError.New("Unable to write file: %s", err))
-			}
-			writers = append(writers, file)
-			closers = append(closers, file)
+		for _, uri := range siloURIs {
+			controller := makeWriteController(uri)
+			controllers = append(controllers, controller)
+			writers = append(writers, controller.Writer())
 		}
-		defer func() {
-			for _, closer := range closers {
-				if err := closer.Close(); err != nil {
-					panic(integrity.WarehouseConnectionError.New("Unable to close file: %s", err))
-				}
-			}
-		}()
 		stream := io.MultiWriter(writers...)
 		if len(writers) < 1 {
 			stream = ioutil.Discard
@@ -172,6 +161,11 @@ func (t TarTransmat) Scan(
 
 		// walk, fwrite, hash
 		commitID = integrity.CommitID(Save(stream, subjectPath, hasherFactory))
+
+		// commit
+		for _, controller := range controllers {
+			controller.Commit(commitID)
+		}
 	}).Catch(integrity.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {

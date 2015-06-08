@@ -26,7 +26,7 @@ func Test(t *testing.T) {
 						// Funny thing is, the URI isn't even necessarily where the buck stops;
 						// Remote URIs need not be checked if caches are in play, etc.
 						// So the hash needs to be set (and needs to be invalid).
-						URI:  "/nonexistance/in/its/most/essential/unform.tar.gz",
+						URI:  "file:///nonexistance/in/its/most/essential/unform.tar.gz",
 						Hash: "defnot",
 					},
 				},
@@ -68,7 +68,7 @@ func Test(t *testing.T) {
 							Type:     "tar",
 							Location: "/",
 							Hash:     "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-							URI:      filepath.Join(projPath, "assets/ubuntu.tar.gz"),
+							URI:      "file://" + filepath.Join(projPath, "assets/ubuntu.tar.gz"),
 						},
 					},
 				}

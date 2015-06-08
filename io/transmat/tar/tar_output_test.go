@@ -28,7 +28,7 @@ func TestTarOutputCompat(t *testing.T) {
 							Kind,
 							"./data",
 							[]integrity.SiloURI{
-								integrity.SiloURI("./output.tar"),
+								integrity.SiloURI("file://output.tar"),
 							},
 						)
 
