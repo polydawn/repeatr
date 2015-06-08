@@ -65,10 +65,10 @@ echo -e "${clblue}#  This first run might take a while -- it's downloading an op
 	{
 		"Inputs": [
 			{
-				"Type": "s3",
+				"Type": "tar",
 				"Location": "/",
 				"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-				"URI": "s3+splay://repeatr/assets/"
+				"URI": "http+ca://repeatr.s3-website-us-west-2.amazonaws.com/assets/"
 			}
 		],
 		"Accents": {
