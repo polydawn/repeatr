@@ -30,7 +30,7 @@ func TestTarInputCompat(t *testing.T) {
 					integrity.TransmatKind("tar"),
 					integrity.CommitID(hash),
 					[]integrity.SiloURI{
-						integrity.SiloURI(filename),
+						integrity.SiloURI("file://" + filename),
 					},
 				)
 				defer arena.Teardown()
@@ -103,7 +103,7 @@ func TestTarInputCompat(t *testing.T) {
 						integrity.TransmatKind("tar"),
 						integrity.CommitID(hash),
 						[]integrity.SiloURI{
-							integrity.SiloURI(filename),
+							integrity.SiloURI("file://" + filename),
 						},
 					)
 					defer arena.Teardown()

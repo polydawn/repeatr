@@ -12,7 +12,7 @@ import (
 func CheckScanWithoutMutation(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
 	Convey("SPEC: Scanning a filesystem shouldn't change it", testutil.Requires(
 		testutil.RequiresRoot,
-		testutil.WithTmpdir(func() {
+		func() {
 			for _, fixture := range filefixture.All {
 				transmat := transmatFabFn("./workdir")
 				Convey(fmt.Sprintf("- Fixture %q", fixture.Name), func() {
@@ -26,14 +26,14 @@ func CheckScanWithoutMutation(kind integrity.TransmatKind, transmatFabFn integri
 					So(rescan.Describe(filefixture.CompareDefaults), ShouldEqual, fixture.Describe(filefixture.CompareDefaults))
 				})
 			}
-		}),
+		},
 	))
 }
 
 func CheckScanProducesConsistentHash(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
 	Convey("SPEC: Applying the output to a filesystem twice should produce the same hash", testutil.Requires(
 		testutil.RequiresRoot,
-		testutil.WithTmpdir(func() {
+		func() {
 			for _, fixture := range filefixture.All {
 				transmat := transmatFabFn("./workdir")
 				Convey(fmt.Sprintf("- Fixture %q", fixture.Name), func() {
@@ -47,14 +47,14 @@ func CheckScanProducesConsistentHash(kind integrity.TransmatKind, transmatFabFn 
 					So(commitID2, ShouldEqual, commitID1)
 				})
 			}
-		}),
+		},
 	))
 }
 
 func CheckScanProducesDistinctHashes(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
 	Convey("SPEC: Applying the output to two different filesystems should produce different hashes", testutil.Requires(
 		testutil.RequiresRoot,
-		testutil.WithTmpdir(func() {
+		func() {
 			transmat := transmatFabFn("./workdir")
 			// set up fixtures
 			filefixture.Alpha.Create("./alpha")
@@ -64,6 +64,6 @@ func CheckScanProducesDistinctHashes(kind integrity.TransmatKind, transmatFabFn 
 			commitID2 := transmat.Scan(kind, "./beta", nil)
 			// should be distinct
 			So(commitID2, ShouldNotEqual, commitID1)
-		})),
+		}),
 	)
 }
