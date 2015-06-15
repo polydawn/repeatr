@@ -27,7 +27,11 @@ func makeS3reader(bucketName string, path string, keys s3gof3r.Keys) io.ReadClos
 	s3 := s3gof3r.New("s3.amazonaws.com", keys)
 	w, _, err := s3.Bucket(bucketName).GetReader(path, s3Conf)
 	if err != nil {
-		panic(integrity.WarehouseConnectionError.Wrap(err))
+		if err2, ok := err.(*s3gof3r.RespError); ok && err2.Code == "NoSuchKey" {
+			panic(integrity.DataDNE.New("not stored here"))
+		} else {
+			panic(integrity.WarehouseConnectionError.Wrap(err))
+		}
 	}
 	return w
 }
