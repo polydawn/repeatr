@@ -19,7 +19,6 @@ script:
   - ./lib/integration/assets.sh
   - sudo bash -c "export PATH=$PATH:$PWD/assets ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell
   - sudo ./demo.sh -t
-  - sudo ./goad sanity
   - sudo ./lib/integration/runAll.sh
 
 notifications:

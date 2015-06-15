@@ -76,10 +76,6 @@ else
 		shift
 		"$GOPATH/bin/$name" "$@"
 		;;
-	sanity)
-		# A placeholder for an eventually-larger set of full-stack invoke-binary tests.
-		"$GOPATH/bin/$name" run -e chroot -s linear -i lib/integration/wait.json
-		;;
 	fmt)
 		go fmt "$SUBSECTION"
 		;;
