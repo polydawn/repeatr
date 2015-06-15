@@ -194,6 +194,6 @@ func (a tarArena) Teardown() {
 		if e2, ok := err.(*os.PathError); ok && e2.Err == syscall.ENOENT && e2.Path == a.path {
 			return
 		}
-		panic(err)
+		panic(integrity.TransmatError.New("Failed to tear down arena: %s", err))
 	}
 }
