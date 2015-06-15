@@ -1,7 +1,6 @@
 package integrity
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -176,7 +175,7 @@ func NewDispatchingTransmat(workPath string, transmats map[TransmatKind]Transmat
 func (dt *DispatchingTransmat) Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena {
 	transmat := dt.dispatch[kind]
 	if transmat == nil {
-		panic(fmt.Errorf("no transmat of kind %q available to satisfy request", kind))
+		panic(ConfigError.New("no transmat of kind %q available to satisfy request", kind))
 	}
 	return transmat.Materialize(kind, dataHash, siloURIs, options...)
 }
@@ -184,7 +183,7 @@ func (dt *DispatchingTransmat) Materialize(kind TransmatKind, dataHash CommitID,
 func (dt *DispatchingTransmat) Scan(kind TransmatKind, subjectPath string, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID {
 	transmat := dt.dispatch[kind]
 	if transmat == nil {
-		panic(fmt.Errorf("no transmat of kind %q available to satisfy request", kind))
+		panic(ConfigError.New("no transmat of kind %q available to satisfy request", kind))
 	}
 	return transmat.Scan(kind, subjectPath, siloURIs, options...)
 }
