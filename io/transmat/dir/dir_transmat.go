@@ -91,10 +91,7 @@ func (t *DirTransmat) Materialize(
 		}
 
 		// hash whole tree
-		actualTreeHash, err := fshash.Hash(bucket, hasherFactory)
-		if err != nil {
-			panic(err)
-		}
+		actualTreeHash := fshash.Hash(bucket, hasherFactory)
 
 		// verify total integrity
 		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
@@ -157,7 +154,7 @@ func (t DirTransmat) Scan(
 		}
 
 		// hash whole tree
-		actualTreeHash, _ := fshash.Hash(bucket, hasherFactory)
+		actualTreeHash := fshash.Hash(bucket, hasherFactory)
 
 		// report
 		commitID = integrity.CommitID(base64.URLEncoding.EncodeToString(actualTreeHash))

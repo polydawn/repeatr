@@ -103,10 +103,7 @@ func (t *TarTransmat) Materialize(
 		fs.PlaceFile(arena.Path(), bucket.Root().Metadata, nil)
 
 		// hash whole tree
-		actualTreeHash, err := fshash.Hash(bucket, hasherFactory)
-		if err != nil {
-			panic(err)
-		}
+		actualTreeHash := fshash.Hash(bucket, hasherFactory)
 
 		// verify total integrity
 		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))

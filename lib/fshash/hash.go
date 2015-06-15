@@ -32,7 +32,7 @@ import (
 	and the tree itself is traversed in sorted order, the entire structure
 	is computed deterministically and unambiguously.
 */
-func Hash(bucket Bucket, hasherFactory func() hash.Hash) ([]byte, error) {
+func Hash(bucket Bucket, hasherFactory func() hash.Hash) []byte {
 	// Hack around codec not exporting things very usefully -.-
 	const magic_RAW = 0
 	const magic_UTF8 = 1
@@ -108,7 +108,7 @@ func Hash(bucket Bucket, hasherFactory func() hash.Hash) ([]byte, error) {
 		panic(errors.ProgrammerError.New("invariant failed after bucket records walk: visited %d of %d nodes", visitCount, bucket.Length()))
 	}
 	// return the result upsubbed by the root
-	return finalAnswer, nil
+	return finalAnswer
 }
 
 type upsubStack []func([]byte)
