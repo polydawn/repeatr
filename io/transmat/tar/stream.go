@@ -42,8 +42,10 @@ func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) 
 			panic(integrity.WarehouseConnectionError.New("Unable to fetch %q: %s", u.String(), err))
 		}
 		return resp.Body
+	case "":
+		panic(integrity.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
 	default:
-		panic(integrity.ConfigError.New("unsupported scheme: %q", u.Scheme))
+		panic(integrity.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
 	}
 }
 
@@ -92,8 +94,10 @@ func makeWriteController(warehouseCoords integrity.SiloURI) StreamingWarehouseWr
 		fallthrough
 	case "http":
 		panic(integrity.ConfigError.New("http transports are only supported for read-only use"))
+	case "":
+		panic(integrity.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
 	default:
-		panic(integrity.ConfigError.New("unsupported scheme: %q", u.Scheme))
+		panic(integrity.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
 	}
 }
 
