@@ -78,8 +78,6 @@ func makeWriteController(warehouseCoords integrity.SiloURI) StreamingWarehouseWr
 		// Warehouse is expected to exist already; transmats
 		//  should *not* create one whimsically, that's someone else's responsibility.
 		warehouseBasePath := filepath.Dir(controller.tmpPath)
-		// FIXME insane
-		os.Mkdir(warehouseBasePath, 0755)
 		if _, err := os.Stat(warehouseBasePath); err != nil {
 			panic(integrity.WarehouseConnectionError.New("Warehouse unavailable: %q %s", warehouseBasePath, err))
 		}
