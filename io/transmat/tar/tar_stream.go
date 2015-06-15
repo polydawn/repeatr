@@ -28,7 +28,7 @@ func Save(file io.Writer, basePath string, hasherFactory func() hash.Hash) strin
 	}
 
 	// hash whole tree
-	actualTreeHash, _ := fshash.Hash(bucket, hasherFactory)
+	actualTreeHash := fshash.Hash(bucket, hasherFactory)
 
 	// report
 	return base64.URLEncoding.EncodeToString(actualTreeHash)

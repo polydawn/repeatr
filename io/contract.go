@@ -233,7 +233,7 @@ func NewCachingTransmat(workPath string, transmats map[TransmatKind]TransmatFact
 	}
 	err := os.MkdirAll(filepath.Join(ct.workPath, "committed"), 0755)
 	if err != nil {
-		panic(err) // TODO type.  migrate input/output errors
+		panic(TransmatError.New("Unable to create cacher work dirs: %s", err))
 	}
 	return ct
 }
@@ -257,11 +257,11 @@ func (ct *CachingTransmat) Materialize(kind TransmatKind, dataHash CommitID, sil
 				err2.Err == syscall.EBUSY || err2.Err == syscall.ENOTEMPTY {
 				// oh, fine.  somebody raced us to it.
 				if err := os.RemoveAll(arena.Path()); err != nil {
-					panic(err) // not systemically fatal, but like, wtf mate.
+					panic(TransmatError.New("Error cleaning up cancelled cache: %s", err)) // not systemically fatal, but like, wtf mate.
 				}
 				return catchingTransmatArena{permPath}
 			}
-			panic(err)
+			panic(TransmatError.New("Error commiting %q into cache: %s", err))
 		}
 	}
 	return catchingTransmatArena{permPath}
