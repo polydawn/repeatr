@@ -134,17 +134,20 @@ func (t *S3Transmat) Materialize(
 
 		// verify total integrity
 		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
+		if err != nil {
+			panic(integrity.ConfigError.New("Could not parse hash: %s", err))
+		}
 		if bytes.Equal(actualTreeHash, expectedTreeHash) {
 			// excellent, got what we asked for.
 			arena.hash = dataHash
 		} else {
 			// this may or may not be grounds for panic, depending on configuration.
-			if config.AcceptHashMismatch && errors.GetClass(err).Is(integrity.HashMismatchError) {
+			if config.AcceptHashMismatch {
 				// if we're tolerating mismatches, report the actual hash through different mechanisms.
 				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
 				arena.hash = integrity.CommitID(actualTreeHash)
 			} else {
-				panic(err)
+				panic(integrity.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
 			}
 		}
 	}).Catch(integrity.Error, func(err *errors.Error) {
