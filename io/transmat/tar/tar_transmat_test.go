@@ -6,10 +6,11 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/tests"
+	"polydawn.net/repeatr/testutil"
 )
 
 func TestCoreCompliance(t *testing.T) {
-	Convey("Spec Compliance: Tar Transmat", t, func() {
+	Convey("Spec Compliance: Tar Transmat", t, testutil.WithTmpdir(func() {
 		// scanning
 		tests.CheckScanWithoutMutation(integrity.TransmatKind("tar"), New)
 		tests.CheckScanProducesConsistentHash(integrity.TransmatKind("tar"), New)
@@ -21,5 +22,5 @@ func TestCoreCompliance(t *testing.T) {
 		// round-trip using content-addressible "warehouse"
 		// FIXME REQUIRES TEST REFACTOR // os.Mkdir("bounce", 0755) // WRONG CWD.
 		tests.CheckRoundTrip(integrity.TransmatKind("tar"), New, "file+ca://bounce", "content-addressible")
-	})
+	}))
 }

@@ -20,7 +20,7 @@ import (
 func CheckRoundTrip(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory, bounceURI string, addtnlDesc ...string) {
 	Convey("SPEC: Round-trip scanning and remaking a filesystem should agree on hash and content"+testutil.AdditionalDescription(addtnlDesc...), testutil.Requires(
 		testutil.RequiresRoot,
-		testutil.WithTmpdir(func() {
+		func() {
 			transmat := transmatFabFn("./workdir")
 			for _, fixture := range filefixture.All {
 				Convey(fmt.Sprintf("- Fixture %q", fixture.Name), FailureContinues, func() {
@@ -41,6 +41,6 @@ func CheckRoundTrip(kind integrity.TransmatKind, transmatFabFn integrity.Transma
 					So(rescan.Describe(comparisonLevel), ShouldEqual, fixture.Describe(comparisonLevel))
 				})
 			}
-		}),
+		},
 	))
 }
