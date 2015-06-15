@@ -1,17 +1,21 @@
 package dir
 
 import (
+	"bytes"
+	"crypto/sha512"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"syscall"
 
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/input"
-	dir_in "polydawn.net/repeatr/input/dir"
+	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/io"
-	dir_out "polydawn.net/repeatr/output/dir"
+	"polydawn.net/repeatr/lib/fshash"
 )
+
+const Kind = integrity.TransmatKind("dir")
 
 var _ integrity.Transmat = &DirTransmat{}
 
@@ -24,10 +28,12 @@ var _ integrity.TransmatFactory = New
 func New(workPath string) integrity.Transmat {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
-		panic(input.TargetFilesystemUnavailableIOError(err)) // TODO these errors should migrate
+		panic(integrity.TransmatError.New("Unable to set up workspace: %s", err))
 	}
 	return &DirTransmat{workPath}
 }
+
+var hasherFactory = sha512.New384
 
 /*
 	Arenas produced by Dir Transmats may be relocated by simple `mv`.
@@ -38,33 +44,78 @@ func (t *DirTransmat) Materialize(
 	siloURIs []integrity.SiloURI,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.Arena {
-	config := integrity.EvaluateConfig(options...)
-	var err error
 	var arena dirArena
-	arena.path, err = ioutil.TempDir(t.workPath, "")
-	if err != nil {
-		panic(input.TargetFilesystemUnavailableIOError(err))
-	}
-	arena.hash = dataHash // until proven otherwise
-	err = <-dir_in.New(def.Input{
-		// Wrapping around previous implementations until we migrate it all.
-		// Ugly, but will let us migrate consumer apis next, then unwind these wrappers,
-		// and thus never break things while in flight.
-		Type: string(kind),
-		Hash: string(dataHash),
-		URI:  string(siloURIs[0]),
-	}).Apply(arena.path)
-	// Also ugly!  When we unwind these wrappers, everything will
-	// consistently be blocking behaviors, and this will clean up substantially.
-	if err != nil {
-		if config.AcceptHashMismatch && errors.GetClass(err).Is(input.InputHashMismatchError) {
-			// if we're tolerating mismatches, report the actual hash through different mechanisms.
-			// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
-			arena.hash = integrity.CommitID(errors.GetData(err, input.HashActualKey).(string))
-		} else {
+	try.Do(func() {
+		// Basic validation and config
+		config := integrity.EvaluateConfig(options...)
+		if kind != Kind {
+			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
+		}
+
+		// Ping silos
+		if len(siloURIs) < 1 {
+			panic(integrity.ConfigError.New("Materialization requires at least one data source!"))
+			// Note that it's possible a caching layer will satisfy things even without data sources...
+			//  but if that was going to happen, it already would have by now.
+		}
+		// Our policy is to take the first path that exists.
+		//  This lets you specify a series of potential locations,
+		var siloURI integrity.SiloURI
+		for _, givenURI := range siloURIs {
+			// TODO still assuming all local paths and not doing real uri parsing
+			localPath := string(givenURI)
+			_, err := os.Stat(localPath)
+			if os.IsNotExist(err) {
+				continue
+			}
+			siloURI = givenURI
+			break
+		}
+		if siloURI == "" {
+			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
+		}
+
+		// Create staging arena to produce data into.
+		var err error
+		arena.path, err = ioutil.TempDir(t.workPath, "")
+		if err != nil {
+			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
+		}
+
+		// walk filesystem, copying and accumulating data for integrity check
+		hasherFactory := sha512.New384
+		bucket := &fshash.MemoryBucket{}
+		localPath := string(siloURI)
+		if err := fshash.FillBucket(localPath, arena.Path(), bucket, hasherFactory); err != nil {
 			panic(err)
 		}
-	}
+
+		// hash whole tree
+		actualTreeHash, err := fshash.Hash(bucket, hasherFactory)
+		if err != nil {
+			panic(err)
+		}
+
+		// verify total integrity
+		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
+		if bytes.Equal(actualTreeHash, expectedTreeHash) {
+			// excellent, got what we asked for.
+			arena.hash = dataHash
+		} else {
+			// this may or may not be grounds for panic, depending on configuration.
+			if config.AcceptHashMismatch && errors.GetClass(err).Is(integrity.HashMismatchError) {
+				// if we're tolerating mismatches, report the actual hash through different mechanisms.
+				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
+				arena.hash = integrity.CommitID(actualTreeHash)
+			} else {
+				panic(err)
+			}
+		}
+	}).Catch(integrity.Error, func(err *errors.Error) {
+		panic(err)
+	}).CatchAll(func(err error) {
+		panic(integrity.UnknownError.Wrap(err))
+	}).Done()
 	return arena
 }
 
@@ -74,19 +125,48 @@ func (t DirTransmat) Scan(
 	siloURIs []integrity.SiloURI,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.CommitID {
-	if len(siloURIs) <= 0 {
-		// odd hack, replace with actual comprehensive of uri lists when finishing migrating.
-		// empty strings here make it all the way to the fshash walker, which sees that as a "don't copy" instruction.
-		siloURIs = []integrity.SiloURI{""}
-	}
-	report := <-dir_out.New(def.Output{
-		Type: string(kind),
-		URI:  string(siloURIs[0]),
-	}).Apply(subjectPath)
-	if report.Err != nil {
-		panic(report.Err)
-	}
-	return integrity.CommitID(report.Output.Hash)
+	var commitID integrity.CommitID
+	try.Do(func() {
+		// Basic validation and config
+		if kind != Kind {
+			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
+		}
+
+		// Parse save locations.
+		// This transmat only supports one output location at a time due
+		//  to Old code we haven't invested in refactoring yet.
+		var localPath string
+		if len(siloURIs) == 0 {
+			localPath = "" // empty string is a well known value to `fshash.FillBucket`: means just hash, don't copy.
+		} else if len(siloURIs) == 1 {
+			// TODO still assuming all local paths and not doing real uri parsing
+			localPath = string(siloURIs[0])
+			err := os.MkdirAll(filepath.Dir(localPath), 0755)
+			if err != nil {
+				panic(integrity.WarehouseConnectionError.New("Unable to write file: %s", err))
+			}
+		} else {
+			panic(integrity.ConfigError.New("%s transmat only supports shipping to 1 warehouse", Kind))
+		}
+
+		// walk filesystem, copying and accumulating data for integrity check
+		bucket := &fshash.MemoryBucket{}
+		err := fshash.FillBucket(subjectPath, localPath, bucket, hasherFactory)
+		if err != nil {
+			panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
+		}
+
+		// hash whole tree
+		actualTreeHash, _ := fshash.Hash(bucket, hasherFactory)
+
+		// report
+		commitID = integrity.CommitID(base64.URLEncoding.EncodeToString(actualTreeHash))
+	}).Catch(integrity.Error, func(err *errors.Error) {
+		panic(err)
+	}).CatchAll(func(err error) {
+		panic(integrity.UnknownError.Wrap(err))
+	}).Done()
+	return commitID
 }
 
 type dirArena struct {

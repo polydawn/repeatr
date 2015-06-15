@@ -26,6 +26,42 @@ type Arena interface {
 }
 
 type Transmat interface {
+	/*
+		`Materialize` causes data to exist, and returns an Arena which
+		describes where the requested data can be seen on a local posix filesystem.
+
+		In the bigger picture: Transmat.Materialize causes data to exist;
+		Placers and Assemblers get several data sets to resemble a single
+		filesystem; Executors then plop that whole thing into a sandbox.
+
+		This may be a relatively long-running operation, and using a goroutine
+		to parallelize materialize operations is advised.
+		(See `executor/util/provision.go`.)
+
+		Integrity: The Transmat implementation is responsible for ensuring that the content
+		of this Arena matches the hash described by the `CommitID` parameter.
+
+		Sharing and Mutability: The Transmat implementation is allowed to assume
+		no other process will mutate the filesystem.  Thus, the Transmat may
+		return an Arena that refers to a filesystem shared with other Arenas.
+		**It is the caller's responsibility not to modify this filesystem, and undefined
+		behavior may result from the whole system if this contract is violated.**
+		The caller should use `io/placer` systems to isolate filesystems
+		before operating on them or exposing them to other systems.
+
+		Locality: Implementation-specific.  Many Transmats will actually produce
+		data onto a plain local filesystem (and thus, behaviors of your host
+		filesystem may leak through!  noatime, etc); others may use FUSE or
+		other custom mounting sytems.
+		The data need not all be available on the local machine by the time
+		the Arena is returned; it may or may not be cached locally after Arena teardown.
+		The behavior of fsync is not guaranteed.
+		The only requirement is that it look roughly like a posix filesystem.
+
+		Composability: Transmats may delegate based on the `TransmatKind`
+		parameter.  See `integrity.DispatchingTransmat` for an example of this.
+
+	*/
 	Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena
 
 	Scan(kind TransmatKind, subjectPath string, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID

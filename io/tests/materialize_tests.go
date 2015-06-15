@@ -17,8 +17,8 @@ import (
 	- Places it in a new filesystem with the input system and the scanned hash
 	- Checks the new filesystem matches the original
 */
-func CheckRoundTrip(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory, bounceURI string) {
-	Convey("SPEC: Round-trip scanning and remaking a filesystem should agree on hash and content", testutil.Requires(
+func CheckRoundTrip(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory, bounceURI string, addtnlDesc ...string) {
+	Convey("SPEC: Round-trip scanning and remaking a filesystem should agree on hash and content"+testutil.AdditionalDescription(addtnlDesc...), testutil.Requires(
 		testutil.RequiresRoot,
 		testutil.WithTmpdir(func() {
 			transmat := transmatFabFn("./workdir")

@@ -4,17 +4,16 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/tests"
 )
 
 func TestCoreCompliance(t *testing.T) {
 	Convey("Spec Compliance: Dir Transmat", t, func() {
 		// scanning
-		tests.CheckScanWithoutMutation(integrity.TransmatKind("dir"), New)
-		tests.CheckScanProducesConsistentHash(integrity.TransmatKind("dir"), New)
-		tests.CheckScanProducesDistinctHashes(integrity.TransmatKind("dir"), New)
+		tests.CheckScanWithoutMutation(Kind, New)
+		tests.CheckScanProducesConsistentHash(Kind, New)
+		tests.CheckScanProducesDistinctHashes(Kind, New)
 		// round-trip
-		tests.CheckRoundTrip(integrity.TransmatKind("dir"), New, "./bounce")
+		tests.CheckRoundTrip(Kind, New, "./bounce")
 	})
 }
