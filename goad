@@ -137,7 +137,7 @@ else
 		}
 		;;
 	clean)
-		rm -rf "$GOPATH/bin" "$GOPATH/pkg" "$GOPATH/tmp"
+		rm -rf "$GOPATH/bin" "$GOPATH/pkg" "$GOPATH/tmp" "demo"
 		;;
 	*)
 		echo "Usage: $0 {init|test|install|exec|fmt|doc|cover|validate|clean}" 1>&2;
