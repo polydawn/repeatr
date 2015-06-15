@@ -27,7 +27,7 @@ type cborMuxRow struct {
 }
 
 func CborFileMux(filePath string) Mux {
-	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR|os.O_EXCL, 0755)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR|os.O_EXCL, 0644)
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
 	}
