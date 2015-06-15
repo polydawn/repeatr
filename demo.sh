@@ -32,7 +32,7 @@ echo -e "${clblue}# Repeatr says hello!${cnone}"
 echo -e "${clblue}#  Without a command, it provides help.${cnone}"
 (
 	tellRunning "repeatr"
-	repeatr
+	time repeatr
 )
 echo -e "${clblue} ----------------------------${cnone}\n\n"
 awaitack
@@ -42,9 +42,9 @@ echo -e "${clblue}# To suck in data, use the scan command:${cnone}"
 echo
 (
 	tellRunning "repeatr scan --help"
-	repeatr scan --help
+	time repeatr scan --help
 	tellRunning "repeatr scan --kind=tar"
-	repeatr scan --kind=tar
+	time repeatr scan --kind=tar
 )
 echo
 echo -e "${clblue}#  This determines the data identity,${cnone}"
@@ -61,7 +61,7 @@ echo -e "${clblue}#  Stdout goes to your terminal; any 'output' specifications a
 echo -e "${clblue}#  This first run might take a while -- it's downloading an operating system image first!${cnone}"
 (
 	tellRunning "repeatr run -i some-json-config-files.conf"
-	repeatr run -i <(cat <<-EOF
+	time repeatr run -i <(cat <<-EOF
 	{
 		"Inputs": [
 			{
