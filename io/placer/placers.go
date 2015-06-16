@@ -1,12 +1,12 @@
 package placer
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"syscall"
 
-	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
@@ -146,15 +146,8 @@ func NewAufsPlacer(workPath string) integrity.Placer {
 		}
 		// set up COW
 		// if you were doing this in a shell, it'd be roughly `mount -t aufs -o br="$layer":"$base" none "$composite"`.
-		// yes, this may behave oddly in the event of paths containing ":".
-		gosh.Sh(
-			"mount",
-			"-t", "aufs",
-			"-o", "br="+layerPath+":"+srcBasePath,
-			"none",
-			destBasePath,
-			gosh.NullIO,
-		)
+		// yes, this may behave oddly in the event of paths containing ":" or "=".
+		syscall.Mount("none", destBasePath, "aufs", 0, fmt.Sprintf("br:%s=rw:%s=ro", layerPath, srcBasePath))
 		// fix props on layerPath; otherwise they instantly leak through
 		hdr, _ := fs.ScanFile(srcBasePath, "./", srcBaseStat)
 		fs.PlaceFile(layerPath, hdr, nil)
