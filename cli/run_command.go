@@ -11,7 +11,7 @@ import (
 	"polydawn.net/repeatr/scheduler/dispatch"
 )
 
-func RunCommandPattern(journal io.Writer) cli.Command {
+func RunCommandPattern() cli.Command {
 	bat := cli.StringSlice([]string{})
 	return cli.Command{
 		Name:  "run",
@@ -37,7 +37,7 @@ func RunCommandPattern(journal io.Writer) cli.Command {
 			executor := executordispatch.Get(c.String("executor"))
 			scheduler := schedulerdispatch.Get(c.String("scheduler"))
 			formulaPaths := c.StringSlice("input")
-			Run(executor, scheduler, formulaPaths, journal)
+			Run(executor, scheduler, formulaPaths, c.App.Writer)
 		},
 	}
 }

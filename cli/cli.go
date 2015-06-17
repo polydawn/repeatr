@@ -18,8 +18,8 @@ func Main(args []string, journal, output io.Writer) {
 	App.Writer = journal
 
 	App.Commands = []cli.Command{
-		RunCommandPattern(journal),
-		ScanCommandPattern(journal, output),
+		RunCommandPattern(),
+		ScanCommandPattern(output),
 	}
 
 	// Reporting "no help topic for 'zyx'" and exiting with a *zero* is... silly.
