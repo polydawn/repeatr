@@ -29,6 +29,14 @@ func Main(args []string, journal, output io.Writer) {
 		os.Exit(int(EXIT_BADARGS))
 	}
 
+	// Put some more info in our version printer.
+	// Global var.  Womp womp.
+	// Also, version goes to stdout.
+	cli.VersionPrinter = func(ctx *cli.Context) {
+		fmt.Fprintf(os.Stdout, "%v v%v\n", ctx.App.Name, ctx.App.Version)
+		// TODO figure out how to build in compile hash and compile date, then add those on more lines
+	}
+
 	// Invoking version as a subcommand should also fly.
 	App.Commands = append(App.Commands,
 		cli.Command{
