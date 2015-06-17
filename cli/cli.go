@@ -8,6 +8,8 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+//go:generate ./version.go.tmpl
+
 func Main(args []string, journal, output io.Writer) {
 	App := cli.NewApp()
 
@@ -34,7 +36,8 @@ func Main(args []string, journal, output io.Writer) {
 	// Also, version goes to stdout.
 	cli.VersionPrinter = func(ctx *cli.Context) {
 		fmt.Fprintf(os.Stdout, "%v v%v\n", ctx.App.Name, ctx.App.Version)
-		// TODO figure out how to build in compile hash and compile date, then add those on more lines
+		fmt.Fprintf(os.Stdout, "git commit %v\n", GITCOMMIT)
+		fmt.Fprintf(os.Stdout, "build date %v\n", BUILDDATE)
 	}
 
 	// Invoking version as a subcommand should also fly.

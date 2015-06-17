@@ -1,0 +1,17 @@
+#!/bin/bash
+set -euo pipefail
+
+GITCOMMIT="$(git rev-parse --short HEAD)"
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+	GITCOMMIT="$GITCOMMIT-dirty"
+fi
+BUILDDATE="$(date --rfc-2822)"
+
+cat > version.go <<EOF
+package cli
+
+var (
+	GITCOMMIT string = "$GITCOMMIT"
+	BUILDDATE string = "$BUILDDATE"
+)
+EOF

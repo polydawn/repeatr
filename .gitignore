@@ -1,5 +1,7 @@
 /.gopath/bin/
 /.gopath/pkg/
 
+/cli/version.go
+
 /assets/
 /formula.json
