@@ -29,5 +29,16 @@ func Main(args []string, journal, output io.Writer) {
 		os.Exit(int(EXIT_BADARGS))
 	}
 
+	// Invoking version as a subcommand should also fly.
+	App.Commands = append(App.Commands,
+		cli.Command{
+			Name:  "version",
+			Usage: "Shows the version of repeatr",
+			Action: func(ctx *cli.Context) {
+				cli.ShowVersion(ctx)
+			},
+		},
+	)
+
 	App.Run(args)
 }
