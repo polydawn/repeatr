@@ -26,6 +26,7 @@ export REPEATR_BASE="/tmp/repeatr-test/$(date +%Y.%m.%d..%H.%M.%S)..$RANDOM$RAND
 
 if [ -z "$1" ] ; then
 	(
+		go generate "$SUBSECTION"
 		go fmt "$SUBSECTION"
 		go install "$pkg" 2> >(grep --color -E "$highlighRegex") && {
 			echo -e "\E[1;32minstall successful.\E[0;m\n"
@@ -60,6 +61,7 @@ else
 		git submodule update --init
 		;;
 	test)
+		go generate "$SUBSECTION"
 		set +e ; shift ; shift ; set -e
 		go test -i "$SUBSECTION" "$@" 2> >(grep --color -E "$highlighRegex") &&
 		go test -v "$SUBSECTION" "$@" 2> >(grep --color -E "$highlighRegex") && {
@@ -70,6 +72,7 @@ else
 		}
 		;;
 	install)
+		go generate "./..."
 		go install "$pkg" 2> >(grep --color -E "$highlighRegex")
 		;;
 	exec)
