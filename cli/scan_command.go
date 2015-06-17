@@ -11,7 +11,7 @@ import (
 	"polydawn.net/repeatr/io"
 )
 
-func ScanCommandPattern(journal, output io.Writer) cli.Command {
+func ScanCommandPattern(output io.Writer) cli.Command {
 	return cli.Command{
 		Name:  "scan",
 		Usage: "Scan a local filesystem, optionally storing the data into a silo",
