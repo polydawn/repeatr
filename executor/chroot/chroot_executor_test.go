@@ -9,50 +9,25 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
-	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/executor/tests"
 	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
 )
 
 func Test(t *testing.T) {
-	Convey("Given a rootfs input that doesn't exist", t,
-		testutil.WithTmpdir(func() {
-			formula := def.Formula{
-				Inputs: []def.Input{
-					{
-						Type:     "tar",
-						Location: "/",
-						// Funny thing is, the URI isn't even necessarily where the buck stops;
-						// Remote URIs need not be checked if caches are in play, etc.
-						// So the hash needs to be set (and needs to be invalid).
-						URI:  "file:///nonexistance/in/its/most/essential/unform.tar.gz",
-						Hash: "defnot",
-					},
-				},
-			}
-			e := &Executor{
-				workspacePath: "chroot_workspace",
-			}
-			So(os.Mkdir(e.workspacePath, 0755), ShouldBeNil)
-
-			Convey("We should get an error from the warehouse", func() {
-				result := e.Start(formula, def.JobID(guid.New()), ioutil.Discard).Wait()
-				So(result.Error, testutil.ShouldBeErrorClass, integrity.WarehouseError)
-			})
-
-			Convey("The job exit code should clearly indicate failure", FailureContinues, func() {
-				formula.Accents = def.Accents{
-					Entrypoint: []string{"echo", "echococo"},
+	Convey("Spec Compliance: Chroot Executor", t,
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				execEng := &Executor{
+					workspacePath: "chroot_workspace",
 				}
-				job := e.Start(formula, def.JobID(guid.New()), ioutil.Discard)
-				So(job, ShouldNotBeNil)
-				So(job.Wait().Error, ShouldNotBeNil)
-				// Even though one should clearly also check the error status,
-				//  zero here could be very confusing, so jobs that error before start should be -1.
-				So(job.Wait().ExitCode, ShouldEqual, -1)
-			})
-		}),
+				So(os.Mkdir(execEng.workspacePath, 0755), ShouldBeNil)
+
+				tests.CheckBasicExecution(execEng)
+			}),
+		),
 	)
 
 	projPath, _ := os.Getwd()
