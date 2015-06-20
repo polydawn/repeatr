@@ -2,8 +2,6 @@ package tests
 
 import (
 	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
@@ -13,22 +11,8 @@ import (
 )
 
 func CheckFilesystemContainment(execEng executor.Executor) {
-	// find local assets.  we rely on local files bootstrapped by earlier build process steps rather than have executor tests depend on networked transmats (and thus *network*).
-	// is janky.  don't know of a best practice for finding your "project dir".
-	projPath, _ := os.Getwd()
-	projPath = filepath.Dir(filepath.Dir(projPath))
-
 	Convey("SPEC: other inputs can be seen, in place", func() {
-		formula := def.Formula{
-			Inputs: []def.Input{
-				{
-					Type:     "tar",
-					Location: "/",
-					Hash:     "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-					URI:      "file://" + filepath.Join(projPath, "assets/ubuntu.tar.gz"),
-				},
-			},
-		}
+		formula := getBaseFormula()
 
 		Convey("Launch should succeed", func() {
 			filefixture.Beta.Create("./fixture/beta")

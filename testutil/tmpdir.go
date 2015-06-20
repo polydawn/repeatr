@@ -20,6 +20,9 @@ func WithTmpdir(fn func()) func() {
 		if err != nil {
 			panic(err)
 		}
+		if originalDir == "" {
+			originalDir = retreat
+		}
 
 		convey.Reset(func() {
 			os.Chdir(retreat)
@@ -58,3 +61,22 @@ func WithTmpdir(fn func()) func() {
 		fn()
 	}
 }
+
+/*
+	Returns the first cwd, before anyone ever `WithTmpdir`'d.
+
+	For most tests, this will be the test package directory in the source tree.
+*/
+func OriginalDir() string {
+	// not goroutine safe, but what kind of maniac are you anyway?
+	if originalDir == "" {
+		var err error
+		originalDir, err = os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return originalDir
+}
+
+var originalDir string

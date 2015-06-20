@@ -2,8 +2,6 @@ package tests
 
 import (
 	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
@@ -60,22 +58,8 @@ func CheckBasicExecution(execEng executor.Executor) {
 		})
 	})
 
-	// find local assets.  we rely on local files bootstrapped by earlier build process steps rather than have executor tests depend on networked transmats (and thus *network*).
-	// is janky.  don't know of a best practice for finding your "project dir".
-	projPath, _ := os.Getwd()
-	projPath = filepath.Dir(filepath.Dir(projPath))
-
 	Convey("SPEC: with a working rootfs, execution works", func() {
-		formula := def.Formula{
-			Inputs: []def.Input{
-				{
-					Type:     "tar",
-					Location: "/",
-					Hash:     "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-					URI:      "file://" + filepath.Join(projPath, "assets/ubuntu.tar.gz"),
-				},
-			},
-		}
+		formula := getBaseFormula()
 
 		Convey("The executor should be able to invoke echo", FailureContinues, func() {
 			formula.Accents = def.Accents{
