@@ -11,7 +11,7 @@ import (
 )
 
 func CheckFilesystemContainment(execEng executor.Executor) {
-	Convey("SPEC: other inputs can be seen, in place", func() {
+	Convey("SPEC: Launching with multiple inputs should work", func() {
 		formula := getBaseFormula()
 
 		Convey("Launch should succeed", func() {

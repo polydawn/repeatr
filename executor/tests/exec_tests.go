@@ -25,7 +25,7 @@ import (
 	If any of these fail, most other parts of the specs will also fail.
 */
 func CheckBasicExecution(execEng executor.Executor) {
-	Convey("SPEC: a rootfs input that doesn't exist raises errors", func() {
+	Convey("SPEC: Attempting launch with a rootfs that doesn't exist should error", func() {
 		formula := def.Formula{
 			Inputs: []def.Input{
 				{
@@ -58,7 +58,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 		})
 	})
 
-	Convey("SPEC: with a working rootfs, execution works", func() {
+	Convey("SPEC: Launching a command with a working rootfs should work", func() {
 		formula := getBaseFormula()
 
 		Convey("The executor should be able to invoke echo", FailureContinues, func() {
