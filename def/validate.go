@@ -30,6 +30,9 @@ func ValidateBasic(job *Formula) {
 	if job.Accents.Entrypoint == nil {
 		job.Accents.Entrypoint = []string{}
 	}
+	if job.Accents.Cwd == "" {
+		job.Accents.Cwd = "/"
+	}
 }
 
 // Modifies a formula with a few tweaks that make them more convenient for human-generated input.

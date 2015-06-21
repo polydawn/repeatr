@@ -107,6 +107,8 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 		Pdeathsig: syscall.SIGKILL,
 	}
 
+	cmd.Dir = f.Accents.Cwd
+
 	cmd.Stdin = nil
 	cmd.Stdout = outS
 	cmd.Stderr = errS
