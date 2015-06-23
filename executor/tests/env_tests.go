@@ -7,6 +7,7 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/lib/guid"
+	"polydawn.net/repeatr/testutil"
 )
 
 func CheckPwdBehavior(execEng executor.Executor) {
@@ -24,13 +25,46 @@ func CheckPwdBehavior(execEng executor.Executor) {
 				Entrypoint: []string{"pwd"},
 			}
 
+			soExpectSuccessAndOutput(execEng, formula,
+				"/\n",
+			)
+		})
+
+		Convey("Setting another cwd should work", func() {
+			formula.Accents = def.Accents{
+				Cwd:        "/usr",
+				Entrypoint: []string{"pwd"},
+			}
+
+			soExpectSuccessAndOutput(execEng, formula,
+				"/usr\n",
+			)
+		})
+
+		Convey("Setting a nonexistent cwd should fail to launch", func() {
+			formula.Accents = def.Accents{
+				Cwd:        "/does/not/exist/by/any/means",
+				Entrypoint: []string{"pwd"},
+			}
+
 			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
 			So(job, ShouldNotBeNil)
-			So(job.Wait().Error, ShouldBeNil)
-			So(job.Wait().ExitCode, ShouldEqual, 0)
+			So(job.Wait().Error, ShouldNotBeNil)
+			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError) // FIXME this is ridiculous
+			So(job.Wait().ExitCode, ShouldEqual, -1)
 			msg, err := ioutil.ReadAll(job.OutputReader())
 			So(err, ShouldBeNil)
-			So(string(msg), ShouldEqual, "/\n")
+			So(string(msg), ShouldEqual, "")
 		})
 	})
+}
+
+func soExpectSuccessAndOutput(execEng executor.Executor, formula def.Formula, output string) {
+	job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+	So(job, ShouldNotBeNil)
+	So(job.Wait().Error, ShouldBeNil)
+	So(job.Wait().ExitCode, ShouldEqual, 0)
+	msg, err := ioutil.ReadAll(job.OutputReader())
+	So(err, ShouldBeNil)
+	So(string(msg), ShouldEqual, output)
 }
