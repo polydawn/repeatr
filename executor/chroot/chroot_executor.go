@@ -118,6 +118,10 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	}
 	cmd.Dir = f.Accents.Cwd
 
+	// set env.
+	// initialization already required by earlier 'validate' calls.
+	cmd.Env = envToSlice(f.Accents.Env)
+
 	cmd.Stdin = nil
 	cmd.Stdout = outS
 	cmd.Stderr = errS
@@ -148,4 +152,14 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 
 	// Save outputs
 	result.Outputs = util.PreserveOutputs(transmat, f.Outputs, rootfs, journal)
+}
+
+func envToSlice(env map[string]string) []string {
+	rv := make([]string, len(env))
+	i := 0
+	for k, v := range env {
+		rv[i] = k + "=" + v
+		i++
+	}
+	return rv
 }

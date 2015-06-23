@@ -22,6 +22,7 @@ func Test(t *testing.T) {
 				tests.CheckBasicExecution(execEng)
 				tests.CheckFilesystemContainment(execEng)
 				tests.CheckPwdBehavior(execEng)
+				tests.CheckEnvBehavior(execEng)
 			}),
 		),
 	)

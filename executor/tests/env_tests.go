@@ -2,6 +2,8 @@ package tests
 
 import (
 	"io/ioutil"
+	"os"
+	"strings"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/def"
@@ -56,6 +58,45 @@ func CheckPwdBehavior(execEng executor.Executor) {
 			So(err, ShouldBeNil)
 			So(string(msg), ShouldEqual, "")
 		})
+	})
+}
+
+func CheckEnvBehavior(execEng executor.Executor) {
+	// NOTE the chroot executor currently uses `def.ValidateAll` which effectively *does not permit you to have an empty $PATH var*.
+	// we may decide to change that later -- but there's a correctness versus convenience battle there, and for now, we're going with convenience.
+
+	Convey("SPEC: Env vars should be contained", func() {
+		formula := getBaseFormula()
+		formula.Accents = def.Accents{
+			Entrypoint: []string{"env"},
+		}
+
+		Convey("Env from the parent should not be inherited", func() {
+			os.Setenv("REPEATR_TEST_KEY_1", "test value")
+			defer os.Unsetenv("REPEATR_TEST_KEY_1") // using unique strings per test anyway, because this is too scary
+
+			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			So(job, ShouldNotBeNil)
+			So(job.Wait().Error, ShouldBeNil)
+			So(job.Wait().ExitCode, ShouldEqual, 0)
+			msg, err := ioutil.ReadAll(job.OutputReader())
+			So(err, ShouldBeNil)
+			So(strings.Contains("REPEATR_TEST_KEY_1", string(msg)), ShouldBeFalse)
+		})
+
+		Convey("Env specified with the job should be applied", func() {
+			formula.Accents.Env = make(map[string]string)
+			formula.Accents.Env["REPEATR_TEST_KEY_2"] = "test value"
+
+			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			So(job, ShouldNotBeNil)
+			So(job.Wait().Error, ShouldBeNil)
+			So(job.Wait().ExitCode, ShouldEqual, 0)
+			msg, err := ioutil.ReadAll(job.OutputReader())
+			So(err, ShouldBeNil)
+			So(string(msg), ShouldContainSubstring, "REPEATR_TEST_KEY_2=test value")
+		})
+
 	})
 }
 
