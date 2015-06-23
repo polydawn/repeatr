@@ -43,7 +43,7 @@ func (t *TarExecTransmat) Materialize(
 	var arena dirArena
 	try.Do(func() {
 		// Basic validation and config
-		if kind != Kind {
+		if !(kind == Kind || kind == "exec-tar") {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 

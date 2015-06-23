@@ -30,7 +30,9 @@ func LoadFormulaFromFile(path string) def.Formula {
 	return formula
 }
 
-func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, f ...def.Formula) {
+func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, f ...def.Formula) (allclear bool) {
+	allclear = true // set to false on the first instance of a problem
+
 	jobLoggerFactory := func(_ def.JobID) io.Writer {
 		// All job progress reporting actually still copy to our shared journal stream.
 		// This should be replaced with a real logging framework,
@@ -71,6 +73,7 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, 
 			result := job.Wait()
 			if result.Error != nil {
 				fmt.Fprintln(journal, "Job", n, id, "failed with", result.Error.Message())
+				allclear = false
 			} else {
 				fmt.Fprintln(journal, "Job", n, id, "finished with code", result.ExitCode, "and outputs", result.Outputs)
 			}
@@ -78,4 +81,5 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, 
 	}
 
 	wg.Wait()
+	return
 }

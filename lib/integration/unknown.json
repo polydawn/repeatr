@@ -13,7 +13,7 @@
         {
             "Type": "tar",
             "Location": "/var/log",
-            "URI": "basic.tar"
+            "URI": "file://basic.tar"
         }
     ]
 }
