@@ -50,7 +50,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldNotBeNil)
-			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError) // FIXME this is ridiculous
+			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.TaskExecError)
 			So(job.Wait().ExitCode, ShouldEqual, -1)
 			msg, err := ioutil.ReadAll(job.OutputReader())
 			So(err, ShouldBeNil)
