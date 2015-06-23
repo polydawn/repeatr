@@ -10,9 +10,6 @@ export GOPATH="$PWD"/.gopath/
 # Right now we need nsinit on the PATH.
 PATH=$PWD/assets:$PATH
 
-# Highlights build failures. Setting to '^' will disable, could make configurable.
-highlighRegex='^|^# (.*/)+.*$'
-
 # subsection arg?
 [ -z "$2" ] && SUBSECTION="./..." || SUBSECTION="./$2"
 
@@ -28,13 +25,13 @@ if [ -z "$1" ] ; then
 	(
 		go generate "$SUBSECTION"
 		go fmt "$SUBSECTION"
-		go install "$pkg" 2> >(grep --color -E "$highlighRegex") && {
+		go install "$pkg" && {
 			echo -e "\E[1;32minstall successful.\E[0;m\n"
 		} || {
 			echo -e "\E[1;41minstall failed!\E[0;m"
 			exit 8
 		}
-		go test -short "$SUBSECTION" 2> >(grep --color -E "$highlighRegex") && {
+		go test -short "$SUBSECTION" && {
 			echo -e "\n\E[1;32mall tests green.\E[0;m"
 		} || {
 			echo -e "\n\E[1;41msome tests failed!\E[0;m"
@@ -63,8 +60,8 @@ else
 	test)
 		go generate "$SUBSECTION"
 		set +e ; shift ; shift ; set -e
-		go test -i "$SUBSECTION" "$@" 2> >(grep --color -E "$highlighRegex") &&
-		go test -v "$SUBSECTION" "$@" 2> >(grep --color -E "$highlighRegex") && {
+		go test -i "$SUBSECTION" "$@" &&
+		go test -v "$SUBSECTION" "$@" && {
 			echo -e "\n\E[1;32mall tests green.\E[0;m"
 		} || {
 			echo -e "\n\E[1;41msome tests failed!\E[0;m"
@@ -73,7 +70,7 @@ else
 		;;
 	install)
 		go generate "./..."
-		go install "$pkg" 2> >(grep --color -E "$highlighRegex")
+		go install "$pkg"
 		;;
 	exec)
 		shift
