@@ -2,6 +2,7 @@ package chroot
 
 import (
 	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
@@ -107,6 +108,20 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 		Pdeathsig: syscall.SIGKILL,
 	}
 
+	// except handling cwd is a little odd.
+	// see comments in gosh tests with chroot for information about the odd behavior we're hacking around here;
+	// we're comfortable making this special check here, but not upstreaming it to gosh, because in our context we "know" we're not racing anyone.
+	if externalCwdStat, err := os.Stat(filepath.Join(rootfs, f.Accents.Cwd)); err != nil {
+		panic(executor.TaskExecError.New("cannot set cwd to %q: %s", f.Accents.Cwd, err.(*os.PathError).Err))
+	} else if !externalCwdStat.IsDir() {
+		panic(executor.TaskExecError.New("cannot set cwd to %q: not a dir", f.Accents.Cwd))
+	}
+	cmd.Dir = f.Accents.Cwd
+
+	// set env.
+	// initialization already required by earlier 'validate' calls.
+	cmd.Env = envToSlice(f.Accents.Env)
+
 	cmd.Stdin = nil
 	cmd.Stdout = outS
 	cmd.Stderr = errS
@@ -120,8 +135,10 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 		switch err.(type) {
 		case gosh.NoSuchCommandError:
 			panic(executor.NoSuchCommandError.Wrap(err))
-		case gosh.NoArgumentsErr:
+		case gosh.NoArgumentsError:
 			panic(executor.NoSuchCommandError.Wrap(err))
+		case gosh.NoSuchCwdError: // included for clarity and completeness, but we'll never actually see this; see comments in gosh about the interaction of chroot and cwd error handling.
+			panic(executor.TaskExecError.Wrap(err))
 		case gosh.ProcMonitorError:
 			panic(executor.TaskExecError.Wrap(err))
 		default:
@@ -135,4 +152,14 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 
 	// Save outputs
 	result.Outputs = util.PreserveOutputs(transmat, f.Outputs, rootfs, journal)
+}
+
+func envToSlice(env map[string]string) []string {
+	rv := make([]string, len(env))
+	i := 0
+	for k, v := range env {
+		rv[i] = k + "=" + v
+		i++
+	}
+	return rv
 }

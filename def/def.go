@@ -107,6 +107,7 @@ type Accents struct {
 	OS         string            // OS restriction.  use values matching '$GOOS'.  linux presumed if unset.  included in the conjecture.
 	Arch       string            // architecture restriction.  use values matching '$GOARCH'.  x86_64 presumed if unset.  included in the conjecture.
 	Entrypoint []string          // executable to invoke as the task.  included in the conjecture.
+	Cwd        string            // working directory to set when invoking the executable.  if not set, will be defaulted to "/".
 	Env        map[string]string // environment variables.  included in the conjecture.
 	Custom     map[string]string // User-defined map; a no-man's land where anything goes.  included in the conjecture.
 }
