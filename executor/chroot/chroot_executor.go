@@ -122,8 +122,10 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 		switch err.(type) {
 		case gosh.NoSuchCommandError:
 			panic(executor.NoSuchCommandError.Wrap(err))
-		case gosh.NoArgumentsErr:
+		case gosh.NoArgumentsError:
 			panic(executor.NoSuchCommandError.Wrap(err))
+		case gosh.NoSuchCwdError: // included for clarity and completeness, but we'll never actually see this; see comments in gosh about the interaction of chroot and cwd error handling.
+			panic(executor.TaskExecError.Wrap(err))
 		case gosh.ProcMonitorError:
 			panic(executor.TaskExecError.Wrap(err))
 		default:
