@@ -189,25 +189,32 @@ and there you have it: a formula.
 Try it out
 ----------
 
-First, clone our repository and its dependencies, then download some testing assets:
+### Run the Demo
+
+The quickest way to see for yourself what repeatr can do is try the demo included with the repo.
+
+First, clone our repository and its dependencies, then fire off `demo.sh`:
 
 ```bash
 # Clone
 git clone https://github.com/polydawn/repeatr.git && cd repeatr
-
-# Install dependencies
+# Build from source (including fetching dependencies)
 ./goad init
-
-# Download a small Ubuntu tarball and required binary
-./lib/integration/assets.sh
+./goad install
+# Run the demo!
+sudo ./demo.sh
 ```
 
-Build repeatr:
+(This assumes you have a go compiler already -- if not, check out https://golang.org/dl/ and grab the right package for your platform.)
 
-```bash
-# Build
-./goad install
+The demo script will show off some basic examples of using repeatr.
 
+Note that several sections of repeatr require elevated priviledges to run (sandboxing and mounting);
+as a result, running the demo needs sudo priviledges.
+
+After this, you also have the repeatr binary available, so you can play with it yourself:
+
+```
 # See usage
 .gopath/bin/repeatr
 
@@ -221,7 +228,27 @@ cat lib/integration/basic.json
 tar -tf basic.tar
 ```
 
-You can run our test suite (several of which will will be skipped without root):
+When in doubt, try `repeatr help` or `repeatr [subcommand] help`.
+These should give you more information about what the various commands do and how to use them.
+
+
+### Developing
+
+Setting up a full development environment and running the test suites is similar:
+
+```bash
+# Clone
+git clone https://github.com/polydawn/repeatr.git && cd repeatr
+# Build from source (including fetching dependencies)
+./goad init
+./lib/integration/assets.sh
+./goad install
+# Run the entire test suite
+./goad test
+```
+
+Note that several sections of repeatr require elevated priviledges to run (sandboxing and mounting);
+the test suite for these areas will be skipped without root, so to run the *whole* suite, sudo is required:
 
 ```
 sudo ./goad test
