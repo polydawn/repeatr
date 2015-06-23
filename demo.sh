@@ -69,7 +69,7 @@ echo -e "${clblue}#  This first run might take a while -- it's downloading an op
 				"Type": "tar",
 				"Location": "/",
 				"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-				"URI": "http+ca://repeatr.s3-website-us-west-2.amazonaws.com/assets/"
+				"URI": "http+ca://repeatr.s3.amazonaws.com/assets/"
 			}
 		],
 		"Accents": {
@@ -100,10 +100,10 @@ echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts i
 	{
 		"Inputs": [
 			{
-				"Type": "s3",
+				"Type": "tar",
 				"Location": "/",
 				"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-				"URI": "s3+splay://repeatr/assets/"
+				"URI": "http+ca://repeatr.s3.amazonaws.com/assets/"
 			}
 		],
 		"Accents": {
