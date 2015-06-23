@@ -4,7 +4,7 @@
 			"Type": "tar",
 			"Location": "/",
 			"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-			"URI": "assets/ubuntu.tar.gz"
+			"URI": "file://assets/ubuntu.tar.gz"
 		}
 	],
 	"Accents": {
@@ -14,7 +14,7 @@
 		{
 			"Type": "tar",
 			"Location": "/var/log",
-			"URI": "basic.tar"
+			"URI": "file://basic.tar"
 		}
 	]
 }

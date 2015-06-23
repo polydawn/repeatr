@@ -2,6 +2,9 @@ package testutil
 
 import (
 	"bytes"
+	"io"
+
+	"github.com/smartystreets/goconvey/convey"
 )
 
 /*
@@ -27,4 +30,18 @@ func AdditionalDescription(addtnlDesc ...string) string {
 	buf.WriteString(addtnlDesc[n-1])
 	buf.WriteRune(')')
 	return buf.String()
+}
+
+var _ io.Writer = Writer{}
+
+/*
+	Wraps a goconvey context into an `io.Writer` so that you can
+	shovel logs at it.
+*/
+type Writer struct {
+	Convey convey.C
+}
+
+func (lw Writer) Write(msg []byte) (int, error) {
+	return lw.Convey.Print(string(msg))
 }

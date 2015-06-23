@@ -17,6 +17,6 @@ func Base() string {
 	if base == "" {
 		base = "/tmp/repeatr" // change to var/lib or something when we feel more serious
 	}
-	os.MkdirAll(base, 01755)
+	os.MkdirAll(base, 0755)
 	return base
 }

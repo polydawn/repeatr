@@ -33,8 +33,9 @@ func Test(t *testing.T) {
 		testutil.Requires(
 			testutil.RequiresRoot,
 			testutil.RequiresNamespaces,
-			func() {
-				Main(append(baseArgs, "run", "-i", "lib/integration/basic.json"), ioutil.Discard, ioutil.Discard)
+			func(c C) {
+				w := testutil.Writer{c}
+				Main(append(baseArgs, "run", "-i", "lib/integration/basic.json"), w, w)
 			},
 		),
 	)
