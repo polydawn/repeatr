@@ -4,7 +4,7 @@
 			"Type": "tar",
 			"Location": "/",
 			"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-			"URI": "file://assets/ubuntu.tar.gz"
+			"URI": "http+ca://repeatr.s3.amazonaws.com/assets/"
 		}
 	],
 	"Accents": {
