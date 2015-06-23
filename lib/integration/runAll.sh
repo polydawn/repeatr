@@ -1,4 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
+set -euo pipefail
+set -x
 
 # Run each integration example; useful for CI
 
