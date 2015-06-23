@@ -60,6 +60,7 @@ echo -e "${clblue}# The \`repeatr run\` command takes a job description and exec
 echo -e "${clblue}#  Stdout goes to your terminal; any 'output' specifications are saved/uploaded.${cnone}"
 echo -e "${clblue}#  This first run might take a while -- it's downloading an operating system image first!${cnone}"
 (
+	mkdir -p "${demodir}/local-warehouse"
 	tellRunning "repeatr run -i some-json-config-files.conf"
 	time repeatr run -i <(cat <<-EOF
 	{
@@ -78,7 +79,7 @@ echo -e "${clblue}#  This first run might take a while -- it's downloading an op
 			{
 				"Type": "tar",
 				"Location": "/var/log",
-				"URI": "file://basic.tar"
+				"URI": "file+ca://${demodir}/local-warehouse"
 			}
 		]
 	}
@@ -112,7 +113,7 @@ echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts i
 			{
 				"Type": "tar",
 				"Location": "/var/log",
-				"URI": "file://basic.tar"
+				"URI": "file+ca://${demodir}/local-warehouse"
 			}
 		]
 	}
@@ -123,6 +124,26 @@ echo -e "${clblue}# Also, note that the output is the same hash?${cnone}"
 echo -e "${clblue}#  Given the same inputs, this command produces the same outputs, every time. ;)${cnone}"
 echo -e "${clblue} ----------------------------${cnone}\n\n"
 awaitack
+
+
+
+echo -e "${clblue}# We also included an output spec in those last two commands.${cnone}"
+echo -e "${clblue}# That means repeatr uploaded our data to the 'warehouse' we gave it --${cnone}"
+echo -e "${clblue}#  warehouses act like permanent storage for your data.${cnone}"
+echo -e "${clblue}# We just used a local filesystem, so let's see how that looks:${cnone}"
+(
+	tellRunning "ls -lah \$demodir/local-warehouse"
+	ls -lah "${demodir}/local-warehouse"
+)
+echo -e "${clblue}# Content addressible storage means the same data gets de-duplicated automatically --${cnone}"
+echo -e "${clblue}#  since both of our jobs produced the same output, it's just here stored once.${cnone}"
+echo -e "${clblue}# Everything in a warehouse has guaranteed integrity based on the hashes.${cnone}"
+echo -e "${clblue}#  If a warehouse suffers disk corruption?  You're covered -- you'll know immediately.${cnone}"
+echo -e "${clblue}#  If a warehouse gets hacked?  You're covered -- if the attacker changed anything, you'll know immediately!${cnone}"
+echo -e "${clblue}# Here we used a local filesystem, but other warehousing options include S3, for example.${cnone}"
+echo -e "${clblue} ----------------------------${cnone}\n\n"
+awaitack
+
 
 
 echo "${clblue}#  That's all!  Neat, eh?${cnone}"
