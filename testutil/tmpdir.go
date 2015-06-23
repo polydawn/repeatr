@@ -38,7 +38,7 @@ func WithTmpdir(fn func()) func() {
 			panic(err)
 		}
 
-		err = os.MkdirAll("repeatr-test", 1755)
+		err = os.MkdirAll("repeatr-test", 0755)
 		if err != nil {
 			panic(err)
 		}
