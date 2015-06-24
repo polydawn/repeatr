@@ -35,21 +35,34 @@ type Filter interface {
 	chown entirely, which means the whole system can run with lower privs).
 */
 type FilterSet struct {
-	Mtime MtimeFilter
-	Uid   UidFilter
-	Gid   GidFilter
+	Mtime *MtimeFilter
+	Uid   *UidFilter
+	Gid   *GidFilter
 }
 
-// maybe have an applyAll method, and transmats that did Something Special just nil the relevant ones and then call that?
+func (fs FilterSet) Apply(hdr fs.Metadata) fs.Metadata {
+	if fs.Mtime != nil {
+		hdr = fs.Mtime.Filter(hdr)
+	}
+	if fs.Uid != nil {
+		hdr = fs.Uid.Filter(hdr)
+	}
+	if fs.Gid != nil {
+		hdr = fs.Gid.Filter(hdr)
+	}
+	return hdr
+}
 
 func (fs FilterSet) Put(filt Filter) FilterSet {
 	switch f2 := filt.(type) {
 	case MtimeFilter:
-		fs.Mtime = f2
+		fs.Mtime = &f2
 	case UidFilter:
-		fs.Uid = f2
+		fs.Uid = &f2
 	case GidFilter:
-		fs.Gid = f2
+		fs.Gid = &f2
+	default:
+		panic("unreachable (unrecognized filter)")
 	}
 	return fs
 }
