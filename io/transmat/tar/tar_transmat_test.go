@@ -17,6 +17,7 @@ func TestCoreCompliance(t *testing.T) {
 		tests.CheckScanWithoutMutation(integrity.TransmatKind("tar"), New)
 		tests.CheckScanProducesConsistentHash(integrity.TransmatKind("tar"), New)
 		tests.CheckScanProducesDistinctHashes(integrity.TransmatKind("tar"), New)
+		tests.CheckScanWithFilters(integrity.TransmatKind("tar"), New)
 		// round-trip (with relative paths)
 		tests.CheckRoundTrip(integrity.TransmatKind("tar"), New, "file://bounce", "file literal", "relative")
 		// round-trip (with absolute paths)

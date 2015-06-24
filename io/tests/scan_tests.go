@@ -2,9 +2,12 @@ package tests
 
 import (
 	"fmt"
+	"os"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/io/filter"
 	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
 )
@@ -64,6 +67,27 @@ func CheckScanProducesDistinctHashes(kind integrity.TransmatKind, transmatFabFn 
 			commitID2 := transmat.Scan(kind, "./beta", nil)
 			// should be distinct
 			So(commitID2, ShouldNotEqual, commitID1)
+		}),
+	)
+}
+
+func CheckScanWithFilters(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
+	Convey("SPEC: Filesystems only differing by mtime should have same hash after mtime filter", testutil.Requires(
+		testutil.RequiresRoot,
+		func() {
+			transmat := transmatFabFn("./workdir")
+			// set up fixtures
+			filefixture.Alpha.Create("./alpha1")
+			filefixture.Alpha.Create("./alpha2")
+			// overwrite the time on one of them -- can be nonconstant value, even; that's sorta the point.
+			So(os.Chtimes("./alpha2/a", time.Now(), time.Now()), ShouldBeNil)
+			// set of a filter.  can set their times to anything, as long as its the same
+			filt := filter.MtimeFilter{time.Unix(1000000, 9000)}
+			// scan both filesystems with the transmat
+			commitID1 := transmat.Scan(kind, "./alpha1", nil, integrity.UseFilter(filt))
+			commitID2 := transmat.Scan(kind, "./alpha2", nil, integrity.UseFilter(filt))
+			// should be same
+			So(commitID2, ShouldEqual, commitID1)
 		}),
 	)
 }
