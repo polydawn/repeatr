@@ -12,6 +12,7 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/io/filter"
 	"polydawn.net/repeatr/lib/fshash"
 )
 
@@ -86,7 +87,7 @@ func (t *DirTransmat) Materialize(
 		hasherFactory := sha512.New384
 		bucket := &fshash.MemoryBucket{}
 		localPath := string(siloURI)
-		if err := fshash.FillBucket(localPath, arena.Path(), bucket, hasherFactory); err != nil {
+		if err := fshash.FillBucket(localPath, arena.Path(), bucket, filter.FilterSet{}, hasherFactory); err != nil {
 			panic(err)
 		}
 
@@ -128,6 +129,7 @@ func (t DirTransmat) Scan(
 	var commitID integrity.CommitID
 	try.Do(func() {
 		// Basic validation and config
+		config := integrity.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
@@ -151,7 +153,7 @@ func (t DirTransmat) Scan(
 
 		// walk filesystem, copying and accumulating data for integrity check
 		bucket := &fshash.MemoryBucket{}
-		err := fshash.FillBucket(subjectPath, localPath, bucket, hasherFactory)
+		err := fshash.FillBucket(subjectPath, localPath, bucket, config.FilterSet, hasherFactory)
 		if err != nil {
 			panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
 		}
