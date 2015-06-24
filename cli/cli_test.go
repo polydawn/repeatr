@@ -35,7 +35,7 @@ func Test(t *testing.T) {
 			testutil.RequiresNamespaces,
 			func(c C) {
 				w := testutil.Writer{c}
-				Main(append(baseArgs, "run", "-i", "lib/integration/basic.json"), w, w)
+				Main(append(baseArgs, "run", "-i", "lib/integration/unittest.json"), w, w)
 			},
 		),
 	)
