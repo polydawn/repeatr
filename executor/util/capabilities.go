@@ -1,8 +1,14 @@
 package util
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/polydawn/gosh"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
@@ -39,15 +45,69 @@ func DefaultTransmat() integrity.Transmat {
 }
 
 func BestAssembler() integrity.Assembler {
+	if bestAssembler == nil {
+		bestAssembler = determineBestAssembler()
+	}
+	return bestAssembler
+}
+
+var bestAssembler integrity.Assembler
+
+func determineBestAssembler() integrity.Assembler {
 	if os.Getuid() != 0 {
 		// Can't mount without root.
+		fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: need root privs to use faster systems.\n")
 		return placer.NewAssembler(placer.CopyingPlacer)
 	}
 	if os.Getenv("TRAVIS") != "" {
 		// Travis's own virtualization denies mounting.  whee.
+		fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: travis' environment blocks faster systems.\n")
 		return placer.NewAssembler(placer.CopyingPlacer)
 	}
-	// If we *can* mount, AUFS+Bind is The Winner.
-	return placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(def.Base(), "aufs")))
-	// TODO: fallbacks for mount but not aufs.
+	// If we *can* mount...
+	if isAUFSAvailable() {
+		// if AUFS is installed, AUFS+Bind is The Winner.
+		return placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(def.Base(), "aufs")))
+	}
+	// last fallback... :( copy it is
+	fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: install AUFS to use faster systems.\n")
+	return placer.NewAssembler(placer.CopyingPlacer)
+	// TODO we should be able to use copy for fallback RW isolator but still bind for RO.  write a new placer for that.  or really, maybe bind should chain.
+}
+
+func isAUFSAvailable() bool {
+	// the greatest thing to do would of course just be to issue the syscall once and see if it flies
+	// but that's a distrubingly stateful and messy operation so we're gonna check a bunch
+	// of next-best-things instead.
+
+	// if we can't find it in /proc/filesystems, it's probably not installed
+	if fs, err := ioutil.ReadFile("/proc/filesystems"); err == nil {
+		found := false
+		fsLines := strings.Split(string(fs), "\n")
+		for _, line := range fsLines {
+			parts := strings.Split(line, "\t")
+			if len(parts) < 2 {
+				continue
+			}
+			if parts[1] == "aufs" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	// if we can't find it in modprobe, it's probably not installed
+	modprobeCode := gosh.Sh(
+		"modprobe", "aufs",
+		gosh.NullIO,
+		gosh.Opts{OkExit: gosh.AnyExit},
+	).GetExitCodeSoon(100 * time.Millisecond)
+	if modprobeCode != 0 {
+		return false
+	}
+
+	return true
 }
