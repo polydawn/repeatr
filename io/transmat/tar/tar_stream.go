@@ -11,6 +11,7 @@ import (
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/io/filter"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fshash"
@@ -18,12 +19,12 @@ import (
 )
 
 // Walks `basePath`, hashing it, pushing the encoded tar to `file`, and returning the final hash.
-func Save(file io.Writer, basePath string, hasherFactory func() hash.Hash) string {
+func Save(file io.Writer, basePath string, filterset filter.FilterSet, hasherFactory func() hash.Hash) string {
 	// walk filesystem, copying and accumulating data for integrity check
 	bucket := &fshash.MemoryBucket{}
 	tarWriter := tar.NewWriter(file)
 	defer tarWriter.Close()
-	if err := saveWalk(basePath, tarWriter, bucket, hasherFactory); err != nil {
+	if err := saveWalk(basePath, tarWriter, filterset, bucket, hasherFactory); err != nil {
 		panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
 	}
 
@@ -34,12 +35,14 @@ func Save(file io.Writer, basePath string, hasherFactory func() hash.Hash) strin
 	return base64.URLEncoding.EncodeToString(actualTreeHash)
 }
 
-func saveWalk(srcBasePath string, tw *tar.Writer, bucket fshash.Bucket, hasherFactory func() hash.Hash) error {
+func saveWalk(srcBasePath string, tw *tar.Writer, filterset filter.FilterSet, bucket fshash.Bucket, hasherFactory func() hash.Hash) error {
 	preVisit := func(filenode *fs.FilewalkNode) error {
 		if filenode.Err != nil {
 			return filenode.Err
 		}
 		hdr, file := fs.ScanFile(srcBasePath, filenode.Path, filenode.Info)
+		// apply filters.  on scans, this is pretty easy, all of em just apply to the stream in memory.
+		hdr = filterset.Apply(hdr)
 		// flaten time to seconds.  this tar writer impl doesn't do subsecond precision.
 		// the writer will flatten it internally of course, but we need to do it here as well
 		// so that the hash and the serial form are describing the same thing.

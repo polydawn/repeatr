@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+
+	"polydawn.net/repeatr/io/filter"
 )
 
 /*
@@ -92,6 +94,8 @@ type MaterializerOptions struct {
 
 	ProgressReporter   chan<- float32
 	AcceptHashMismatch bool
+
+	FilterSet filter.FilterSet
 }
 
 type MaterializerConfigurer func(*MaterializerOptions)
@@ -106,6 +110,12 @@ func ProgressReporter(rep chan<- float32) MaterializerConfigurer {
 
 var AcceptHashMismatch = func(opts *MaterializerOptions) {
 	opts.AcceptHashMismatch = true
+}
+
+func UseFilter(filt filter.Filter) MaterializerConfigurer {
+	return func(opts *MaterializerOptions) {
+		opts.FilterSet = opts.FilterSet.Put(filt)
+	}
 }
 
 func EvaluateConfig(options ...MaterializerConfigurer) MaterializerOptions {

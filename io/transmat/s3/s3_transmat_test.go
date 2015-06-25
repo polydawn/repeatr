@@ -23,6 +23,7 @@ func TestCoreCompliance(t *testing.T) {
 		tests.CheckScanWithoutMutation(Kind, New)
 		tests.CheckScanProducesConsistentHash(Kind, New)
 		tests.CheckScanProducesDistinctHashes(Kind, New)
+		tests.CheckScanWithFilters(Kind, New)
 		// round-trip
 		tests.CheckRoundTrip(Kind, New, "s3://repeatr-test/test-"+testRunGuid+"/rt/obj.tar", "literal path")
 		tests.CheckRoundTrip(Kind, New, "s3+splay://repeatr-test/test-"+testRunGuid+"/rt-splay/heap/", "content addressible path")

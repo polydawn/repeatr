@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"polydawn.net/repeatr/io/filter"
 	"polydawn.net/repeatr/testutil"
 )
 
@@ -27,7 +28,7 @@ func Test(t *testing.T) {
 
 			Convey("We can walk and fill a bucket", func() {
 				bucket := &MemoryBucket{}
-				err := FillBucket("src", "", bucket, sha512.New384)
+				err := FillBucket("src", "", bucket, filter.FilterSet{}, sha512.New384)
 				So(err, ShouldBeNil)
 
 				Convey("Then the bucket contains the file descriptions", func() {
@@ -42,7 +43,7 @@ func Test(t *testing.T) {
 
 				Convey("Doing it again produces identical descriptions", func() {
 					bucket2 := &MemoryBucket{}
-					err := FillBucket("src", "", bucket2, sha512.New384)
+					err := FillBucket("src", "", bucket2, filter.FilterSet{}, sha512.New384)
 					So(err, ShouldBeNil)
 
 					So(len(bucket2.lines), ShouldEqual, 5)
@@ -73,12 +74,12 @@ func Test(t *testing.T) {
 
 			Convey("We can walk and make a copy while filling a bucket", func() {
 				bucket := &MemoryBucket{}
-				err := FillBucket("src", "dest", bucket, sha512.New384)
+				err := FillBucket("src", "dest", bucket, filter.FilterSet{}, sha512.New384)
 				So(err, ShouldBeNil)
 
 				Convey("Walking the copy should match on hash", func() {
 					bucket2 := &MemoryBucket{}
-					err := FillBucket("dest", "", bucket2, sha512.New384)
+					err := FillBucket("dest", "", bucket2, filter.FilterSet{}, sha512.New384)
 					So(err, ShouldBeNil)
 
 					hash1 := Hash(bucket, sha512.New384)

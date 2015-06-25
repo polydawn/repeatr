@@ -24,3 +24,45 @@ import (
 type Filter interface {
 	Filter(fs.Metadata) fs.Metadata
 }
+
+/*
+	Keeps a bunch of filters.
+
+	Refers to some of them by name instead of just a slice of interfaces,
+	because frequently transmats, the code that actually consumes filters,
+	may have custom interactions with known types of filters for efficiency
+	reasons (e.g. if uid is filtered, we might be able to just skip calling
+	chown entirely, which means the whole system can run with lower privs).
+*/
+type FilterSet struct {
+	Mtime *MtimeFilter
+	Uid   *UidFilter
+	Gid   *GidFilter
+}
+
+func (fs FilterSet) Apply(hdr fs.Metadata) fs.Metadata {
+	if fs.Mtime != nil {
+		hdr = fs.Mtime.Filter(hdr)
+	}
+	if fs.Uid != nil {
+		hdr = fs.Uid.Filter(hdr)
+	}
+	if fs.Gid != nil {
+		hdr = fs.Gid.Filter(hdr)
+	}
+	return hdr
+}
+
+func (fs FilterSet) Put(filt Filter) FilterSet {
+	switch f2 := filt.(type) {
+	case MtimeFilter:
+		fs.Mtime = &f2
+	case UidFilter:
+		fs.Uid = &f2
+	case GidFilter:
+		fs.Gid = &f2
+	default:
+		panic("unreachable (unrecognized filter)")
+	}
+	return fs
+}

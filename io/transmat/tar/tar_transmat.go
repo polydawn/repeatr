@@ -140,6 +140,7 @@ func (t TarTransmat) Scan(
 	var commitID integrity.CommitID
 	try.Do(func() {
 		// Basic validation and config
+		config := integrity.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
@@ -160,7 +161,7 @@ func (t TarTransmat) Scan(
 		}
 
 		// walk, fwrite, hash
-		commitID = integrity.CommitID(Save(stream, subjectPath, hasherFactory))
+		commitID = integrity.CommitID(Save(stream, subjectPath, config.FilterSet, hasherFactory))
 
 		// commit
 		for _, controller := range controllers {
