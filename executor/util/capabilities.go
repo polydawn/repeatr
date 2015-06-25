@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -55,10 +56,12 @@ var bestAssembler integrity.Assembler
 func determineBestAssembler() integrity.Assembler {
 	if os.Getuid() != 0 {
 		// Can't mount without root.
+		fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: need root privs to use faster systems.\n")
 		return placer.NewAssembler(placer.CopyingPlacer)
 	}
 	if os.Getenv("TRAVIS") != "" {
 		// Travis's own virtualization denies mounting.  whee.
+		fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: travis' environment blocks faster systems.\n")
 		return placer.NewAssembler(placer.CopyingPlacer)
 	}
 	// If we *can* mount...
@@ -67,6 +70,7 @@ func determineBestAssembler() integrity.Assembler {
 		return placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(def.Base(), "aufs")))
 	}
 	// last fallback... :( copy it is
+	fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: install AUFS to use faster systems.\n")
 	return placer.NewAssembler(placer.CopyingPlacer)
 	// TODO we should be able to use copy for fallback RW isolator but still bind for RO.  write a new placer for that.  or really, maybe bind should chain.
 }
