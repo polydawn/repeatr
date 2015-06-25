@@ -90,4 +90,24 @@ func CheckScanWithFilters(kind integrity.TransmatKind, transmatFabFn integrity.T
 			So(commitID2, ShouldEqual, commitID1)
 		}),
 	)
+
+	Convey("SPEC: Filesystems only differing by uid/gid should have same hash after filter", testutil.Requires(
+		testutil.RequiresRoot,
+		func() {
+			transmat := transmatFabFn("./workdir")
+			// set up fixtures
+			filefixture.Alpha.Create("./alpha1")
+			filefixture.Alpha.Create("./alpha2")
+			// overwrite the time on one of them -- can be nonconstant value, even; that's sorta the point.
+			So(os.Chown("./alpha2/a", 908234, 20954), ShouldBeNil)
+			// set of a filter.  can set their times to anything, as long as its the same
+			ufilt := filter.UidFilter{10401}
+			gfilt := filter.GidFilter{10401}
+			// scan both filesystems with the transmat
+			commitID1 := transmat.Scan(kind, "./alpha1", nil, integrity.UseFilter(ufilt), integrity.UseFilter(gfilt))
+			commitID2 := transmat.Scan(kind, "./alpha2", nil, integrity.UseFilter(ufilt), integrity.UseFilter(gfilt))
+			// should be same
+			So(commitID2, ShouldEqual, commitID1)
+		}),
+	)
 }
