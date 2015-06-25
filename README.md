@@ -191,7 +191,30 @@ Try it out
 
 ### Run the Demo
 
-The quickest way to see for yourself what repeatr can do is try the demo included with the repo.
+The quickest way to see for yourself what repeatr can do is try the demo.
+The demo script will show off some basic examples of using repeatr, and doesn't require anything but a repeatr binary.
+
+
+```bash
+# Get repeatr and get the demo script
+wget https://repeatr.s3.amazonaws.com/repeatr
+wget https://repeatr.s3.amazonaws.com/demo.sh
+chmod +x repeatr demo.sh
+# Run the demo!
+sudo ./demo.sh
+```
+
+Note that several sections of repeatr require elevated priviledges to run (sandboxing and mounting);
+as a result, running the demo needs sudo priviledges.
+
+After this, you also have the repeatr binary available, so you can play with it yourself!
+When in doubt, try `repeatr help` or `repeatr [subcommand] help`.
+These should give you more information about what the various commands do and how to use them.
+A great place to start messing around is to grab the config snippets embedded in the demo and run with those;
+there's more example configs in the repo in the `lib/integration/*.json` files.
+
+
+### Run the Demo -- from source!
 
 First, clone our repository and its dependencies, then fire off `demo.sh`:
 
@@ -206,11 +229,6 @@ sudo ./demo.sh
 ```
 
 (This assumes you have a go compiler already -- if not, check out https://golang.org/dl/ and grab the right package for your platform.)
-
-The demo script will show off some basic examples of using repeatr.
-
-Note that several sections of repeatr require elevated priviledges to run (sandboxing and mounting);
-as a result, running the demo needs sudo priviledges.
 
 After this, you also have the repeatr binary available, so you can play with it yourself:
 
@@ -228,7 +246,7 @@ cat lib/integration/basic.json
 tar -tf basic.tar
 ```
 
-When in doubt, try `repeatr help` or `repeatr [subcommand] help`.
+Remember, when in doubt, try `repeatr help` or `repeatr [subcommand] help`.
 These should give you more information about what the various commands do and how to use them.
 
 

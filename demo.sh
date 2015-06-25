@@ -1,7 +1,8 @@
 #!/bin/bash
 set -eo pipefail
 
-if [ -f .gopath/bin/repeatr ]; then PATH=$PWD/.gopath/bin/:$PATH; fi
+if [ -x .gopath/bin/repeatr ]; then PATH=$PWD/.gopath/bin/:$PATH; fi
+if [ -x repeatr ]; then PATH=$PWD:$PATH; fi
 if [ "$1" != "-t" ]; then straight=true; fi; export straight;
 demodir="demo";
 
