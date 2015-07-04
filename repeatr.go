@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/spacemonkeygo/errors"
@@ -87,6 +88,18 @@ func saveErrorReport(caught error) (string, error) {
 	fmt.Fprintf(logFile, "-----------\n")
 	fmt.Fprintf(logFile, "%#v\n", caught)
 	fmt.Fprintf(logFile, "\n")
-	// TODO full stack viewed from here.  yank the formatting stuff from spacemonkey errors
+	// Record the stack.
+	// This is the same string format as golang panics when they crash the program.
+	// Note that if you didn't panic, it's... hard to get any useful data to you.
+	// Even if capturing stacks yourself (or using an error library to do it for you),
+	//  the printing options available for captured stacks as possible for anyone
+	//   outside of the golang core are... limited; the runtime "cheats" here, and
+	//    and doesn't expose the same powers to anyone on the outside.
+	fmt.Fprintf(logFile, "Stack:\n")
+	fmt.Fprintf(logFile, "-----------\n")
+	buf := make([]byte, 1024*1024)
+	n := runtime.Stack(buf, false)
+	fmt.Fprintf(logFile, "%s\n", buf[0:n])
+	fmt.Fprintf(logFile, "\n")
 	return logFile.Name(), nil
 }
