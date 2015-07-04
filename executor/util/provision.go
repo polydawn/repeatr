@@ -93,10 +93,16 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 			scanPath := filepath.Join(rootfs, out.Location)
 			fmt.Fprintf(journal, "Starting scan on %q\n", scanPath)
 			try.Do(func() {
+				// TODO: following is hack; badly need to update config parsing to understand this first-class
+				warehouseCoordsList := make([]integrity.SiloURI, 0)
+				if out.URI != "" {
+					warehouseCoordsList = append(warehouseCoordsList, integrity.SiloURI(out.URI))
+				}
+				// invoke transmat
 				commitID := transmat.Scan(
 					integrity.TransmatKind(out.Type),
 					scanPath,
-					[]integrity.SiloURI{integrity.SiloURI(out.URI)},
+					warehouseCoordsList,
 				)
 				out.Hash = string(commitID)
 				fmt.Fprintf(journal, "Finished scan on %q\n", scanPath)
