@@ -25,7 +25,9 @@ func LoadFormulaFromFile(path string) def.Formula {
 	dec := codec.NewDecoderBytes(content, &codec.JsonHandle{})
 
 	formula := def.Formula{}
-	dec.MustDecode(&formula)
+	if err := dec.Decode(&formula); err != nil {
+		panic(Error.New("Could not parse formula file %q: %s", filename, err))
+	}
 
 	return formula
 }
