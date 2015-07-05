@@ -5,7 +5,9 @@ import (
 	"encoding/base64"
 	"hash"
 	"io"
+	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -92,6 +94,26 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 		}
 		if hdr.AccessTime.IsZero() {
 			hdr.AccessTime = def.Epochwhen
+		}
+		// conjure parents, if necessary.  tar format allows implicit parent dirs.
+		// Note that if any of the implicitly conjured dirs is specified later, unpacking won't notice,
+		// but bucket hashing iteration will (correctly) blow up for repeat entries.
+		// It may well be possible to construct a tar like that, but it's already well established that
+		// tars with repeated filenames are just asking for trouble and shall be rejected without
+		// ceremony because they're just a ridiculous idea.
+		parts := strings.Split(hdr.Name, "/")
+		for i := range parts[:len(parts)-1] {
+			i++
+			_, err := os.Lstat(filepath.Join(append([]string{destBasePath}, parts[:i]...)...))
+			// if it already exists, move along; if the error is anything interesting, let PlaceFile decide how to deal with it
+			if err == nil || !os.IsNotExist(err) {
+				continue
+			}
+			// if we're missing a dir, conjure a node with defaulted values (same as we do for "./")
+			conjuredHdr := fshash.DefaultDirRecord().Metadata
+			conjuredHdr.Name = strings.Join(parts[:i], "/") + "/" // path.Join does cleaning; unwanted.
+			fs.PlaceFile(destBasePath, conjuredHdr, nil)
+			bucket.Record(conjuredHdr, nil)
 		}
 		// place the file
 		switch hdr.Typeflag {
