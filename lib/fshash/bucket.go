@@ -111,9 +111,17 @@ var InvalidParameter *errors.ErrorClass = errors.ProgrammerError.NewClass("Inval
 var DefaultRoot Record
 
 func init() {
-	DefaultRoot = Record{
+	DefaultRoot = DefaultDirRecord()
+	DefaultRoot.Metadata.Name = "./"
+}
+
+/*
+	Returns a new, consistent, "blank" record for a directory.
+	You must assign the `Name` metadata.
+*/
+func DefaultDirRecord() Record {
+	return Record{
 		Metadata: fs.Metadata{
-			Name:       "./",
 			Typeflag:   tar.TypeDir,
 			Mode:       0755,
 			ModTime:    def.Epochwhen,
