@@ -137,6 +137,14 @@ else
 	clean)
 		rm -rf "$GOPATH/bin" "$GOPATH/pkg" "$GOPATH/tmp" "demo"
 		;;
+	sys)
+		# i would call this `install` following make tradition, but, well, `go install` means something different, so.
+		go generate "./..."
+		go install "$pkg"
+		cp "$GOPATH/bin/repeatr" /usr/bin/repeatr
+		ls -la /usr/bin/repeatr
+		repeatr --version
+		;;
 	*)
 		echo "Usage: $0 {init|test|install|exec|fmt|doc|cover|validate|clean}" 1>&2;
 		exit 1
