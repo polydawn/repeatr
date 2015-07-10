@@ -3,7 +3,6 @@ package util
 import (
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 
 	"github.com/spacemonkeygo/errors"
@@ -71,16 +70,19 @@ type materializerReport struct {
 	Err   *errors.Error   // subtype of input.Error.  (others are forbidden by contract and treated as fatal.)
 }
 
-// Output folders should exist
-// TODO: discussion
 func ProvisionOutputs(outputs []def.Output, rootfs string, journal io.Writer) {
-	for _, output := range outputs {
-		path := filepath.Join(rootfs, output.Location)
-		err := os.MkdirAll(path, 0755)
-		if err != nil {
-			panic(errors.IOError.Wrap(err))
-		}
-	}
+	// We no longer make output locations by default.
+	// Originally, this seemed like a good idea, because it would be a
+	//  consistent stance and allow us to use more complex (e.g. mount-powered)
+	//   output shuttling concepts later without any fuss.
+	// However, practically speaking, as a default, this has turned out not to work well.
+	// Other tools in the world expect clear directories.
+	// One example that makes this instantaneously game-over in the real
+	//  world is git: `git clone [url] .` *won't work* if there are any other
+	//   dirs already existing under `.`; and given how frequently projects
+	//    put their build and test outputs in gitignored dirs under their
+	//     project versioning root, we very frequently see outputs pointed there.
+	//      That creates a lot of noise... so we're dropping the behavior.
 }
 
 // Run outputs
