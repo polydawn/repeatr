@@ -84,7 +84,6 @@ func ProvisionOutputs(outputs []def.Output, rootfs string, journal io.Writer) {
 }
 
 // Run outputs
-// TODO: run all simultaneously, waitgroup out the errors
 func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs string, journal io.Writer) []def.Output {
 	// run commit on the outputs
 	scanGather := make(chan scanReport)
