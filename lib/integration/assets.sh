@@ -1,7 +1,13 @@
-#!/bin/bash -e
-
-# A very silly way to resolve some testing assets locally.
-# Improvements or replacements welcome.
+#!/bin/bash
+#
+# Bootstrap assets for testing onto the local filesystem.
+#
+# Test assets bootstrap takes (unusually!) non-CA/DFS coordinates.
+# Many parts of testing and demos do use repeatr's own full content-addressible systems, but
+# these assets are supposed to work in basic tests at the bottom of the stack even when all
+# else fails, so they get special treatment.
+#
+set -eo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$DIR"/../..
@@ -9,9 +15,7 @@ cd "$DIR"/../..
 # Holds convenient downloads. Considered disposable. Can be cached by your CI.
 mkdir -p assets
 
-# Assets really ought to be in a DFS?
-# For now, canonical URL and mandated URL pattern for maximum portability.
-mirrorURL="http://storage.googleapis.com/scitran-dist/assets/repeatr"
+mirrorURL="http://repeatr.s3.amazonaws.com/custom"
 
 # Takes a file and a sha384
 resolveAsset() {
