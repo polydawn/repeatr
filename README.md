@@ -271,3 +271,14 @@ the test suite for these areas will be skipped without root, so to run the *whol
 ```
 sudo ./goad test
 ```
+
+
+### Errata
+
+Repeatr tries to use the most efficient systems available on your host by default.
+Specifically, for making copy-on-write filesystems for isolating jobs, if you have AUFS available,
+repeatr will use it; if you don't, repeatr falls back to doing a (much slower) regular filesystem copy,
+and warn you that it's taking a slow route.
+How you install AUFS may very per system, but on ubuntu `apt-get install aufs-tools && modprobe aufs` should work.
+
+
