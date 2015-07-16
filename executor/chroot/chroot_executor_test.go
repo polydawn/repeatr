@@ -14,9 +14,8 @@ func Test(t *testing.T) {
 		testutil.Requires(
 			testutil.RequiresRoot,
 			testutil.WithTmpdir(func() {
-				execEng := &Executor{
-					workspacePath: "chroot_workspace",
-				}
+				execEng := &Executor{}
+				execEng.Configure("chroot_workspace")
 				So(os.Mkdir(execEng.workspacePath, 0755), ShouldBeNil)
 
 				tests.CheckBasicExecution(execEng)
