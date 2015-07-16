@@ -25,7 +25,12 @@ type Executor struct {
 }
 
 func (e *Executor) Configure(workspacePath string) {
-	e.workspacePath = workspacePath
+	var err error
+	// immediately convert path to absolute.  nsinit rejects non-abs paths.
+	e.workspacePath, err = filepath.Abs(workspacePath)
+	if err != nil {
+		panic(executor.ConfigError.New("could not use workspace path %q: %s", workspacePath, err))
+	}
 }
 
 func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job {
