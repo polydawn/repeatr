@@ -3,6 +3,7 @@ package testutil
 import (
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
@@ -65,7 +66,12 @@ func ShouldBeErrorClass(actual interface{}, expected ...interface{}) string {
 		}
 		class = cls
 	default:
-		return "You must provide zero or one parameters as expectations to this assertion."
+		return "You must provide one parameter as an expectation to this assertion."
+	}
+
+	// checking if this is nil is surprisingly complicated due to https://golang.org/doc/faq#nil_error
+	if reflect.ValueOf(err).IsNil() {
+		return fmt.Sprintf("Expected error to be of class %q but it was nil!", class.String())
 	}
 
 	spaceClass := errors.GetClass(err)
@@ -96,7 +102,7 @@ func ShouldPanicWith(actual interface{}, expected ...interface{}) string {
 		}
 		errClass = cls
 	default:
-		return "You must provide zero or one parameters as expectations to this assertion."
+		return "You must provide one parameter as an expectation to this assertion."
 	}
 
 	var caught error
