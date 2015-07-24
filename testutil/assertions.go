@@ -65,7 +65,7 @@ func ShouldBeErrorClass(actual interface{}, expected ...interface{}) string {
 		}
 		class = cls
 	default:
-		return "You must provide zero or one parameters as expectations to this assertion."
+		return "You must provide one parameter as an expectation to this assertion."
 	}
 
 	spaceClass := errors.GetClass(err)
@@ -96,7 +96,7 @@ func ShouldPanicWith(actual interface{}, expected ...interface{}) string {
 		}
 		errClass = cls
 	default:
-		return "You must provide zero or one parameters as expectations to this assertion."
+		return "You must provide one parameter as an expectation to this assertion."
 	}
 
 	var caught error
