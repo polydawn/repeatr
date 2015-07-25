@@ -8,6 +8,11 @@ import (
 var Error *errors.ErrorClass = errors.NewClass("ExecutorError")
 
 /*
+	Error raised when an executor cannot operate due to invalid setup.
+*/
+var ConfigError *errors.ErrorClass = Error.NewClass("ExecutorConfigError")
+
+/*
 	Error raised when there are serious issues with task launch.
 
 	Occurance of TaskExecError may be due to OS-imposed resource limits

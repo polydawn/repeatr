@@ -88,13 +88,17 @@ func CheckBasicExecution(execEng executor.Executor) {
 			So(job.Wait().ExitCode, ShouldEqual, 14)
 		})
 
-		Convey("The executor should report command not found clearly", func() {
+		Convey("The executor should report command not found clearly", FailureContinues, func() {
 			formula.Accents = def.Accents{
 				Entrypoint: []string{"not a command"},
 			}
 
-			result := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard).Wait()
-			So(result.Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
+			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
+			So(job.Wait().ExitCode, ShouldEqual, -1)
+			msg, err := ioutil.ReadAll(job.OutputReader())
+			So(err, ShouldBeNil)
+			So(string(msg), ShouldEqual, "")
 		})
 	})
 }

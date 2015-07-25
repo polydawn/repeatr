@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
@@ -25,7 +26,12 @@ type Executor struct {
 }
 
 func (e *Executor) Configure(workspacePath string) {
-	e.workspacePath = workspacePath
+	var err error
+	// immediately convert path to absolute.  nsinit rejects non-abs paths.
+	e.workspacePath, err = filepath.Abs(workspacePath)
+	if err != nil {
+		panic(executor.ConfigError.New("could not use workspace path %q: %s", workspacePath, err))
+	}
 }
 
 func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job {
@@ -112,6 +118,9 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	// Where our system image exists
 	args = append(args, "--rootfs", rootfs)
 
+	// Set cwd
+	args = append(args, "--cwd", f.Accents.Cwd)
+
 	// Add all desired environment variables
 	for k, v := range f.Accents.Env {
 		args = append(args, "--env", k+"="+v)
@@ -137,10 +146,43 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	defer assembly.Teardown() // What ever happens: Disassemble filesystem
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)
 
-	err := cmd.Run()
-	if err != nil {
-		panic(err)
-	}
+	// launch execution.
+	// transform gosh's typed errors to repeatr's hierarchical errors.
+	// this is... not untroubled code: since we're invoking a helper that's then
+	//  proxying the exec even further, most errors are fatal (the mapping here is
+	//   very different than in e.g. chroot executor, and provides much less meaning).
+	var proc gosh.Proc
+	try.Do(func() {
+		proc = gosh.ExecProcCmd(cmd)
+	}).CatchAll(func(err error) {
+		switch err.(type) {
+		case gosh.NoSuchCommandError:
+			panic(executor.ConfigError.New("nsinit binary is missing"))
+		case gosh.NoArgumentsError:
+			panic(executor.UnknownError.Wrap(err))
+		case gosh.NoSuchCwdError:
+			panic(executor.UnknownError.Wrap(err))
+		case gosh.ProcMonitorError:
+			panic(executor.TaskExecError.Wrap(err))
+		default:
+			panic(executor.UnknownError.Wrap(err))
+		}
+	}).Done()
+
+	// Wait for the job to complete
+	// REVIEW: consider exposing `gosh.Proc`'s interface as part of repeatr's job tracking api?
+	result.ExitCode = proc.GetExitCode()
+
+	// Horrifyingly ambiguous attempts to detect failure modes from inside nsinit.
+	// This can only be made correct by pushing patches into nsinit to use another channel for control data reporting that is completely separated from user data flows.
+	// (Or, arguably, putting another layer of control processes as the first parent inside nsinit, but that's ducktape within a ducktape mesh; let's not.)
+	// Certain program outputs may be incorrectly attributed as launch failure, though this should be... "unlikely".
+	// Also note that if we ever switch to non-blocking execution, this will become even more of a mess: we won't be able to tell if exec failed, esp. in the case of e.g. a long running process with no output, and so we won't know when it's safe to return.
+
+	// TODO handle the following leading strings:
+	// - "exec: \"%s\": executable file not found in $PATH\n"
+	// - "no such file or directory\n"
+	// this will probably require rejiggering a whole bunch of stuff so that the streamer is reachable down here.
 
 	// Save outputs
 	result.Outputs = util.PreserveOutputs(transmat, f.Outputs, rootfs, journal)
