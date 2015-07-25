@@ -118,6 +118,9 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	// Where our system image exists
 	args = append(args, "--rootfs", rootfs)
 
+	// Set cwd
+	args = append(args, "--cwd", f.Accents.Cwd)
+
 	// Add all desired environment variables
 	for k, v := range f.Accents.Env {
 		args = append(args, "--env", k+"="+v)
