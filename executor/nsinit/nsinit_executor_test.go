@@ -13,6 +13,7 @@ func Test(t *testing.T) {
 	Convey("Spec Compliance: nsinit Executor", t,
 		testutil.Requires(
 			testutil.RequiresRoot,
+			testutil.RequiresNamespaces,
 			testutil.WithTmpdir(func() {
 				execEng := &Executor{}
 				execEng.Configure("nsinit_workspace")
