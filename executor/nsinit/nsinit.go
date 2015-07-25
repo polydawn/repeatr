@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
@@ -142,10 +143,32 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	defer assembly.Teardown() // What ever happens: Disassemble filesystem
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)
 
-	err := cmd.Run()
-	if err != nil {
-		panic(err)
-	}
+	// launch execution.
+	// transform gosh's typed errors to repeatr's hierarchical errors.
+	// this is... not untroubled code: since we're invoking a helper that's then
+	//  proxying the exec even further, most errors are fatal (the mapping here is
+	//   very different than in e.g. chroot executor, and provides much less meaning).
+	var proc gosh.Proc
+	try.Do(func() {
+		proc = gosh.ExecProcCmd(cmd)
+	}).CatchAll(func(err error) {
+		switch err.(type) {
+		case gosh.NoSuchCommandError:
+			panic(executor.ConfigError.New("nsinit binary is missing"))
+		case gosh.NoArgumentsError:
+			panic(executor.UnknownError.Wrap(err))
+		case gosh.NoSuchCwdError:
+			panic(executor.UnknownError.Wrap(err))
+		case gosh.ProcMonitorError:
+			panic(executor.TaskExecError.Wrap(err))
+		default:
+			panic(executor.UnknownError.Wrap(err))
+		}
+	}).Done()
+
+	// Wait for the job to complete
+	// REVIEW: consider exposing `gosh.Proc`'s interface as part of repeatr's job tracking api?
+	result.ExitCode = proc.GetExitCode()
 
 	// Save outputs
 	result.Outputs = util.PreserveOutputs(transmat, f.Outputs, rootfs, journal)
