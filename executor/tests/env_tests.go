@@ -43,7 +43,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 			)
 		})
 
-		Convey("Setting a nonexistent cwd should fail to launch", func() {
+		Convey("Setting a nonexistent cwd should fail to launch", FailureContinues, func() {
 			formula.Accents = def.Accents{
 				Cwd:        "/does/not/exist/by/any/means",
 				Entrypoint: []string{"pwd"},
