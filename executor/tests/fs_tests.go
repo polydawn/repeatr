@@ -26,7 +26,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 			formula.Accents = def.Accents{
 				Entrypoint: []string{"/bin/true"},
 			}
-			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -36,7 +36,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 					Entrypoint: []string{"ls", "/data/test"},
 				}
 
-				job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+				job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 				So(job, ShouldNotBeNil)
 				So(job.Wait().Error, ShouldBeNil)
 				So(job.Wait().ExitCode, ShouldEqual, 0)

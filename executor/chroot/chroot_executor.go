@@ -29,7 +29,7 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job {
+func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal io.Writer) def.Job {
 
 	// Prepare the forumla for execution on this host
 	def.ValidateAll(&f)
@@ -56,7 +56,7 @@ func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job
 			// Job is ready to stream process output
 			close(jobReady)
 
-			job.Result = e.Run(f, job, dir, outS, errS, journal)
+			job.Result = e.Run(f, job, dir, stdin, outS, errS, journal)
 		}, e.workspacePath, "job", string(job.Id()))
 
 		// Directory is clean; job complete
@@ -68,14 +68,14 @@ func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job
 }
 
 // Executes a job, catching any panics.
-func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser, journal io.Writer) def.JobResult {
+func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS, errS io.WriteCloser, journal io.Writer) def.JobResult {
 	r := def.JobResult{
 		ID:       j.Id(),
 		ExitCode: -1,
 	}
 
 	try.Do(func() {
-		e.Execute(f, j, d, &r, outS, errS, journal)
+		e.Execute(f, j, d, &r, stdin, outS, errS, journal)
 	}).Catch(executor.Error, func(err *errors.Error) {
 		r.Error = err
 	}).Catch(integrity.Error, func(err *errors.Error) {
@@ -88,7 +88,7 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCl
 }
 
 // Execute a formula in a specified directory. MAY PANIC.
-func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobResult, outS, errS io.WriteCloser, journal io.Writer) {
+func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobResult, stdin io.Reader, outS, errS io.WriteCloser, journal io.Writer) {
 	// Prepare filesystem
 	rootfs := filepath.Join(d, "rootfs")
 	transmat := util.DefaultTransmat()
@@ -122,7 +122,7 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	// initialization already required by earlier 'validate' calls.
 	cmd.Env = envToSlice(f.Accents.Env)
 
-	cmd.Stdin = nil
+	cmd.Stdin = stdin
 	cmd.Stdout = outS
 	cmd.Stderr = errS
 

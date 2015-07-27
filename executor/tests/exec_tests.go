@@ -41,7 +41,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 		}
 
 		Convey("We should get an error from the warehouse", func() {
-			result := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard).Wait()
+			result := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard).Wait()
 			So(result.Error, testutil.ShouldBeErrorClass, integrity.WarehouseError)
 		})
 
@@ -49,7 +49,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 			formula.Accents = def.Accents{
 				Entrypoint: []string{"echo", "echococo"},
 			}
-			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldNotBeNil)
 			// Even though one should clearly also check the error status,
@@ -66,7 +66,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 				Entrypoint: []string{"echo", "echococo"},
 			}
 
-			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 			So(job, ShouldNotBeNil)
 			// note that we can read output concurrently.
 			// no need to wait for job done.
@@ -82,7 +82,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 				Entrypoint: []string{"sh", "-c", "exit 14"},
 			}
 
-			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 14)
@@ -93,7 +93,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 				Entrypoint: []string{"not a command"},
 			}
 
-			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
 			So(job.Wait().ExitCode, ShouldEqual, -1)
 			msg, err := ioutil.ReadAll(job.OutputReader())

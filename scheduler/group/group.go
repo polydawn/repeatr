@@ -63,7 +63,7 @@ func (s *Scheduler) Schedule(f def.Formula) (def.JobID, <-chan def.Job) {
 func (s *Scheduler) Run() {
 	for h := range s.queue {
 		journal := s.jobLoggerFactory(h.id) // TODO replace with real logging framework
-		job := s.executor.Start(h.forumla, h.id, journal)
+		job := s.executor.Start(h.forumla, h.id, nil, journal)
 		h.response <- job
 		job.Wait()
 	}
