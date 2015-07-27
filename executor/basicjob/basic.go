@@ -4,12 +4,13 @@ import (
 	"io"
 
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/streamer"
 )
 
 type BasicJob struct {
 	ID def.JobID
 
-	Reader io.Reader
+	Streams streamer.ROMux
 
 	// Only valid to read after Wait()
 	Result def.JobResult
@@ -23,7 +24,11 @@ func (j *BasicJob) Id() def.JobID {
 }
 
 func (j *BasicJob) OutputReader() io.Reader {
-	return j.Reader
+	return j.Streams.Reader(1, 2)
+}
+
+func (j *BasicJob) Outputs() streamer.ROMux {
+	return j.Streams
 }
 
 func (j *BasicJob) Wait() def.JobResult {

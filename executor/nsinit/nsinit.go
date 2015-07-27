@@ -51,7 +51,7 @@ func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job
 			strm = streamer.CborFileMux(filepath.Join(dir, "log"))
 			outS := strm.Appender(1)
 			errS := strm.Appender(2)
-			job.Reader = strm.Reader(1, 2)
+			job.Streams = strm
 			defer func() {
 				// Regardless of how the job ends (or even if it fails the remaining setup), output streams must be terminated.
 				outS.Close()
