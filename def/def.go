@@ -31,8 +31,8 @@
 	- The root filesystem of your execution engine is just another `Input` with the rest, with Location="/".
 	Exactly one input with the root location is required at runtime.
 
-	- Formula.SchedulingInfo, since it's *not* included in the 'conjecture', is clearly not expected to have a major impact on your execution correctness.
-	This is probably an assumption that's sometimes broken (vms can do more than containers, for example); if so, consider using the
+	- Formula.SchedulingInfo, since it's *not* included in the 'conjecture',
+	is expected not to have a major impact on your execution correctness.
 */
 package def
 
