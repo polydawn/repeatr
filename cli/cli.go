@@ -22,6 +22,7 @@ func Main(args []string, journal, output io.Writer) {
 	App.Commands = []cli.Command{
 		RunCommandPattern(),
 		ScanCommandPattern(output),
+		TwerkCommandPattern(os.Stdin, output, output), // FIXME this is too much loss of precision already
 	}
 
 	// Reporting "no help topic for 'zyx'" and exiting with a *zero* is... silly.
