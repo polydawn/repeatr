@@ -1,9 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-GITCOMMIT="$(git rev-parse --short HEAD)"
-if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-	GITCOMMIT="$GITCOMMIT-dirty"
+GITCOMMIT=${GITCOMMIT:-}
+if [ -z "$GITCOMMIT" ]; then
+	GITCOMMIT="$(git rev-parse --short HEAD)}"
+	if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+		GITCOMMIT="$GITCOMMIT-dirty"
+	fi
 fi
 BUILDDATE="$(date --rfc-2822)"
 
