@@ -40,6 +40,7 @@ import (
 	"io"
 
 	"github.com/spacemonkeygo/errors"
+	"polydawn.net/repeatr/lib/streamer"
 )
 
 /*
@@ -192,8 +193,16 @@ type Job interface {
 	/*
 		Returns a new reader that delivers the combined stdout and
 		stderr of a command, from the beginning of execution.
+
+		Shorthand for `Outputs().Reader(1, 2)`.
 	*/
 	OutputReader() io.Reader
+
+	/*
+		Returns a mux of readable streams.  Numbering is as typical
+		unix convention (1=stdout, 2=stderr, etc).
+	*/
+	Outputs() streamer.ROMux
 
 	/*
 		Waits for completion if necessary, then returns the job's results

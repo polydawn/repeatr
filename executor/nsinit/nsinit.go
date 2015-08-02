@@ -34,7 +34,7 @@ func (e *Executor) Configure(workspacePath string) {
 	}
 }
 
-func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job {
+func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal io.Writer) def.Job {
 
 	// Prepare the forumla for execution on this host
 	def.ValidateAll(&f)
@@ -51,7 +51,7 @@ func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job
 			strm = streamer.CborFileMux(filepath.Join(dir, "log"))
 			outS := strm.Appender(1)
 			errS := strm.Appender(2)
-			job.Reader = strm.Reader(1, 2)
+			job.Streams = strm
 			defer func() {
 				// Regardless of how the job ends (or even if it fails the remaining setup), output streams must be terminated.
 				outS.Close()
@@ -61,7 +61,7 @@ func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job
 			// Job is ready to stream process output
 			close(jobReady)
 
-			job.Result = e.Run(f, job, dir, outS, errS, journal)
+			job.Result = e.Run(f, job, dir, stdin, outS, errS, journal)
 		}, e.workspacePath, "job", string(job.Id()))
 
 		// Directory is clean; job complete
@@ -73,7 +73,7 @@ func (e *Executor) Start(f def.Formula, id def.JobID, journal io.Writer) def.Job
 }
 
 // Executes a job, catching any panics.
-func (e *Executor) Run(f def.Formula, j def.Job, d string, outS, errS io.WriteCloser, journal io.Writer) def.JobResult {
+func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS, errS io.WriteCloser, journal io.Writer) def.JobResult {
 	r := def.JobResult{
 		ID:       j.Id(),
 		ExitCode: -1,

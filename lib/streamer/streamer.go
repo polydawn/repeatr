@@ -9,3 +9,7 @@ type Mux interface {
 
 	Reader(labels ...int) io.Reader
 }
+
+type ROMux interface {
+	Reader(labels ...int) io.Reader
+}

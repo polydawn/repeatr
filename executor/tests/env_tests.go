@@ -49,7 +49,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 				Entrypoint: []string{"pwd"},
 			}
 
-			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldNotBeNil)
 			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.TaskExecError)
@@ -75,7 +75,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 			os.Setenv("REPEATR_TEST_KEY_1", "test value")
 			defer os.Unsetenv("REPEATR_TEST_KEY_1") // using unique strings per test anyway, because this is too scary
 
-			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -88,7 +88,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 			formula.Accents.Env = make(map[string]string)
 			formula.Accents.Env["REPEATR_TEST_KEY_2"] = "test value"
 
-			job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -101,7 +101,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 }
 
 func soExpectSuccessAndOutput(execEng executor.Executor, formula def.Formula, output string) {
-	job := execEng.Start(formula, def.JobID(guid.New()), ioutil.Discard)
+	job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 	So(job, ShouldNotBeNil)
 	So(job.Wait().Error, ShouldBeNil)
 	So(job.Wait().ExitCode, ShouldEqual, 0)
