@@ -25,7 +25,7 @@ Script="$(cat <<-'EOF'
 	./goad install
 EOF
 )"
-Script="$(echo "${Script}" | jq -s -R .)"
+Script="$(echo "${Script}" | tr -d "\t" | grep -v "^#" | tr -s "\n" ";" | sed "s/\"/\\\\\"/g")"
 Formula="$(cat <<-EOF
 {
 	"Inputs": [{
@@ -45,7 +45,7 @@ Formula="$(cat <<-EOF
 		"URI": "./"
 	}],
 	"Accents": {
-		"Entrypoint": [ "/bin/bash", "-c", ${Script} ],
+		"Entrypoint": [ "/bin/bash", "-c", "${Script}" ],
 		"Cwd": "/task/repeatr/"
 	},
 	"Outputs": [{
