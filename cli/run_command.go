@@ -53,6 +53,11 @@ func Run(executor executor.Executor, scheduler scheduler.Scheduler, formulaPaths
 
 	// TODO Don't reeeeally want the 'run once' command going through the schedulers.
 	//  Having a path that doesn't invoke that complexity unnecessarily, and also is more clearly allowed to use the current terminal, is want.
+	// TODO / NOTE : yeah, this is still worryingly ambiguous:
+	//  - Current behavior is to emit nothing for outputs on failed jobs, whic his... not unlikely to bork your shell scripts
+	//  - Current behavior only returns non-zero exits on major failure to launch/monitor... not if jobs exit nonzero, which is likely to bork your shell scripts
+	//  - If you actually *use* the multi-formula feature, your outputs are not going to be fun to re-demux.
+	//  Increasingly it seems like this idea of multiple formulae through a single shell command should be removed outright.  The API of a single CLI command isn't up to it.
 
 	// Prepare to collect results.
 	results := make(chan def.JobResult)
