@@ -46,6 +46,33 @@ func ShouldBeFile(actual interface{}, expected ...interface{}) string {
 }
 
 /*
+	'actual' should be path.  Expects no file (or dir) at path.
+*/
+func ShouldBeNotFile(actual interface{}, expected ...interface{}) string {
+	filename, ok := actual.(string)
+	if !ok {
+		return "You must provide a filename as the first argument to this assertion."
+	}
+
+	switch len(expected) {
+	case 0:
+		break
+	default:
+		return "You must provide zero parameters as expectations to this assertion."
+	}
+
+	info, err := os.Stat(filename)
+	if err == nil {
+		modeType := info.Mode() & os.ModeType
+		return fmt.Sprintf("Expected file not to exist but it had mode %v instead!", modeType)
+	}
+	if os.IsNotExist(err) {
+		return ""
+	}
+	return err.Error()
+}
+
+/*
 	'actual' should be an `*errors.Error`; 'expected' should be an `*errors.ErrorClass`;
 	we'll check that the error is under the umbrella of the error class.
 */

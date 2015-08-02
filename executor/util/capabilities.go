@@ -14,6 +14,7 @@ import (
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/placer"
 	"polydawn.net/repeatr/io/transmat/dir"
+	"polydawn.net/repeatr/io/transmat/git"
 	"polydawn.net/repeatr/io/transmat/s3"
 	"polydawn.net/repeatr/io/transmat/tar"
 	"polydawn.net/repeatr/io/transmat/tarexec"
@@ -40,6 +41,7 @@ func DefaultTransmat() integrity.Transmat {
 		integrity.TransmatKind("tar"):      dirCacher,
 		integrity.TransmatKind("exec-tar"): tarexec.New(filepath.Join(workDir, "tarexec")),
 		integrity.TransmatKind("s3"):       dirCacher,
+		integrity.TransmatKind("git"):      git.New(filepath.Join(workDir, "git")),
 	})
 	return universalTransmat
 }

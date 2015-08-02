@@ -63,6 +63,30 @@ func WithTmpdir(fn func()) func() {
 }
 
 /*
+	Calls `fn` after chdir'ing to `dir`, and resets chdir on return.
+
+	`dir` is expected to already exist, and will not be removed on return.
+*/
+func UsingDir(dir string, fn func()) {
+	retreat, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	if originalDir == "" {
+		originalDir = retreat
+	}
+
+	defer os.Chdir(retreat)
+
+	err = os.Chdir(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	fn()
+}
+
+/*
 	Returns the first cwd, before anyone ever `WithTmpdir`'d.
 
 	For most tests, this will be the test package directory in the source tree.
