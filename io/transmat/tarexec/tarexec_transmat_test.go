@@ -13,6 +13,7 @@ func TestCoreCompliance(t *testing.T) {
 	Convey("Spec Compliance: TarExec Transmat", t, testutil.WithTmpdir(func() {
 		// scanning
 		tests.CheckScanWithoutMutation(integrity.TransmatKind("tar"), New)
+		tests.CheckScanEmptyIsCalm(Kind, New)
 		// WILL NOT PASS (no hashes!) -- tests.CheckScanProducesConsistentHash(integrity.TransmatKind("tar"), New)
 		// WILL NOT PASS (no hashes!) -- tests.CheckScanProducesDistinctHashes(integrity.TransmatKind("tar"), New)
 		// round-trip

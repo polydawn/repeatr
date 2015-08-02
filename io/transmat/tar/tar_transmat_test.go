@@ -16,6 +16,7 @@ func TestCoreCompliance(t *testing.T) {
 		tests.CheckScanWithoutMutation(Kind, New)
 		tests.CheckScanProducesConsistentHash(Kind, New)
 		tests.CheckScanProducesDistinctHashes(Kind, New)
+		tests.CheckScanEmptyIsCalm(Kind, New)
 		tests.CheckScanWithFilters(Kind, New)
 		// round-trip (with relative paths)
 		tests.CheckRoundTrip(Kind, New, "file://bounce", "file literal", "relative")

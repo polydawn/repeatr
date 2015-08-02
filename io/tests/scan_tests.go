@@ -71,6 +71,14 @@ func CheckScanProducesDistinctHashes(kind integrity.TransmatKind, transmatFabFn 
 	)
 }
 
+func CheckScanEmptyIsCalm(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
+	Convey("SPEC: Scanning a nonexistent filesystem should return an empty commitID", func() {
+		transmat := transmatFabFn("./workdir")
+		commitID := transmat.Scan(kind, "./does-not-exist", nil)
+		So(commitID, ShouldEqual, "")
+	})
+}
+
 func CheckScanWithFilters(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
 	Convey("SPEC: Filesystems only differing by mtime should have same hash after mtime filter", testutil.Requires(
 		testutil.RequiresRoot,

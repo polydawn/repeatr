@@ -114,6 +114,17 @@ func (t TarExecTransmat) Scan(
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
+		// If scan area doesn't exist, bail immediately.
+		// No need to even start dialing warehouses if we've got nothing for em.
+		_, err := os.Stat(subjectPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return // empty commitID
+			} else {
+				panic(err)
+			}
+		}
+
 		// Parse save locations.
 		//  (Most transmats do... significantly smarter things than this backwater.)
 		var localPath string

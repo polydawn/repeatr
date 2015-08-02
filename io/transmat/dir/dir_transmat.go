@@ -134,6 +134,17 @@ func (t DirTransmat) Scan(
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
+		// If scan area doesn't exist, bail immediately.
+		// No need to even start dialing warehouses if we've got nothing for em.
+		_, err := os.Stat(subjectPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return // empty commitID
+			} else {
+				panic(err)
+			}
+		}
+
 		// Parse save locations.
 		// This transmat only supports one output location at a time due
 		//  to Old code we haven't invested in refactoring yet.
@@ -153,7 +164,7 @@ func (t DirTransmat) Scan(
 
 		// walk filesystem, copying and accumulating data for integrity check
 		bucket := &fshash.MemoryBucket{}
-		err := fshash.FillBucket(subjectPath, localPath, bucket, config.FilterSet, hasherFactory)
+		err = fshash.FillBucket(subjectPath, localPath, bucket, config.FilterSet, hasherFactory)
 		if err != nil {
 			panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
 		}
