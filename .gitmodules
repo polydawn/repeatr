@@ -22,3 +22,9 @@
 [submodule ".gopath/src/github.com/rlmcpherson/s3gof3r"]
 	path = .gopath/src/github.com/rlmcpherson/s3gof3r
 	url = https://github.com/rlmcpherson/s3gof3r.git
+[submodule ".gopath/src/github.com/inconshreveable/log15"]
+	path = .gopath/src/github.com/inconshreveable/log15
+	url = https://github.com/inconshreveable/log15.git
+[submodule ".gopath/src/github.com/mattn/go-colorable"]
+	path = .gopath/src/github.com/mattn/go-colorable
+	url = https://github.com/mattn/go-colorable.git
