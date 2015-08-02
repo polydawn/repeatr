@@ -49,8 +49,8 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, 
 	s.Start()
 
 	// Set up a logger.
-	logger := log15.New()
-	logger.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
+	log := log15.New()
+	log.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
 
 	// Queue each job as the scheduler deigns to read from the channel
 	var wg sync.WaitGroup
@@ -62,7 +62,7 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, 
 		go func() {
 			defer wg.Done()
 
-			log := log15.New(log15.Ctx{"JobID": id})
+			log := log.New(log15.Ctx{"JobID": id})
 
 			log.Info("Job queued")
 			job := <-jobChan
