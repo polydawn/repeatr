@@ -58,7 +58,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			fmt.Fprintf(output, "%s\n", string(msg))
 			// Exit nonzero with our own "your job did not report success" indicator code, if applicable.
 			if result.ExitCode != 0 {
-				panic(Error.NewWith("job finished with non-zero exit status", SetExitCode(EXIT_JOB)))
+				panic(Exit.NewWith("job finished with non-zero exit status", SetExitCode(EXIT_JOB)))
 			}
 		},
 	}

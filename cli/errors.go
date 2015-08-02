@@ -36,3 +36,10 @@ var Error *errors.ErrorClass = errors.NewClass("CLIError")
 func SetExitCode(code ExitCode) errors.ErrorOption {
 	return errors.SetData(ExitCodeKey, code)
 }
+
+/*
+	Exit errors may be raised to immediately transition to we're done (and
+	specify an `ExitCode`), but generate slightly less of a sadface than
+	`cli.Error`: use them for graceful exits.
+*/
+var Exit *errors.ErrorClass = Error.NewClass("Exit")
