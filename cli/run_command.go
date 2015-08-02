@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 
 	"github.com/codegangsta/cli"
@@ -38,12 +40,12 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			executor := executordispatch.Get(c.String("executor"))
 			scheduler := schedulerdispatch.Get(c.String("scheduler"))
 			formulaPaths := c.StringSlice("input")
-			Run(executor, scheduler, formulaPaths, c.App.Writer)
+			Run(executor, scheduler, formulaPaths, c.App.Writer, output)
 		},
 	}
 }
 
-func Run(executor executor.Executor, scheduler scheduler.Scheduler, formulaPaths []string, journal io.Writer) {
+func Run(executor executor.Executor, scheduler scheduler.Scheduler, formulaPaths []string, journal io.Writer, output io.Writer) {
 	var formulae []def.Formula
 	for _, path := range formulaPaths {
 		formulae = append(formulae, LoadFormulaFromFile(path))
@@ -52,10 +54,25 @@ func Run(executor executor.Executor, scheduler scheduler.Scheduler, formulaPaths
 	// TODO Don't reeeeally want the 'run once' command going through the schedulers.
 	//  Having a path that doesn't invoke that complexity unnecessarily, and also is more clearly allowed to use the current terminal, is want.
 
-	if !RunFormulae(scheduler, executor, journal, formulae...) {
+	// Prepare to collect results.
+	results := make(chan def.JobResult)
+
+	// Output... as we go, yes.
+	// Note that all other logs, progress, terminals, etc are all routed to "journal" (typically, stderr),
+	//  while this output is routed to "output" (typically, stdout), so it can be piped and parsed mechanically.
+	go func() {
+		// Sync note: `results` being unbuffered is critical to this being always run before the terminal return of RunFormulae.
+		for result := range results {
+			msg, err := json.Marshal(result.Outputs)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Fprintf(output, "%s\n", string(msg))
+			// consider: should exit code maybe be added to def.Formula for record keeping...?
+		}
+	}()
+
+	if !RunFormulae(scheduler, executor, journal, results, formulae...) {
 		panic(Error.NewWith("not all jobs completed successfully", SetExitCode(EXIT_USER)))
 	}
-
-	// output
-	// TODO NEED JSON DESCRIPTION OF OUTPUTS TO BE EMITTED
 }

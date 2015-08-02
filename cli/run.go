@@ -33,7 +33,7 @@ func LoadFormulaFromFile(path string) def.Formula {
 	return formula
 }
 
-func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, f ...def.Formula) (allclear bool) {
+func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, results chan<- def.JobResult, f ...def.Formula) (allclear bool) {
 	allclear = true // set to false on the first instance of a problem
 
 	jobLoggerFactory := func(_ def.JobID) io.Writer {
@@ -85,6 +85,7 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, 
 					"exit":    result.ExitCode,
 					"outputs": result.Outputs,
 				})
+				results <- result
 			}
 		}()
 	}
