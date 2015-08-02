@@ -29,12 +29,17 @@ func RunCommandPattern(output io.Writer) cli.Command {
 				Name:  "input, i",
 				Usage: "Location of input formula (json format)",
 			},
+			cli.BoolFlag{
+				Name:  "ignore-job-exit",
+				Usage: "If true, repeatr will exit with 0/success even if the job exited nonzero.",
+			},
 		},
 		Action: func(ctx *cli.Context) {
 			// Parse args
 			executor := executordispatch.Get(ctx.String("executor"))
 			scheduler := schedulerdispatch.Get(ctx.String("scheduler"))
 			formulaPaths := ctx.String("input")
+			ignoreJobExit := ctx.Bool("ignore-job-exit")
 			// Parse formula
 			formula := LoadFormulaFromFile(formulaPaths)
 
@@ -57,7 +62,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			}
 			fmt.Fprintf(output, "%s\n", string(msg))
 			// Exit nonzero with our own "your job did not report success" indicator code, if applicable.
-			if result.ExitCode != 0 {
+			if result.ExitCode != 0 && !ignoreJobExit {
 				panic(Exit.NewWith("job finished with non-zero exit status", SetExitCode(EXIT_JOB)))
 			}
 		},
