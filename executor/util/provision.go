@@ -2,9 +2,9 @@ package util
 
 import (
 	"fmt"
-	"io"
 	"path/filepath"
 
+	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 	"polydawn.net/repeatr/def"
@@ -12,25 +12,25 @@ import (
 )
 
 // Run inputs
-func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assembler, inputs []def.Input, rootfs string, journal io.Writer) integrity.Assembly {
+func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assembler, inputs []def.Input, rootfs string, journal log15.Logger) integrity.Assembly {
 	// start having all filesystems
 	filesystems := make(map[def.Input]integrity.Arena, len(inputs))
 	fsGather := make(chan map[def.Input]materializerReport)
 	for _, in := range inputs {
 		go func(in def.Input) {
 			try.Do(func() {
-				fmt.Fprintf(journal, "Starting materialize for %s hash=%s\n", in.Type, in.Hash)
+				journal.Info(fmt.Sprintf("Starting materialize for %s hash=%s", in.Type, in.Hash))
 				arena := transmat.Materialize(
 					integrity.TransmatKind(in.Type),
 					integrity.CommitID(in.Hash),
 					[]integrity.SiloURI{integrity.SiloURI(in.URI)},
 				)
-				fmt.Fprintf(journal, "Finished materialize for %s hash=%s\n", in.Type, in.Hash)
+				journal.Info(fmt.Sprintf("Finished materialize for %s hash=%s", in.Type, in.Hash))
 				fsGather <- map[def.Input]materializerReport{
 					in: {Arena: arena},
 				}
 			}).Catch(integrity.Error, func(err *errors.Error) {
-				fmt.Fprintf(journal, "Errored during materialize for %s hash=%s -- %s\n", in.Type, in.Hash, err)
+				journal.Warn(fmt.Sprintf("Errored during materialize for %s hash=%s", in.Type, in.Hash), "error", err)
 				fsGather <- map[def.Input]materializerReport{
 					in: {Err: err},
 				}
@@ -49,7 +49,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 			filesystems[in] = report.Arena
 		}
 	}
-	fmt.Fprintf(journal, "All inputs acquired... starting assembly\n")
+	journal.Info("All inputs acquired... starting assembly")
 
 	// assemble them into the final tree
 	assemblyParts := make([]integrity.AssemblyPart, 0, len(filesystems))
@@ -61,7 +61,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 		})
 	}
 	assembly := assemblerFn(rootfs, assemblyParts)
-	fmt.Fprintf(journal, "Assembly complete!\n")
+	journal.Info("Assembly complete!")
 	return assembly
 }
 
@@ -70,7 +70,7 @@ type materializerReport struct {
 	Err   *errors.Error   // subtype of input.Error.  (others are forbidden by contract and treated as fatal.)
 }
 
-func ProvisionOutputs(outputs []def.Output, rootfs string, journal io.Writer) {
+func ProvisionOutputs(outputs []def.Output, rootfs string, journal log15.Logger) {
 	// We no longer make output locations by default.
 	// Originally, this seemed like a good idea, because it would be a
 	//  consistent stance and allow us to use more complex (e.g. mount-powered)
@@ -86,13 +86,13 @@ func ProvisionOutputs(outputs []def.Output, rootfs string, journal io.Writer) {
 }
 
 // Run outputs
-func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs string, journal io.Writer) []def.Output {
+func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs string, journal log15.Logger) []def.Output {
 	// run commit on the outputs
 	scanGather := make(chan scanReport)
 	for _, out := range outputs {
 		go func(out def.Output) {
 			scanPath := filepath.Join(rootfs, out.Location)
-			fmt.Fprintf(journal, "Starting scan on %q\n", scanPath)
+			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
 			try.Do(func() {
 				// TODO: following is hack; badly need to update config parsing to understand this first-class
 				warehouseCoordsList := make([]integrity.SiloURI, 0)
@@ -106,10 +106,10 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 					warehouseCoordsList,
 				)
 				out.Hash = string(commitID)
-				fmt.Fprintf(journal, "Finished scan on %q\n", scanPath)
+				journal.Info(fmt.Sprintf("Finished scan on %q", scanPath))
 				scanGather <- scanReport{Output: out}
 			}).Catch(integrity.Error, func(err *errors.Error) {
-				fmt.Fprintf(journal, "Errored scan on %q -- %s\n", scanPath, err)
+				journal.Warn(fmt.Sprintf("Errored scan on %q", scanPath), "error", err)
 				scanGather <- scanReport{Err: err}
 			}).Done()
 		}(out)

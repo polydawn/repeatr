@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/ugorji/go/codec"
 
 	"polydawn.net/repeatr/def"
@@ -36,48 +37,54 @@ func RunFormulae(s scheduler.Scheduler, e executor.Executor, journal io.Writer, 
 	allclear = true // set to false on the first instance of a problem
 
 	jobLoggerFactory := func(_ def.JobID) io.Writer {
-		// All job progress reporting actually still copy to our shared journal stream.
-		// This should be replaced with a real logging framework,
-		//  at which point we can add tags for jobID before handing out specialized loggers.
+		// All job progress reporting, still copy to our shared journal stream.
+		// This func might now be outdated; but we haven't decided what any of this
+		//  should look like if take a lurch toward supporting cluster farming.
+		//  (It might make sense to have a structural comms layer?  Or, maybe plain
+		//  byte streams are best for sanity conservation.  Either way: not today.)
 		return journal
 	}
 
 	s.Configure(e, len(f), jobLoggerFactory) // we know exactly how many forumlae will be enqueued
 	s.Start()
 
-	var wg sync.WaitGroup
+	// Set up a logger.
+	logger := log15.New()
+	logger.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
 
 	// Queue each job as the scheduler deigns to read from the channel
-	for x, formula := range f {
+	var wg sync.WaitGroup
+	for _, formula := range f {
 		wg.Add(1)
 
-		// gofunc + range = race condition, whoops!
-		n := x + 1
 		id, jobChan := s.Schedule(formula)
 
 		go func() {
 			defer wg.Done()
 
-			fmt.Fprintln(journal, "Job", n, id, "queued")
+			log := log15.New(log15.Ctx{"JobID": id})
+
+			log.Info("Job queued")
 			job := <-jobChan
 			// TODO need better lifecycle events here.  "starting" here means we might still be in provisioning stage.
-			fmt.Fprintln(journal, "Job", n, id, "starting")
+			log.Info("Job starting")
 
 			// Stream job output to terminal in real time
-			// TODO: This ruins stdout / stderr split. Job should probably just expose the Mux interface.
 			_, err := io.Copy(journal, job.OutputReader())
 			if err != nil {
-				// TODO: This is serious, how to handle in CLI context debatable
-				fmt.Fprintln(journal, "Error reading job stream")
+				log.Error("Error reading job stream", "error", err)
 				panic(err)
 			}
 
 			result := job.Wait()
 			if result.Error != nil {
-				fmt.Fprintln(journal, "Job", n, id, "failed with", result.Error.Message())
+				log.Error("Job execution errored", "error", result.Error.Message())
 				allclear = false
 			} else {
-				fmt.Fprintln(journal, "Job", n, id, "finished with code", result.ExitCode, "and outputs", result.Outputs)
+				log.Info("Job finished", log15.Ctx{
+					"exit":    result.ExitCode,
+					"outputs": result.Outputs,
+				})
 			}
 		}()
 	}
