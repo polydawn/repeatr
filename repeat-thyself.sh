@@ -12,6 +12,11 @@ if [ -x .gopath/bin/repeatr ]; then PATH=$PWD/.gopath/bin/:$PATH; fi
 if [ ! -d .git ]; then echo "this script assumes it is run from a local git repo containing repeatr." 1>&2 ; exit 1 ; fi
 
 
+
+# Pick out the current head hash.
+# Of course you could use any commit hash you want.
+Commit=${Commit:-$(git rev-parse HEAD)}
+
 Script="$(cat <<-'EOF'
 	#!/bin/bash
 	set -euo pipefail
@@ -45,7 +50,7 @@ Formula="$(cat <<-EOF
 	},{
 		"Type": "git",
 		"Location": "/task/repeatr/",
-		"Hash": "HEAD",
+		"Hash": "${Commit}",
 		"URI": "https://github.com/polydawn/repeatr.git"
 	}],
 	"Accents": {
