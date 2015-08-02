@@ -3,9 +3,13 @@
 # Build repeatr repeatedly with repeatr.
 #
 # If you don't have repeatr on your path yet, you can
-# use `./goad sys` to install it to your local /usr/bin.
+# use `./goad sys` to install it to your local `/usr/bin/`,
+# or `./goad install` to update a copy in `./.gopath/bin/`.
 #
 set -euo pipefail
+
+if [ -x .gopath/bin/repeatr ]; then PATH=$PWD/.gopath/bin/:$PATH; fi
+if [ ! -d .git ]; then echo "this script assumes it is run from a local git repo containing repeatr." 1>&2 ; exit 1 ; fi
 
 
 Script="$(cat <<-'EOF'
