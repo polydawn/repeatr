@@ -36,7 +36,7 @@ func DefaultTransmat() integrity.Transmat {
 		integrity.TransmatKind("tar"): tar.New,
 		integrity.TransmatKind("s3"):  s3.New,
 	})
-	universalTransmat := integrity.NewDispatchingTransmat(workDir, map[integrity.TransmatKind]integrity.Transmat{
+	universalTransmat := integrity.NewDispatchingTransmat(map[integrity.TransmatKind]integrity.Transmat{
 		integrity.TransmatKind("dir"):      dirCacher,
 		integrity.TransmatKind("tar"):      dirCacher,
 		integrity.TransmatKind("exec-tar"): tarexec.New(filepath.Join(workDir, "tarexec")),

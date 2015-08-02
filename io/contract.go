@@ -166,13 +166,11 @@ var _ Transmat = &DispatchingTransmat{}
 	function, and it will DTRT.
 */
 type DispatchingTransmat struct {
-	workPath string
 	dispatch map[TransmatKind]Transmat
 }
 
-func NewDispatchingTransmat(workPath string, transmats map[TransmatKind]Transmat) *DispatchingTransmat {
+func NewDispatchingTransmat(transmats map[TransmatKind]Transmat) *DispatchingTransmat {
 	dt := &DispatchingTransmat{
-		workPath: workPath,
 		dispatch: transmats,
 	}
 	return dt

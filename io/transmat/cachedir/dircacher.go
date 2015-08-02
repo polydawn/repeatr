@@ -52,7 +52,7 @@ func New(workPath string, transmats map[integrity.TransmatKind]integrity.Transma
 		dispatch[kind] = factoryFn(filepath.Join(workPath, "stg", string(kind)))
 	}
 	ct := &CachingTransmat{
-		*integrity.NewDispatchingTransmat(workPath, dispatch),
+		*integrity.NewDispatchingTransmat(dispatch),
 		workPath,
 	}
 	return ct
