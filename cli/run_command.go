@@ -26,7 +26,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			cli.StringFlag{
 				Name:  "scheduler, s",
 				Value: "linear",
-				Usage: "Location of input formula (json format)",
+				Usage: "Which scheduler to use",
 			},
 			cli.StringSliceFlag{
 				Name:  "input, i",
