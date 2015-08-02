@@ -46,7 +46,7 @@ Formula="$(cat <<-EOF
 		"Type": "git",
 		"Location": "/task/repeatr/",
 		"Hash": "HEAD",
-		"URI": "./"
+		"URI": "https://github.com/polydawn/repeatr.git"
 	}],
 	"Accents": {
 		"Entrypoint": [ "/bin/bash", "-c", "${Script}" ],
