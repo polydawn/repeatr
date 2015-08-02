@@ -138,9 +138,13 @@ func (t *GitTransmat) Materialize(
 		).RunAndReport()
 
 		// Checkout the interesting commit.
-		// And, do submodules.
 		git.Bake(
 			"checkout", string(dataHash), // FIXME dear god, whitelist this to make sure it looks like a hash.
+			gosh.Opts{Cwd: arena.workDirPath},
+		).RunAndReport()
+		// And, do submodules.
+		git.Bake(
+			"submodule", "update", "--init",
 			gosh.Opts{Cwd: arena.workDirPath},
 		).RunAndReport()
 
