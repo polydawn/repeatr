@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/polydawn/gosh"
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/testutil"
@@ -26,6 +27,12 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 	//  both of these could be addressed with upgrades to filefixtures in the future.
 	Convey("Given a local git repo", t, testutil.Requires(
 		testutil.WithTmpdir(func() {
+			git := git.Bake(gosh.Opts{Env: map[string]string{
+				"GIT_AUTHOR_NAME":     "repeatr",
+				"GIT_AUTHOR_EMAIL":    "repeatr",
+				"GIT_COMMITTER_NAME":  "repeatr",
+				"GIT_COMMITTER_EMAIL": "repeatr",
+			}})
 			var dataHash_1 integrity.CommitID
 			var dataHash_2 integrity.CommitID
 			var dataHash_3 integrity.CommitID
