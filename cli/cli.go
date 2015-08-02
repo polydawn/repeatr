@@ -20,7 +20,7 @@ func Main(args []string, journal, output io.Writer) {
 	App.Writer = journal
 
 	App.Commands = []cli.Command{
-		RunCommandPattern(),
+		RunCommandPattern(output),
 		ScanCommandPattern(output),
 		TwerkCommandPattern(os.Stdin, output, output), // FIXME this is too much loss of precision already
 	}

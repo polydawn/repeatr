@@ -8,8 +8,9 @@ type ExitCode byte
 
 const (
 	EXIT_BADARGS      = ExitCode(1)
-	EXIT_UNKNOWNPANIC = ExitCode(2) // same code as golang uses when the process dies naturally on an unhandled panic.
-	EXIT_USER         = ExitCode(3) // grab bag for general user input errors (try to make a more specific code if possible/useful)
+	EXIT_UNKNOWNPANIC = ExitCode(2)  // same code as golang uses when the process dies naturally on an unhandled panic.
+	EXIT_USER         = ExitCode(3)  // grab bag for general user input errors (try to make a more specific code if possible/useful)
+	EXIT_JOB          = ExitCode(10) // used to indicate a job reported a nonzero exit code (from cli commands that execute a single job).
 )
 
 var ExitCodeKey = errors.GenSym()
@@ -30,8 +31,15 @@ var Error *errors.ErrorClass = errors.NewClass("CLIError")
 	Use this to set a specific error code the process should exit with
 	when producing a `cli.Error`.
 
-	Example: `cli.Error.New("something terrible!", SetExitCode(EXIT_BADARGS))`
+	Example: `cli.Error.NewWith("something terrible!", SetExitCode(EXIT_BADARGS))`
 */
 func SetExitCode(code ExitCode) errors.ErrorOption {
 	return errors.SetData(ExitCodeKey, code)
 }
+
+/*
+	Exit errors may be raised to immediately transition to we're done (and
+	specify an `ExitCode`), but generate slightly less of a sadface than
+	`cli.Error`: use them for graceful exits.
+*/
+var Exit *errors.ErrorClass = Error.NewClass("Exit")

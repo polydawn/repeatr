@@ -1,18 +1,16 @@
 package cli
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 
 	"github.com/codegangsta/cli"
-	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/dispatch"
-	"polydawn.net/repeatr/scheduler"
 	"polydawn.net/repeatr/scheduler/dispatch"
 )
 
-func RunCommandPattern() cli.Command {
-	bat := cli.StringSlice([]string{})
+func RunCommandPattern(output io.Writer) cli.Command {
 	return cli.Command{
 		Name:  "run",
 		Usage: "Run a formula",
@@ -25,33 +23,48 @@ func RunCommandPattern() cli.Command {
 			cli.StringFlag{
 				Name:  "scheduler, s",
 				Value: "linear",
+				Usage: "Which scheduler to use",
+			},
+			cli.StringFlag{
+				Name:  "input, i",
 				Usage: "Location of input formula (json format)",
 			},
-			cli.StringSliceFlag{
-				Name:  "input, i",
-				Value: &bat,
-				Usage: "Location of input formulae (json format)",
+			cli.BoolFlag{
+				Name:  "ignore-job-exit",
+				Usage: "If true, repeatr will exit with 0/success even if the job exited nonzero.",
 			},
 		},
-		Action: func(c *cli.Context) {
-			executor := executordispatch.Get(c.String("executor"))
-			scheduler := schedulerdispatch.Get(c.String("scheduler"))
-			formulaPaths := c.StringSlice("input")
-			Run(executor, scheduler, formulaPaths, c.App.Writer)
+		Action: func(ctx *cli.Context) {
+			// Parse args
+			executor := executordispatch.Get(ctx.String("executor"))
+			scheduler := schedulerdispatch.Get(ctx.String("scheduler"))
+			formulaPaths := ctx.String("input")
+			ignoreJobExit := ctx.Bool("ignore-job-exit")
+			// Parse formula
+			formula := LoadFormulaFromFile(formulaPaths)
+
+			// TODO Don't reeeeally want the 'run once' command going through the schedulers.
+			//  Having a path that doesn't invoke that complexity unnecessarily, and also is more clearly allowed to use the current terminal, is want.
+
+			// Invoke!
+			result := RunFormula(scheduler, executor, formula, ctx.App.Writer)
+			// Exit if the job failed collosally (if it just had a nonzero exit code, that's acceptable).
+			if result.Error != nil {
+				panic(Error.NewWith("job execution errored", SetExitCode(EXIT_USER)))
+			}
+
+			// Output.
+			// Note that all other logs, progress, terminals, etc are all routed to "journal" (typically, stderr),
+			//  while this output is routed to "output" (typically, stdout), so it can be piped and parsed mechanically.
+			msg, err := json.Marshal(result.Outputs)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Fprintf(output, "%s\n", string(msg))
+			// Exit nonzero with our own "your job did not report success" indicator code, if applicable.
+			if result.ExitCode != 0 && !ignoreJobExit {
+				panic(Exit.NewWith("job finished with non-zero exit status", SetExitCode(EXIT_JOB)))
+			}
 		},
-	}
-}
-
-func Run(executor executor.Executor, scheduler scheduler.Scheduler, formulaPaths []string, journal io.Writer) {
-	var formulae []def.Formula
-	for _, path := range formulaPaths {
-		formulae = append(formulae, LoadFormulaFromFile(path))
-	}
-
-	// TODO Don't reeeeally want the 'run once' command going through the schedulers.
-	//  Having a path that doesn't invoke that complexity unnecessarily, and also is more clearly allowed to use the current terminal, is want.
-
-	if !RunFormulae(scheduler, executor, journal, formulae...) {
-		panic(Error.NewWith("not all jobs completed successfully", SetExitCode(EXIT_USER)))
 	}
 }
