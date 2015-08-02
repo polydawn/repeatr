@@ -31,7 +31,7 @@ var Error *errors.ErrorClass = errors.NewClass("CLIError")
 	Use this to set a specific error code the process should exit with
 	when producing a `cli.Error`.
 
-	Example: `cli.Error.New("something terrible!", SetExitCode(EXIT_BADARGS))`
+	Example: `cli.Error.NewWith("something terrible!", SetExitCode(EXIT_BADARGS))`
 */
 func SetExitCode(code ExitCode) errors.ErrorOption {
 	return errors.SetData(ExitCodeKey, code)
