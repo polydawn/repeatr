@@ -11,8 +11,9 @@ import (
 	"polydawn.net/repeatr/scheduler/dispatch"
 )
 
-func RunCommandPattern() cli.Command {
+func RunCommandPattern(output io.Writer) cli.Command {
 	bat := cli.StringSlice([]string{})
+
 	return cli.Command{
 		Name:  "run",
 		Usage: "Run a formula",
@@ -54,4 +55,7 @@ func Run(executor executor.Executor, scheduler scheduler.Scheduler, formulaPaths
 	if !RunFormulae(scheduler, executor, journal, formulae...) {
 		panic(Error.NewWith("not all jobs completed successfully", SetExitCode(EXIT_USER)))
 	}
+
+	// output
+	// TODO NEED JSON DESCRIPTION OF OUTPUTS TO BE EMITTED
 }
