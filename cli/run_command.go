@@ -6,14 +6,11 @@ import (
 	"io"
 
 	"github.com/codegangsta/cli"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/dispatch"
 	"polydawn.net/repeatr/scheduler/dispatch"
 )
 
 func RunCommandPattern(output io.Writer) cli.Command {
-	bat := cli.StringSlice([]string{})
-
 	return cli.Command{
 		Name:  "run",
 		Usage: "Run a formula",
@@ -28,53 +25,37 @@ func RunCommandPattern(output io.Writer) cli.Command {
 				Value: "linear",
 				Usage: "Which scheduler to use",
 			},
-			cli.StringSliceFlag{
+			cli.StringFlag{
 				Name:  "input, i",
-				Value: &bat,
-				Usage: "Location of input formulae (json format)",
+				Usage: "Location of input formula (json format)",
 			},
 		},
 		Action: func(ctx *cli.Context) {
 			// Parse args
 			executor := executordispatch.Get(ctx.String("executor"))
 			scheduler := schedulerdispatch.Get(ctx.String("scheduler"))
-			formulaPaths := ctx.StringSlice("input")
-			// Parse formulae
-			var formulae []def.Formula
-			for _, path := range formulaPaths {
-				formulae = append(formulae, LoadFormulaFromFile(path))
-			}
+			formulaPaths := ctx.String("input")
+			// Parse formula
+			formula := LoadFormulaFromFile(formulaPaths)
 
 			// TODO Don't reeeeally want the 'run once' command going through the schedulers.
 			//  Having a path that doesn't invoke that complexity unnecessarily, and also is more clearly allowed to use the current terminal, is want.
-			// TODO / NOTE : yeah, this is still worryingly ambiguous:
-			//  - Current behavior is to emit nothing for outputs on failed jobs, whic his... not unlikely to bork your shell scripts
-			//  - Current behavior only returns non-zero exits on major failure to launch/monitor... not if jobs exit nonzero, which is likely to bork your shell scripts
-			//  - If you actually *use* the multi-formula feature, your outputs are not going to be fun to re-demux.
-			//  Increasingly it seems like this idea of multiple formulae through a single shell command should be removed outright.  The API of a single CLI command isn't up to it.
-
-			// Prepare to collect results.
-			results := make(chan def.JobResult)
-
-			// Output... as we go, yes.
-			// Note that all other logs, progress, terminals, etc are all routed to "journal" (typically, stderr),
-			//  while this output is routed to "output" (typically, stdout), so it can be piped and parsed mechanically.
-			go func() {
-				// Sync note: `results` being unbuffered is critical to this being always run before the terminal return of RunFormulae.
-				for result := range results {
-					msg, err := json.Marshal(result.Outputs)
-					if err != nil {
-						panic(err)
-					}
-					fmt.Fprintf(output, "%s\n", string(msg))
-					// consider: should exit code maybe be added to def.Formula for record keeping...?
-				}
-			}()
 
 			// Invoke!
-			if !RunFormulae(scheduler, executor, ctx.App.Writer, results, formulae...) {
-				panic(Error.NewWith("not all jobs completed successfully", SetExitCode(EXIT_USER)))
+			result := RunFormula(scheduler, executor, formula, ctx.App.Writer)
+			// Exit if the job failed collosally (if it just had a nonzero exit code, that's acceptable).
+			if result.Error != nil {
+				panic(Error.NewWith("job execution errored", SetExitCode(EXIT_USER)))
 			}
+
+			// Output.
+			// Note that all other logs, progress, terminals, etc are all routed to "journal" (typically, stderr),
+			//  while this output is routed to "output" (typically, stdout), so it can be piped and parsed mechanically.
+			msg, err := json.Marshal(result.Outputs)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Fprintf(output, "%s\n", string(msg))
 		},
 	}
 }
