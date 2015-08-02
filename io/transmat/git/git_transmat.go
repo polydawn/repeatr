@@ -37,6 +37,10 @@ func New(workPath string) integrity.Transmat {
 var git gosh.Command = gosh.Gosh(
 	"git",
 	gosh.NullIO,
+	gosh.Opts{Env: map[string]string{
+		"GIT_CONFIG_NOSYSTEM": "true",
+		"HOME":                "/dev/null",
+	}},
 )
 
 /*
