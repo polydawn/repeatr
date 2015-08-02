@@ -13,6 +13,7 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/placer"
+	"polydawn.net/repeatr/io/transmat/cachedir"
 	"polydawn.net/repeatr/io/transmat/dir"
 	"polydawn.net/repeatr/io/transmat/s3"
 	"polydawn.net/repeatr/io/transmat/tar"
@@ -30,7 +31,7 @@ import (
 */
 func DefaultTransmat() integrity.Transmat {
 	workDir := filepath.Join(def.Base(), "io")
-	dirCacher := integrity.NewCachingTransmat(filepath.Join(workDir, "dircacher"), map[integrity.TransmatKind]integrity.TransmatFactory{
+	dirCacher := cachedir.New(filepath.Join(workDir, "dircacher"), map[integrity.TransmatKind]integrity.TransmatFactory{
 		integrity.TransmatKind("dir"): dir.New,
 		integrity.TransmatKind("tar"): tar.New,
 		integrity.TransmatKind("s3"):  s3.New,
