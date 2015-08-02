@@ -172,6 +172,17 @@ func (t S3Transmat) Scan(
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
+		// If scan area doesn't exist, bail immediately.
+		// No need to even start dialing warehouses if we've got nothing for em.
+		_, err := os.Stat(subjectPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return // empty commitID
+			} else {
+				panic(err)
+			}
+		}
+
 		// load keys from env
 		// TODO someday URIs should grow smart enough to control this in a more general fashion -- but for now, host ENV is actually pretty feasible and plays easily with others.
 		keys, err := s3gof3r.EnvKeys()

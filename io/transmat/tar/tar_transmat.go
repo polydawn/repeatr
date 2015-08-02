@@ -145,6 +145,17 @@ func (t TarTransmat) Scan(
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
+		// If scan area doesn't exist, bail immediately.
+		// No need to even start dialing warehouses if we've got nothing for em.
+		_, err := os.Stat(subjectPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return // empty commitID
+			} else {
+				panic(err)
+			}
+		}
+
 		// Open output streams for writing.
 		// Since these are all behaving as just one `io.Writer` stream, this could maybe be factored out.
 		// Error handling is currently "anything -> panic".  This should probably be more resilient.  (That might need another refactor so we have an upload call per remote.)
