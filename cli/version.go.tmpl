@@ -8,7 +8,7 @@ if [ -z "$GITCOMMIT" ]; then
 		GITCOMMIT="$GITCOMMIT-dirty"
 	fi
 fi
-BUILDDATE="$(date --rfc-2822)"
+BUILDDATE="${BUILDDATE:-$(date --rfc-2822)}"
 
 cat > version.go <<EOF
 package cli

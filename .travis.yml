@@ -20,6 +20,7 @@ script:
   - sudo bash -c "export PATH=$PATH:$PWD/assets ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell
   - sudo ./demo.sh -t
   - sudo ./lib/integration/runAll.sh
+  - sudo ./repeat-thyself.sh
 
 notifications:
   email: false
