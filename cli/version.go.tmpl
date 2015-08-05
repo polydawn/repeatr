@@ -3,7 +3,7 @@ set -euo pipefail
 
 GITCOMMIT=${GITCOMMIT:-}
 if [ -z "$GITCOMMIT" ]; then
-	GITCOMMIT="$(git rev-parse --short HEAD)}"
+	GITCOMMIT="$(git rev-parse --short HEAD)"
 	if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
 		GITCOMMIT="$GITCOMMIT-dirty"
 	fi
