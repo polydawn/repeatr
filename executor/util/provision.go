@@ -95,7 +95,7 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 	scanGather := make(chan scanReport)
 	for _, out := range outputs {
 		go func(out def.Output) {
-			filters := filter.FilterSet{}
+			filterOptions := make([]integrity.MaterializerConfigurer, 0, 4)
 			for _, name := range out.Filters {
 				cfg := strings.Fields(name)
 				switch cfg[0] {
@@ -104,19 +104,19 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 					if len(cfg) > 1 {
 						f.Value, _ = strconv.Atoi(cfg[1])
 					}
-					filters.Put(f)
+					filterOptions = append(filterOptions, integrity.UseFilter(f))
 				case "gid":
 					f := filter.GidFilter{}
 					if len(cfg) > 1 {
 						f.Value, _ = strconv.Atoi(cfg[1])
 					}
-					filters.Put(f)
+					filterOptions = append(filterOptions, integrity.UseFilter(f))
 				case "mtime":
 					f := filter.MtimeFilter{}
 					if len(cfg) > 1 {
 						f.Value, _ = time.Parse(time.RFC3339, cfg[1])
 					}
-					filters.Put(f)
+					filterOptions = append(filterOptions, integrity.UseFilter(f))
 				default:
 					continue
 				}
@@ -134,6 +134,7 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 					integrity.TransmatKind(out.Type),
 					scanPath,
 					warehouseCoordsList,
+					filterOptions...,
 				)
 				out.Hash = string(commitID)
 				journal.Info(fmt.Sprintf("Finished scan on %q", scanPath))
