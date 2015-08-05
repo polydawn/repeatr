@@ -59,7 +59,12 @@ Formula="$(cat <<-EOF
 	},
 	"Outputs": [{
 		"Type": "tar",
-		"Location": "/task/repeatr/.gopath/bin/"
+		"Location": "/task/repeatr/.gopath/bin/",
+		"Filters": [
+			"uid 10100",
+			"gid 10100",
+			"mtime"
+		]
 	}]
 }
 EOF
