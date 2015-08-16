@@ -37,12 +37,15 @@ func DefaultTransmat() integrity.Transmat {
 		integrity.TransmatKind("tar"): tar.New,
 		integrity.TransmatKind("s3"):  s3.New,
 	})
+	gitCacher := cachedir.New(filepath.Join(workDir, "dircacher-git"), map[integrity.TransmatKind]integrity.TransmatFactory{
+		integrity.TransmatKind("git"): git.New,
+	})
 	universalTransmat := integrity.NewDispatchingTransmat(map[integrity.TransmatKind]integrity.Transmat{
 		integrity.TransmatKind("dir"):      dirCacher,
 		integrity.TransmatKind("tar"):      dirCacher,
 		integrity.TransmatKind("exec-tar"): tarexec.New(filepath.Join(workDir, "tarexec")),
 		integrity.TransmatKind("s3"):       dirCacher,
-		integrity.TransmatKind("git"):      git.New(filepath.Join(workDir, "git")),
+		integrity.TransmatKind("git"):      gitCacher,
 	})
 	return universalTransmat
 }
