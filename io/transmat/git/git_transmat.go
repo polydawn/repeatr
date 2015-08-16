@@ -98,6 +98,7 @@ func (t *GitTransmat) Materialize(
 			localPath := string(givenURI)
 			// TODO there's no "--" in ls-remote, so... we should forbid things starting in "-", i guess?
 			//  or use "file://" religiously?  but no, bc ssh doesn't look like "ssh://" all the time... ugh, i do not want to write a git url parser
+			//   update: yeah, using "file://" religiously is not an option.  this actually takes a *different* path than `/non/protocol/prefixed`.  not significantly, but it may impact e.g. hardlinking, iiuc
 			// TODO someday go for the usability buff of parsing git errors into something more helpful
 			code := git.Bake(
 				"ls-remote", localPath,
