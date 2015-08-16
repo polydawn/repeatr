@@ -34,7 +34,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 					in: {Arena: arena},
 				}
 			}).Catch(integrity.Error, func(err *errors.Error) {
-				journal.Warn(fmt.Sprintf("Errored during materialize for %s hash=%s", in.Type, in.Hash), "error", err)
+				journal.Warn(fmt.Sprintf("Errored during materialize for %s hash=%s", in.Type, in.Hash), "error", err.Message())
 				fsGather <- map[def.Input]materializerReport{
 					in: {Err: err},
 				}
@@ -139,7 +139,7 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 				journal.Info(fmt.Sprintf("Finished scan on %q", scanPath))
 				scanGather <- scanReport{Output: out}
 			}).Catch(integrity.Error, func(err *errors.Error) {
-				journal.Warn(fmt.Sprintf("Errored scan on %q", scanPath), "error", err)
+				journal.Warn(fmt.Sprintf("Errored scan on %q", scanPath), "error", err.Message())
 				scanGather <- scanReport{Err: err}
 			}).Done()
 		}(out)
