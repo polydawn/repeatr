@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -143,10 +144,22 @@ func (t *GitTransmat) Materialize(
 		).RunAndReport()
 
 		// Checkout the interesting commit.
-		git.Bake(
+		buf := &bytes.Buffer{}
+		p := git.Bake(
 			"checkout", string(dataHash), // FIXME dear god, whitelist this to make sure it looks like a hash.
 			gosh.Opts{Cwd: arena.workDirPath},
-		).RunAndReport()
+			gosh.Opts{OkExit: gosh.AnyExit},
+			gosh.Opts{Err: buf, Out: buf},
+		).Run()
+		if bytes.HasPrefix(buf.Bytes(), []byte("fatal: reference is not a tree: ")) {
+			panic(integrity.DataDNE.New("hash %q not found in this repo", dataHash))
+		}
+		if p.GetExitCode() != 0 {
+			// catchall.
+			// this formatting is *terrible*, but we don't have a good formatter for using datakeys, either, so.
+			// (blowing past this without too much fuss because we're going to switch error libraries later and it's going to fix this better.)
+			panic(Error.New("git checkout failed.  git output:\n%s", buf.String()))
+		}
 		// And, do submodules.
 		git.Bake(
 			"submodule", "update", "--init",
