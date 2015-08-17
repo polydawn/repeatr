@@ -15,20 +15,20 @@ if [ ! -d .git ]; then echo "this script assumes it is run from a local git repo
 
 # Pick out the current head hash.
 # Of course you could use any commit hash you want.
-Commit=${Commit:-$(git rev-parse HEAD)}
+Commit=${GITCOMMIT:-$(git rev-parse HEAD)}
 
-Script="$(cat <<-'EOF'
+Script="$(cat <<-EOF
 	#!/bin/bash
 	set -euo pipefail
 	set -x
 	
 	export GOROOT=/app/go/go
-	export PATH=$PATH:/app/go/go/bin
+	export PATH=\$PATH:/app/go/go/bin
 	
 	# Hack around our own bad metadata insertion.
 	#  These are used by go-generate (see `cli/go.version.tmpl`);
 	#  In order to produce consistent outputs, we have to affix them.
-	export GITCOMMIT="xxx"
+	export GITCOMMIT="${Commit}"
 	export BUILDDATE="xxx"
 
 	./goad install
