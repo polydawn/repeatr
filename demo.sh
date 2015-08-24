@@ -65,22 +65,22 @@ echo -e "${clblue}#  This first run might take a while -- it's downloading an op
 	tellRunning "repeatr run -i some-json-config-files.conf"
 	time repeatr run -i <(cat <<-EOF
 	{
-		"Inputs": [
+		"inputs": [
 			{
-				"Type": "tar",
-				"Location": "/",
-				"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-				"URI": "http+ca://repeatr.s3.amazonaws.com/assets/"
+				"type": "tar",
+				"mount": "/",
+				"hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
+				"silo": "http+ca://repeatr.s3.amazonaws.com/assets/"
 			}
 		],
-		"Accents": {
-			"Entrypoint": [ "echo", "Hello from repeatr!" ]
+		"action": {
+			"command": [ "echo", "Hello from repeatr!" ]
 		},
-		"Outputs": [
+		"outputs": [
 			{
-				"Type": "tar",
-				"Location": "/var/log",
-				"URI": "file+ca://${demodir}/local-warehouse"
+				"type": "tar",
+				"mount": "/var/log",
+				"silo": "file+ca://${demodir}/local-warehouse"
 			}
 		]
 	}
@@ -99,22 +99,22 @@ echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts i
 	tellRunning "time repeatr run -i some-json-config-files.conf"
 	time repeatr run -i <(cat <<-EOF
 	{
-		"Inputs": [
+		"inputs": [
 			{
-				"Type": "tar",
-				"Location": "/",
-				"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-				"URI": "http+ca://repeatr.s3.amazonaws.com/assets/"
+				"type": "tar",
+				"mount": "/",
+				"hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
+				"silo": "http+ca://repeatr.s3.amazonaws.com/assets/"
 			}
 		],
-		"Accents": {
-			"Entrypoint": [ "echo", "Hello from repeatr!" ]
+		"action": {
+			"command": [ "echo", "Hello from repeatr!" ]
 		},
-		"Outputs": [
+		"outputs": [
 			{
-				"Type": "tar",
-				"Location": "/var/log",
-				"URI": "file+ca://${demodir}/local-warehouse"
+				"type": "tar",
+				"mount": "/var/log",
+				"silo": "file+ca://${demodir}/local-warehouse"
 			}
 		]
 	}
