@@ -15,7 +15,7 @@ import (
 func Base() string {
 	base := os.Getenv("REPEATR_BASE")
 	if base == "" {
-		base = "/tmp/repeatr" // change to var/lib or something when we feel more serious
+		base = "/var/lib/repeatr"
 	}
 	os.MkdirAll(base, 0755)
 	return base
