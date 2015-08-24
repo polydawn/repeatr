@@ -66,7 +66,8 @@ Formula="$(cat <<-EOF
 			"uid 10100",
 			"gid 10100",
 			"mtime"
-		]
+		],
+		"silo": "file://repeatr.tar"
 	}]
 }
 EOF
