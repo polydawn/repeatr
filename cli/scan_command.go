@@ -26,7 +26,7 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 				Usage: "Optional.  The local filesystem path to scan.  Defaults to your current directory.",
 			},
 			cli.StringFlag{
-				Name:  "uri",
+				Name:  "silo",
 				Usage: "Optional.  A Silo URI to upload data to.",
 			},
 		},
@@ -34,7 +34,7 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 			// args parse
 			outputSpec := def.Output{
 				Type: ctx.String("kind"),
-				URI:  ctx.String("uri"),
+				URI:  ctx.String("silo"),
 				// Filters: might want
 				Location: ctx.String("path"),
 			}
