@@ -45,8 +45,8 @@ Formula="$(cat <<-EOF
 	},{
 		"Type": "tar",
 		"Location": "/app/go/",
-		"Hash": "mfUMdLmuysVlW1jEARtm_YKc5PkLxP2Tj-xwEXqEThUGVAWyyCHJyhFXe7OQSgKs",
-		"URI": "https://storage.googleapis.com/golang/go1.4.2.linux-amd64.tar.gz"
+		"Hash": "vbl0TwPjBrjoph65IaWxOy-Yl0MZXtXEDKcxodzY0_-inUDq7rPVTEDvqugYpJAH",
+		"URI": "https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz"
 	},{
 		"Type": "git",
 		"Location": "/task/repeatr/",
