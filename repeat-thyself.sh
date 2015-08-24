@@ -37,30 +37,30 @@ EOF
 Script="$(echo "${Script}" | tr -d "\t" | grep -v "^#" | tr -s "\n" ";" | sed "s/\"/\\\\\"/g")"
 Formula="$(cat <<-EOF
 {
-	"Inputs": [{
-		"Type": "tar",
-		"Location": "/",
-		"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-		"URI": "http+ca://repeatr.s3.amazonaws.com/assets/"
+	"inputs": [{
+		"type": "tar",
+		"mount": "/",
+		"hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
+		"silo": "http+ca://repeatr.s3.amazonaws.com/assets/"
 	},{
-		"Type": "tar",
-		"Location": "/app/go/",
-		"Hash": "vbl0TwPjBrjoph65IaWxOy-Yl0MZXtXEDKcxodzY0_-inUDq7rPVTEDvqugYpJAH",
-		"URI": "https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz"
+		"type": "tar",
+		"mount": "/app/go/",
+		"hash": "vbl0TwPjBrjoph65IaWxOy-Yl0MZXtXEDKcxodzY0_-inUDq7rPVTEDvqugYpJAH",
+		"silo": "https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz"
 	},{
-		"Type": "git",
-		"Location": "/task/repeatr/",
-		"Hash": "${Commit}",
-		"URI": "https://github.com/polydawn/repeatr.git"
+		"type": "git",
+		"mount": "/task/repeatr/",
+		"hash": "${Commit}",
+		"silo": "https://github.com/polydawn/repeatr.git"
 	}],
-	"Accents": {
-		"Entrypoint": [ "/bin/bash", "-c", "${Script}" ],
-		"Cwd": "/task/repeatr/"
+	"action": {
+		"command": [ "/bin/bash", "-c", "${Script}" ],
+		"cwd": "/task/repeatr/"
 	},
-	"Outputs": [{
-		"Type": "tar",
-		"Location": "/task/repeatr/.gopath/bin/",
-		"Filters": [
+	"outputs": [{
+		"type": "tar",
+		"mount": "/task/repeatr/.gopath/bin/",
+		"filters": [
 			"uid 10100",
 			"gid 10100",
 			"mtime"
