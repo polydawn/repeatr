@@ -4,7 +4,7 @@
 			"type": "tar",
 			"mount": "/",
 			"hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-			"silo": "file://assets/ubuntu.tar.gz"
+			"silo": ["file://assets/ubuntu.tar.gz"]
 		}
 	],
 	"action": {
@@ -14,7 +14,7 @@
 		{
 			"type": "tar",
 			"mount": "/var/log",
-			"silo": "file://basic.tar"
+			"silo": ["file://basic.tar"]
 		}
 	]
 }

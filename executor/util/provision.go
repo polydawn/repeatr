@@ -17,26 +17,40 @@ import (
 
 // Run inputs
 func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assembler, inputs []def.Input, rootfs string, journal log15.Logger) integrity.Assembly {
+	// massage a bunch of maps.  `def.Input` isn't a valid key, sadly, because of the URI slice.
+	// so we're keying everything by Location instead, since there's no reason for that to not be unique.
+	inputsMap := make(map[string]def.Input, len(inputs))
+	filesystems := make(map[string]integrity.Arena, len(inputs))
+	fsGather := make(chan map[string]materializerReport)
+	for _, in := range inputs {
+		if _, ok := inputsMap[in.Location]; ok {
+			panic("duplicate Location in input config") // TODO this should be validated much earlier.
+		}
+		inputsMap[in.Location] = in
+	}
+
 	// start having all filesystems
-	filesystems := make(map[def.Input]integrity.Arena, len(inputs))
-	fsGather := make(chan map[def.Input]materializerReport)
 	for _, in := range inputs {
 		go func(in def.Input) {
 			try.Do(func() {
+				warehouseCoordsList := make([]integrity.SiloURI, len(in.URI))
+				for i, s := range in.URI {
+					warehouseCoordsList[i] = integrity.SiloURI(s)
+				}
 				journal.Info(fmt.Sprintf("Starting materialize for %s hash=%s", in.Type, in.Hash))
 				arena := transmat.Materialize(
 					integrity.TransmatKind(in.Type),
 					integrity.CommitID(in.Hash),
-					[]integrity.SiloURI{integrity.SiloURI(in.URI)},
+					warehouseCoordsList,
 				)
 				journal.Info(fmt.Sprintf("Finished materialize for %s hash=%s", in.Type, in.Hash))
-				fsGather <- map[def.Input]materializerReport{
-					in: {Arena: arena},
+				fsGather <- map[string]materializerReport{
+					in.Location: {Arena: arena},
 				}
 			}).Catch(integrity.Error, func(err *errors.Error) {
 				journal.Warn(fmt.Sprintf("Errored during materialize for %s hash=%s", in.Type, in.Hash), "error", err.Message())
-				fsGather <- map[def.Input]materializerReport{
-					in: {Err: err},
+				fsGather <- map[string]materializerReport{
+					in.Location: {Err: err},
 				}
 			}).Done()
 		}(in)
@@ -57,10 +71,10 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 
 	// assemble them into the final tree
 	assemblyParts := make([]integrity.AssemblyPart, 0, len(filesystems))
-	for input, arena := range filesystems {
+	for location, arena := range filesystems {
 		assemblyParts = append(assemblyParts, integrity.AssemblyPart{
 			SourcePath: arena.Path(),
-			TargetPath: input.Location,
+			TargetPath: location,
 			Writable:   true, // TODO input config should have a word about this
 		})
 	}
@@ -124,10 +138,9 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 			scanPath := filepath.Join(rootfs, out.Location)
 			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
 			try.Do(func() {
-				// TODO: following is hack; badly need to update config parsing to understand this first-class
-				warehouseCoordsList := make([]integrity.SiloURI, 0)
-				if out.URI != "" {
-					warehouseCoordsList = append(warehouseCoordsList, integrity.SiloURI(out.URI))
+				warehouseCoordsList := make([]integrity.SiloURI, len(out.URI))
+				for i, s := range out.URI {
+					warehouseCoordsList[i] = integrity.SiloURI(s)
 				}
 				// invoke transmat
 				commitID := transmat.Scan(

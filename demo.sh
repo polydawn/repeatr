@@ -70,7 +70,7 @@ echo -e "${clblue}#  This first run might take a while -- it's downloading an op
 				"type": "tar",
 				"mount": "/",
 				"hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-				"silo": "http+ca://repeatr.s3.amazonaws.com/assets/"
+				"silo": ["http+ca://repeatr.s3.amazonaws.com/assets/"]
 			}
 		],
 		"action": {
@@ -80,7 +80,7 @@ echo -e "${clblue}#  This first run might take a while -- it's downloading an op
 			{
 				"type": "tar",
 				"mount": "/var/log",
-				"silo": "file+ca://${demodir}/local-warehouse"
+				"silo": ["file+ca://${demodir}/local-warehouse"]
 			}
 		]
 	}
@@ -93,7 +93,7 @@ awaitack
 
 
 
-echo -e "${clblue}# The \`repeatr run\` command can used cached assets to start jobs faster.${cnone}"
+echo -e "${clblue}# The \`repeatr run\` command can use cached assets to start jobs faster.${cnone}"
 echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts instantly.${cnone}"
 (
 	tellRunning "time repeatr run -i some-json-config-files.conf"
@@ -104,7 +104,7 @@ echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts i
 				"type": "tar",
 				"mount": "/",
 				"hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-				"silo": "http+ca://repeatr.s3.amazonaws.com/assets/"
+				"silo": ["http+ca://repeatr.s3.amazonaws.com/assets/"]
 			}
 		],
 		"action": {
@@ -114,7 +114,7 @@ echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts i
 			{
 				"type": "tar",
 				"mount": "/var/log",
-				"silo": "file+ca://${demodir}/local-warehouse"
+				"silo": ["file+ca://${demodir}/local-warehouse"]
 			}
 		]
 	}

@@ -26,15 +26,19 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 				Usage: "Optional.  The local filesystem path to scan.  Defaults to your current directory.",
 			},
 			cli.StringFlag{
-				Name:  "uri",
+				Name:  "silo",
 				Usage: "Optional.  A Silo URI to upload data to.",
 			},
 		},
 		Action: func(ctx *cli.Context) {
 			// args parse
+			silos := make([]string, 0, 1)
+			if ctx.String("silo") != "" {
+				silos = append(silos, ctx.String("silo"))
+			}
 			outputSpec := def.Output{
 				Type: ctx.String("kind"),
-				URI:  ctx.String("uri"),
+				URI:  silos,
 				// Filters: might want
 				Location: ctx.String("path"),
 			}
@@ -66,12 +70,9 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 func Scan(outputSpec def.Output) def.Output {
 	// TODO validate Location exists, give nice errors
 
-	siloURIs := []integrity.SiloURI{
-		integrity.SiloURI(outputSpec.URI),
-	}
-	if outputSpec.URI == "" {
-		// ugly.  figure out how we want the user-facing API to see multiple silo URIs.
-		siloURIs = nil
+	silos := make([]integrity.SiloURI, len(outputSpec.URI))
+	for i, s := range outputSpec.URI {
+		silos[i] = integrity.SiloURI(s)
 	}
 
 	// So, this CLI command is *not* in its rights to change the subject area,
@@ -81,7 +82,7 @@ func Scan(outputSpec def.Output) def.Output {
 		//  Yeah these are hints that this stuff should be facing data validation.
 		integrity.TransmatKind(outputSpec.Type),
 		outputSpec.Location,
-		siloURIs,
+		silos,
 	)
 
 	return def.Output{

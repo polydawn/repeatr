@@ -19,7 +19,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 			formula.Inputs = append(formula.Inputs, (def.Input{
 				Type:     "dir",
 				Hash:     filefixture.Beta_Hash,
-				URI:      "./fixture/beta",
+				URI:      []string{"./fixture/beta"},
 				Location: "/data/test",
 			}))
 

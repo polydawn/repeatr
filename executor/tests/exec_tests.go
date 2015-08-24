@@ -34,7 +34,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 					// Funny thing is, the URI isn't even necessarily where the buck stops;
 					// Remote URIs need not be checked if caches are in play, etc.
 					// So the hash needs to be set (and needs to be invalid).
-					URI:  "file:///nonexistance/in/its/most/essential/unform.tar.gz",
+					URI:  []string{"file:///nonexistance/in/its/most/essential/unform.tar.gz"},
 					Hash: "defnot",
 				},
 			},

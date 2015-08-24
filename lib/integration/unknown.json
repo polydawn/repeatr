@@ -3,7 +3,7 @@
         {
             "type": "exec-tar",
             "mount": "/",
-            "silo": "assets/ubuntu.tar.gz"
+            "silo": ["assets/ubuntu.tar.gz"]
         }
     ],
     "action": {
@@ -13,7 +13,7 @@
         {
             "type": "tar",
             "mount": "/var/log",
-            "silo": "file://basic.tar"
+            "silo": ["file://basic.tar"]
         }
     ]
 }

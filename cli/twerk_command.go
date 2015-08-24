@@ -21,7 +21,7 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 					Type:     "tar",
 					Location: "/",
 					Hash:     "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-					URI:      "http+ca://repeatr.s3.amazonaws.com/assets/",
+					URI:      []string{"http+ca://repeatr.s3.amazonaws.com/assets/"},
 				}},
 				Accents: def.Accents{
 					Entrypoint: []string{"bash", "-c", "echo hallo ; pwd ; ls -la ; bash"},
