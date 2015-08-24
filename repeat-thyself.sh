@@ -15,7 +15,9 @@ if [ ! -d .git ]; then echo "this script assumes it is run from a local git repo
 
 # Pick out the current head hash.
 # Of course you could use any commit hash you want.
-Commit=${GITCOMMIT:-$(git rev-parse HEAD)}
+GITCOMMIT=${GITCOMMIT:-$(git rev-parse HEAD)}
+# Nil builddate by default.  But if you want to set one, go ahead.
+BUILDDATE=${BUILDDATE:-"xxx"}
 
 Script="$(cat <<-EOF
 	#!/bin/bash
@@ -28,8 +30,8 @@ Script="$(cat <<-EOF
 	# Hack around our own bad metadata insertion.
 	#  These are used by go-generate (see `cli/go.version.tmpl`);
 	#  In order to produce consistent outputs, we have to affix them.
-	export GITCOMMIT="${Commit}"
-	export BUILDDATE="xxx"
+	export GITCOMMIT="${GITCOMMIT}"
+	export BUILDDATE="${BUILDDATE}"
 
 	./goad install
 EOF
@@ -50,7 +52,7 @@ Formula="$(cat <<-EOF
 	},{
 		"type": "git",
 		"mount": "/task/repeatr/",
-		"hash": "${Commit}",
+		"hash": "${GITCOMMIT}",
 		"silo": "https://github.com/polydawn/repeatr.git"
 	}],
 	"action": {
