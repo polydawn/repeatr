@@ -13,30 +13,35 @@ if [ ! -d .git ]; then echo "this script assumes it is run from a local git repo
 
 
 
+### Set values for metadata our build injects for debugging purposes.
+#  These are used by go-generate (see `cli/go.version.tmpl`);
+#  In order to produce consistent outputs, we have to affix them.
+
 # Pick out the current head hash.
 # Of course you could use any commit hash you want.
 GITCOMMIT=${GITCOMMIT:-$(git rev-parse HEAD)}
+
 # Nil builddate by default.  But if you want to set one, go ahead.
 BUILDDATE=${BUILDDATE:-"xxx"}
 
-Script="$(cat <<-EOF
-	#!/bin/bash
-	set -euo pipefail
-	set -x
-	
-	export GOROOT=/app/go/go
-	export PATH=\$PATH:/app/go/go/bin
-	
-	# Hack around our own bad metadata insertion.
-	#  These are used by go-generate (see `cli/go.version.tmpl`);
-	#  In order to produce consistent outputs, we have to affix them.
-	export GITCOMMIT="${GITCOMMIT}"
-	export BUILDDATE="${BUILDDATE}"
 
+
+### Arrange a short bootstrapping script
+# This sets just enough variables to make our golang package run.
+Script="$(cat <<-'EOF'
+	#!/bin/bash
+	export GOROOT=/app/go/go
+	export PATH=$PATH:/app/go/go/bin
 	./goad install
 EOF
 )"
+# escape it as a json string.  if you have jq, use `jq -s -R .` instead.
 Script="$(echo "${Script}" | tr -d "\t" | grep -v "^#" | tr -s "\n" ";" | sed "s/\"/\\\\\"/g")"
+
+
+
+### Assemble the full formula
+# This is mostly just taking our metadata variables above, and injecting them.
 Formula="$(cat <<-EOF
 {
 	"inputs": [{
@@ -57,7 +62,11 @@ Formula="$(cat <<-EOF
 	}],
 	"action": {
 		"command": [ "/bin/bash", "-c", "${Script}" ],
-		"cwd": "/task/repeatr/"
+		"cwd": "/task/repeatr/",
+		"env": {
+			"GITCOMMIT": "${GITCOMMIT}",
+			"BUILDDATE": "${BUILDDATE}"
+		}
 	},
 	"outputs": [{
 		"type": "tar",
@@ -72,4 +81,7 @@ Formula="$(cat <<-EOF
 }
 EOF
 )"
+
+
+### run it!
 time repeatr run -i <(echo "${Formula}")
