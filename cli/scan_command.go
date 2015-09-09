@@ -36,13 +36,13 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 				Type: ctx.String("kind"),
 				URI:  ctx.String("silo"),
 				// Filters: might want
-				Location: ctx.String("path"),
+				MountPath: ctx.String("path"),
 			}
 			if outputSpec.Type == "" {
 				panic(Error.NewWith("Missing argument: \"kind\" is a required parameter for scan", SetExitCode(EXIT_BADARGS)))
 			}
-			if outputSpec.Location == "" {
-				outputSpec.Location = "."
+			if outputSpec.MountPath == "" {
+				outputSpec.MountPath = "."
 			}
 			// invoke
 			outputResult := Scan(outputSpec)
@@ -64,7 +64,7 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 	a `Input` specification in a `Formula`.
 */
 func Scan(outputSpec def.Output) def.Output {
-	// TODO validate Location exists, give nice errors
+	// TODO validate MountPath exists, give nice errors
 
 	siloURIs := []integrity.SiloURI{
 		integrity.SiloURI(outputSpec.URI),
@@ -80,7 +80,7 @@ func Scan(outputSpec def.Output) def.Output {
 		// All of this stuff that's type-coercing?
 		//  Yeah these are hints that this stuff should be facing data validation.
 		integrity.TransmatKind(outputSpec.Type),
-		outputSpec.Location,
+		outputSpec.MountPath,
 		siloURIs,
 	)
 

@@ -29,8 +29,8 @@ func CheckBasicExecution(execEng executor.Executor) {
 		formula := def.Formula{
 			Inputs: []def.Input{
 				{
-					Type:     "tar",
-					Location: "/",
+					Type:      "tar",
+					MountPath: "/",
 					// Funny thing is, the URI isn't even necessarily where the buck stops;
 					// Remote URIs need not be checked if caches are in play, etc.
 					// So the hash needs to be set (and needs to be invalid).

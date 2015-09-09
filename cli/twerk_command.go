@@ -18,10 +18,10 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 			executor := executordispatch.Get("chroot")
 			formula := def.Formula{
 				Inputs: []def.Input{{
-					Type:     "tar",
-					Location: "/",
-					Hash:     "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-					URI:      "http+ca://repeatr.s3.amazonaws.com/assets/",
+					Type:      "tar",
+					MountPath: "/",
+					Hash:      "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
+					URI:       "http+ca://repeatr.s3.amazonaws.com/assets/",
 				}},
 				Action: def.Action{
 					Entrypoint: []string{"bash", "-c", "echo hallo ; pwd ; ls -la ; bash"},

@@ -15,9 +15,9 @@ func ValidateBasic(job *Formula) {
 		panic(ValidationError.New("Formula needs at least one input"))
 	}
 
-	if job.Inputs[0].Location == "" {
-		job.Inputs[0].Location = "/"
-	} else if job.Inputs[0].Location != "/" {
+	if job.Inputs[0].MountPath == "" {
+		job.Inputs[0].MountPath = "/"
+	} else if job.Inputs[0].MountPath != "/" {
 		panic(ValidationError.New("First formula input must be mounted to /"))
 	}
 

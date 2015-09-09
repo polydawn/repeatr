@@ -17,10 +17,10 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 		Convey("Launch should succeed", func() {
 			filefixture.Beta.Create("./fixture/beta")
 			formula.Inputs = append(formula.Inputs, (def.Input{
-				Type:     "dir",
-				Hash:     filefixture.Beta_Hash,
-				URI:      "./fixture/beta",
-				Location: "/data/test",
+				Type:      "dir",
+				Hash:      filefixture.Beta_Hash,
+				URI:       "./fixture/beta",
+				MountPath: "/data/test",
 			}))
 
 			formula.Action = def.Action{
