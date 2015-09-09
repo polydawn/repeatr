@@ -108,8 +108,7 @@ type Action struct {
 	Examples may include "tar", "git", "hadoop", "ipfs", etc.
 
 	`Output.Location` states where we should collect information from the
-	task execution environment.  Repeatr executors will make sure this
-	path exists and is owned&writable by the task before starting.
+	task execution environment.
 	After the task completes, repeatr will pick up this data, ship it off
 	to storage, and also calculate a checksum of the data so we can see
 	whether it matches any prior (or future) runs of this `Formula`.
