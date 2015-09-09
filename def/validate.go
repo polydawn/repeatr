@@ -24,9 +24,6 @@ func ValidateBasic(job *Formula) {
 	if job.Accents.Env == nil {
 		job.Accents.Env = map[string]string{}
 	}
-	if job.Accents.Custom == nil {
-		job.Accents.Custom = map[string]string{}
-	}
 	if job.Accents.Entrypoint == nil {
 		job.Accents.Entrypoint = []string{}
 	}

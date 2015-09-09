@@ -94,23 +94,11 @@ type Input struct {
 /*
 	Accents lists executor-independent constraints and information about a task.
 	All content is part of the conjecture.
-
-	`OS` and `Arch` constraints may be specified here.  This may be used by the scheduler.
-	They are also considered part of the 'conjecture' since it's typically Pretty Hard
-	to get things to behave identially across many platforms, so we won't try to
-	group together formula that run on different platforms by default.
-	(If you want to assert	things are the same across all platforms, great!
-	Build a query to gather formulas together to check for that.)
-
-	NOTE: this entire struct is janky; try not to leak too much linux/container specific stuff into it
 */
 type Accents struct {
-	OS         string            // OS restriction.  use values matching '$GOOS'.  linux presumed if unset.  included in the conjecture.
-	Arch       string            // architecture restriction.  use values matching '$GOARCH'.  x86_64 presumed if unset.  included in the conjecture.
 	Entrypoint []string          `json:"command"` // executable to invoke as the task.  included in the conjecture.
 	Cwd        string            `json:"cwd"`     // working directory to set when invoking the executable.  if not set, will be defaulted to "/".
 	Env        map[string]string `json:"env"`     // environment variables.  included in the conjecture.
-	Custom     map[string]string // User-defined map; a no-man's land where anything goes.  included in the conjecture.
 }
 
 /*
