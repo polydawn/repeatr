@@ -29,8 +29,8 @@ func CheckBasicExecution(execEng executor.Executor) {
 		formula := def.Formula{
 			Inputs: []def.Input{
 				{
-					Type:     "tar",
-					Location: "/",
+					Type:      "tar",
+					MountPath: "/",
 					// Funny thing is, the URI isn't even necessarily where the buck stops;
 					// Remote URIs need not be checked if caches are in play, etc.
 					// So the hash needs to be set (and needs to be invalid).
@@ -46,7 +46,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 		})
 
 		Convey("The job exit code should clearly indicate failure", FailureContinues, func() {
-			formula.Accents = def.Accents{
+			formula.Action = def.Action{
 				Entrypoint: []string{"echo", "echococo"},
 			}
 			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
@@ -62,7 +62,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 		formula := getBaseFormula()
 
 		Convey("The executor should be able to invoke echo", FailureContinues, func() {
-			formula.Accents = def.Accents{
+			formula.Action = def.Action{
 				Entrypoint: []string{"echo", "echococo"},
 			}
 
@@ -78,7 +78,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 		})
 
 		Convey("The executor should be able to check exit codes", func() {
-			formula.Accents = def.Accents{
+			formula.Action = def.Action{
 				Entrypoint: []string{"sh", "-c", "exit 14"},
 			}
 
@@ -89,7 +89,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 		})
 
 		Convey("The executor should report command not found clearly", FailureContinues, func() {
-			formula.Accents = def.Accents{
+			formula.Action = def.Action{
 				Entrypoint: []string{"not a command"},
 			}
 

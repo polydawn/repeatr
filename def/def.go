@@ -20,7 +20,7 @@
 
 	Given a Formula j, and the []Output v, and some hash h:
 
-	h(j.Inputs||j.Accents||filter(j.Outputs, where Conjecture=true)) -> h(v)
+	h(j.Inputs||j.Action||filter(j.Outputs, where Conjecture=true)) -> h(v)
 
 	should be an onto relationship.
 
@@ -28,7 +28,7 @@
 
 	### Misc docs:
 
-	- The root filesystem of your execution engine is just another `Input` with the rest, with Location="/".
+	- The root filesystem of your execution engine is just another `Input` with the rest, with MountPath="/".
 	Exactly one input with the root location is required at runtime.
 
 	- Formula.SchedulingInfo, since it's *not* included in the 'conjecture',
@@ -52,7 +52,7 @@ import (
 */
 type Formula struct {
 	Inputs  []Input  `json:"inputs"`  // total set of inputs.  sorted order.  included in the conjecture.
-	Accents Accents  `json:"action"`  // description of the computation to be performed.  included in the conjecture.
+	Action  Action   `json:"action"`  // description of the computation to be performed.  included in the conjecture.
 	Outputs []Output `json:"outputs"` // set of expected outputs.  sorted order.  conditionally included in the conjecture (configurable per output).
 	//SchedulingInfo interface{} // configures what execution framework is used and impl-specific additional parameters to that (minimum node memory, etc).  not considered part of the conjecture.
 }
@@ -85,32 +85,20 @@ type Formula struct {
 	transport details; and content itself is still checked by `Input.Hash`.
 */
 type Input struct {
-	Type     string `json:"type"`  // implementation name (repeatr-internal).  included in the conjecture.
-	Hash     string `json:"hash"`  // identifying hash of input data.  included in the conjecture.
-	URI      string `json:"silo"`  // secondary content lookup descriptor.  not considered part of the conjecture.
-	Location string `json:"mount"` // filepath where this input should be mounted in the execution context.  included in the conjecture.
+	Type      string `json:"type"`  // implementation name (repeatr-internal).  included in the conjecture.
+	Hash      string `json:"hash"`  // identifying hash of input data.  included in the conjecture.
+	URI       string `json:"silo"`  // secondary content lookup descriptor.  not considered part of the conjecture.
+	MountPath string `json:"mount"` // filepath where this input should be mounted in the execution context.  included in the conjecture.
 }
 
 /*
-	Accents lists executor-independent constraints and information about a task.
+	Action describes the computation to be run once the inputs have been set up.
 	All content is part of the conjecture.
-
-	`OS` and `Arch` constraints may be specified here.  This may be used by the scheduler.
-	They are also considered part of the 'conjecture' since it's typically Pretty Hard
-	to get things to behave identially across many platforms, so we won't try to
-	group together formula that run on different platforms by default.
-	(If you want to assert	things are the same across all platforms, great!
-	Build a query to gather formulas together to check for that.)
-
-	NOTE: this entire struct is janky; try not to leak too much linux/container specific stuff into it
 */
-type Accents struct {
-	OS         string            // OS restriction.  use values matching '$GOOS'.  linux presumed if unset.  included in the conjecture.
-	Arch       string            // architecture restriction.  use values matching '$GOARCH'.  x86_64 presumed if unset.  included in the conjecture.
+type Action struct {
 	Entrypoint []string          `json:"command"` // executable to invoke as the task.  included in the conjecture.
 	Cwd        string            `json:"cwd"`     // working directory to set when invoking the executable.  if not set, will be defaulted to "/".
 	Env        map[string]string `json:"env"`     // environment variables.  included in the conjecture.
-	Custom     map[string]string // User-defined map; a no-man's land where anything goes.  included in the conjecture.
 }
 
 /*
@@ -119,9 +107,8 @@ type Accents struct {
 	Outputs can be one of many different `Type`s of data sink.
 	Examples may include "tar", "git", "hadoop", "ipfs", etc.
 
-	`Output.Location` states where we should collect information from the
-	task execution environment.  Repeatr executors will make sure this
-	path exists and is owned&writable by the task before starting.
+	`Output.MountPath` states where we should collect information from the
+	task execution environment.
 	After the task completes, repeatr will pick up this data, ship it off
 	to storage, and also calculate a checksum of the data so we can see
 	whether it matches any prior (or future) runs of this `Formula`.
@@ -132,7 +119,7 @@ type Accents struct {
 	your data can be mobile).
 
 	The `Output.Hash` field will be filled in with a value computed
-	from the data present in `Output.Location` after the task has completed.
+	from the data present in `Output.MountPath` after the task has completed.
 	As with `Input.Hash`, the `Output.Hash` in repeatr will always be a
 	cryptographically strong hash, which means it precisely describes your
 	data, and makes it virtually impossible to accidentally get the same
@@ -166,10 +153,10 @@ type Accents struct {
 	modification times to a standard value.)
 */
 type Output struct {
-	Type     string `json:"type"`           // implementation name (repeatr-internal).  included in the conjecture (iff the whole output is).
-	Hash     string `json:"hash"`           // identifying hash of output data.  generated by the output handling implementation during data export when a task is complete.  included in the conjecture (iff the whole output is).
-	URI      string `json:"silo,omitempty"` // where to ship the output data.  not considered part of the conjecture.
-	Location string `json:"mount"`          // filepath where this output will be yanked from the job when it reaches completion.  included in the conjecture (iff the whole output is).
+	Type      string `json:"type"`           // implementation name (repeatr-internal).  included in the conjecture (iff the whole output is).
+	Hash      string `json:"hash"`           // identifying hash of output data.  generated by the output handling implementation during data export when a task is complete.  included in the conjecture (iff the whole output is).
+	URI       string `json:"silo,omitempty"` // where to ship the output data.  not considered part of the conjecture.
+	MountPath string `json:"mount"`          // filepath where this output will be yanked from the job when it reaches completion.  included in the conjecture (iff the whole output is).
 	// list of filter implementation names to apply to the output after the task has completeled and just before committing the data to storage.  included in the conjecture (iff the whole output is).
 	// The filter name and its arguments are space-separated, whitespace cannot
 	// be quoted.

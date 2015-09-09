@@ -60,7 +60,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 	for input, arena := range filesystems {
 		assemblyParts = append(assemblyParts, integrity.AssemblyPart{
 			SourcePath: arena.Path(),
-			TargetPath: input.Location,
+			TargetPath: input.MountPath,
 			Writable:   true, // TODO input config should have a word about this
 		})
 	}
@@ -75,7 +75,7 @@ type materializerReport struct {
 }
 
 func ProvisionOutputs(outputs []def.Output, rootfs string, journal log15.Logger) {
-	// We no longer make output locations by default.
+	// We no longer make output MountPaths by default.
 	// Originally, this seemed like a good idea, because it would be a
 	//  consistent stance and allow us to use more complex (e.g. mount-powered)
 	//   output shuttling concepts later without any fuss.
@@ -121,7 +121,7 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 					continue
 				}
 			}
-			scanPath := filepath.Join(rootfs, out.Location)
+			scanPath := filepath.Join(rootfs, out.MountPath)
 			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
 			try.Do(func() {
 				// TODO: following is hack; badly need to update config parsing to understand this first-class

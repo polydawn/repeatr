@@ -17,13 +17,13 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 		Convey("Launch should succeed", func() {
 			filefixture.Beta.Create("./fixture/beta")
 			formula.Inputs = append(formula.Inputs, (def.Input{
-				Type:     "dir",
-				Hash:     filefixture.Beta_Hash,
-				URI:      "./fixture/beta",
-				Location: "/data/test",
+				Type:      "dir",
+				Hash:      filefixture.Beta_Hash,
+				URI:       "./fixture/beta",
+				MountPath: "/data/test",
 			}))
 
-			formula.Accents = def.Accents{
+			formula.Action = def.Action{
 				Entrypoint: []string{"/bin/true"},
 			}
 			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
@@ -32,7 +32,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 			So(job.Wait().ExitCode, ShouldEqual, 0)
 
 			Convey("Commands inside the job should be able to see the mounted files", FailureContinues, func() {
-				formula.Accents = def.Accents{
+				formula.Action = def.Action{
 					Entrypoint: []string{"ls", "/data/test"},
 				}
 

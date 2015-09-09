@@ -21,7 +21,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 			// If you spawn a new process with the chroot without setting its current working dir,
 			// the cwd is still *whatever it inherits*.  And even if the process can't reach there
 			// starting from "/", it can still *walk deeper from that cwd*.
-			formula.Accents = def.Accents{
+			formula.Action = def.Action{
 				//Entrypoint: []string{"find", "-maxdepth", "5"}, // if you goofed, during test runs this will show you the executor's workspace!
 				//Entrypoint: []string{"bash", "-c", "find -maxdepth 5 ; echo --- ; echo \"$PWD\" ; cd \"$(echo \"$PWD\" | sed 's/^(unreachable)//')\" ; ls"}, // this demo's that you can't actually cd back to it, though.
 				Entrypoint: []string{"pwd"},
@@ -33,7 +33,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 		})
 
 		Convey("Setting another cwd should work", func() {
-			formula.Accents = def.Accents{
+			formula.Action = def.Action{
 				Cwd:        "/usr",
 				Entrypoint: []string{"pwd"},
 			}
@@ -44,7 +44,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 		})
 
 		Convey("Setting a nonexistent cwd should fail to launch", FailureContinues, func() {
-			formula.Accents = def.Accents{
+			formula.Action = def.Action{
 				Cwd:        "/does/not/exist/by/any/means",
 				Entrypoint: []string{"pwd"},
 			}
@@ -67,7 +67,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 
 	Convey("SPEC: Env vars should be contained", func() {
 		formula := getBaseFormula()
-		formula.Accents = def.Accents{
+		formula.Action = def.Action{
 			Entrypoint: []string{"env"},
 		}
 
@@ -85,8 +85,8 @@ func CheckEnvBehavior(execEng executor.Executor) {
 		})
 
 		Convey("Env specified with the job should be applied", func() {
-			formula.Accents.Env = make(map[string]string)
-			formula.Accents.Env["REPEATR_TEST_KEY_2"] = "test value"
+			formula.Action.Env = make(map[string]string)
+			formula.Action.Env["REPEATR_TEST_KEY_2"] = "test value"
 
 			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
 			So(job, ShouldNotBeNil)

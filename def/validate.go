@@ -15,45 +15,36 @@ func ValidateBasic(job *Formula) {
 		panic(ValidationError.New("Formula needs at least one input"))
 	}
 
-	if job.Inputs[0].Location == "" {
-		job.Inputs[0].Location = "/"
-	} else if job.Inputs[0].Location != "/" {
+	if job.Inputs[0].MountPath == "" {
+		job.Inputs[0].MountPath = "/"
+	} else if job.Inputs[0].MountPath != "/" {
 		panic(ValidationError.New("First formula input must be mounted to /"))
 	}
 
-	if job.Accents.Env == nil {
-		job.Accents.Env = map[string]string{}
+	if job.Action.Env == nil {
+		job.Action.Env = map[string]string{}
 	}
-	if job.Accents.Custom == nil {
-		job.Accents.Custom = map[string]string{}
+	if job.Action.Entrypoint == nil {
+		job.Action.Entrypoint = []string{}
 	}
-	if job.Accents.Entrypoint == nil {
-		job.Accents.Entrypoint = []string{}
-	}
-	if job.Accents.Cwd == "" {
-		job.Accents.Cwd = "/"
+	if job.Action.Cwd == "" {
+		job.Action.Cwd = "/"
 	}
 }
 
 // Modifies a formula with a few tweaks that make them more convenient for human-generated input.
 // * If no environment PATH was specified, set the PATH to "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-//   * To disable, set job.Accents.Env["PATH"] to any string (including "") as desired.
+//   * To disable, set job.Action.Env["PATH"] to any string (including "") as desired.
 // * Sets the entrypoint to "/bin/true" if none was specified
-//   * To disable, set job.Accents.Entrypoint
+//   * To disable, set job.Action.Entrypoint
 func ValidateConvenience(job *Formula) {
 	// Add a basic PATH if none exists
-	if _, ok := job.Accents.Env["PATH"]; !ok {
-		job.Accents.Env["PATH"] = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	if _, ok := job.Action.Env["PATH"]; !ok {
+		job.Action.Env["PATH"] = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 	}
 
 	// Assume a trivial command if none
-	if len(job.Accents.Entrypoint) < 1 {
-		job.Accents.Entrypoint = []string{"/bin/true"}
+	if len(job.Action.Entrypoint) < 1 {
+		job.Action.Entrypoint = []string{"/bin/true"}
 	}
 }
-
-// TODO: massage rel dirs into abs dirs
-
-// TODO + discuss: Validate rootfs ?
-// possibly `echo "nameserver 8.8.8.8" >  /etc/resolv.conf` if whelp?
-// something more clever

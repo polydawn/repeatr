@@ -124,15 +124,15 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	args = append(args, "--rootfs", rootfs)
 
 	// Set cwd
-	args = append(args, "--cwd", f.Accents.Cwd)
+	args = append(args, "--cwd", f.Action.Cwd)
 
 	// Add all desired environment variables
-	for k, v := range f.Accents.Env {
+	for k, v := range f.Action.Env {
 		args = append(args, "--env", k+"="+v)
 	}
 
 	// Unroll command args
-	args = append(args, f.Accents.Entrypoint...)
+	args = append(args, f.Action.Entrypoint...)
 
 	// Prepare command to exec
 	cmd := exec.Command("nsinit", args...)

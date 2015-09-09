@@ -106,8 +106,8 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)
 
 	// chroot's are pretty easy.
-	cmdName := f.Accents.Entrypoint[0]
-	cmd := exec.Command(cmdName, f.Accents.Entrypoint[1:]...)
+	cmdName := f.Action.Entrypoint[0]
+	cmd := exec.Command(cmdName, f.Action.Entrypoint[1:]...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Chroot:    rootfs,
 		Pdeathsig: syscall.SIGKILL,
@@ -116,16 +116,16 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	// except handling cwd is a little odd.
 	// see comments in gosh tests with chroot for information about the odd behavior we're hacking around here;
 	// we're comfortable making this special check here, but not upstreaming it to gosh, because in our context we "know" we're not racing anyone.
-	if externalCwdStat, err := os.Stat(filepath.Join(rootfs, f.Accents.Cwd)); err != nil {
-		panic(executor.TaskExecError.New("cannot set cwd to %q: %s", f.Accents.Cwd, err.(*os.PathError).Err))
+	if externalCwdStat, err := os.Stat(filepath.Join(rootfs, f.Action.Cwd)); err != nil {
+		panic(executor.TaskExecError.New("cannot set cwd to %q: %s", f.Action.Cwd, err.(*os.PathError).Err))
 	} else if !externalCwdStat.IsDir() {
-		panic(executor.TaskExecError.New("cannot set cwd to %q: not a dir", f.Accents.Cwd))
+		panic(executor.TaskExecError.New("cannot set cwd to %q: not a dir", f.Action.Cwd))
 	}
-	cmd.Dir = f.Accents.Cwd
+	cmd.Dir = f.Action.Cwd
 
 	// set env.
 	// initialization already required by earlier 'validate' calls.
-	cmd.Env = envToSlice(f.Accents.Env)
+	cmd.Env = envToSlice(f.Action.Env)
 
 	cmd.Stdin = stdin
 	cmd.Stdout = outS
