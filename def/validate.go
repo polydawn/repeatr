@@ -48,9 +48,3 @@ func ValidateConvenience(job *Formula) {
 		job.Accents.Entrypoint = []string{"/bin/true"}
 	}
 }
-
-// TODO: massage rel dirs into abs dirs
-
-// TODO + discuss: Validate rootfs ?
-// possibly `echo "nameserver 8.8.8.8" >  /etc/resolv.conf` if whelp?
-// something more clever
