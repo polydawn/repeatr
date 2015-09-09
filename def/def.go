@@ -20,7 +20,7 @@
 
 	Given a Formula j, and the []Output v, and some hash h:
 
-	h(j.Inputs||j.Accents||filter(j.Outputs, where Conjecture=true)) -> h(v)
+	h(j.Inputs||j.Action||filter(j.Outputs, where Conjecture=true)) -> h(v)
 
 	should be an onto relationship.
 
@@ -52,7 +52,7 @@ import (
 */
 type Formula struct {
 	Inputs  []Input  `json:"inputs"`  // total set of inputs.  sorted order.  included in the conjecture.
-	Accents Accents  `json:"action"`  // description of the computation to be performed.  included in the conjecture.
+	Action  Action   `json:"action"`  // description of the computation to be performed.  included in the conjecture.
 	Outputs []Output `json:"outputs"` // set of expected outputs.  sorted order.  conditionally included in the conjecture (configurable per output).
 	//SchedulingInfo interface{} // configures what execution framework is used and impl-specific additional parameters to that (minimum node memory, etc).  not considered part of the conjecture.
 }
@@ -92,10 +92,10 @@ type Input struct {
 }
 
 /*
-	Accents lists executor-independent constraints and information about a task.
+	Action describes the computation to be run once the inputs have been set up.
 	All content is part of the conjecture.
 */
-type Accents struct {
+type Action struct {
 	Entrypoint []string          `json:"command"` // executable to invoke as the task.  included in the conjecture.
 	Cwd        string            `json:"cwd"`     // working directory to set when invoking the executable.  if not set, will be defaulted to "/".
 	Env        map[string]string `json:"env"`     // environment variables.  included in the conjecture.
