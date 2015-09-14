@@ -55,8 +55,12 @@ func TestParse(t *testing.T) {
 						"hash": "abcq",
 					},
 				},
-				"action":  placeholderAction,
-				"outputs": placeholderOutput,
+				"action": placeholderAction,
+				"outputs": map[string]interface{}{
+					"/beep/boop": map[string]interface{}{
+						"type": "tar",
+					},
+				},
 			}
 
 			Convey("The mountpath should be the map key", func() {
@@ -66,8 +70,9 @@ func TestParse(t *testing.T) {
 				So(len(formula.Inputs), ShouldEqual, 2)
 				So(formula.Inputs[0].MountPath, ShouldEqual, "/")
 				So(formula.Inputs[1].MountPath, ShouldEqual, "/beep/boop")
+				So(len(formula.Outputs), ShouldEqual, 1)
+				So(formula.Outputs[0].MountPath, ShouldEqual, "/beep/boop")
 			})
 		})
-
 	})
 }
