@@ -85,11 +85,18 @@ type Formula struct {
 	transport details; and content itself is still checked by `Input.Hash`.
 */
 type Input struct {
+	Name      string // the map key.  by default will also be used for MountPath.
 	Type      string `json:"type"`  // implementation name (repeatr-internal).  included in the conjecture.
 	Hash      string `json:"hash"`  // identifying hash of input data.  included in the conjecture.
 	URI       string `json:"silo"`  // secondary content lookup descriptor.  not considered part of the conjecture.
 	MountPath string `json:"mount"` // filepath where this input should be mounted in the execution context.  included in the conjecture.
 }
+
+type InputsByName []Input
+
+func (a InputsByName) Len() int           { return len(a) }
+func (a InputsByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a InputsByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 /*
 	Action describes the computation to be run once the inputs have been set up.

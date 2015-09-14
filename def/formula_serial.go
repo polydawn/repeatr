@@ -1,5 +1,9 @@
 package def
 
+import (
+	"sort"
+)
+
 func (f *Formula) Unmarshal(ser interface{}) error {
 	mp, ok := ser.(map[string]interface{})
 	if !ok {
@@ -18,18 +22,21 @@ func (f *Formula) Unmarshal(ser interface{}) error {
 	//  we flip this to a slice and hold it as sorted.
 	f.Inputs = make([]Input, len(val2))
 	var i int
-	for _, v := range val2 {
+	for k, v := range val2 {
+		f.Inputs[i].Name = k
 		if err := f.Inputs[i].Unmarshal(v); err != nil {
 			return err
 		}
-		// TODO add name field, set name
 		i++
 	}
+	sort.Sort(InputsByName(f.Inputs))
 
 	return nil
 }
 
 func (i *Input) Unmarshal(ser interface{}) error {
+	// special: expect `Name` to have been set by caller.
+
 	mp, ok := ser.(map[string]interface{})
 	if !ok {
 		return newConfigValTypeError("input", "structure")
@@ -54,12 +61,13 @@ func (i *Input) Unmarshal(ser interface{}) error {
 	}
 
 	val, ok = mp["mount"]
-	if !ok {
-		return newConfigValTypeError("mount", "string")
-	}
-	i.MountPath, ok = val.(string)
-	if !ok {
-		return newConfigValTypeError("mount", "string")
+	if ok {
+		i.MountPath, ok = val.(string)
+		if !ok {
+			return newConfigValTypeError("mount", "string")
+		}
+	} else {
+		i.MountPath = i.Name
 	}
 
 	val, ok = mp["silo"]
