@@ -12,7 +12,7 @@ func (f *Formula) Unmarshal(ser interface{}) error {
 
 	val, ok := mp["inputs"]
 	if !ok {
-		return newConfigValTypeError("inputs", "structure")
+		return newConfigValTypeError("inputs", "map")
 	}
 	val2, ok := val.(map[string]interface{})
 	if !ok {
