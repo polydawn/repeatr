@@ -2,6 +2,7 @@ package def
 
 import (
 	"sort"
+	"strings"
 )
 
 func (f *Formula) Unmarshal(ser interface{}) error {
@@ -161,5 +162,82 @@ func (i *Output) Unmarshal(ser interface{}) error {
 		}
 	}
 
+	val, ok = mp["filters"]
+	if ok {
+		if err := i.Filters.Unmarshal(val); err != nil {
+			return err
+		}
+	}
+	i.Filters.InitDefaults()
+
 	return nil
+}
+
+func (f *Filters) Unmarshal(ser interface{}) error {
+	strs := coerceStringList(ser)
+	if strs == nil {
+		return newConfigValTypeError("filters", "list of strings")
+	}
+	for _, line := range strs {
+		words := strings.Fields(line)
+		if len(words) < 1 {
+			continue
+		}
+		switch words[0] {
+		case "uid":
+			if len(words) != 2 {
+				return ConfigError.New("filter uid requires one parameter")
+			}
+			if words[1] == "keep" {
+				f.Uid = "keep"
+				break
+			}
+			// TODO may support special value "host" in the future to say "fuckkit, no privs" for input filters
+
+			// for each filter:
+			// - special state uninitialized
+			// - special state "keep"
+			// - some have special state "host"?  (only uid/gid; and probably only on input!)
+			// - generic value.
+			// note that not all of these values are literally useful, either.
+			//  for example "host" has to be resolved to a literal, and that's from yet another
+			//   layer of config resolve (because we have to keep it for reserialization at this level).
+			// so that at least makes it super clear that we have a config form and
+			//  that shouldn't refer to the functional form.
+
+			// strconv.Atoi(words[1])
+		case "gid":
+		case "mtime":
+		default:
+			return ConfigError.New("unknown filter name %q", words[0])
+		}
+	}
+	return nil
+}
+
+func (f *Filters) InitDefaults() {
+	if f.Uid == "" {
+		f.Uid = FilterDefaultUid
+	}
+	if f.Gid == "" {
+		f.Gid = FilterDefaultGid
+	}
+	if f.Mtime == "" {
+		f.Mtime = FilterDefaultMtime
+	}
+}
+
+func coerceStringList(x interface{}) []string {
+	y, ok := x.([]interface{})
+	if !ok {
+		return nil
+	}
+	z := make([]string, len(y))
+	for i := range y {
+		z[i], ok = y[i].(string)
+		if !ok {
+			return nil
+		}
+	}
+	return z
 }

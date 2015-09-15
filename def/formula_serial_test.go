@@ -74,5 +74,31 @@ func TestParse(t *testing.T) {
 				So(formula.Outputs[0].MountPath, ShouldEqual, "/beep/boop")
 			})
 		})
+
+		Convey("Given a formula with output filters", func() {
+			tree := map[string]interface{}{
+				"inputs": placeholderInput,
+				"action": placeholderAction,
+				"outputs": map[string]interface{}{
+					"/beep/boop": map[string]interface{}{
+						"type": "tar",
+						"filters": []interface{}{
+							"mtime keep",
+							"uid 9000",
+						},
+					},
+				},
+			}
+
+			Convey("It should parse", func() {
+				formula := &def.Formula{}
+				err := formula.Unmarshal(tree)
+				So(err, ShouldBeNil)
+				So(len(formula.Outputs), ShouldEqual, 1)
+				So(formula.Outputs[0].Filters.Mtime, ShouldEqual, def.FilterKeep)
+				So(formula.Outputs[0].Filters.Uid, ShouldEqual, 9000)
+				So(formula.Outputs[0].Filters.Gid, ShouldEqual, def.FilterDefaultGid)
+			})
+		})
 	})
 }
