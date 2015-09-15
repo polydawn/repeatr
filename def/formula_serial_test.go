@@ -90,14 +90,18 @@ func TestParse(t *testing.T) {
 				},
 			}
 
-			Convey("It should parse", func() {
+			Convey("Filters should be loaded", func() {
 				formula := &def.Formula{}
 				err := formula.Unmarshal(tree)
 				So(err, ShouldBeNil)
 				So(len(formula.Outputs), ShouldEqual, 1)
-				So(formula.Outputs[0].Filters.Mtime, ShouldEqual, def.FilterKeep)
+				// mtime should be overriden to keep
+				So(formula.Outputs[0].Filters.MtimeMode, ShouldEqual, def.FilterKeep)
+				// uid hould be use, with our specified value
+				So(formula.Outputs[0].Filters.UidMode, ShouldEqual, def.FilterUse)
 				So(formula.Outputs[0].Filters.Uid, ShouldEqual, 9000)
-				So(formula.Outputs[0].Filters.Gid, ShouldEqual, def.FilterDefaultGid)
+				// gid should be uninitialized, because we didn't say anything
+				So(formula.Outputs[0].Filters.GidMode, ShouldEqual, def.FilterUninitialized)
 			})
 		})
 	})

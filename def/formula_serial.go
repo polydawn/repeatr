@@ -2,7 +2,9 @@ package def
 
 import (
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 )
 
 func (f *Formula) Unmarshal(ser interface{}) error {
@@ -168,7 +170,10 @@ func (i *Output) Unmarshal(ser interface{}) error {
 			return err
 		}
 	}
-	i.Filters.InitDefaults()
+	// if any (or all!) uninitialized values are left... that's fine, because
+	// that means we wouldn't want to reserialize them as if they
+	// had been specified.  one of the InitDefaults methods should
+	// be called right before use.
 
 	return nil
 }
@@ -186,28 +191,58 @@ func (f *Filters) Unmarshal(ser interface{}) error {
 		switch words[0] {
 		case "uid":
 			if len(words) != 2 {
-				return ConfigError.New("filter uid requires one parameter")
+				return ConfigError.New("uid filter requires one parameter")
 			}
 			if words[1] == "keep" {
-				f.Uid = "keep"
+				f.UidMode = FilterKeep
 				break
 			}
-			// TODO may support special value "host" in the future to say "fuckkit, no privs" for input filters
-
-			// for each filter:
-			// - special state uninitialized
-			// - special state "keep"
-			// - some have special state "host"?  (only uid/gid; and probably only on input!)
-			// - generic value.
-			// note that not all of these values are literally useful, either.
-			//  for example "host" has to be resolved to a literal, and that's from yet another
-			//   layer of config resolve (because we have to keep it for reserialization at this level).
-			// so that at least makes it super clear that we have a config form and
-			//  that shouldn't refer to the functional form.
-
-			// strconv.Atoi(words[1])
+			n, err := strconv.Atoi(words[1])
+			if err != nil || n < 0 {
+				return ConfigError.New("uid filter parameter must be non-negative integer")
+			}
+			f.UidMode = FilterUse
+			f.Uid = n
 		case "gid":
+			if len(words) != 2 {
+				return ConfigError.New("gid filter requires one parameter")
+			}
+			if words[1] == "keep" {
+				f.GidMode = FilterKeep
+				break
+			}
+			n, err := strconv.Atoi(words[1])
+			if err != nil || n < 0 {
+				return ConfigError.New("gid filter parameter must be non-negative integer")
+			}
+			f.GidMode = FilterUse
+			f.Gid = n
 		case "mtime":
+			if len(words) == 2 && words[1] == "keep" {
+				f.MtimeMode = FilterKeep
+				break
+			}
+			// time may be either an RFC3339 string, or, a unix timestamp prefixed
+			//  by '@' (similar to how the gnu 'date' command can be told to take unix timestamps).
+			if len(words) == 2 && words[1][0] == '@' {
+				n, err := strconv.Atoi(words[1][1:])
+				if err != nil {
+					return ConfigError.New("mtime filter parameter starting with '@' should be timestamp integer")
+				}
+				f.MtimeMode = FilterUse
+				f.Mtime = time.Unix(int64(n), 0)
+				break
+			}
+			// okay, no special rules matched: try to parse full thing as human date string.
+			if len(words) < 2 {
+				return ConfigError.New("mtime filter requires either RFC3339 date or unix timestamp denoted by prefix with '@")
+			}
+			date, err := time.Parse(time.RFC3339, strings.Join(words[1:], " "))
+			if err != nil {
+				return ConfigError.New("mtime filter requires either RFC3339 date or unix timestamp denoted by prefix with '@")
+			}
+			f.MtimeMode = FilterUse
+			f.Mtime = date
 		default:
 			return ConfigError.New("unknown filter name %q", words[0])
 		}
@@ -215,14 +250,31 @@ func (f *Filters) Unmarshal(ser interface{}) error {
 	return nil
 }
 
-func (f *Filters) InitDefaults() {
-	if f.Uid == "" {
+// Default filters for input are to respect everything.
+func (f *Filters) InitDefaultsInput() {
+	if f.UidMode == FilterUninitialized {
+		f.UidMode = FilterKeep
+	}
+	if f.GidMode == FilterUninitialized {
+		f.GidMode = FilterKeep
+	}
+	if f.MtimeMode == FilterUninitialized {
+		f.MtimeMode = FilterKeep
+	}
+}
+
+// Default filters for output are to flatten uid, gid, and mtime.
+func (f *Filters) InitDefaultsOutput() {
+	if f.UidMode == FilterUninitialized {
+		f.UidMode = FilterUse
 		f.Uid = FilterDefaultUid
 	}
-	if f.Gid == "" {
+	if f.GidMode == FilterUninitialized {
+		f.GidMode = FilterUse
 		f.Gid = FilterDefaultGid
 	}
-	if f.Mtime == "" {
+	if f.MtimeMode == FilterUninitialized {
+		f.MtimeMode = FilterUse
 		f.Mtime = FilterDefaultMtime
 	}
 }

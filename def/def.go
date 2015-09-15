@@ -38,6 +38,7 @@ package def
 
 import (
 	"io"
+	"time"
 
 	"github.com/spacemonkeygo/errors"
 	"polydawn.net/repeatr/lib/streamer"
@@ -210,15 +211,28 @@ func (a OutputsByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 	system priviledges).
 */
 type Filters struct {
-	Uid   string
-	Gid   string
-	Mtime string
+	UidMode   FilterMode
+	Uid       int
+	GidMode   FilterMode
+	Gid       int
+	MtimeMode FilterMode
+	Mtime     time.Time
 }
 
-const FilterKeep = "keep"
-const FilterDefaultUid = "1000"
-const FilterDefaultGid = "1000"
-const FilterDefaultMtime = "1262304000" // fmt.Sprintf("%d", time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC).Unix())
+type FilterMode int
+
+const (
+	FilterUninitialized FilterMode = iota
+	FilterUse
+	FilterKeep
+	FilterHost
+)
+
+var (
+	FilterDefaultUid   = 1000
+	FilterDefaultGid   = 1000
+	FilterDefaultMtime = time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)
+)
 
 /*
 	Job is an interface for observing actively running tasks.

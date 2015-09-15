@@ -3,9 +3,6 @@ package util
 import (
 	"fmt"
 	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
@@ -95,32 +92,33 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 	scanGather := make(chan scanReport)
 	for _, out := range outputs {
 		go func(out def.Output) {
-			filterOptions := make([]integrity.MaterializerConfigurer, 0, 4)
-			for _, name := range out.Filters {
-				cfg := strings.Fields(name)
-				switch cfg[0] {
-				case "uid":
-					f := filter.UidFilter{}
-					if len(cfg) > 1 {
-						f.Value, _ = strconv.Atoi(cfg[1])
-					}
-					filterOptions = append(filterOptions, integrity.UseFilter(f))
-				case "gid":
-					f := filter.GidFilter{}
-					if len(cfg) > 1 {
-						f.Value, _ = strconv.Atoi(cfg[1])
-					}
-					filterOptions = append(filterOptions, integrity.UseFilter(f))
-				case "mtime":
-					f := filter.MtimeFilter{}
-					if len(cfg) > 1 {
-						f.Value, _ = time.Parse(time.RFC3339, cfg[1])
-					}
-					filterOptions = append(filterOptions, integrity.UseFilter(f))
-				default:
-					continue
-				}
+			filterOptions := make([]integrity.MaterializerConfigurer, 0, 3)
+			out.Filters.InitDefaultsOutput()
+			switch out.Filters.UidMode {
+			case def.FilterKeep: // easy, just no filter.
+			case def.FilterUse:
+				f := filter.UidFilter{out.Filters.Uid}
+				filterOptions = append(filterOptions, integrity.UseFilter(f))
+			default:
+				panic(errors.ProgrammerError.New("unhandled filter mode %v", out.Filters.UidMode))
 			}
+			switch out.Filters.GidMode {
+			case def.FilterKeep: // easy, just no filter.
+			case def.FilterUse:
+				f := filter.GidFilter{out.Filters.Gid}
+				filterOptions = append(filterOptions, integrity.UseFilter(f))
+			default:
+				panic(errors.ProgrammerError.New("unhandled filter mode %v", out.Filters.GidMode))
+			}
+			switch out.Filters.MtimeMode {
+			case def.FilterKeep: // easy, just no filter.
+			case def.FilterUse:
+				f := filter.MtimeFilter{out.Filters.Mtime}
+				filterOptions = append(filterOptions, integrity.UseFilter(f))
+			default:
+				panic(errors.ProgrammerError.New("unhandled filter mode %v", out.Filters.MtimeMode))
+			}
+
 			scanPath := filepath.Join(rootfs, out.MountPath)
 			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
 			try.Do(func() {
