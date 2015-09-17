@@ -6,6 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/testutil"
 )
 
 func TestParse(t *testing.T) {
@@ -18,7 +19,7 @@ func TestParse(t *testing.T) {
 			},
 		}
 		placeholderAction := map[string]interface{}{
-			"command": "bonk",
+			"command": []interface{}{"bonk"},
 		}
 		placeholderOutput := map[string]interface{}{
 			"/output": map[string]interface{}{
@@ -104,5 +105,36 @@ func TestParse(t *testing.T) {
 				So(formula.Outputs[0].Filters.GidMode, ShouldEqual, def.FilterUninitialized)
 			})
 		})
+
+		Convey("Given a formula missing critical bits, parse should error", func() {
+			Convey("Missing input fails", func() {
+				tree := map[string]interface{}{
+					"action":  placeholderAction,
+					"outputs": placeholderOutput,
+				}
+				formula := &def.Formula{}
+				err := formula.Unmarshal(tree)
+				So(err, testutil.ShouldBeErrorClass, def.ConfigError)
+			})
+			Convey("Missing action fails", func() {
+				tree := map[string]interface{}{
+					"inputs":  placeholderInput,
+					"outputs": placeholderOutput,
+				}
+				formula := &def.Formula{}
+				err := formula.Unmarshal(tree)
+				So(err, testutil.ShouldBeErrorClass, def.ConfigError)
+			})
+			Convey("Missing output fails", func() {
+				tree := map[string]interface{}{
+					"action":  placeholderAction,
+					"outputs": placeholderOutput,
+				}
+				formula := &def.Formula{}
+				err := formula.Unmarshal(tree)
+				So(err, testutil.ShouldBeErrorClass, def.ConfigError)
+			})
+		})
+
 	})
 }

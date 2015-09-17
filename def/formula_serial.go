@@ -37,6 +37,16 @@ func (f *Formula) Unmarshal(ser interface{}) error {
 	}
 
 	{
+		val, ok := mp["action"]
+		if !ok {
+			return newConfigValTypeError("action", "map")
+		}
+		if err := f.Action.Unmarshal(val); err != nil {
+			return err
+		}
+	}
+
+	{
 		val, ok := mp["outputs"]
 		if !ok {
 			return newConfigValTypeError("outputs", "map")
@@ -113,6 +123,40 @@ func (i *Input) Unmarshal(ser interface{}) error {
 		i.URI, ok = val.(string)
 		if !ok {
 			return newConfigValTypeError("silo", "string")
+		}
+	}
+
+	return nil
+}
+
+func (a *Action) Unmarshal(ser interface{}) error {
+	mp, ok := ser.(map[string]interface{})
+	if !ok {
+		return newConfigValTypeError("action", "map")
+	}
+
+	val, ok := mp["command"]
+	if !ok {
+		return newConfigValTypeError("command", "list of strings")
+	}
+	a.Entrypoint = coerceStringList(val)
+	if a.Entrypoint == nil {
+		return newConfigValTypeError("command", "list of strings")
+	}
+
+	val, ok = mp["cwd"]
+	if ok {
+		a.Cwd, ok = val.(string)
+		if !ok {
+			return newConfigValTypeError("type", "string")
+		}
+	}
+
+	val, ok = mp["env"]
+	if ok {
+		a.Env, ok = val.(map[string]string)
+		if !ok {
+			return newConfigValTypeError("env", "map of string->string")
 		}
 	}
 
