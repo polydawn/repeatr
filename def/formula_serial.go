@@ -1,6 +1,7 @@
 package def
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -10,17 +11,17 @@ import (
 func (f *Formula) Unmarshal(ser interface{}) error {
 	mp, ok := ser.(map[string]interface{})
 	if !ok {
-		return newConfigValTypeError("formula", "structure")
+		return newConfigValTypeError("formula", "structure", describe(ser))
 	}
 
 	{
 		val, ok := mp["inputs"]
 		if !ok {
-			return newConfigValTypeError("inputs", "map")
+			return newConfigValTypeError("inputs", "map", "missing")
 		}
 		val2, ok := val.(map[string]interface{})
 		if !ok {
-			return newConfigValTypeError("inputs", "map")
+			return newConfigValTypeError("inputs", "map", describe(val))
 		}
 		// though the serial representation is a map,
 		//  we flip this to a slice and hold it as sorted.
@@ -39,7 +40,7 @@ func (f *Formula) Unmarshal(ser interface{}) error {
 	{
 		val, ok := mp["action"]
 		if !ok {
-			return newConfigValTypeError("action", "map")
+			return newConfigValTypeError("action", "map", "missing")
 		}
 		if err := f.Action.Unmarshal(val); err != nil {
 			return err
@@ -49,11 +50,11 @@ func (f *Formula) Unmarshal(ser interface{}) error {
 	{
 		val, ok := mp["outputs"]
 		if !ok {
-			return newConfigValTypeError("outputs", "map")
+			return newConfigValTypeError("outputs", "map", "missing")
 		}
 		val2, ok := val.(map[string]interface{})
 		if !ok {
-			return newConfigValTypeError("outputs", "map")
+			return newConfigValTypeError("outputs", "map", describe(val))
 		}
 		// though the serial representation is a map,
 		//  we flip this to a slice and hold it as sorted.
@@ -77,32 +78,32 @@ func (i *Input) Unmarshal(ser interface{}) error {
 
 	mp, ok := ser.(map[string]interface{})
 	if !ok {
-		return newConfigValTypeError("input", "structure")
+		return newConfigValTypeError("input", "structure", describe(ser))
 	}
 
 	val, ok := mp["type"]
 	if !ok {
-		return newConfigValTypeError("type", "string")
+		return newConfigValTypeError("type", "string", "missing")
 	}
 	i.Type, ok = val.(string)
 	if !ok {
-		return newConfigValTypeError("type", "string")
+		return newConfigValTypeError("type", "string", describe(val))
 	}
 
 	val, ok = mp["hash"]
 	if !ok {
-		return newConfigValTypeError("hash", "string")
+		return newConfigValTypeError("hash", "string", "missing")
 	}
 	i.Hash, ok = val.(string)
 	if !ok {
-		return newConfigValTypeError("hash", "string")
+		return newConfigValTypeError("hash", "string", describe(val))
 	}
 
 	val, ok = mp["mount"]
 	if ok {
 		i.MountPath, ok = val.(string)
 		if !ok {
-			return newConfigValTypeError("mount", "string")
+			return newConfigValTypeError("mount", "string", describe(val))
 		}
 	} else {
 		i.MountPath = i.Name
@@ -122,7 +123,7 @@ func (i *Input) Unmarshal(ser interface{}) error {
 
 		i.URI, ok = val.(string)
 		if !ok {
-			return newConfigValTypeError("silo", "string")
+			return newConfigValTypeError("silo", "string", describe(val))
 		}
 	}
 
@@ -132,31 +133,32 @@ func (i *Input) Unmarshal(ser interface{}) error {
 func (a *Action) Unmarshal(ser interface{}) error {
 	mp, ok := ser.(map[string]interface{})
 	if !ok {
-		return newConfigValTypeError("action", "map")
+		return newConfigValTypeError("action", "map", describe(ser))
 	}
+	var err error
 
 	val, ok := mp["command"]
 	if !ok {
-		return newConfigValTypeError("command", "list of strings")
+		return newConfigValTypeError("command", "list of strings", "missing")
 	}
-	a.Entrypoint = coerceStringList(val)
-	if a.Entrypoint == nil {
-		return newConfigValTypeError("command", "list of strings")
+	a.Entrypoint, err = coerceStringList(val)
+	if err != nil {
+		return newConfigValTypeError("command", "list of strings", err.Error())
 	}
 
 	val, ok = mp["cwd"]
 	if ok {
 		a.Cwd, ok = val.(string)
 		if !ok {
-			return newConfigValTypeError("type", "string")
+			return newConfigValTypeError("type", "string", describe(val))
 		}
 	}
 
 	val, ok = mp["env"]
 	if ok {
-		a.Env = coerceMapStringString(val)
-		if a.Env == nil {
-			return newConfigValTypeError("env", "map of string->string")
+		a.Env, err = coerceMapStringString(val)
+		if err != nil {
+			return newConfigValTypeError("env", "map of string->string", err.Error())
 		}
 	}
 
@@ -168,23 +170,23 @@ func (i *Output) Unmarshal(ser interface{}) error {
 
 	mp, ok := ser.(map[string]interface{})
 	if !ok {
-		return newConfigValTypeError("output", "structure")
+		return newConfigValTypeError("output", "structure", describe(ser))
 	}
 
 	val, ok := mp["type"]
 	if !ok {
-		return newConfigValTypeError("type", "string")
+		return newConfigValTypeError("type", "string", "missing")
 	}
 	i.Type, ok = val.(string)
 	if !ok {
-		return newConfigValTypeError("type", "string")
+		return newConfigValTypeError("type", "string", describe(val))
 	}
 
 	val, ok = mp["mount"]
 	if ok {
 		i.MountPath, ok = val.(string)
 		if !ok {
-			return newConfigValTypeError("mount", "string")
+			return newConfigValTypeError("mount", "string", describe(val))
 		}
 	} else {
 		i.MountPath = i.Name
@@ -204,7 +206,7 @@ func (i *Output) Unmarshal(ser interface{}) error {
 
 		i.URI, ok = val.(string)
 		if !ok {
-			return newConfigValTypeError("silo", "string")
+			return newConfigValTypeError("silo", "string", describe(val))
 		}
 	}
 
@@ -223,9 +225,9 @@ func (i *Output) Unmarshal(ser interface{}) error {
 }
 
 func (f *Filters) Unmarshal(ser interface{}) error {
-	strs := coerceStringList(ser)
+	strs, err := coerceStringList(ser)
 	if strs == nil {
-		return newConfigValTypeError("filters", "list of strings")
+		return newConfigValTypeError("filters", "list of strings", err.Error())
 	}
 	for _, line := range strs {
 		words := strings.Fields(line)
@@ -323,32 +325,36 @@ func (f *Filters) InitDefaultsOutput() {
 	}
 }
 
-func coerceStringList(x interface{}) []string {
+func describe(x interface{}) string {
+	return fmt.Sprintf("%T", x)
+}
+
+func coerceStringList(x interface{}) ([]string, error) {
 	y, ok := x.([]interface{})
 	if !ok {
-		return nil
+		return nil, fmt.Errorf(describe(x))
 	}
 	z := make([]string, len(y))
 	for i := range y {
 		z[i], ok = y[i].(string)
 		if !ok {
-			return nil
+			return nil, fmt.Errorf("%s at index %d", describe(x), i)
 		}
 	}
-	return z
+	return z, nil
 }
 
-func coerceMapStringString(x interface{}) map[string]string {
+func coerceMapStringString(x interface{}) (map[string]string, error) {
 	y, ok := x.(map[string]interface{})
 	if !ok {
-		return nil
+		return nil, fmt.Errorf(describe(x))
 	}
 	z := make(map[string]string, len(y))
 	for k, v := range y {
 		z[k], ok = v.(string)
 		if !ok {
-			return nil
+			return nil, fmt.Errorf("%s at index %q", describe(x), k)
 		}
 	}
-	return z
+	return z, nil
 }
