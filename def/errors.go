@@ -21,5 +21,5 @@ var UnsupportedPlatform *errors.ErrorClass = errors.NewClass("UnsupportedPlatfor
 var ConfigError *errors.ErrorClass = errors.NewClass("ConfigError")
 
 func newConfigValTypeError(expectedKey, mustBeA string) *errors.Error {
-	return ConfigError.New("config %q must be of a %s", expectedKey, mustBeA).(*errors.Error)
+	return ConfigError.New("config key %q must be a %s", expectedKey, mustBeA).(*errors.Error)
 }
