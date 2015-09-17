@@ -1,20 +1,18 @@
 {
-	"inputs": [
-		{
+	"inputs": {
+		"/": {
 			"type": "tar",
-			"mount": "/",
 			"hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
 			"silo": "http+ca://repeatr.s3.amazonaws.com/assets/"
 		}
-	],
+	},
 	"action": {
 		"command": [ "echo", "Hello from repeatr!" ]
 	},
-	"outputs": [
-		{
+	"outputs": {
+		"/var/log": {
 			"type": "tar",
-			"mount": "/var/log",
 			"silo": "file://basic.tar"
 		}
-	]
+	}
 }

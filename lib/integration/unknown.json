@@ -1,19 +1,17 @@
 {
-    "inputs": [
-        {
+    "inputs": {
+        "/": {
             "type": "exec-tar",
-            "mount": "/",
             "silo": "assets/ubuntu.tar.gz"
         }
-    ],
+    },
     "action": {
         "command": [ "echo", "Hello from repeatr!" ]
     },
-    "outputs": [
-        {
+    "outputs": {
+        "/var/log": {
             "type": "tar",
-            "mount": "/var/log",
             "silo": "file://basic.tar"
         }
-    ]
+    }
 }
