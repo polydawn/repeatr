@@ -154,8 +154,8 @@ func (a *Action) Unmarshal(ser interface{}) error {
 
 	val, ok = mp["env"]
 	if ok {
-		a.Env, ok = val.(map[string]string)
-		if !ok {
+		a.Env = coerceMapStringString(val)
+		if a.Env == nil {
 			return newConfigValTypeError("env", "map of string->string")
 		}
 	}
@@ -331,6 +331,21 @@ func coerceStringList(x interface{}) []string {
 	z := make([]string, len(y))
 	for i := range y {
 		z[i], ok = y[i].(string)
+		if !ok {
+			return nil
+		}
+	}
+	return z
+}
+
+func coerceMapStringString(x interface{}) map[string]string {
+	y, ok := x.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	z := make(map[string]string, len(y))
+	for k, v := range y {
+		z[k], ok = v.(string)
 		if !ok {
 			return nil
 		}

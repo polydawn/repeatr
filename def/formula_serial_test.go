@@ -136,5 +136,23 @@ func TestParse(t *testing.T) {
 			})
 		})
 
+		Convey("Given a formula with more action properties", func() {
+			tree := map[string]interface{}{
+				"inputs":  placeholderInput,
+				"action":  placeholderAction,
+				"outputs": placeholderOutput,
+			}
+
+			Convey("action.env parses", func() {
+				formula := &def.Formula{}
+				tree["action"].(map[string]interface{})["env"] = map[string]interface{}{
+					"key": "value",
+				}
+				err := formula.Unmarshal(tree)
+				So(err, ShouldBeNil)
+				So(formula.Action.Env["key"], ShouldEqual, "value")
+			})
+		})
+
 	})
 }
