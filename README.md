@@ -91,13 +91,12 @@ Given the same inputs, and the same computation, the outputs should naturally be
 
 A formula starts with an "input":
 
-```
-"Inputs": [{
-	"Type": "tar",
-	"Mountpoint": "/",
-	"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-	"SiloURI": "s3+ca://mybucket/prefix/" // content-addressable!
-}]
+```yaml
+inputs:
+	"/":
+		type: "tar"
+		hash: "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL"
+		silo: "s3+ca://mybucket/prefix/" // content-addressable!
 ```
 
 Inputs come in different types -- these are like plugins; repeatr can support local storage systems, S3, git, and a ton of other systems for data storage.
@@ -110,10 +109,9 @@ Finally, inputs have a Mountpoint.  In this example, it's `"/"` -- the root of a
 When you want to run a process on this data, that looks about like you'd expect.
 Just put a snippet like this after your input definition:
 
-```
-"Execution": {
-	"Cmd": [ "echo", "Hello from repeatr!" ]
-}
+```yaml
+action:
+	command: [ "echo", "Hello from repeatr!" ]
 ```
 
 Jobs usually produce some data that you want to keep.
@@ -122,46 +120,35 @@ These will collect files after your job execution is complete, create the integr
 
 Outputs look pretty similar to inputs, except instead of specifying the hash, it'll be given to you when the job runs:
 
-```
-"Outputs": [{
-	"Type": "tar",
-	"Mountpoint": "/var/log",
-	"SiloURI": "file://assets/ubuntu.tar.gz" // just keep this output locally
-}]
+```yaml
+outputs:
+	"/var/log":
+		type: "tar"
+		silo: "file://assets/logs.tar.gz" // just keep this output locally
 ```
 
 Now, here's where things really get interesting: you can have *lots* of inputs!
 
-```
-"Inputs": [
-	{
-		"Type": "s3",
-		"Mountpoint": "/",
-		"Hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-		"SiloURI": "s3+ca://mybucket/prefix/" // content-addressable!
-	},
-	{
-		"Type": "dir",
-		"Mountpoint": "/mnt/addtnl-data",
-		"Hash": "uwRHqe4dnfg-gWLjmUR6vYT-0Y-ch8FmjYZ9biW4ghYfMSD7EhQzRfXoaor3xLg8",
-		"SiloURI": "file://mybucket/prefix/" // use local resources
-	},
-	{
-		"Type": "ipfs",
-		"Mountpoint": "/opt/app/python27",
-		"Hash": "ipfs-sha1-welkjsoivweuhiuhsdf",
-		"SiloURI": "ipv4://ipfs.cluster.mynet.org"
-	},
-	{
-		"Type": "git",
-		"Mountpoint": "/opt/algorithm",
-		"Hash": "1c43gdf9j4",
-		"SiloURI": [
-			"ssh://git@mycorp.com/image-processor.git",     // use the in-house copy if possible
-			"http://github.com/mycorp/image-processor.git", // public mirror has the data too
-		]
-	}
-]
+```yaml
+inputs:
+	"/":
+		type: "s3"
+		hash: "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL"
+		silo: "s3+ca://mybucket/prefix/" // content-addressable!
+	"/opt/app/python27":
+		type: "dir"
+		hash: "uwRHqe4dnfg-gWLjmUR6vYT-0Y-ch8FmjYZ9biW4ghYfMSD7EhQzRfXoaor3xLg8"
+		silo: "file://mybucket/prefix/" // use local resources
+	"/mnt/addtnl-data":
+		type: "ipfs"
+		hash: "ipfs-sha1-welkjsoivweuhiuhsdf"
+		silo: "ipv4://ipfs.cluster.mynet.org"
+	"/opt/algorithm":
+		type: "git"
+		hash: "1c43gdf9j434b2"
+		silo:
+			- "ssh://git@mycorp.com/image-processor.git"     // use the in-house copy if possible
+			- "http://github.com/mycorp/image-processor.git" // public mirror has the data too
 ```
 
 Multiple inputs, *all using the same integrity-guaranteed transport systems*, give you a ton of power as well as a ton of safety:
@@ -176,9 +163,9 @@ Now combine all three:
 
 ```
 {
-	"Inputs": [...]
-	"Execution": [...]
-	"Outputs": [...]
+	inputs: [...]
+	action: [...]
+	outputs: [...]
 }
 ```
 
