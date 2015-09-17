@@ -76,7 +76,7 @@ Formula="$(cat <<-EOF
 			"filters": [
 				"uid 10100",
 				"gid 10100",
-				"mtime"
+				"mtime @0"
 			],
 			"silo": "file://repeatr.tar"
 		}
