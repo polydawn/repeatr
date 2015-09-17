@@ -20,6 +20,6 @@ var UnsupportedPlatform *errors.ErrorClass = errors.NewClass("UnsupportedPlatfor
 
 var ConfigError *errors.ErrorClass = errors.NewClass("ConfigError")
 
-func newConfigValTypeError(expectedKey, mustBeA string) *errors.Error {
-	return ConfigError.New("config key %q must be a %s", expectedKey, mustBeA).(*errors.Error)
+func newConfigValTypeError(expectedKey, mustBeA string, wasActually string) *errors.Error {
+	return ConfigError.New("config key %q must be a %s; was %s", expectedKey, mustBeA, wasActually).(*errors.Error)
 }
