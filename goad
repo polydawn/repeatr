@@ -70,6 +70,12 @@ else
 			exit 4
 		}
 		;;
+	test-acceptance)
+		[ -x "$GOPATH/bin/repeatr" ] || { echo "run 'goad install' first" 2>&1 ; exit 19; }
+		./demo.sh -t
+		./lib/integration/runAll.sh
+		./repeat-thyself.sh
+		;;
 	install)
 		go generate "./..."
 		go install "$pkg"

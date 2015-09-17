@@ -18,9 +18,7 @@ script:
   - ./goad install
   - ./lib/integration/assets.sh
   - sudo bash -c "export PATH=$PATH:$PWD/assets ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell
-  - sudo ./demo.sh -t
-  - sudo ./lib/integration/runAll.sh
-  - sudo ./repeat-thyself.sh
+  - sudo ./goad test-acceptance
 
 notifications:
   email: false
