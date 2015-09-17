@@ -274,7 +274,7 @@ func (f *Filters) Unmarshal(ser interface{}) error {
 					return ConfigError.New("mtime filter parameter starting with '@' should be timestamp integer")
 				}
 				f.MtimeMode = FilterUse
-				f.Mtime = time.Unix(int64(n), 0)
+				f.Mtime = time.Unix(int64(n), 0).UTC()
 				break
 			}
 			// okay, no special rules matched: try to parse full thing as human date string.
