@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/go-yaml/yaml"
 	"github.com/inconshreveable/log15"
-	"github.com/ugorji/go/codec"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
@@ -22,10 +22,8 @@ func LoadFormulaFromFile(path string) def.Formula {
 		panic(Error.Wrap(fmt.Errorf("Could not read formula file %q: %s", filename, err)))
 	}
 
-	dec := codec.NewDecoderBytes(content, &codec.JsonHandle{})
-
 	var raw interface{}
-	if err := dec.Decode(&raw); err != nil {
+	if err := yaml.Unmarshal(content, &raw); err != nil {
 		panic(Error.New("Could not parse formula file %q: %s", filename, err))
 	}
 	raw = stringifyMapKeys(raw)
