@@ -44,22 +44,23 @@ Script="$(echo "${Script}" | tr -d "\t" | grep -v "^#" | tr -s "\n" ";" | sed "s
 # This is mostly just taking our metadata variables above, and injecting them.
 Formula="$(cat <<-EOF
 {
-	"inputs": [{
-		"type": "tar",
-		"mount": "/",
-		"hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-		"silo": "http+ca://repeatr.s3.amazonaws.com/assets/"
-	},{
-		"type": "tar",
-		"mount": "/app/go/",
-		"hash": "vbl0TwPjBrjoph65IaWxOy-Yl0MZXtXEDKcxodzY0_-inUDq7rPVTEDvqugYpJAH",
-		"silo": "https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz"
-	},{
-		"type": "git",
-		"mount": "/task/repeatr/",
-		"hash": "${GITCOMMIT}",
-		"silo": "https://github.com/polydawn/repeatr.git"
-	}],
+	"inputs": {
+		"/": {
+			"type": "tar",
+			"hash": "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
+			"silo": "http+ca://repeatr.s3.amazonaws.com/assets/"
+		},
+		"/app/go/": {
+			"type": "tar",
+			"hash": "vbl0TwPjBrjoph65IaWxOy-Yl0MZXtXEDKcxodzY0_-inUDq7rPVTEDvqugYpJAH",
+			"silo": "https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz"
+		},
+		"/task/repeatr/": {
+			"type": "git",
+			"hash": "${GITCOMMIT}",
+			"silo": "https://github.com/polydawn/repeatr.git"
+		}
+	},
 	"action": {
 		"command": [ "/bin/bash", "-c", "${Script}" ],
 		"cwd": "/task/repeatr/",
@@ -68,16 +69,18 @@ Formula="$(cat <<-EOF
 			"BUILDDATE": "${BUILDDATE}"
 		}
 	},
-	"outputs": [{
-		"type": "tar",
-		"mount": "/task/repeatr/.gopath/bin/",
-		"filters": [
-			"uid 10100",
-			"gid 10100",
-			"mtime"
-		],
-		"silo": "file://repeatr.tar"
-	}]
+	"outputs": {
+		"executable": {
+			"type": "tar",
+			"mount": "/task/repeatr/.gopath/bin/",
+			"filters": [
+				"uid 10100",
+				"gid 10100",
+				"mtime @0"
+			],
+			"silo": "file://repeatr.tar"
+		}
+	}
 }
 EOF
 )"

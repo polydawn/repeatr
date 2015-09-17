@@ -17,3 +17,9 @@ var ValidationError *errors.ErrorClass = errors.NewClass("ValidationError")
 	OS.  (Say, setting utime on a symlink on a mac.)
 */
 var UnsupportedPlatform *errors.ErrorClass = errors.NewClass("UnsupportedPlatform")
+
+var ConfigError *errors.ErrorClass = errors.NewClass("ConfigError")
+
+func newConfigValTypeError(expectedKey, mustBeA string) *errors.Error {
+	return ConfigError.New("config key %q must be a %s", expectedKey, mustBeA).(*errors.Error)
+}

@@ -24,12 +24,35 @@ func LoadFormulaFromFile(path string) def.Formula {
 
 	dec := codec.NewDecoderBytes(content, &codec.JsonHandle{})
 
+	var raw interface{}
+	if err := dec.Decode(&raw); err != nil {
+		panic(Error.New("Could not parse formula file %q: %s", filename, err))
+	}
+	raw = stringifyMapKeys(raw)
 	formula := def.Formula{}
-	if err := dec.Decode(&formula); err != nil {
+	if err := formula.Unmarshal(raw); err != nil {
 		panic(Error.New("Could not parse formula file %q: %s", filename, err))
 	}
 
 	return formula
+}
+
+func stringifyMapKeys(value interface{}) interface{} {
+	switch value := value.(type) {
+	case map[interface{}]interface{}:
+		next := make(map[string]interface{}, len(value))
+		for k, v := range value {
+			next[k.(string)] = stringifyMapKeys(v)
+		}
+		return next
+	case []interface{}:
+		for i := 0; i < len(value); i++ {
+			value[i] = stringifyMapKeys(value[i])
+		}
+		return value
+	default:
+		return value
+	}
 }
 
 func RunFormula(s scheduler.Scheduler, e executor.Executor, formula def.Formula, journal io.Writer) def.JobResult {
