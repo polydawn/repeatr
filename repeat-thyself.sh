@@ -41,7 +41,9 @@ inputs:
 	"/task/repeatr/":
 		type: "git"
 		hash: "${GITCOMMIT}"
-		silo: "https://github.com/polydawn/repeatr.git"
+		silo:
+			- "."
+			- "https://github.com/polydawn/repeatr.git"
 action:
 	command:
 		- "/bin/bash"
