@@ -111,19 +111,21 @@ func (i *Input) Unmarshal(ser interface{}) error {
 
 	val, ok = mp["silo"]
 	if ok {
-		// TODO : we want to switch the structure here to a slice
-		//	switch val2 := val.(type) {
-		//	case []string:
-		//		i.URI = val2
-		//	case string:
-		//		i.URI = []string{val2}
-		//	default:
-		//		return newConfigValTypeError("silo", "string or list of strings")
-		//	}
-
-		i.URI, ok = val.(string)
-		if !ok {
-			return newConfigValTypeError("silo", "string", describe(val))
+		switch val2 := val.(type) {
+		case []interface{}:
+			var err error
+			i.Warehouses, err = coerceStringList(val2)
+			if err != nil {
+				return newConfigValTypeError("silo", "string or list of strings", err.Error())
+			}
+		case interface{}:
+			str, ok := val2.(string)
+			if !ok {
+				return newConfigValTypeError("silo", "string or list of strings", describe(val))
+			}
+			i.Warehouses = []string{str}
+		default:
+			return newConfigValTypeError("silo", "string or list of strings", describe(val))
 		}
 	}
 
@@ -194,19 +196,21 @@ func (i *Output) Unmarshal(ser interface{}) error {
 
 	val, ok = mp["silo"]
 	if ok {
-		// TODO : we want to switch the structure here to a slice
-		//	switch val2 := val.(type) {
-		//	case []string:
-		//		i.URI = val2
-		//	case string:
-		//		i.URI = []string{val2}
-		//	default:
-		//		return newConfigValTypeError("silo", "string or list of strings")
-		//	}
-
-		i.URI, ok = val.(string)
-		if !ok {
-			return newConfigValTypeError("silo", "string", describe(val))
+		switch val2 := val.(type) {
+		case []interface{}:
+			var err error
+			i.Warehouses, err = coerceStringList(val2)
+			if err != nil {
+				return newConfigValTypeError("silo", "string or list of strings", err.Error())
+			}
+		case interface{}:
+			str, ok := val2.(string)
+			if !ok {
+				return newConfigValTypeError("silo", "string or list of strings", describe(val))
+			}
+			i.Warehouses = []string{str}
+		default:
+			return newConfigValTypeError("silo", "string or list of strings", describe(val))
 		}
 	}
 

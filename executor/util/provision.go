@@ -15,25 +15,42 @@ import (
 // Run inputs
 func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assembler, inputs []def.Input, rootfs string, journal log15.Logger) integrity.Assembly {
 	// start having all filesystems
-	filesystems := make(map[def.Input]integrity.Arena, len(inputs))
-	fsGather := make(chan map[def.Input]materializerReport)
+	// input names are used as keys, so must be unique
+	inputsByName := make(map[string]def.Input, len(inputs))
+	for _, in := range inputs {
+		// TODO checks should also be sooner, up in cfg parse
+		// but this check is for programmatic access as well (errors down the line can get nonobvious if you skip this).
+		if _, ok := inputsByName[in.Name]; ok {
+			panic(errors.ProgrammerError.New("duplicate name in input config"))
+		}
+		inputsByName[in.Name] = in
+	}
+	filesystems := make(map[string]integrity.Arena, len(inputs))
+	fsGather := make(chan map[string]materializerReport)
 	for _, in := range inputs {
 		go func(in def.Input) {
 			try.Do(func() {
 				journal.Info(fmt.Sprintf("Starting materialize for %s hash=%s", in.Type, in.Hash))
+				// todo: create validity checking api for URIs, check them all before launching anything
+				warehouses := make([]integrity.SiloURI, len(in.Warehouses))
+				for i, wh := range in.Warehouses {
+					warehouses[i] = integrity.SiloURI(wh)
+				}
+				// invoke transmat (blocking, potentially long time)
 				arena := transmat.Materialize(
 					integrity.TransmatKind(in.Type),
 					integrity.CommitID(in.Hash),
-					[]integrity.SiloURI{integrity.SiloURI(in.URI)},
+					warehouses,
 				)
+				// submit report
 				journal.Info(fmt.Sprintf("Finished materialize for %s hash=%s", in.Type, in.Hash))
-				fsGather <- map[def.Input]materializerReport{
-					in: {Arena: arena},
+				fsGather <- map[string]materializerReport{
+					in.Name: {Arena: arena},
 				}
 			}).Catch(integrity.Error, func(err *errors.Error) {
 				journal.Warn(fmt.Sprintf("Errored during materialize for %s hash=%s", in.Type, in.Hash), "error", err.Message())
-				fsGather <- map[def.Input]materializerReport{
-					in: {Err: err},
+				fsGather <- map[string]materializerReport{
+					in.Name: {Err: err},
 				}
 			}).Done()
 		}(in)
@@ -43,21 +60,21 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 
 	// gather materialized inputs
 	for range inputs {
-		for in, report := range <-fsGather {
+		for name, report := range <-fsGather {
 			if report.Err != nil {
 				panic(report.Err)
 			}
-			filesystems[in] = report.Arena
+			filesystems[name] = report.Arena
 		}
 	}
 	journal.Info("All inputs acquired... starting assembly")
 
 	// assemble them into the final tree
 	assemblyParts := make([]integrity.AssemblyPart, 0, len(filesystems))
-	for input, arena := range filesystems {
+	for name, arena := range filesystems {
 		assemblyParts = append(assemblyParts, integrity.AssemblyPart{
 			SourcePath: arena.Path(),
-			TargetPath: input.MountPath,
+			TargetPath: inputsByName[name].MountPath,
 			Writable:   true, // TODO input config should have a word about this
 		})
 	}
@@ -122,19 +139,20 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 			scanPath := filepath.Join(rootfs, out.MountPath)
 			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
 			try.Do(func() {
-				// TODO: following is hack; badly need to update config parsing to understand this first-class
-				warehouseCoordsList := make([]integrity.SiloURI, 0)
-				if out.URI != "" {
-					warehouseCoordsList = append(warehouseCoordsList, integrity.SiloURI(out.URI))
+				// todo: create validity checking api for URIs, check them all before launching anything
+				warehouses := make([]integrity.SiloURI, len(out.Warehouses))
+				for i, wh := range out.Warehouses {
+					warehouses[i] = integrity.SiloURI(wh)
 				}
-				// invoke transmat
+				// invoke transmat (blocking, potentially long time)
 				commitID := transmat.Scan(
 					integrity.TransmatKind(out.Type),
 					scanPath,
-					warehouseCoordsList,
+					warehouses,
 					filterOptions...,
 				)
 				out.Hash = string(commitID)
+				// submit report
 				journal.Info(fmt.Sprintf("Finished scan on %q", scanPath))
 				scanGather <- scanReport{Output: out}
 			}).Catch(integrity.Error, func(err *errors.Error) {

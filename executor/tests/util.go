@@ -18,10 +18,11 @@ func getBaseFormula() def.Formula {
 	return def.Formula{
 		Inputs: []def.Input{
 			{
-				Type:      "tar",
-				MountPath: "/",
-				Hash:      "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
-				URI:       "file://" + filepath.Join(projPath, "assets/ubuntu.tar.gz"),
+				Name:       "/",
+				Type:       "tar",
+				MountPath:  "/",
+				Hash:       "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
+				Warehouses: []string{"file://" + filepath.Join(projPath, "assets/ubuntu.tar.gz")},
 			},
 		},
 	}
