@@ -32,9 +32,13 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 		},
 		Action: func(ctx *cli.Context) {
 			// args parse
+			var warehouses []string
+			if ctx.IsSet("silo") {
+				warehouses = []string{ctx.String("silo")}
+			}
 			outputSpec := def.Output{
-				Type: ctx.String("kind"),
-				URI:  ctx.String("silo"),
+				Type:       ctx.String("kind"),
+				Warehouses: warehouses,
 				// Filters: might want
 				MountPath: ctx.String("path"),
 			}
@@ -66,12 +70,10 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 func Scan(outputSpec def.Output) def.Output {
 	// TODO validate MountPath exists, give nice errors
 
-	siloURIs := []integrity.SiloURI{
-		integrity.SiloURI(outputSpec.URI),
-	}
-	if outputSpec.URI == "" {
-		// ugly.  figure out how we want the user-facing API to see multiple silo URIs.
-		siloURIs = nil
+	// todo: create validity checking api for URIs, check them all before launching anything
+	warehouses := make([]integrity.SiloURI, len(outputSpec.Warehouses))
+	for i, wh := range outputSpec.Warehouses {
+		warehouses[i] = integrity.SiloURI(wh)
 	}
 
 	// So, this CLI command is *not* in its rights to change the subject area,
@@ -81,12 +83,12 @@ func Scan(outputSpec def.Output) def.Output {
 		//  Yeah these are hints that this stuff should be facing data validation.
 		integrity.TransmatKind(outputSpec.Type),
 		outputSpec.MountPath,
-		siloURIs,
+		warehouses,
 	)
 
 	return def.Output{
-		Type: outputSpec.Type,
-		URI:  outputSpec.URI,
-		Hash: string(commitID),
+		Type:       outputSpec.Type,
+		Warehouses: outputSpec.Warehouses,
+		Hash:       string(commitID),
 	}
 }
