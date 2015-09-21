@@ -18,7 +18,7 @@ pkg="polydawn.net/$name"
 
 # For demo runs and tests, ask them to lump all their state in one, unique dir.
 mkdir -p /tmp/repeatr-test/
-chmod 01777 /tmp/repeatr-test/
+chmod 01777 /tmp/repeatr-test/ 2>/dev/null || true
 export REPEATR_BASE="/tmp/repeatr-test/$(date +%Y.%m.%d..%H.%M.%S)..$RANDOM$RANDOM"
 
 if [ -z "$1" ] ; then
