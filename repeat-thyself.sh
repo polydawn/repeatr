@@ -61,10 +61,6 @@ outputs:
 	"executable":
 		type: "tar"
 		mount: "/task/repeatr/.gopath/bin/"
-		filters:
-			- uid 10100
-			- gid 10100
-			- mtime @0
 		silo: "file://repeatr.tar"
 EOF
 )"
