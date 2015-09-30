@@ -56,7 +56,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			// Output.
 			// Note that all other logs, progress, terminals, etc are all routed to "journal" (typically, stderr),
 			//  while this output is routed to "output" (typically, stdout), so it can be piped and parsed mechanically.
-			msg, err := json.Marshal(result.Outputs)
+			msg, err := json.MarshalIndent(result.Outputs, "", "\t")
 			if err != nil {
 				panic(err)
 			}
