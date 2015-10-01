@@ -31,3 +31,6 @@
 [submodule ".gopath/src/github.com/go-yaml/yaml"]
 	path = .gopath/src/github.com/go-yaml/yaml
 	url = https://github.com/go-yaml/yaml.git
+[submodule ".gopath/src/xi2.org/x/xz"]
+	path = .gopath/src/xi2.org/x/xz
+	url = https://github.com/xi2/xz.git
