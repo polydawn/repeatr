@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spacemonkeygo/errors"
+
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/filter"
@@ -117,16 +119,28 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 		}
 		// place the file
 		switch hdr.Typeflag {
-		case tar.TypeReg:
+		case tar.TypeReg, tar.TypeRegA:
 			reader := &flak.HashingReader{tr, hasherFactory()}
+			hdr.Typeflag = tar.TypeReg
 			fs.PlaceFile(destBasePath, hdr, reader)
 			bucket.Record(hdr, reader.Hasher.Sum(nil))
 		case tar.TypeDir:
 			hdr.Name += "/"
-			fallthrough
-		default:
 			fs.PlaceFile(destBasePath, hdr, nil)
 			bucket.Record(hdr, nil)
+		case tar.TypeSymlink:
+			fallthrough
+		case tar.TypeLink:
+			fallthrough
+		case tar.TypeBlock:
+			fallthrough
+		case tar.TypeChar:
+			fallthrough
+		case tar.TypeFifo:
+			fs.PlaceFile(destBasePath, hdr, nil)
+			bucket.Record(hdr, nil)
+		default:
+			panic(errors.NotImplementedError.New("Unknown file mode %q", hdr.Typeflag))
 		}
 	}
 	// cleanup dir times with a post-order traversal over the bucket
