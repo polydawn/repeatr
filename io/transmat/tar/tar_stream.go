@@ -128,15 +128,7 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 			hdr.Name += "/"
 			fs.PlaceFile(destBasePath, hdr, nil)
 			bucket.Record(hdr, nil)
-		case tar.TypeSymlink:
-			fallthrough
-		case tar.TypeLink:
-			fallthrough
-		case tar.TypeBlock:
-			fallthrough
-		case tar.TypeChar:
-			fallthrough
-		case tar.TypeFifo:
+		case tar.TypeSymlink, tar.TypeLink, tar.TypeBlock, tar.TypeChar, tar.TypeFifo:
 			fs.PlaceFile(destBasePath, hdr, nil)
 			bucket.Record(hdr, nil)
 		default:
