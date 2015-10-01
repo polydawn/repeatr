@@ -7,6 +7,8 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+
+	"xi2.org/x/xz"
 )
 
 type Compression int
@@ -62,7 +64,7 @@ func Decompress(stream io.Reader) (io.Reader, error) {
 	case Bzip2:
 		return bzip2.NewReader(buf), nil
 	case Xz:
-		return nil, fmt.Errorf("Unsupported compression format %s", (&compression).Extension())
+		return xz.NewReader(buf, 0)
 	default:
 		return nil, fmt.Errorf("Unsupported compression format %s", (&compression).Extension())
 	}
