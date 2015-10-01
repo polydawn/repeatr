@@ -99,7 +99,7 @@ func (t *TarTransmat) Materialize(
 
 		// walk input tar stream, placing data and accumulating hashes and metadata for integrity check
 		bucket := &fshash.MemoryBucket{}
-		Extract(tarReader, arena.Path(), bucket, hasherFactory)
+		Extract(tarReader, arena.Path(), bucket, hasherFactory, log)
 
 		// bucket processing may have created a root node if missing.  if so, we need to apply its props.
 		fs.PlaceFile(arena.Path(), bucket.Root().Metadata, nil)
