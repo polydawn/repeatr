@@ -80,7 +80,7 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 		if err := os.Mkdir(destPath, mode); err != nil {
 			ioError(err)
 		}
-	case tar.TypeReg, tar.TypeRegA:
+	case tar.TypeReg:
 		file, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, mode)
 		if err != nil {
 			ioError(err)
@@ -120,7 +120,7 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 			ioError(err)
 		}
 	default:
-		panic(errors.NotImplementedError.New("The tennants of filesystems have changed!  We're not prepared for this file mode %q", hdr.Typeflag))
+		panic(errors.ProgrammerError.New("placefile: unhandled file mode %q", hdr.Typeflag))
 	}
 
 	if err := os.Lchown(destPath, hdr.Uid, hdr.Gid); err != nil {

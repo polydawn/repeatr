@@ -3,6 +3,7 @@ package tar
 import (
 	"archive/tar"
 	"encoding/base64"
+	"fmt"
 	"hash"
 	"io"
 	"os"
@@ -10,6 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/inconshreveable/log15"
+	"github.com/spacemonkeygo/errors"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
@@ -68,7 +72,7 @@ func saveWalk(srcBasePath string, tw *tar.Writer, filterset filter.FilterSet, bu
 	return fs.Walk(srcBasePath, preVisit, nil)
 }
 
-func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFactory func() hash.Hash) {
+func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFactory func() hash.Hash, log log15.Logger) {
 	for {
 		thdr, err := tr.Next()
 		if err == io.EOF {
@@ -117,16 +121,22 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 		}
 		// place the file
 		switch hdr.Typeflag {
-		case tar.TypeReg:
+		case tar.TypeReg, tar.TypeRegA:
 			reader := &flak.HashingReader{tr, hasherFactory()}
+			hdr.Typeflag = tar.TypeReg
 			fs.PlaceFile(destBasePath, hdr, reader)
 			bucket.Record(hdr, reader.Hasher.Sum(nil))
 		case tar.TypeDir:
 			hdr.Name += "/"
-			fallthrough
-		default:
 			fs.PlaceFile(destBasePath, hdr, nil)
 			bucket.Record(hdr, nil)
+		case tar.TypeSymlink, tar.TypeLink, tar.TypeBlock, tar.TypeChar, tar.TypeFifo:
+			fs.PlaceFile(destBasePath, hdr, nil)
+			bucket.Record(hdr, nil)
+		case tar.TypeCont, tar.TypeXHeader, tar.TypeXGlobalHeader, tar.TypeGNULongName, tar.TypeGNULongLink, tar.TypeGNUSparse:
+			log.Warn(fmt.Sprintf("tar extract: ignoring entry type %q", hdr.Typeflag))
+		default:
+			panic(errors.NotImplementedError.New("Unknown file mode %q", hdr.Typeflag))
 		}
 	}
 	// cleanup dir times with a post-order traversal over the bucket
