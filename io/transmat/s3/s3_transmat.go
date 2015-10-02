@@ -12,9 +12,11 @@ import (
 	"path"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
 	"github.com/rlmcpherson/s3gof3r"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
+
 	"polydawn.net/repeatr/io"
 	tartrans "polydawn.net/repeatr/io/transmat/tar"
 	"polydawn.net/repeatr/lib/fs"
@@ -49,6 +51,7 @@ func (t *S3Transmat) Materialize(
 	kind integrity.TransmatKind,
 	dataHash integrity.CommitID,
 	siloURIs []integrity.SiloURI,
+	log log15.Logger,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.Arena {
 	var arena dirArena
@@ -162,6 +165,7 @@ func (t S3Transmat) Scan(
 	kind integrity.TransmatKind,
 	subjectPath string,
 	siloURIs []integrity.SiloURI,
+	log log15.Logger,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.CommitID {
 	var commitID integrity.CommitID

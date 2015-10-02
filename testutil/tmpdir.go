@@ -14,8 +14,8 @@ import (
 
 	See also https://github.com/smartystreets/goconvey/wiki/Decorating-tests-to-provide-common-logic
 */
-func WithTmpdir(fn func()) func() {
-	return func() {
+func WithTmpdir(fn interface{}) func(c convey.C) {
+	return func(c convey.C) {
 		retreat, err := os.Getwd()
 		if err != nil {
 			panic(err)
@@ -58,7 +58,12 @@ func WithTmpdir(fn func()) func() {
 			panic(err)
 		}
 
-		fn()
+		switch fn := fn.(type) {
+		case func():
+			fn()
+		case func(c convey.C):
+			fn(c)
+		}
 	}
 }
 

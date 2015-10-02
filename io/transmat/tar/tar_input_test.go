@@ -21,7 +21,7 @@ func TestTarInputCompat(t *testing.T) {
 	projPath = filepath.Dir(filepath.Dir(filepath.Dir(projPath)))
 
 	Convey("Unpacking tars should match exec untar", t,
-		testutil.Requires(testutil.RequiresRoot, testutil.WithTmpdir(func() {
+		testutil.Requires(testutil.RequiresRoot, testutil.WithTmpdir(func(c C) {
 			checkEquivalence := func(hash, filename string, paveBase bool) {
 				transmat := New("./workdir/tar")
 
@@ -32,6 +32,7 @@ func TestTarInputCompat(t *testing.T) {
 					[]integrity.SiloURI{
 						integrity.SiloURI("file://" + filename),
 					},
+					testutil.TestLogger(c),
 				)
 				defer arena.Teardown()
 
@@ -94,7 +95,7 @@ func TestTarInputCompat(t *testing.T) {
 		// where really all "unusual" means is "valid tar, but not from our own cannonical output".
 		testutil.Requires(
 			testutil.RequiresRoot,
-			testutil.WithTmpdir(func() {
+			testutil.WithTmpdir(func(c C) {
 				checkBounce := func(hash, filename string) {
 					transmat := New("./workdir/tar")
 
@@ -105,11 +106,12 @@ func TestTarInputCompat(t *testing.T) {
 						[]integrity.SiloURI{
 							integrity.SiloURI("file://" + filename),
 						},
+						testutil.TestLogger(c),
 					)
 					defer arena.Teardown()
 
 					// scan and compare
-					commitID := transmat.Scan(integrity.TransmatKind("tar"), arena.Path(), nil)
+					commitID := transmat.Scan(integrity.TransmatKind("tar"), arena.Path(), nil, testutil.TestLogger(c))
 					// debug: gosh.Sh("tar", "--utc", "-xOvf", filename)
 					So(commitID, ShouldEqual, integrity.CommitID(hash))
 

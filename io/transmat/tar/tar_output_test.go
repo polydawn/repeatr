@@ -16,7 +16,7 @@ func TestTarOutputCompat(t *testing.T) {
 	Convey("Output should produce a tar recognizable to gnu tar", t,
 		testutil.Requires(
 			testutil.RequiresRoot,
-			testutil.WithTmpdir(func() {
+			testutil.WithTmpdir(func(c C) {
 				for _, fixture := range filefixture.All {
 					Convey(fmt.Sprintf("- Fixture %q", fixture.Name), func() {
 						// create fixture
@@ -30,6 +30,7 @@ func TestTarOutputCompat(t *testing.T) {
 							[]integrity.SiloURI{
 								integrity.SiloURI("file://output.tar"),
 							},
+							testutil.TestLogger(c),
 						)
 
 						// sanity check that there's a file.
