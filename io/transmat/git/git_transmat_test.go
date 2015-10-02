@@ -26,7 +26,7 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 	//  - because we're doing custom content anyway so we have multiple commits
 	//  both of these could be addressed with upgrades to filefixtures in the future.
 	Convey("Given a local git repo", t, testutil.Requires(
-		testutil.WithTmpdir(func() {
+		testutil.WithTmpdir(func(c C) {
 			git := git.Bake(gosh.Opts{Env: map[string]string{
 				"GIT_AUTHOR_NAME":     "repeatr",
 				"GIT_AUTHOR_EMAIL":    "repeatr",
@@ -55,7 +55,7 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 			Convey("Materialization should be able to produce the latest commit", FailureContinues, func() {
 				uris := []integrity.SiloURI{integrity.SiloURI("./repo-a")}
 				// materialize from the ID returned by foreign git
-				arena := transmat.Materialize(Kind, dataHash_3, uris, integrity.AcceptHashMismatch)
+				arena := transmat.Materialize(Kind, dataHash_3, uris, testutil.TestLogger(c), integrity.AcceptHashMismatch)
 				// assert hash match
 				// (normally survival would attest this, but we used the `AcceptHashMismatch` to supress panics in the name of letting the test see more after failures.)
 				So(arena.Hash(), ShouldEqual, dataHash_3)
@@ -68,7 +68,7 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 			Convey("Materialization should be able to produce older commits", FailureContinues, func() {
 				uris := []integrity.SiloURI{integrity.SiloURI("./repo-a")}
 				// materialize from the ID returned by foreign git
-				arena := transmat.Materialize(Kind, dataHash_2, uris, integrity.AcceptHashMismatch)
+				arena := transmat.Materialize(Kind, dataHash_2, uris, testutil.TestLogger(c), integrity.AcceptHashMismatch)
 				// assert hash match
 				// (normally survival would attest this, but we used the `AcceptHashMismatch` to supress panics in the name of letting the test see more after failures.)
 				So(arena.Hash(), ShouldEqual, dataHash_2)

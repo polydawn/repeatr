@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
+
 	"polydawn.net/repeatr/io"
 )
 
@@ -62,18 +64,19 @@ func (ct *CachingTransmat) Materialize(
 	kind integrity.TransmatKind,
 	dataHash integrity.CommitID,
 	siloURIs []integrity.SiloURI,
+	log log15.Logger,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.Arena {
 	if dataHash == "" {
 		// if you can't give us a hash, we can't cache.
 		// also this is almost certainly doomed unless one of your options is `AcceptHashMismatch`, but that's not ours to check.
-		return ct.DispatchingTransmat.Materialize(kind, dataHash, siloURIs, options...)
+		return ct.DispatchingTransmat.Materialize(kind, dataHash, siloURIs, log, options...)
 	}
 	permPath := filepath.Join(ct.workPath, "committed", string(dataHash))
 	_, statErr := os.Stat(permPath)
 	if os.IsNotExist(statErr) {
 		// TODO implement some terribly clever stateful parking mechanism, and do the real fetch in another routine.
-		arena := ct.DispatchingTransmat.Materialize(kind, dataHash, siloURIs, options...)
+		arena := ct.DispatchingTransmat.Materialize(kind, dataHash, siloURIs, log, options...)
 		// keep it around.
 		// build more realistic syncs around this later, but posix mv atomicity might actually do enough.
 		err := os.Rename(arena.Path(), permPath)

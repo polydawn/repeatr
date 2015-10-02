@@ -1,6 +1,8 @@
 package integrity
 
 import (
+	"github.com/inconshreveable/log15"
+
 	"polydawn.net/repeatr/io/filter"
 )
 
@@ -59,9 +61,9 @@ type Transmat interface {
 		parameter.  See `integrity.DispatchingTransmat` for an example of this.
 
 	*/
-	Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena
+	Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, log log15.Logger, options ...MaterializerConfigurer) Arena
 
-	Scan(kind TransmatKind, subjectPath string, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID
+	Scan(kind TransmatKind, subjectPath string, siloURIs []SiloURI, log log15.Logger, options ...MaterializerConfigurer) CommitID
 
 	/*
 		Returns a list of all active Arenas managed by this Transmat.
@@ -176,18 +178,18 @@ func NewDispatchingTransmat(transmats map[TransmatKind]Transmat) *DispatchingTra
 	return dt
 }
 
-func (dt *DispatchingTransmat) Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, options ...MaterializerConfigurer) Arena {
+func (dt *DispatchingTransmat) Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, log log15.Logger, options ...MaterializerConfigurer) Arena {
 	transmat := dt.dispatch[kind]
 	if transmat == nil {
 		panic(ConfigError.New("no transmat of kind %q available to satisfy request", kind))
 	}
-	return transmat.Materialize(kind, dataHash, siloURIs, options...)
+	return transmat.Materialize(kind, dataHash, siloURIs, log, options...)
 }
 
-func (dt *DispatchingTransmat) Scan(kind TransmatKind, subjectPath string, siloURIs []SiloURI, options ...MaterializerConfigurer) CommitID {
+func (dt *DispatchingTransmat) Scan(kind TransmatKind, subjectPath string, siloURIs []SiloURI, log log15.Logger, options ...MaterializerConfigurer) CommitID {
 	transmat := dt.dispatch[kind]
 	if transmat == nil {
 		panic(ConfigError.New("no transmat of kind %q available to satisfy request", kind))
 	}
-	return transmat.Scan(kind, subjectPath, siloURIs, options...)
+	return transmat.Scan(kind, subjectPath, siloURIs, log, options...)
 }

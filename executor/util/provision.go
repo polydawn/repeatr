@@ -41,6 +41,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 					integrity.TransmatKind(in.Type),
 					integrity.CommitID(in.Hash),
 					warehouses,
+					journal,
 				)
 				// submit report
 				journal.Info(fmt.Sprintf("Finished materialize for %s hash=%s", in.Type, in.Hash))
@@ -149,6 +150,7 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 					integrity.TransmatKind(out.Type),
 					scanPath,
 					warehouses,
+					journal,
 					filterOptions...,
 				)
 				out.Hash = string(commitID)

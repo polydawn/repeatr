@@ -6,12 +6,13 @@ import (
 	"io"
 
 	"github.com/codegangsta/cli"
+	"github.com/inconshreveable/log15"
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/io"
 )
 
-func ScanCommandPattern(output io.Writer) cli.Command {
+func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 	return cli.Command{
 		Name:  "scan",
 		Usage: "Scan a local filesystem, optionally storing the data into a silo",
@@ -49,7 +50,9 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 				outputSpec.MountPath = "."
 			}
 			// invoke
-			outputResult := Scan(outputSpec)
+			log := log15.New()
+			log.SetHandler(log15.StreamHandler(stderr, log15.TerminalFormat()))
+			outputResult := Scan(outputSpec, log)
 			// output
 			// FIXME serialization format.
 			//  should be especially pretty and human-friendly; deserves custom code.
@@ -67,7 +70,7 @@ func ScanCommandPattern(output io.Writer) cli.Command {
 	Spits out a chunk of json on stdout that can be used as
 	a `Input` specification in a `Formula`.
 */
-func Scan(outputSpec def.Output) def.Output {
+func Scan(outputSpec def.Output, log log15.Logger) def.Output {
 	// TODO validate MountPath exists, give nice errors
 
 	// todo: create validity checking api for URIs, check them all before launching anything
@@ -84,6 +87,7 @@ func Scan(outputSpec def.Output) def.Output {
 		integrity.TransmatKind(outputSpec.Type),
 		outputSpec.MountPath,
 		warehouses,
+		log,
 	)
 
 	return def.Output{

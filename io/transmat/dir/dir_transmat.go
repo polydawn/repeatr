@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
+
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/filter"
 	"polydawn.net/repeatr/lib/fshash"
@@ -43,6 +45,7 @@ func (t *DirTransmat) Materialize(
 	kind integrity.TransmatKind,
 	dataHash integrity.CommitID,
 	siloURIs []integrity.SiloURI,
+	log log15.Logger,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.Arena {
 	var arena dirArena
@@ -124,6 +127,7 @@ func (t DirTransmat) Scan(
 	kind integrity.TransmatKind,
 	subjectPath string,
 	siloURIs []integrity.SiloURI,
+	log log15.Logger,
 	options ...integrity.MaterializerConfigurer,
 ) integrity.CommitID {
 	var commitID integrity.CommitID

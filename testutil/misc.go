@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/inconshreveable/log15"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -44,4 +45,10 @@ type Writer struct {
 
 func (lw Writer) Write(msg []byte) (int, error) {
 	return lw.Convey.Print(string(msg))
+}
+
+func TestLogger(c convey.C) log15.Logger {
+	log := log15.New()
+	log.SetHandler(log15.StreamHandler(Writer{c}, log15.TerminalFormat()))
+	return log
 }
