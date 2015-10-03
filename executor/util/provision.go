@@ -13,7 +13,7 @@ import (
 )
 
 // Run inputs
-func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assembler, inputs []def.Input, rootfs string, journal log15.Logger) integrity.Assembly {
+func ProvisionInputs(transmat integrity.Transmat, inputs []def.Input, journal log15.Logger) map[string]integrity.Arena {
 	// start having all filesystems
 	// input names are used as keys, so must be unique
 	inputsByName := make(map[string]def.Input, len(inputs))
@@ -60,6 +60,7 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 	// (we don't have any output setup at this point, but if we do in the future, that'll be here.)
 
 	// gather materialized inputs
+	// any errors are re-raised immediately (TODO: this currently doesn't fan out smooth cancellations)
 	for range inputs {
 		for name, report := range <-fsGather {
 			if report.Err != nil {
@@ -68,18 +69,31 @@ func ProvisionInputs(transmat integrity.Transmat, assemblerFn integrity.Assemble
 			filesystems[name] = report.Arena
 		}
 	}
-	journal.Info("All inputs acquired... starting assembly")
 
-	// assemble them into the final tree
-	assemblyParts := make([]integrity.AssemblyPart, 0, len(filesystems))
-	for name, arena := range filesystems {
+	return filesystems
+}
+
+func AssembleFilesystem(
+	assemblerFn integrity.Assembler,
+	rootPath string,
+	inputs []def.Input,
+	inputArenas map[string]integrity.Arena,
+	journal log15.Logger,
+) integrity.Assembly {
+	journal.Info("All inputs acquired... starting assembly")
+	inputsByName := make(map[string]def.Input, len(inputs))
+	for _, in := range inputs {
+		inputsByName[in.Name] = in
+	}
+	assemblyParts := make([]integrity.AssemblyPart, 0, len(inputArenas))
+	for name, arena := range inputArenas {
 		assemblyParts = append(assemblyParts, integrity.AssemblyPart{
 			SourcePath: arena.Path(),
 			TargetPath: inputsByName[name].MountPath,
 			Writable:   true, // TODO input config should have a word about this
 		})
 	}
-	assembly := assemblerFn(rootfs, assemblyParts)
+	assembly := assemblerFn(rootPath, assemblyParts)
 	journal.Info("Assembly complete!")
 	return assembly
 }
