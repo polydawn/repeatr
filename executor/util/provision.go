@@ -78,9 +78,11 @@ func AssembleFilesystem(
 	rootPath string,
 	inputs []def.Input,
 	inputArenas map[string]integrity.Arena,
+	hostMounts []def.Mount,
 	journal log15.Logger,
 ) integrity.Assembly {
 	journal.Info("All inputs acquired... starting assembly")
+	// process inputs
 	inputsByName := make(map[string]def.Input, len(inputs))
 	for _, in := range inputs {
 		inputsByName[in.Name] = in
@@ -93,6 +95,16 @@ func AssembleFilesystem(
 			Writable:   true, // TODO input config should have a word about this
 		})
 	}
+	// process mounts
+	for _, mount := range hostMounts {
+		assemblyParts = append(assemblyParts, integrity.AssemblyPart{
+			SourcePath: mount.SourcePath,
+			TargetPath: mount.TargetPath,
+			Writable:   mount.Writable,
+			BareMount:  true,
+		})
+	}
+	// assemmmmmmmmblllle
 	assembly := assemblerFn(rootPath, assemblyParts)
 	journal.Info("Assembly complete!")
 	return assembly

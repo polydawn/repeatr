@@ -151,6 +151,7 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 		rootfs,
 		f.Inputs,
 		inputArenas,
+		f.Action.Escapes.Mounts,
 		journal,
 	)
 	defer assembly.Teardown() // What ever happens: Disassemble filesystem

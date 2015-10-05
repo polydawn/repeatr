@@ -133,9 +133,13 @@ type Emplacement interface {
 /*
 	Assembles a filesystem from a bunch of scattered filesystem pieces.
 	The source pieces will be rearranged into the single tree as fast as
-	possible, and will not be modified.  (The fast systems use bind mounts
-	and COW filesystems to isolate and rearrange; worst-case scenario,
-	plain ol' byte copies get the job done.)
+	possible, leaving their original locations unchanged.
+
+	`Assembler` is the boundary where you ask for what kind of relationship you want.
+	Each `AssemblyPart` is a request to get someting into place; how exactly it
+	gets there is up to the `Assembler` to decide.  (Fast systems may use
+	bind mounts and COW filesystems to isolate and rearrange; worst-case
+	scenario, plain ol' byte copies get the job done.)
 */
 type Assembler func(basePath string, mounts []AssemblyPart) Assembly
 
@@ -146,7 +150,26 @@ type Assembly interface {
 type AssemblyPart struct {
 	TargetPath string // in the container fs context
 	SourcePath string // datasource which we want to respect
-	Writable   bool
+	/*
+		Writable toggles whether or not to mount read-only.
+
+		(If `Writable && BareMount`, then *this will allow modifications
+		to the host*.)
+	*/
+	Writable bool
+	/*
+		BareMount requests direct passthrough; if writable==false, this
+		means continuing changes in sourcepath are visible realtime; if
+		writable==true, the placer will employ a bind mount *without*
+		COW or isolation ** meaning mutations will be applied to the sourcepath **.
+		Using a BareMount almost certainly means your job is giving up
+		on any repeatability guarantees.
+
+		Note that this may be impossible to satisfy with some placers
+		(e.g. we can't give you a writable mount without the required
+		sys caps to perform mounts!).
+	*/
+	BareMount bool
 }
 
 // sortable by target path (which is effectively mountability order)
