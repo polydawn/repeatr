@@ -18,15 +18,15 @@ type defaultAssembler struct {
 
 var _ integrity.Assembler = defaultAssembler{}.Assemble
 
-func (a defaultAssembler) Assemble(basePath string, mounts []integrity.AssemblyPart) integrity.Assembly {
-	sort.Sort(integrity.AssemblyPartsByPath(mounts))
+func (a defaultAssembler) Assemble(basePath string, parts []integrity.AssemblyPart) integrity.Assembly {
+	sort.Sort(integrity.AssemblyPartsByPath(parts))
 	housekeeping := &defaultAssembly{}
-	for _, mount := range mounts {
-		destBasePath := filepath.Join(basePath, mount.TargetPath)
+	for _, part := range parts {
+		destBasePath := filepath.Join(basePath, part.TargetPath)
 		if err := fs.MkdirAll(destBasePath); err != nil {
 			panic(Error.Wrap(err)) // REVIEW: not clear if placers and assemblers should get separate error hierarchies.  have yet to think of a useful scenario for it.
 		}
-		housekeeping.record(a.Placer(mount.SourcePath, destBasePath, mount.Writable))
+		housekeeping.record(a.Placer(part.SourcePath, destBasePath, part.Writable, part.BareMount))
 	}
 	return housekeeping
 }

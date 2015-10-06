@@ -124,7 +124,7 @@ func EvaluateConfig(options ...MaterializerConfigurer) MaterializerOptions {
 	return opts
 }
 
-type Placer func(srcPath, destPath string, writable bool) Emplacement
+type Placer func(srcPath, destPath string, writable bool, bareMount bool) Emplacement
 
 type Emplacement interface {
 	Teardown()
