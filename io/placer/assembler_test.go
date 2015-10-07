@@ -21,6 +21,7 @@ func TestCopyingPlacerCompliance(t *testing.T) {
 	Convey("Copying placers support source isolation", t, func() {
 		CheckAssemblerIsolatesSource(defaultAssembler{Placer: CopyingPlacer}.Assemble)
 	})
+	// Not Supported: CheckAssemblerBareMount // (can't do live changes with cp)
 }
 
 func TestBindPlacerCompliance(t *testing.T) {
@@ -41,6 +42,7 @@ func TestBindPlacerCompliance(t *testing.T) {
 		),
 	)
 	// Not Supported: CheckAssemblerIsolatesSource // (use AufsPlacer for that)
+	// Not Supported: CheckAssemblerBareMount // (pointless, that's the only thing this one does)
 }
 
 func TestAufsPlacerCompliance(t *testing.T) {
@@ -65,6 +67,14 @@ func TestAufsPlacerCompliance(t *testing.T) {
 			testutil.RequiresMounts,
 			testutil.WithTmpdir(func() {
 				CheckAssemblerIsolatesSource(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
+			}),
+		),
+	)
+	Convey("Aufs placers support bare mounts (non-isolation)", t,
+		testutil.Requires(
+			testutil.RequiresMounts,
+			testutil.WithTmpdir(func() {
+				CheckAssemblerBareMount(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
 			}),
 		),
 	)
@@ -270,5 +280,61 @@ func CheckAssemblerIsolatesSource(assemblerFn integrity.Assembler) {
 				So(scan.Describe(filefixture.CompareDefaults), ShouldEqual, filefixture.Alpha.Describe(filefixture.CompareDefaults))
 			}),
 		),
+	)
+}
+
+func CheckAssemblerBareMount(assemblerFn integrity.Assembler) {
+	Convey("Bare mounts continue to see changes to the source",
+		testutil.WithTmpdir(func() {
+			// make fixture
+			filefixture.Alpha.Create("./material/alpha")
+			// assemble
+			assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+				{TargetPath: "/", SourcePath: "./material/alpha", Writable: false, BareMount: true},
+			})
+			defer assembly.Teardown()
+			// modify on the outside
+			f, err := os.OpenFile("./material/alpha/moar", os.O_CREATE, 0644)
+			defer f.Close()
+			So(err, ShouldBeNil)
+			// the outside should see it (obviously! just a sanity check)
+			So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0))
+			// the inside should see it
+			So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0))
+		}),
+	)
+	Convey("Writable bare mounts propagate changes to the source",
+		testutil.WithTmpdir(func() {
+			// make fixture
+			filefixture.Alpha.Create("./material/alpha")
+			// assemble
+			assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+				{TargetPath: "/", SourcePath: "./material/alpha", Writable: true, BareMount: true},
+			})
+			defer assembly.Teardown()
+			// modify on the inside
+			f, err := os.OpenFile("./assembled/moar", os.O_CREATE, 0644)
+			defer f.Close()
+			So(err, ShouldBeNil)
+			// the inside should see it (obviously! just a sanity check)
+			So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0))
+			// the outside should see it
+			So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0))
+		}),
+	)
+	Convey("Readonly bare mounts reject writes",
+		testutil.WithTmpdir(func() {
+			// make fixture
+			filefixture.Alpha.Create("./material/alpha")
+			// assemble
+			assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+				{TargetPath: "/", SourcePath: "./material/alpha", Writable: false, BareMount: true},
+			})
+			defer assembly.Teardown()
+			// modify on the inside should instantly error
+			f, err := os.OpenFile("./assembled/moar", os.O_CREATE, 0644)
+			defer f.Close()
+			So(err, ShouldNotBeNil)
+		}),
 	)
 }

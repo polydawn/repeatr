@@ -164,6 +164,13 @@ func (a *Action) Unmarshal(ser interface{}) error {
 		}
 	}
 
+	val, ok = mp["escapes"]
+	if ok {
+		if err := a.Escapes.Unmarshal(val); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -326,6 +333,44 @@ func (f *Filters) InitDefaultsOutput() {
 	if f.MtimeMode == FilterUninitialized {
 		f.MtimeMode = FilterUse
 		f.Mtime = FilterDefaultMtime
+	}
+}
+
+func (e *Escapes) Unmarshal(ser interface{}) error {
+	mp, ok := ser.(map[string]interface{})
+	if !ok {
+		return newConfigValTypeError("escapes", "structure", describe(ser))
+	}
+
+	{
+		val, ok := mp["mounts"]
+		if ok {
+			val2, ok := val.(map[string]interface{})
+			if !ok {
+				return newConfigValTypeError("mounts", "map", describe(val))
+			}
+			e.Mounts = make([]Mount, len(val2))
+			var i int
+			for k, v := range val2 {
+				e.Mounts[i].TargetPath = k // may support names in the future like inputs
+				if err := e.Mounts[i].Unmarshal(v); err != nil {
+					return err
+				}
+				i++
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m *Mount) Unmarshal(ser interface{}) error {
+	switch val := ser.(type) {
+	case string:
+		m.SourcePath = val
+		return nil
+	default:
+		return newConfigValTypeError("mount", "string", describe(ser))
 	}
 }
 

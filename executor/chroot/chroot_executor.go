@@ -94,13 +94,19 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS
 
 // Execute a formula in a specified directory. MAY PANIC.
 func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobResult, stdin io.Reader, outS, errS io.WriteCloser, journal log15.Logger) {
-	// Prepare filesystem
-	rootfs := filepath.Join(d, "rootfs")
+	// Prepare inputs
 	transmat := util.DefaultTransmat()
-	assembly := util.ProvisionInputs(
-		transmat,
+	inputArenas := util.ProvisionInputs(transmat, f.Inputs, journal)
+
+	// Assemble filesystem
+	rootfs := filepath.Join(d, "rootfs")
+	assembly := util.AssembleFilesystem(
 		util.BestAssembler(),
-		f.Inputs, rootfs, journal,
+		rootfs,
+		f.Inputs,
+		inputArenas,
+		f.Action.Escapes.Mounts,
+		journal,
 	)
 	defer assembly.Teardown() // What ever happens: Disassemble filesystem
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)

@@ -17,7 +17,7 @@ import (
 
 var _ integrity.Placer = CopyingPlacer
 
-func CopyingPlacer(srcBasePath, destBasePath string, _ bool) integrity.Emplacement {
+func CopyingPlacer(srcBasePath, destBasePath string, _ bool, bareMount bool) integrity.Emplacement {
 	srcBaseStat, err := os.Stat(srcBasePath)
 	if err != nil || !srcBaseStat.IsDir() {
 		panic(Error.New("copyingplacer: srcPath %q must be dir: %s", srcBasePath, err))
@@ -25,6 +25,9 @@ func CopyingPlacer(srcBasePath, destBasePath string, _ bool) integrity.Emplaceme
 	destBaseStat, err := os.Stat(destBasePath)
 	if err != nil || !destBaseStat.IsDir() {
 		panic(Error.New("copyingplacer: destPath %q must be dir: %s", destBasePath, err))
+	}
+	if bareMount {
+		panic(Error.New("copyingplacer: can't support doing a bare mount with this placer; you'll to pick a more powerful one"))
 	}
 	// remove any files already here (to emulate behavior like an overlapping mount)
 	// (can't take the easy route and just `os.RemoveAll(destBasePath)` because that propagates times changes onto the parent.)
@@ -85,7 +88,7 @@ func (e copyEmplacement) Teardown() {
 
 var _ integrity.Placer = BindPlacer
 
-func BindPlacer(srcPath, destPath string, writable bool) integrity.Emplacement {
+func BindPlacer(srcPath, destPath string, writable bool, _ bool) integrity.Emplacement {
 	srcStat, err := os.Stat(srcPath)
 	if err != nil || !srcStat.IsDir() {
 		panic(Error.New("bindplacer: srcPath %q must be dir: %s", srcPath, err))
@@ -126,7 +129,7 @@ func NewAufsPlacer(workPath string) integrity.Placer {
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
 	}
-	return func(srcBasePath, destBasePath string, writable bool) integrity.Emplacement {
+	return func(srcBasePath, destBasePath string, writable bool, bareMount bool) integrity.Emplacement {
 		srcBaseStat, err := os.Stat(srcBasePath)
 		if err != nil || !srcBaseStat.IsDir() {
 			panic(Error.New("aufsplacer: srcPath %q must be dir: %s", srcBasePath, err))
@@ -137,7 +140,11 @@ func NewAufsPlacer(workPath string) integrity.Placer {
 		}
 		// if a RO mount is requested, no need to set up COW; just hand off to bind.
 		if !writable {
-			return BindPlacer(srcBasePath, destBasePath, writable)
+			return BindPlacer(srcBasePath, destBasePath, writable, bareMount)
+		}
+		// similarly, if the caller intentionally wants a bare mount, no need for COW; just hand off.
+		if bareMount {
+			return BindPlacer(srcBasePath, destBasePath, writable, bareMount)
 		}
 		// make work dir for the overlay layer
 		layerPath, err := ioutil.TempDir(workPath, "layer-")
