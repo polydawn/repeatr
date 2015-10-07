@@ -9,7 +9,7 @@ import (
 	"polydawn.net/repeatr/testutil"
 )
 
-func TestParse(t *testing.T) {
+func TestStructuralParse(t *testing.T) {
 	Convey("Testing formula parse", t, func() {
 		placeholderInput := map[string]interface{}{
 			"/": map[string]interface{}{
