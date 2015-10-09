@@ -116,26 +116,28 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 	defer assembly.Teardown()
 
 	// Emit configs for runc.
+	runcConfigJsonPath := filepath.Join(jobPath, "config.json")
 	cfg := EmitRuncConfigStruct(formula)
 	buf, err := json.Marshal(cfg)
 	if err != nil {
 		panic(executor.UnknownError.Wrap(err))
 	}
-	ioutil.WriteFile(filepath.Join(jobPath, "config.json"), buf, 0600)
+	ioutil.WriteFile(runcConfigJsonPath, buf, 0600)
+	runcRuntimeJsonPath := filepath.Join(jobPath, "runtime.json")
 	cfg = EmitRuncRuntimeStruct(formula)
 	buf, err = json.Marshal(cfg)
 	if err != nil {
 		panic(executor.UnknownError.Wrap(err))
 	}
-	ioutil.WriteFile(filepath.Join(jobPath, "runtime.json"), buf, 0600)
+	ioutil.WriteFile(runcRuntimeJsonPath, buf, 0600)
 
 	// Prepare command to exec
 	args := []string{
 		"--root", filepath.Join(e.workspacePath, "shared"), // a tmpfs would be appropriate
 		"--log", logPath,
 		"start",
-		"--config-file", filepath.Join(jobPath, "config.json"),
-		"--runtime-file", filepath.Join(jobPath, "runtime.json"),
+		"--config-file", runcConfigJsonPath,
+		"--runtime-file", runcRuntimeJsonPath,
 	}
 	cmd := exec.Command("runc", args...)
 	cmd.Stdin = nil
