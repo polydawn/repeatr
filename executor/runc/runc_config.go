@@ -12,7 +12,7 @@ func EmitRuncConfigStruct(frm def.Formula, rootPath string) interface{} {
 			"arch": "amd64",
 		},
 		"process": map[string]interface{}{
-			"terminal": true,
+			//"terminal": true,
 			"user": map[string]interface{}{
 				"uid":            0,
 				"gid":            0,
