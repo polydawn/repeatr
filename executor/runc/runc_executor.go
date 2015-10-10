@@ -117,7 +117,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 
 	// Emit configs for runc.
 	runcConfigJsonPath := filepath.Join(jobPath, "config.json")
-	cfg := EmitRuncConfigStruct(formula)
+	cfg := EmitRuncConfigStruct(formula, rootfsPath)
 	buf, err := json.Marshal(cfg)
 	if err != nil {
 		panic(executor.UnknownError.Wrap(err))

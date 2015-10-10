@@ -4,7 +4,7 @@ import (
 	"polydawn.net/repeatr/def"
 )
 
-func EmitRuncConfigStruct(frm def.Formula) interface{} {
+func EmitRuncConfigStruct(frm def.Formula, rootPath string) interface{} {
 	return map[string]interface{}{
 		"version": "0.1.0",
 		"platform": map[string]interface{}{
@@ -28,7 +28,7 @@ func EmitRuncConfigStruct(frm def.Formula) interface{} {
 			"cwd": frm.Action.Cwd,
 		},
 		"root": map[string]interface{}{
-			"path":     "rootfs",
+			"path":     rootPath,
 			"readonly": true,
 		},
 		"hostname": "shell",
