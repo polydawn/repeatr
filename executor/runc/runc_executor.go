@@ -17,6 +17,7 @@ import (
 	"polydawn.net/repeatr/executor/basicjob"
 	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/io/assets"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/streamer"
 )
@@ -131,6 +132,9 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 	}
 	ioutil.WriteFile(runcRuntimeJsonPath, buf, 0600)
 
+	// Get handle to invokable runc plugin.
+	runcPath := filepath.Join(assets.Get("runc"), "bin/runc")
+
 	// Prepare command to exec
 	args := []string{
 		"--root", filepath.Join(e.workspacePath, "shared"), // a tmpfs would be appropriate
@@ -139,7 +143,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 		"--config-file", runcConfigJsonPath,
 		"--runtime-file", runcRuntimeJsonPath,
 	}
-	cmd := exec.Command("runc", args...)
+	cmd := exec.Command(runcPath, args...)
 	cmd.Stdin = nil
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr

@@ -6,7 +6,7 @@ import (
 
 func EmitRuncConfigStruct(frm def.Formula, rootPath string) interface{} {
 	return map[string]interface{}{
-		"version": "0.1.0",
+		"version": "0.2.0",
 		"platform": map[string]interface{}{
 			"os":   "linux",
 			"arch": "amd64",
