@@ -35,6 +35,17 @@ func (e *Executor) Configure(workspacePath string) {
 }
 
 func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal io.Writer) def.Job {
+	// TODO this function sig and its interface are long overdue for an aggressive refactor.
+	// - `journal` is Rong.  The streams mux should be accessible after this function's scope!
+	// - `journal` should still be a thing, but it should be a logger.
+	// - All these other values should move along in a `Job` struct
+	//   - `BasicJob` sorta started, but is drunk:
+	//      - if we're gonna have that, it's incomplete on the inputs
+	//      - for some reason it mixes in responsibility for waiting for some of the ouputs
+	//      - that use of channels and public fields is stupidly indefensive
+	//   - The current `Job` interface is in the wrong package
+	// - almost all of the scopes in these functions is wrong
+	//   - they should be realigned until they actually assist the defers and cleanups
 
 	// Prepare the forumla for execution on this host
 	def.ValidateAll(&f)
@@ -219,6 +230,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 
 	// Wait for the job to complete
 	result.ExitCode = proc.GetExitCode()
+	//runcLog.Close() // this could/should happen before PreserveOutputs.  see todo about fixing scopes.
 
 	// Save outputs
 	result.Outputs = util.PreserveOutputs(transmat, formula.Outputs, rootfsPath, journal)
