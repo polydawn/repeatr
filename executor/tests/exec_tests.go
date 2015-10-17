@@ -89,16 +89,44 @@ func CheckBasicExecution(execEng executor.Executor) {
 		})
 
 		Convey("The executor should report command not found clearly", FailureContinues, func() {
-			formula.Action = def.Action{
-				Entrypoint: []string{"not a command"},
-			}
+			Convey("... when used via $PATH", FailureContinues, func() {
+				formula.Action = def.Action{
+					Entrypoint: []string{"not a command"},
+				}
 
-			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
-			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
-			So(job.Wait().ExitCode, ShouldEqual, -1)
-			msg, err := ioutil.ReadAll(job.OutputReader())
-			So(err, ShouldBeNil)
-			So(string(msg), ShouldEqual, "")
+				job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
+				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
+				So(job.Wait().ExitCode, ShouldEqual, -1)
+				msg, err := ioutil.ReadAll(job.OutputReader())
+				So(err, ShouldBeNil)
+				So(string(msg), ShouldEqual, "")
+			})
+
+			Convey("... when using an absolute path to the command", FailureContinues, func() {
+				formula.Action = def.Action{
+					Entrypoint: []string{"/not/a/command"},
+				}
+
+				job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
+				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
+				So(job.Wait().ExitCode, ShouldEqual, -1)
+				msg, err := ioutil.ReadAll(job.OutputReader())
+				So(err, ShouldBeNil)
+				So(string(msg), ShouldEqual, "")
+			})
+
+			Convey("... even when the command has weird characters", FailureContinues, func() {
+				formula.Action = def.Action{
+					Entrypoint: []string{"/not a comm'\"\tand\b"},
+				}
+
+				job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
+				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
+				So(job.Wait().ExitCode, ShouldEqual, -1)
+				msg, err := ioutil.ReadAll(job.OutputReader())
+				So(err, ShouldBeNil)
+				So(string(msg), ShouldEqual, "")
+			})
 		})
 	})
 }
