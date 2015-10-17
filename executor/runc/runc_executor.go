@@ -204,7 +204,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 
 	// Proxy runc's logs out in realtime; also, detect errors and exit statuses from the stream.
 	var realError error
-	//var unknownError bool // see the "NOTE WELL" section below -.-
+	var someError bool // see the "NOTE WELL" section below -.-
 	go func() {
 		dec := json.NewDecoder(runcLog)
 		for {
@@ -239,8 +239,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 			//  output of a successfully executing job!
 			// We have whitelisted what we can; the following oddities remain:
 			//   - runc will log an "exit status ${n}" message for other failures of its internal forking
-			//     - this one is at least on a clear control channel, so we can raise it as a panic, even if we don't know what it is
-			//       - TODO do so
+			//     - this one is at least on a clear control channel, so we raise it as a panic, even if we don't know what it is
 			//   - lots of system initialization paths in runc will error directly stderr with no clear sigils or separation from usermode stderr.
 			//     - and these mean we're just screwed, and require additional upstream patches to address.
 			switch logMsg["msg"] {
@@ -256,6 +255,11 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 					} else if strings.HasSuffix(logMsg["msg"], ": no such file or directory") {
 						realError = executor.NoSuchCommandError.New("command %q not found", formula.Action.Entrypoint[0])
 					}
+				} else if strings.HasPrefix(logMsg["msg"], "exit status ") {
+					// by itself this doesn't mean much, but if we can't figure out
+					//  what happened in particular by the proc exit, be quite alarmed.
+					// and no, this does *not* mean the real job process exit code, as you might expect.
+					someError = true
 				}
 			}
 		}
@@ -269,6 +273,9 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 	//  - reset code to -1 because the runc exit code wasn't really from the job command
 	//  - zero the output buffers because runc (again) doesn't understand what control channels are
 	//  - finally, raise the error
+	if someError && realError == nil {
+		realError = executor.UnknownError.New("runc errored in an unrecognized fashion")
+	}
 	if realError != nil {
 		result.ExitCode = -1
 		// TODO just overwrite the streamer, i guess?
