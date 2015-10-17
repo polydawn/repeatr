@@ -201,12 +201,15 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 				panic(err)
 			}
 			// remap
+			if _, ok := logMsg["msg"]; !ok {
+				logMsg["msg"] = ""
+			}
 			ctx := log15.Ctx{}
 			for k, v := range logMsg {
 				if k == "msg" {
 					continue
 				}
-				ctx[k] = v
+				ctx["runc-"+k] = v
 			}
 			// with runc, everything we hear is at least a warning.
 			journal.Warn(logMsg["msg"], ctx)
