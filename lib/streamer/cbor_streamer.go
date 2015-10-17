@@ -5,7 +5,6 @@ import (
 	"math"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
@@ -99,7 +98,7 @@ func (m *CborMux) Reader(labels ...int) io.Reader {
 	// do something much more sane than skip it, please
 	return &cborMuxReader{
 		labels: &intset{labels},
-		codec:  codec.NewDecoder(newTailReader(r), new(codec.CborHandle)),
+		codec:  codec.NewDecoder(NewTailReader(r), new(codec.CborHandle)),
 	}
 }
 
@@ -194,53 +193,4 @@ func (s *intset) Remove(i int) {
 
 func (s *intset) Empty() bool {
 	return len(s.s) == 0
-}
-
-/*
-	Proxies another reader, disregarding EOFs and blocking instead until
-	the user closes.
-*/
-type tailReader struct {
-	r    io.Reader
-	quit chan struct{}
-}
-
-func newTailReader(r io.Reader) *tailReader {
-	return &tailReader{
-		r:    r,
-		quit: make(chan struct{}),
-	}
-}
-
-func (r *tailReader) Read(msg []byte) (n int, err error) {
-	for n == 0 && err == nil {
-		n, err = r.r.Read(msg)
-		if err == io.EOF {
-			// We don't pass EOF up until we're commanded to be closed.
-			// This could be a "temporary" EOF and appends will still be incoming.
-			if n > 0 {
-				// If any bytes, pass them up immediately.
-				return n, nil
-			}
-			// We're effectively required to block here, because otherwise the reader may spin;
-			// this is not a clueful wait; but it does prevent pegging a core.
-			// Quite dumb in this case is also quite fool-proof.
-			err = nil
-			select {
-			case <-time.After(1 * time.Millisecond):
-			case <-r.quit:
-				return 0, io.EOF
-			}
-		}
-	}
-	// anything other than an eof, we have no behavioral changes to make; pass up.
-	return n, err
-}
-
-/*
-	Breaks any readers currently blocked.
-*/
-func (r *tailReader) Close() error {
-	close(r.quit)
-	return nil
 }
