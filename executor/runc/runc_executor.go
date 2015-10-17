@@ -198,7 +198,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 				if err == io.EOF {
 					return
 				}
-				panic(err)
+				panic(executor.TaskExecError.New("unparsable log from runc: %s", err))
 			}
 			// remap
 			if _, ok := logMsg["msg"]; !ok {
