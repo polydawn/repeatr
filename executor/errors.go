@@ -22,12 +22,24 @@ var ConfigError *errors.ErrorClass = Error.NewClass("ExecutorConfigError")
 var TaskExecError *errors.ErrorClass = Error.NewClass("ExecutorTaskExecError")
 
 /*
-	Error raised when a command is not found inside the execution environment.
+	Error raised when job launched failed because the command is
+	not found inside the execution environment.
 
-	Often just indicative of user misconfiguration (and thus this is not a
-	child of TaskExecError, which expresses serious system failures).
+	This is considered a form of config error since the command and
+	the filesystem are both configured together, meaning a mismatch
+	between them is operator error.
 */
-var NoSuchCommandError *errors.ErrorClass = Error.NewClass("NoSuchCommandError")
+var NoSuchCommandError *errors.ErrorClass = ConfigError.NewClass("NoSuchCommandError")
+
+/*
+	Error raised when job launched failed because the requested "cwd"
+	is either not found or not a directory inside the execution environment.
+
+	This is considered a form of config error since the command and
+	the filesystem are both configured together, meaning a mismatch
+	between them is operator error.
+*/
+var NoSuchCwdError *errors.ErrorClass = ConfigError.NewClass("NoSuchCwdError")
 
 /*
 	Wraps any other unknown errors just to emphasize the system that raised them;

@@ -53,7 +53,23 @@ func CheckPwdBehavior(execEng executor.Executor) {
 			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldNotBeNil)
-			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.TaskExecError)
+			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCwdError)
+			So(job.Wait().ExitCode, ShouldEqual, -1)
+			msg, err := ioutil.ReadAll(job.OutputReader())
+			So(err, ShouldBeNil)
+			So(string(msg), ShouldEqual, "")
+		})
+
+		Convey("Setting a non-dir cwd should fail to launch", FailureContinues, func() {
+			formula.Action = def.Action{
+				Cwd:        "/bin/sh",
+				Entrypoint: []string{"pwd"},
+			}
+
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
+			So(job, ShouldNotBeNil)
+			So(job.Wait().Error, ShouldNotBeNil)
+			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCwdError)
 			So(job.Wait().ExitCode, ShouldEqual, -1)
 			msg, err := ioutil.ReadAll(job.OutputReader())
 			So(err, ShouldBeNil)
