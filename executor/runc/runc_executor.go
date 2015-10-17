@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -174,6 +175,44 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 			panic(executor.UnknownError.Wrap(err))
 		}
 	}).Done()
+
+	// Proxy runc's logs out; also, detect errors and exit statuses from the stream.
+	go func() {
+		f, err := os.OpenFile(logPath, os.O_CREATE|os.O_RDONLY, 0644)
+		// TODO races child; doesn't matter, but probably easiest if we open a handle before exec'ing.
+		if err != nil {
+			panic(err)
+			// FIXME ... emit via chan?
+			// want to wait for exit after this, but also want to report immediately, but also not block
+			// probably need some seriously fancy selects here
+		}
+		defer f.Close()
+		// make a json decoder, right after swaddling the file in userland-interruptable reader;
+		//  obviously we don't want to stop watching the logs when we hit the end of the still-growing file.
+		dec := json.NewDecoder(streamer.NewTailReader(f))
+		// FIXME this needs to be closed by the exit code waiter... move out
+		for {
+			var logMsg map[string]string
+			err := dec.Decode(&logMsg)
+			if err != nil {
+				if err == io.EOF {
+					return
+				}
+				panic(err)
+			}
+			// remap
+			ctx := log15.Ctx{}
+			for k, v := range logMsg {
+				if k == "msg" {
+					continue
+				}
+				ctx[k] = v
+			}
+			// with runc, everything we hear is at least a warning.
+			journal.Warn(logMsg["msg"], ctx)
+			// TODO actually filtering the interesting structures and raising issues
+		}
+	}()
 
 	// Wait for the job to complete
 	result.ExitCode = proc.GetExitCode()
