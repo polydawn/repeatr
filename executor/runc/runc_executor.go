@@ -98,7 +98,6 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS
 // Execute a formula in a specified directory. MAY PANIC.
 func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, result *def.JobResult, stdout, stderr io.WriteCloser, journal log15.Logger) {
 	rootfsPath := filepath.Join(jobPath, "rootfs")
-	logPath := filepath.Join(jobPath, "runc-debug.log")
 
 	// Prepare inputs
 	transmat := util.DefaultTransmat()
@@ -132,6 +131,10 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 	}
 	ioutil.WriteFile(runcRuntimeJsonPath, buf, 0600)
 
+	// Routing logs through a fifo appears to work, but we're going to use a file as a buffer anyway:
+	//  in the event of nasty breakdowns, it's preferable that the runc log remain readable even if repeatr was the process to end first.
+	logPath := filepath.Join(jobPath, "runc-debug.log")
+
 	// Get handle to invokable runc plugin.
 	runcPath := filepath.Join(assets.Get("runc"), "bin/runc")
 
@@ -139,6 +142,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 	args := []string{
 		"--root", filepath.Join(e.workspacePath, "shared"), // a tmpfs would be appropriate
 		"--log", logPath,
+		"--log-format", "json",
 		"start",
 		"--config-file", runcConfigJsonPath,
 		"--runtime-file", runcRuntimeJsonPath,
@@ -176,17 +180,4 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 
 	// Save outputs
 	result.Outputs = util.PreserveOutputs(transmat, formula.Outputs, rootfsPath, journal)
-
-	// TODO : additional error detection of runc failure modes
-	// Okay, what do we know?
-	//  - They use logrus
-	//  - I've only seen warns and fatals so far, which is kinda amusing
-	//    - But I'm AOK with this: it means we can proxy those messages freely without noise issues
-	//  - INVESTIGATE: does logrus even *have* a mechanism to switch formats to something structural like log15 can?
-	//    - If so, this would still likely require moving a patch upstream in order to expose usefully
-	//      - And while I'm all about moving everyone forward together, that's probably going to get derailed into a spec discussion about lifecycle events, and that's great,
-	//        - but I want to use this before that even if it requires ducttape.
-	//      - Alternatively!  We *are* building runc from source already; maintaining a formula and patches together in-repo here would be totally reasonable.
-	//    - Yes!  It can accept a Formatter and there is a JSON Formatter.  No, there are no flags that currently do this.
-	//      - SetFormatter: we can call it.  Runc is currently only using the global logrus instance.
 }
