@@ -18,6 +18,10 @@ var _ io.Writer = Writer{}
 /*
 	Wraps a goconvey context into an `io.Writer` so that you can
 	shovel logs at it.
+
+	... I really WANT goconvey to be clever about buffering this,
+	aligning it reasonably, and shutting it up unless something goes
+	wrong.  Alas, the terminal form of goconvey does none of these things.
 */
 type Writer struct {
 	Convey convey.C
