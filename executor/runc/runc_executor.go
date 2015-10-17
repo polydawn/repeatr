@@ -200,6 +200,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 	defer runcLog.Close()
 
 	// Proxy runc's logs out in realtime; also, detect errors and exit statuses from the stream.
+	var realError error
 	go func() {
 		dec := json.NewDecoder(runcLog)
 		for {
@@ -224,13 +225,27 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 			}
 			// with runc, everything we hear is at least a warning.
 			journal.Warn(logMsg["msg"], ctx)
-			// TODO actually filtering the interesting structures and raising issues
+			// actually filtering the interesting structures and raising issues
+			// note that we don't need to capture the "exit status" message, because that
+			//  code *does* come out correctly... but we do need to sometimes override it again.
+			switch logMsg["msg"] {
+			case "Container start failed: [8] System error: no such file or directory":
+				realError = executor.NoSuchCwdError.New("cannot set cwd to %q: no such file or directory", formula.Action.Cwd)
+			case "Container start failed: [8] System error: not a directory":
+				realError = executor.NoSuchCwdError.New("cannot set cwd to %q: not a directory", formula.Action.Cwd)
+			}
 		}
 	}()
 
 	// Wait for the job to complete
 	result.ExitCode = proc.GetExitCode()
 	//runcLog.Close() // this could/should happen before PreserveOutputs.  see todo about fixing scopes.
+
+	// If we had a CnC error (rather than the real subprocess exit code), reset code, and raise
+	if realError != nil {
+		result.ExitCode = -1
+		panic(realError)
+	}
 
 	// Save outputs
 	result.Outputs = util.PreserveOutputs(transmat, formula.Outputs, rootfsPath, journal)

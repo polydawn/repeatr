@@ -125,7 +125,7 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	if externalCwdStat, err := os.Stat(filepath.Join(rootfs, f.Action.Cwd)); err != nil {
 		panic(executor.NoSuchCwdError.New("cannot set cwd to %q: %s", f.Action.Cwd, err.(*os.PathError).Err))
 	} else if !externalCwdStat.IsDir() {
-		panic(executor.NoSuchCwdError.New("cannot set cwd to %q: not a dir", f.Action.Cwd))
+		panic(executor.NoSuchCwdError.New("cannot set cwd to %q: not a directory", f.Action.Cwd))
 	}
 	cmd.Dir = f.Action.Cwd
 
