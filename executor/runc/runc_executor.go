@@ -37,6 +37,7 @@ func (e *Executor) Configure(workspacePath string) {
 func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal io.Writer) def.Job {
 	// TODO this function sig and its interface are long overdue for an aggressive refactor.
 	// - `journal` is Rong.  The streams mux should be accessible after this function's scope!
+	//   - either that or it's time to get cracking on saving the stream mux as an output
 	// - `journal` should still be a thing, but it should be a logger.
 	// - All these other values should move along in a `Job` struct
 	//   - `BasicJob` sorta started, but is drunk:
@@ -46,6 +47,7 @@ func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal i
 	//   - The current `Job` interface is in the wrong package
 	// - almost all of the scopes in these functions is wrong
 	//   - they should be realigned until they actually assist the defers and cleanups
+	//     - e.g. withErrorCapture, withJobWorkPath, withFilesystems, etc
 
 	// Prepare the forumla for execution on this host
 	def.ValidateAll(&f)
