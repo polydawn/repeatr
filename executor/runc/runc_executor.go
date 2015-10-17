@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 	"github.com/polydawn/gosh"
@@ -203,6 +204,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 
 	// Proxy runc's logs out in realtime; also, detect errors and exit statuses from the stream.
 	var realError error
+	//var unknownError bool // see the "NOTE WELL" section below -.-
 	go func() {
 		dec := json.NewDecoder(runcLog)
 		for {
@@ -230,11 +232,31 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 			// actually filtering the interesting structures and raising issues
 			// note that we don't need to capture the "exit status" message, because that
 			//  code *does* come out correctly... but we do need to sometimes override it again.
+			// NOTE WELL: we cannot guarantee to capture all semantic runc failure modes.
+			//  Errors may slip through with exit status 1: there are still many fail states
+			//  which runc does not log with sufficient consistency or a sufficiently separate
+			//  control channel for us to be able to reliably disambiguate them from stderr
+			//  output of a successfully executing job!
+			// We have whitelisted what we can; the following oddities remain:
+			//   - runc will log an "exit status ${n}" message for other failures of its internal forking
+			//     - this one is at least on a clear control channel, so we can raise it as a panic, even if we don't know what it is
+			//       - TODO do so
+			//   - lots of system initialization paths in runc will error directly stderr with no clear sigils or separation from usermode stderr.
+			//     - and these mean we're just screwed, and require additional upstream patches to address.
 			switch logMsg["msg"] {
 			case "Container start failed: [8] System error: no such file or directory":
 				realError = executor.NoSuchCwdError.New("cannot set cwd to %q: no such file or directory", formula.Action.Cwd)
 			case "Container start failed: [8] System error: not a directory":
 				realError = executor.NoSuchCwdError.New("cannot set cwd to %q: not a directory", formula.Action.Cwd)
+			default:
+				// broader patterns required for some of these so we can ignore the vagaries of how the command name was quoted
+				if strings.HasPrefix(logMsg["msg"], "Container start failed: [8] System error: exec: ") {
+					if strings.HasSuffix(logMsg["msg"], ": executable file not found in $PATH") {
+						realError = executor.NoSuchCommandError.New("command %q not found", formula.Action.Entrypoint[0])
+					} else if strings.HasSuffix(logMsg["msg"], ": no such file or directory") {
+						realError = executor.NoSuchCommandError.New("command %q not found", formula.Action.Entrypoint[0])
+					}
+				}
 			}
 		}
 	}()
@@ -243,9 +265,13 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 	result.ExitCode = proc.GetExitCode()
 	//runcLog.Close() // this could/should happen before PreserveOutputs.  see todo about fixing scopes.
 
-	// If we had a CnC error (rather than the real subprocess exit code), reset code, and raise
+	// If we had a CnC error (rather than the real subprocess exit code):
+	//  - reset code to -1 because the runc exit code wasn't really from the job command
+	//  - zero the output buffers because runc (again) doesn't understand what control channels are
+	//  - finally, raise the error
 	if realError != nil {
 		result.ExitCode = -1
+		// TODO just overwrite the streamer, i guess?
 		panic(realError)
 	}
 
