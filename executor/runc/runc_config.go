@@ -29,7 +29,7 @@ func EmitRuncConfigStruct(frm def.Formula, rootPath string) interface{} {
 		},
 		"root": map[string]interface{}{
 			"path":     rootPath,
-			"readonly": true,
+			"readonly": false,
 		},
 		"hostname": "shell",
 		"mounts": []interface{}{
