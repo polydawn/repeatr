@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/inconshreveable/log15"
+	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
@@ -35,14 +36,22 @@ func Get(assetName string) string {
 	// Note: haven't got an API that proxies all the monitoring options yet.
 	// Be nice to have that someday, but tbh we need to develop the core of that further first.
 
-	arena := transmat().Materialize(
-		integrity.TransmatKind("tar"),
-		assets[assetName],
-		[]integrity.SiloURI{
-			"http+ca://repeatr.s3.amazonaws.com/assets/",
-		},
-		log15.New(log15.DiscardHandler), // this is foolish, but i just feel Wrong requiring a logger as an arg to `asset.Get`.
-	)
+	var arena integrity.Arena
+	try.Do(func() {
+		arena = transmat().Materialize(
+			integrity.TransmatKind("tar"),
+			assets[assetName],
+			[]integrity.SiloURI{
+				"http+ca://repeatr.s3.amazonaws.com/assets/",
+			},
+			log15.New(log15.DiscardHandler), // this is foolish, but i just feel Wrong requiring a logger as an arg to `asset.Get`.
+		)
+	}).CatchAll(func(err error) {
+		// Mainly, we just don't want to emit a transmat error directly;
+		//  that could be unpleasantly ambiguous given that assets are often used
+		//   in executors right to transmats, or in transmats themselves.
+		panic(ErrLoadingAsset.Wrap(err))
+	}).Done()
 
 	return arena.Path()
 }
