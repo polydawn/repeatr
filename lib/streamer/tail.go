@@ -1,15 +1,19 @@
 package streamer
 
 import (
+	"fmt"
 	"io"
+	"sync/atomic"
 	"time"
 )
 
 var _ io.ReadCloser = &TailReader{}
 
+var ErrAlreadyClosed = fmt.Errorf("TailReader already closed")
+
 type TailReader struct {
-	r    io.Reader
-	quit chan struct{}
+	r     io.Reader
+	drain int32
 }
 
 /*
@@ -18,8 +22,7 @@ type TailReader struct {
 */
 func NewTailReader(r io.Reader) *TailReader {
 	return &TailReader{
-		r:    r,
-		quit: make(chan struct{}),
+		r: r,
 	}
 }
 
@@ -33,15 +36,16 @@ func (r *TailReader) Read(msg []byte) (n int, err error) {
 				// If any bytes, pass them up immediately.
 				return n, nil
 			}
+			// If we got EOF, have no buffer, and are at this instant closed, leave.
+			if r.drain > 0 {
+				return 0, io.EOF
+			}
+			// Pause before retrying.
 			// We're effectively required to block here, because otherwise the reader may spin;
 			// this is not a clueful wait; but it does prevent pegging a core.
 			// Quite dumb in this case is also quite fool-proof.
 			err = nil
-			select {
-			case <-time.After(1 * time.Millisecond):
-			case <-r.quit:
-				return 0, io.EOF
-			}
+			<-time.After(1 * time.Millisecond)
 		}
 	}
 	// anything other than an eof, we have no behavioral changes to make; pass up.
@@ -52,6 +56,8 @@ func (r *TailReader) Read(msg []byte) (n int, err error) {
 	Breaks any readers currently blocked.
 */
 func (r *TailReader) Close() error {
-	close(r.quit)
+	if swapped := atomic.CompareAndSwapInt32(&r.drain, 0, 1); swapped != true {
+		return ErrAlreadyClosed
+	}
 	return nil
 }
