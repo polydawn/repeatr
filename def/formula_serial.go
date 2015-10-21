@@ -368,6 +368,7 @@ func (m *Mount) Unmarshal(ser interface{}) error {
 	switch val := ser.(type) {
 	case string:
 		m.SourcePath = val
+		m.Writable = true
 		return nil
 	default:
 		return newConfigValTypeError("mount", "string", describe(ser))
