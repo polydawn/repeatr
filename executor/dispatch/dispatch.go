@@ -8,6 +8,7 @@ import (
 	"polydawn.net/repeatr/executor/chroot"
 	"polydawn.net/repeatr/executor/nsinit"
 	"polydawn.net/repeatr/executor/null"
+	"polydawn.net/repeatr/executor/runc"
 )
 
 // TODO: This should not require a global string -> class map :|
@@ -24,6 +25,8 @@ func Get(desire string) executor.Executor {
 		executor = &nsinit.Executor{}
 	case "chroot":
 		executor = &chroot.Executor{}
+	case "runc":
+		executor = &runc.Executor{}
 	default:
 		panic(def.ValidationError.New("No such executor %s", desire))
 	}
