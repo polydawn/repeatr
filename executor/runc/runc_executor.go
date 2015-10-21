@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/polydawn/gosh"
@@ -199,13 +200,14 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 	// swaddle the file in userland-interruptable reader;
 	//  obviously we don't want to stop watching the logs when we hit the end of the still-growing file.
 	runcLog = streamer.NewTailReader(runcLog)
-	// close the reader when we return (which means after waiting for the exit code, which overall DTRT).
-	defer runcLog.Close()
 
 	// Proxy runc's logs out in realtime; also, detect errors and exit statuses from the stream.
 	var realError error
 	var someError bool // see the "NOTE WELL" section below -.-
+	var tailerDone sync.WaitGroup
+	tailerDone.Add(1)
 	go func() {
+		defer tailerDone.Done()
 		dec := json.NewDecoder(runcLog)
 		for {
 			var logMsg map[string]string
@@ -265,20 +267,28 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 		}
 	}()
 
-	// Wait for the job to complete
+	// Wait for the job to complete.
+	// Tell the log tailer to drain as soon as the proc exits.
 	result.ExitCode = proc.GetExitCode()
-	//runcLog.Close() // this could/should happen before PreserveOutputs.  see todo about fixing scopes.
+	runcLog.Close()
+
+	// Wait for the tailer routine to drain & exit (this sync guards the err vars).
+	tailerDone.Wait()
 
 	// If we had a CnC error (rather than the real subprocess exit code):
 	//  - reset code to -1 because the runc exit code wasn't really from the job command
-	//  - zero the output buffers because runc (again) doesn't understand what control channels are
 	//  - finally, raise the error
+	// FIXME we WISH we could zero the output buffers because runc pushes duplicate error messages
+	//  down a channel that's indistinguishable from the application stderr... but that's tricky for several reasons:
+	//  - we support streaming them out, right?
+	//  - that means we'd have to have been blocking them already; we can't zero retroactively.
+	//  - there's no "all clear" signal available from runc that would let us know we're clear to start flushing the stream if we blocked it.
+	//  - So, we're unable to pass the executor compat tests until patches to runc clean up this behavior.
 	if someError && realError == nil {
 		realError = executor.UnknownError.New("runc errored in an unrecognized fashion")
 	}
 	if realError != nil {
 		result.ExitCode = -1
-		// TODO just overwrite the streamer, i guess?
 		panic(realError)
 	}
 
