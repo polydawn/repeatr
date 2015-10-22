@@ -249,6 +249,8 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 				realError = executor.NoSuchCwdError.New("cannot set cwd to %q: no such file or directory", formula.Action.Cwd)
 			case "Container start failed: [8] System error: not a directory":
 				realError = executor.NoSuchCwdError.New("cannot set cwd to %q: not a directory", formula.Action.Cwd)
+			case "Container start failed: [8] System error: fork/exec /proc/self/exe: invalid argument":
+				realError = executor.TaskExecError.New("runc cannot operate in this environment!  %s", "fork/exec /proc/self/exe: invalid argument")
 			default:
 				// broader patterns required for some of these so we can ignore the vagaries of how the command name was quoted
 				if strings.HasPrefix(logMsg["msg"], "Container start failed: [8] System error: exec: ") {
