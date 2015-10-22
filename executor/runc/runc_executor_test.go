@@ -23,6 +23,7 @@ func Test(t *testing.T) {
 				tests.CheckFilesystemContainment(execEng)
 				tests.CheckPwdBehavior(execEng)
 				tests.CheckEnvBehavior(execEng)
+				tests.CheckHostnameBehavior(execEng)
 			}),
 		),
 	)

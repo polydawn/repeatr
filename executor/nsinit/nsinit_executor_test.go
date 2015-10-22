@@ -23,6 +23,7 @@ func Test(t *testing.T) {
 				tests.CheckFilesystemContainment(execEng)
 				//tests.CheckPwdBehavior(execEng) // correct error reporting sections fail spec compliance
 				tests.CheckEnvBehavior(execEng)
+				//tests.CheckHostnameBehavior(execEng) // not yet implemented
 			}),
 		),
 	)

@@ -117,6 +117,26 @@ func CheckEnvBehavior(execEng executor.Executor) {
 	})
 }
 
+func CheckHostnameBehavior(execEng executor.Executor) {
+	Convey("SPEC: Hostname should be job ID", func(c C) {
+		// note: considered just saying "not the host", but figured we
+		//  might as well pick a stance and stick with it.
+		formula := getBaseFormula()
+		formula.Action = def.Action{
+			Entrypoint: []string{"hostname"},
+		}
+
+		jobID := def.JobID(guid.New())
+		job := execEng.Start(formula, jobID, nil, testutil.Writer{c})
+		So(job, ShouldNotBeNil)
+		So(job.Wait().Error, ShouldBeNil)
+		So(job.Wait().ExitCode, ShouldEqual, 0)
+		msg, err := ioutil.ReadAll(job.OutputReader())
+		So(err, ShouldBeNil)
+		So(string(msg), ShouldEqual, string(jobID)+"\n")
+	})
+}
+
 func soExpectSuccessAndOutput(execEng executor.Executor, formula def.Formula, journal io.Writer, output string) {
 	job := execEng.Start(formula, def.JobID(guid.New()), nil, journal)
 	So(job, ShouldNotBeNil)
