@@ -25,7 +25,7 @@ import (
 	If any of these fail, most other parts of the specs will also fail.
 */
 func CheckBasicExecution(execEng executor.Executor) {
-	Convey("SPEC: Attempting launch with a rootfs that doesn't exist should error", func() {
+	Convey("SPEC: Attempting launch with a rootfs that doesn't exist should error", func(c C) {
 		formula := def.Formula{
 			Inputs: []def.Input{
 				{
@@ -41,7 +41,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 		}
 
 		Convey("We should get an error from the warehouse", func() {
-			result := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard).Wait()
+			result := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c}).Wait()
 			So(result.Error, testutil.ShouldBeErrorClass, integrity.WarehouseError)
 		})
 
@@ -49,7 +49,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 			formula.Action = def.Action{
 				Entrypoint: []string{"echo", "echococo"},
 			}
-			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldNotBeNil)
 			// Even though one should clearly also check the error status,
@@ -58,7 +58,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 		})
 	})
 
-	Convey("SPEC: Launching a command with a working rootfs should work", func() {
+	Convey("SPEC: Launching a command with a working rootfs should work", func(c C) {
 		formula := getBaseFormula()
 
 		Convey("The executor should be able to invoke echo", FailureContinues, func() {
@@ -66,7 +66,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 				Entrypoint: []string{"echo", "echococo"},
 			}
 
-			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
 			So(job, ShouldNotBeNil)
 			// note that we can read output concurrently.
 			// no need to wait for job done.
@@ -82,23 +82,51 @@ func CheckBasicExecution(execEng executor.Executor) {
 				Entrypoint: []string{"sh", "-c", "exit 14"},
 			}
 
-			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 14)
 		})
 
 		Convey("The executor should report command not found clearly", FailureContinues, func() {
-			formula.Action = def.Action{
-				Entrypoint: []string{"not a command"},
-			}
+			Convey("... when used via $PATH", FailureContinues, func() {
+				formula.Action = def.Action{
+					Entrypoint: []string{"not a command"},
+				}
 
-			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
-			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
-			So(job.Wait().ExitCode, ShouldEqual, -1)
-			msg, err := ioutil.ReadAll(job.OutputReader())
-			So(err, ShouldBeNil)
-			So(string(msg), ShouldEqual, "")
+				job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
+				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
+				So(job.Wait().ExitCode, ShouldEqual, -1)
+				msg, err := ioutil.ReadAll(job.OutputReader())
+				So(err, ShouldBeNil)
+				So(string(msg), ShouldEqual, "")
+			})
+
+			Convey("... when using an absolute path to the command", FailureContinues, func() {
+				formula.Action = def.Action{
+					Entrypoint: []string{"/not/a/command"},
+				}
+
+				job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
+				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
+				So(job.Wait().ExitCode, ShouldEqual, -1)
+				msg, err := ioutil.ReadAll(job.OutputReader())
+				So(err, ShouldBeNil)
+				So(string(msg), ShouldEqual, "")
+			})
+
+			Convey("... even when the command has weird characters", FailureContinues, func() {
+				formula.Action = def.Action{
+					Entrypoint: []string{"/not a comm'\"\tand\b"},
+				}
+
+				job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
+				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
+				So(job.Wait().ExitCode, ShouldEqual, -1)
+				msg, err := ioutil.ReadAll(job.OutputReader())
+				So(err, ShouldBeNil)
+				So(string(msg), ShouldEqual, "")
+			})
 		})
 	})
 }

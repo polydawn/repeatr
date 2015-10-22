@@ -1,4 +1,4 @@
-package nsinit
+package runc
 
 import (
 	"os"
@@ -10,20 +10,20 @@ import (
 )
 
 func Test(t *testing.T) {
-	Convey("Spec Compliance: nsinit Executor", t,
+	Convey("Spec Compliance: Runc Executor", t,
 		testutil.Requires(
 			testutil.RequiresRoot,
 			testutil.RequiresNamespaces,
 			testutil.WithTmpdir(func() {
 				execEng := &Executor{}
-				execEng.Configure("nsinit_workspace")
+				execEng.Configure("runc_workspace")
 				So(os.Mkdir(execEng.workspacePath, 0755), ShouldBeNil)
 
-				//tests.CheckBasicExecution(execEng) // correct error reporting sections fail spec compliance
+				tests.CheckBasicExecution(execEng)
 				tests.CheckFilesystemContainment(execEng)
-				//tests.CheckPwdBehavior(execEng) // correct error reporting sections fail spec compliance
+				tests.CheckPwdBehavior(execEng)
 				tests.CheckEnvBehavior(execEng)
-				//tests.CheckHostnameBehavior(execEng) // not yet implemented
+				tests.CheckHostnameBehavior(execEng)
 			}),
 		),
 	)

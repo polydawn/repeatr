@@ -7,11 +7,12 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/lib/guid"
+	"polydawn.net/repeatr/testutil"
 	"polydawn.net/repeatr/testutil/filefixture"
 )
 
 func CheckFilesystemContainment(execEng executor.Executor) {
-	Convey("SPEC: Launching with multiple inputs should work", func() {
+	Convey("SPEC: Launching with multiple inputs should work", func(c C) {
 		formula := getBaseFormula()
 
 		Convey("Launch should succeed", func() {
@@ -27,7 +28,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 			formula.Action = def.Action{
 				Entrypoint: []string{"/bin/true"},
 			}
-			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -37,7 +38,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 					Entrypoint: []string{"ls", "/data/test"},
 				}
 
-				job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
+				job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
 				So(job, ShouldNotBeNil)
 				So(job.Wait().Error, ShouldBeNil)
 				So(job.Wait().ExitCode, ShouldEqual, 0)

@@ -123,9 +123,9 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	// see comments in gosh tests with chroot for information about the odd behavior we're hacking around here;
 	// we're comfortable making this special check here, but not upstreaming it to gosh, because in our context we "know" we're not racing anyone.
 	if externalCwdStat, err := os.Stat(filepath.Join(rootfs, f.Action.Cwd)); err != nil {
-		panic(executor.TaskExecError.New("cannot set cwd to %q: %s", f.Action.Cwd, err.(*os.PathError).Err))
+		panic(executor.NoSuchCwdError.New("cannot set cwd to %q: %s", f.Action.Cwd, err.(*os.PathError).Err))
 	} else if !externalCwdStat.IsDir() {
-		panic(executor.TaskExecError.New("cannot set cwd to %q: not a dir", f.Action.Cwd))
+		panic(executor.NoSuchCwdError.New("cannot set cwd to %q: not a directory", f.Action.Cwd))
 	}
 	cmd.Dir = f.Action.Cwd
 

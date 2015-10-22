@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -13,7 +14,7 @@ import (
 )
 
 func CheckPwdBehavior(execEng executor.Executor) {
-	Convey("SPEC: Working directory should be contained", func() {
+	Convey("SPEC: Working directory should be contained", func(c C) {
 		formula := getBaseFormula()
 
 		Convey("The default pwd should be the root", func() {
@@ -27,7 +28,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 				Entrypoint: []string{"pwd"},
 			}
 
-			soExpectSuccessAndOutput(execEng, formula,
+			soExpectSuccessAndOutput(execEng, formula, testutil.Writer{c},
 				"/\n",
 			)
 		})
@@ -38,7 +39,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 				Entrypoint: []string{"pwd"},
 			}
 
-			soExpectSuccessAndOutput(execEng, formula,
+			soExpectSuccessAndOutput(execEng, formula, testutil.Writer{c},
 				"/usr\n",
 			)
 		})
@@ -49,10 +50,26 @@ func CheckPwdBehavior(execEng executor.Executor) {
 				Entrypoint: []string{"pwd"},
 			}
 
-			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldNotBeNil)
-			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.TaskExecError)
+			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCwdError)
+			So(job.Wait().ExitCode, ShouldEqual, -1)
+			msg, err := ioutil.ReadAll(job.OutputReader())
+			So(err, ShouldBeNil)
+			So(string(msg), ShouldEqual, "")
+		})
+
+		Convey("Setting a non-dir cwd should fail to launch", FailureContinues, func() {
+			formula.Action = def.Action{
+				Cwd:        "/bin/sh",
+				Entrypoint: []string{"pwd"},
+			}
+
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
+			So(job, ShouldNotBeNil)
+			So(job.Wait().Error, ShouldNotBeNil)
+			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCwdError)
 			So(job.Wait().ExitCode, ShouldEqual, -1)
 			msg, err := ioutil.ReadAll(job.OutputReader())
 			So(err, ShouldBeNil)
@@ -65,7 +82,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 	// NOTE the chroot executor currently uses `def.ValidateAll` which effectively *does not permit you to have an empty $PATH var*.
 	// we may decide to change that later -- but there's a correctness versus convenience battle there, and for now, we're going with convenience.
 
-	Convey("SPEC: Env vars should be contained", func() {
+	Convey("SPEC: Env vars should be contained", func(c C) {
 		formula := getBaseFormula()
 		formula.Action = def.Action{
 			Entrypoint: []string{"env"},
@@ -75,7 +92,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 			os.Setenv("REPEATR_TEST_KEY_1", "test value")
 			defer os.Unsetenv("REPEATR_TEST_KEY_1") // using unique strings per test anyway, because this is too scary
 
-			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -88,7 +105,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 			formula.Action.Env = make(map[string]string)
 			formula.Action.Env["REPEATR_TEST_KEY_2"] = "test value"
 
-			job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
+			job := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c})
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -100,8 +117,28 @@ func CheckEnvBehavior(execEng executor.Executor) {
 	})
 }
 
-func soExpectSuccessAndOutput(execEng executor.Executor, formula def.Formula, output string) {
-	job := execEng.Start(formula, def.JobID(guid.New()), nil, ioutil.Discard)
+func CheckHostnameBehavior(execEng executor.Executor) {
+	Convey("SPEC: Hostname should be job ID", func(c C) {
+		// note: considered just saying "not the host", but figured we
+		//  might as well pick a stance and stick with it.
+		formula := getBaseFormula()
+		formula.Action = def.Action{
+			Entrypoint: []string{"hostname"},
+		}
+
+		jobID := def.JobID(guid.New())
+		job := execEng.Start(formula, jobID, nil, testutil.Writer{c})
+		So(job, ShouldNotBeNil)
+		So(job.Wait().Error, ShouldBeNil)
+		So(job.Wait().ExitCode, ShouldEqual, 0)
+		msg, err := ioutil.ReadAll(job.OutputReader())
+		So(err, ShouldBeNil)
+		So(string(msg), ShouldEqual, string(jobID)+"\n")
+	})
+}
+
+func soExpectSuccessAndOutput(execEng executor.Executor, formula def.Formula, journal io.Writer, output string) {
+	job := execEng.Start(formula, def.JobID(guid.New()), nil, journal)
 	So(job, ShouldNotBeNil)
 	So(job.Wait().Error, ShouldBeNil)
 	So(job.Wait().ExitCode, ShouldEqual, 0)
