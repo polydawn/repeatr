@@ -13,7 +13,7 @@ import (
 )
 
 var assets = map[string]integrity.CommitID{
-	"runc": integrity.CommitID("QATmJ0nliaN5K-4AX1hDEliA6nua-w91iVh0a6692oEyAfeedNKAs7_84JBcxfjO"),
+	"runc": integrity.CommitID("GWQ-0zuTIZDrY_noJMUb2zTSfxJJp9ldhfbQB7dRCQ-kzzaAoLVFFwWozoQJnHJf"),
 }
 
 /*
