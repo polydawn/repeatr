@@ -20,9 +20,6 @@ func TestStringParse(t *testing.T) {
 		action:
 			command:
 				- "shellit"
-		outputs:
-			"/dev/null":
-				type: "nope"
 		`)
 
 		Convey("It should parse", func() {

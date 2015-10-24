@@ -49,25 +49,24 @@ func (f *Formula) Unmarshal(ser interface{}) error {
 
 	{
 		val, ok := mp["outputs"]
-		if !ok {
-			return newConfigValTypeError("outputs", "map", "missing")
-		}
-		val2, ok := val.(map[string]interface{})
-		if !ok {
-			return newConfigValTypeError("outputs", "map", describe(val))
-		}
-		// though the serial representation is a map,
-		//  we flip this to a slice and hold it as sorted.
-		f.Outputs = make([]Output, len(val2))
-		var i int
-		for k, v := range val2 {
-			f.Outputs[i].Name = k
-			if err := f.Outputs[i].Unmarshal(v); err != nil {
-				return err
+		if ok {
+			val2, ok := val.(map[string]interface{})
+			if !ok {
+				return newConfigValTypeError("outputs", "map", describe(val))
 			}
-			i++
+			// though the serial representation is a map,
+			//  we flip this to a slice and hold it as sorted.
+			f.Outputs = make([]Output, len(val2))
+			var i int
+			for k, v := range val2 {
+				f.Outputs[i].Name = k
+				if err := f.Outputs[i].Unmarshal(v); err != nil {
+					return err
+				}
+				i++
+			}
+			sort.Sort(OutputsByName(f.Outputs))
 		}
-		sort.Sort(OutputsByName(f.Outputs))
 	}
 
 	return nil
