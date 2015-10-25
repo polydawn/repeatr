@@ -26,13 +26,12 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 					},
 				}},
 				Action: def.Action{
-					Entrypoint: []string{"bash", "-c", "echo hallo ; pwd ; ls -la ; bash"},
+					Entrypoint: []string{"bash"},
 				},
 			}
 
 			// TODO bonus points if you eventually can get the default mode to have no setuid binaries, in addition to making a spare user and dropping privs immediately.
 
-			fmt.Fprintln(ctx.App.Writer, "launchin")
 			job := executor.Start(formula, def.JobID(guid.New()), stdin, ctx.App.Writer)
 			go io.Copy(stdout, job.Outputs().Reader(1))
 			go io.Copy(stderr, job.Outputs().Reader(2))
