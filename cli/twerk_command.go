@@ -20,7 +20,7 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 				Inputs: []def.Input{{
 					Type:      "tar",
 					MountPath: "/",
-					Hash:      "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
+					Hash:      "lzcqJKln2_H4TIoizNBCr0qoh8u_Nb_LRwARTZL2RumfbChX031pVl46dcSCG4q3",
 					Warehouses: []string{
 						"http+ca://repeatr.s3.amazonaws.com/assets/",
 					},
