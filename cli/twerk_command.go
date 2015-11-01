@@ -20,19 +20,18 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 				Inputs: []def.Input{{
 					Type:      "tar",
 					MountPath: "/",
-					Hash:      "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL",
+					Hash:      "lzcqJKln2_H4TIoizNBCr0qoh8u_Nb_LRwARTZL2RumfbChX031pVl46dcSCG4q3",
 					Warehouses: []string{
 						"http+ca://repeatr.s3.amazonaws.com/assets/",
 					},
 				}},
 				Action: def.Action{
-					Entrypoint: []string{"bash", "-c", "echo hallo ; pwd ; ls -la ; bash"},
+					Entrypoint: []string{"bash"},
 				},
 			}
 
 			// TODO bonus points if you eventually can get the default mode to have no setuid binaries, in addition to making a spare user and dropping privs immediately.
 
-			fmt.Fprintln(ctx.App.Writer, "launchin")
 			job := executor.Start(formula, def.JobID(guid.New()), stdin, ctx.App.Writer)
 			go io.Copy(stdout, job.Outputs().Reader(1))
 			go io.Copy(stderr, job.Outputs().Reader(2))
