@@ -15,6 +15,7 @@ PATH=$PWD/assets:$PATH
 # Project details
 name="repeatr"
 pkg="polydawn.net/$name"
+cmd="$pkg/cmd/repeatr"
 
 # For demo runs and tests, ask them to lump all their state in one, unique dir.
 mkdir -p /tmp/repeatr-test/
@@ -25,7 +26,7 @@ if [ -z "$1" ] ; then
 	(
 		go generate "$SUBSECTION"
 		go fmt "$SUBSECTION"
-		go install "$pkg" && {
+		go install "$cmd" && {
 			echo -e "\E[1;32minstall successful.\E[0;m\n"
 		} || {
 			echo -e "\E[1;41minstall failed!\E[0;m"
@@ -76,7 +77,7 @@ else
 		;;
 	install)
 		go generate "./..."
-		go install "$pkg"
+		go install "$cmd"
 		;;
 	exec)
 		shift
@@ -144,7 +145,7 @@ else
 	sys)
 		# i would call this `install` following make tradition, but, well, `go install` means something different, so.
 		go generate "./..."
-		go install "$pkg"
+		go install "$cmd"
 		cp "$GOPATH/bin/repeatr" /usr/bin/repeatr
 		ls -la /usr/bin/repeatr
 		repeatr --version
