@@ -12,6 +12,12 @@ import (
 	"polydawn.net/repeatr/testutil/filefixture"
 )
 
+// TODO : surprisingly few of these tests cover actually saving content to a warehouse.
+//  While that seems fine within the definitions of the word "scan", and we
+//   do have coverage via the round-trip tests, we could do a much better job
+//   of testing the commit-to-remote concern as an isolated unit... if we
+//   had more APIs around warehouse state inspection.  Big task.  Tackle soon.
+
 func CheckScanWithoutMutation(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
 	Convey("SPEC: Scanning a filesystem shouldn't change it", testutil.Requires(
 		testutil.RequiresRoot,
