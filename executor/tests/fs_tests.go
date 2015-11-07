@@ -21,7 +21,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 				Name:       "2-input-test",
 				Type:       "dir",
 				Hash:       filefixture.Beta_Hash,
-				Warehouses: []string{"./fixture/beta"},
+				Warehouses: []string{"file://./fixture/beta"},
 				MountPath:  "/data/test",
 			}))
 
