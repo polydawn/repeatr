@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/guid"
@@ -134,12 +135,20 @@ func (wc *writeController) commit(saveAs integrity.CommitID) {
 	destPath := wc.warehouse.GetShelf(saveAs)
 	if wc.warehouse.ctntAddr {
 		err := os.Rename(wc.tmpPath, destPath)
+		// if success, it's committed; yayy, we're done
 		if err == nil {
 			return
 		}
-		// TODO detect collision
+		// if there was already a dir there, another actor committed the same thing in a race,
+		//  which is fine: we'll just see ourselves out.
+		if err2 := err.(*os.LinkError); err2.Err == syscall.ENOTEMPTY {
+			os.RemoveAll(wc.tmpPath)
+			return
+		}
+		// any other errors are quite alarming
+		panic(integrity.WarehouseConnectionError.New("failed to commit %s: %s", saveAs, err))
 	} else {
-		pushAside(destPath)
+		pushedAside := pushAside(destPath)
 		err := os.Rename(wc.tmpPath, destPath)
 		if err != nil {
 			// In non-CA mode, this should only happen in case of misconfig or problems from
@@ -151,7 +160,7 @@ func (wc *writeController) commit(saveAs integrity.CommitID) {
 		//   previous data -- we don't want crap building up indefinitely,
 		//   right? -- and while this is no different than, say, tar's
 		//   behavior, it's also a little scary.  Use CA mode, ffs.
-		// TODO cleanup
+		os.RemoveAll(pushedAside)
 	}
 
 }
