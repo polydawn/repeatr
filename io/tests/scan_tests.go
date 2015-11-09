@@ -125,3 +125,29 @@ func CheckScanWithFilters(kind integrity.TransmatKind, transmatFabFn integrity.T
 		}),
 	)
 }
+
+/*
+	Commits the same content, twice, serially.
+
+	This does not expose race conditions (and indeed, is not intended to,
+	since some storage systems -- almost any of the non-CA ones, really --
+	are not in fact race-safe), but it does check for sanity
+	around the basic operations of convergence, esp in CA storage.
+*/
+func CheckMultipleCommit(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory, bounceURI string, addtnlDesc ...string) {
+	Convey("SPEC: Committing the same content twice must be safe"+testutil.AdditionalDescription(addtnlDesc...), testutil.Requires(
+		testutil.RequiresRoot,
+		func(c C) {
+			transmat := transmatFabFn("./workdir")
+			// set up fixtures
+			filefixture.Alpha.Create("./alpha")
+			// scan twice with the transmat, and commit to warehouse
+			uris := []integrity.SiloURI{integrity.SiloURI(bounceURI)}
+			commitID1 := transmat.Scan(kind, "./alpha", uris, testutil.TestLogger(c))
+			commitID2 := transmat.Scan(kind, "./alpha", uris, testutil.TestLogger(c))
+			// survival is winning: the main test was actually that scan #2 didn't panic.
+			// sanity check: both commits should have been same hash
+			So(commitID2, ShouldEqual, commitID1)
+		},
+	))
+}
