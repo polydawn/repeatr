@@ -5,9 +5,7 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"io/ioutil"
-	"net/url"
 	"os"
-	"path/filepath"
 	"syscall"
 
 	"github.com/inconshreveable/log15"
@@ -17,7 +15,6 @@ import (
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/filter"
 	"polydawn.net/repeatr/lib/fshash"
-	"polydawn.net/repeatr/lib/guid"
 )
 
 const Kind = integrity.TransmatKind("dir")
@@ -66,18 +63,18 @@ func (t *DirTransmat) Materialize(
 		}
 		// Our policy is to take the first path that exists.
 		//  This lets you specify a series of potential locations,
-		var localSourcePath string
-		for _, givenURI := range siloURIs {
-			pth := reckonCommittedPath(dataHash, givenURI)
-			_, err := os.Stat(pth)
-			if os.IsNotExist(err) {
-				log.Info("Warehouse does not exist, skipping", "warehouse", givenURI)
-				continue
+		//  and if one is unavailable we'll just take the next.
+		var warehouse *Warehouse
+		for _, uri := range siloURIs {
+			wh := NewWarehouse(uri)
+			if wh.Ping() {
+				warehouse = wh
+				break
+			} else {
+				log.Info("Warehouse does not exist, skipping", "warehouse", uri)
 			}
-			localSourcePath = pth
-			break
 		}
-		if localSourcePath == "" {
+		if warehouse == nil {
 			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
 		}
 
@@ -91,7 +88,7 @@ func (t *DirTransmat) Materialize(
 		// walk filesystem, copying and accumulating data for integrity check
 		hasherFactory := sha512.New384
 		bucket := &fshash.MemoryBucket{}
-		if err := fshash.FillBucket(localSourcePath, arena.Path(), bucket, filter.FilterSet{}, hasherFactory); err != nil {
+		if err := fshash.FillBucket(warehouse.GetShelf(dataHash), arena.Path(), bucket, filter.FilterSet{}, hasherFactory); err != nil {
 			panic(err)
 		}
 
@@ -150,47 +147,55 @@ func (t DirTransmat) Scan(
 			}
 		}
 
-		// First... no save locations is a special case: still need to hash.
-		var actualTreeHash []byte
-		if len(siloURIs) == 0 {
+		saveFn := func(destPath string) {
 			// walk filesystem, copying and accumulating data for integrity check
 			bucket := &fshash.MemoryBucket{}
-			err = fshash.FillBucket(subjectPath, "", bucket, config.FilterSet, hasherFactory)
+			err = fshash.FillBucket(subjectPath, destPath, bucket, config.FilterSet, hasherFactory)
 			if err != nil {
 				panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
 			}
 			// hash whole tree
-			actualTreeHash = fshash.Hash(bucket, hasherFactory)
+			actualTreeHash := fshash.Hash(bucket, hasherFactory)
 			commitID = integrity.CommitID(base64.URLEncoding.EncodeToString(actualTreeHash))
-			// for no-save, that's it, we're done
-			return
 		}
 
-		// Parse save locations.
-		for _, givenURI := range siloURIs {
-			stagedDestPath := claimPrecommitPath(givenURI)
+		// First... no save locations is a special case: still need to hash.
+		if len(siloURIs) == 0 {
+			saveFn("")
+			return // for no-save, that's it, we're done
+		}
 
-			// walk filesystem, copying and accumulating data for integrity check
-			bucket := &fshash.MemoryBucket{}
-			err = fshash.FillBucket(subjectPath, stagedDestPath, bucket, config.FilterSet, hasherFactory)
-			if err != nil {
-				panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
+		// Dial warehouses.
+		warehouses := make([]*Warehouse, 0, len(siloURIs))
+		for _, uri := range siloURIs {
+			wh := NewWarehouse(uri)
+			if wh.Ping() {
+				warehouses = append(warehouses, wh)
+			} else {
+				log.Info("Unable to contact a warehouse, skipping it", "warehouse", uri)
 			}
-			// hash whole tree
-			actualTreeHash = fshash.Hash(bucket, hasherFactory)
-			commitID = integrity.CommitID(base64.URLEncoding.EncodeToString(actualTreeHash))
+		}
+		// By default we're tolerant of some warehouses being unresponsive
+		//  (mirroring is easy and conflict free, after all), but if
+		//   ALL of them are down?  That's bad enough news to stop for.
+		if len(warehouses) == 0 {
+			// Still, finish out determining the hash.
+			saveFn("")
+			// This is one of those situations where panicking doesn't fit very well...
+			//  there's such a thing as partial progress, and we've got it.
+			//   Perhaps in the future we should refactor scan results to include errors
+			//    values... per stage, since that gets several birds with one stone.
+			panic(integrity.WarehouseConnectionError.New("NO warehouses available -- data not saved!"))
+		}
 
-			// commit into place
-			destPath := reckonCommittedPath(commitID, givenURI)
-			err := os.Rename(stagedDestPath, destPath)
-			if err != nil {
-				// TODO this should probably accept races and just move on, in CA mode anyway.
-				// In non-CA mode, this should only happen in case of misconfig or
-				// racey use (in which case as usual, you're already Doing It Wrong and we're just being frank about it).
-				panic(integrity.WarehouseConnectionError.New("failed moving data to committed location: %s", err))
-			}
-			// if not using a CA mode, we destroy the previous data... this is no different than, say, tar's behavior, but also a little scary.  use CA mode, ffs.
-			// TODO cleanup
+		// Open writers to save locations, and commit to each one.
+		//  (We do this serially for now; it could be parallelized, but
+		//   the dircopy code wasn't written with multiwriters in mind.)
+		for _, warehouse := range warehouses {
+			wc := warehouse.openWriter()
+			saveFn(wc.tmpPath)
+			wc.commit(commitID)
+			log.Info("Commited to warehouse", "warehouse", warehouse.localPath, "hash", commitID)
 		}
 	}).Catch(integrity.Error, func(err *errors.Error) {
 		panic(err)
@@ -222,56 +227,4 @@ func (a dirArena) Teardown() {
 		}
 		panic(err)
 	}
-}
-
-/*
-	Returns a local file path as a string (dir transmat doesn't work any other way).
-*/
-func reckonCommittedPath(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) string {
-	u, err := url.Parse(string(warehouseCoords))
-	if err != nil {
-		panic(integrity.ConfigError.New("failed to parse URI: %s", err))
-	}
-	switch u.Scheme {
-	case "file+ca":
-		u.Path = filepath.Join(u.Path, string(dataHash))
-		fallthrough
-	case "file":
-		return filepath.Join(u.Host, u.Path) // file uris don't have hosts
-	case "":
-		panic(integrity.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
-	default:
-		panic(integrity.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
-	}
-}
-
-/*
-	Returns a local file path to a tempdir for writing pre-commit data to.
-
-	May raise WarehouseConnectionError if it can't write; the tempdir is
-	created using the appropriate atomic mechanisms (e.g. we do touch
-	the disk before returning the path string).
-*/
-func claimPrecommitPath(warehouseCoords integrity.SiloURI) string {
-	u, err := url.Parse(string(warehouseCoords))
-	if err != nil {
-		panic(integrity.ConfigError.New("failed to parse URI: %s", err))
-	}
-	var precommitPath string
-	switch u.Scheme {
-	case "file+ca":
-		pathPrefix := filepath.Join(u.Host, u.Path) // file uris don't have hosts
-		precommitPath, err = ioutil.TempDir(pathPrefix, ".tmp.upload."+guid.New()+".")
-	case "file":
-		pathPrefix := filepath.Join(u.Host, u.Path) // file uris don't have hosts
-		precommitPath, err = ioutil.TempDir(filepath.Dir(pathPrefix), ".tmp.upload."+filepath.Base(pathPrefix)+"."+guid.New()+".")
-	case "":
-		panic(integrity.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
-	default:
-		panic(integrity.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
-	}
-	if err != nil {
-		panic(integrity.WarehouseConnectionError.New("failed to reserve temp space in warehouse: %s", err))
-	}
-	return precommitPath
 }
