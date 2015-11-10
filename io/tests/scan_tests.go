@@ -12,6 +12,12 @@ import (
 	"polydawn.net/repeatr/testutil/filefixture"
 )
 
+// TODO : surprisingly few of these tests cover actually saving content to a warehouse.
+//  While that seems fine within the definitions of the word "scan", and we
+//   do have coverage via the round-trip tests, we could do a much better job
+//   of testing the commit-to-remote concern as an isolated unit... if we
+//   had more APIs around warehouse state inspection.  Big task.  Tackle soon.
+
 func CheckScanWithoutMutation(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
 	Convey("SPEC: Scanning a filesystem shouldn't change it", testutil.Requires(
 		testutil.RequiresRoot,
@@ -118,4 +124,30 @@ func CheckScanWithFilters(kind integrity.TransmatKind, transmatFabFn integrity.T
 			So(commitID2, ShouldEqual, commitID1)
 		}),
 	)
+}
+
+/*
+	Commits the same content, twice, serially.
+
+	This does not expose race conditions (and indeed, is not intended to,
+	since some storage systems -- almost any of the non-CA ones, really --
+	are not in fact race-safe), but it does check for sanity
+	around the basic operations of convergence, esp in CA storage.
+*/
+func CheckMultipleCommit(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory, bounceURI string, addtnlDesc ...string) {
+	Convey("SPEC: Committing the same content twice must be safe"+testutil.AdditionalDescription(addtnlDesc...), testutil.Requires(
+		testutil.RequiresRoot,
+		func(c C) {
+			transmat := transmatFabFn("./workdir")
+			// set up fixtures
+			filefixture.Alpha.Create("./alpha")
+			// scan twice with the transmat, and commit to warehouse
+			uris := []integrity.SiloURI{integrity.SiloURI(bounceURI)}
+			commitID1 := transmat.Scan(kind, "./alpha", uris, testutil.TestLogger(c))
+			commitID2 := transmat.Scan(kind, "./alpha", uris, testutil.TestLogger(c))
+			// survival is winning: the main test was actually that scan #2 didn't panic.
+			// sanity check: both commits should have been same hash
+			So(commitID2, ShouldEqual, commitID1)
+		},
+	))
 }

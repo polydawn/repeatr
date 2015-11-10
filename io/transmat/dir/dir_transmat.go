@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"syscall"
 
 	"github.com/inconshreveable/log15"
@@ -64,18 +63,18 @@ func (t *DirTransmat) Materialize(
 		}
 		// Our policy is to take the first path that exists.
 		//  This lets you specify a series of potential locations,
-		var siloURI integrity.SiloURI
-		for _, givenURI := range siloURIs {
-			// TODO still assuming all local paths and not doing real uri parsing
-			localPath := string(givenURI)
-			_, err := os.Stat(localPath)
-			if os.IsNotExist(err) {
-				continue
+		//  and if one is unavailable we'll just take the next.
+		var warehouse *Warehouse
+		for _, uri := range siloURIs {
+			wh := NewWarehouse(uri)
+			if wh.Ping() {
+				warehouse = wh
+				break
+			} else {
+				log.Info("Warehouse does not exist, skipping", "warehouse", uri)
 			}
-			siloURI = givenURI
-			break
 		}
-		if siloURI == "" {
+		if warehouse == nil {
 			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
 		}
 
@@ -89,8 +88,7 @@ func (t *DirTransmat) Materialize(
 		// walk filesystem, copying and accumulating data for integrity check
 		hasherFactory := sha512.New384
 		bucket := &fshash.MemoryBucket{}
-		localPath := string(siloURI)
-		if err := fshash.FillBucket(localPath, arena.Path(), bucket, filter.FilterSet{}, hasherFactory); err != nil {
+		if err := fshash.FillBucket(warehouse.GetShelf(dataHash), arena.Path(), bucket, filter.FilterSet{}, hasherFactory); err != nil {
 			panic(err)
 		}
 
@@ -149,35 +147,56 @@ func (t DirTransmat) Scan(
 			}
 		}
 
-		// Parse save locations.
-		// This transmat only supports one output location at a time due
-		//  to Old code we haven't invested in refactoring yet.
-		var localPath string
-		if len(siloURIs) == 0 {
-			localPath = "" // empty string is a well known value to `fshash.FillBucket`: means just hash, don't copy.
-		} else if len(siloURIs) == 1 {
-			// TODO still assuming all local paths and not doing real uri parsing
-			localPath = string(siloURIs[0])
-			err := os.MkdirAll(filepath.Dir(localPath), 0755)
+		saveFn := func(destPath string) {
+			// walk filesystem, copying and accumulating data for integrity check
+			bucket := &fshash.MemoryBucket{}
+			err = fshash.FillBucket(subjectPath, destPath, bucket, config.FilterSet, hasherFactory)
 			if err != nil {
-				panic(integrity.WarehouseConnectionError.New("Unable to write file: %s", err))
+				panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
 			}
-		} else {
-			panic(integrity.ConfigError.New("%s transmat only supports shipping to 1 warehouse", Kind))
+			// hash whole tree
+			actualTreeHash := fshash.Hash(bucket, hasherFactory)
+			commitID = integrity.CommitID(base64.URLEncoding.EncodeToString(actualTreeHash))
 		}
 
-		// walk filesystem, copying and accumulating data for integrity check
-		bucket := &fshash.MemoryBucket{}
-		err = fshash.FillBucket(subjectPath, localPath, bucket, config.FilterSet, hasherFactory)
-		if err != nil {
-			panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
+		// First... no save locations is a special case: still need to hash.
+		if len(siloURIs) == 0 {
+			saveFn("")
+			return // for no-save, that's it, we're done
 		}
 
-		// hash whole tree
-		actualTreeHash := fshash.Hash(bucket, hasherFactory)
+		// Dial warehouses.
+		warehouses := make([]*Warehouse, 0, len(siloURIs))
+		for _, uri := range siloURIs {
+			wh := NewWarehouse(uri)
+			if wh.Ping() {
+				warehouses = append(warehouses, wh)
+			} else {
+				log.Info("Unable to contact a warehouse, skipping it", "warehouse", uri)
+			}
+		}
+		// By default we're tolerant of some warehouses being unresponsive
+		//  (mirroring is easy and conflict free, after all), but if
+		//   ALL of them are down?  That's bad enough news to stop for.
+		if len(warehouses) == 0 {
+			// Still, finish out determining the hash.
+			saveFn("")
+			// This is one of those situations where panicking doesn't fit very well...
+			//  there's such a thing as partial progress, and we've got it.
+			//   Perhaps in the future we should refactor scan results to include errors
+			//    values... per stage, since that gets several birds with one stone.
+			panic(integrity.WarehouseConnectionError.New("NO warehouses available -- data not saved!"))
+		}
 
-		// report
-		commitID = integrity.CommitID(base64.URLEncoding.EncodeToString(actualTreeHash))
+		// Open writers to save locations, and commit to each one.
+		//  (We do this serially for now; it could be parallelized, but
+		//   the dircopy code wasn't written with multiwriters in mind.)
+		for _, warehouse := range warehouses {
+			wc := warehouse.openWriter()
+			saveFn(wc.tmpPath)
+			wc.commit(commitID)
+			log.Info("Commited to warehouse", "warehouse", warehouse.localPath, "hash", commitID)
+		}
 	}).Catch(integrity.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
