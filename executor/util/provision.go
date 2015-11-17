@@ -7,9 +7,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
+
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/io/filter"
 )
 
 // Run inputs
@@ -136,33 +136,8 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 	scanGather := make(chan scanReport)
 	for _, out := range outputs {
 		go func(out def.Output) {
-			filterOptions := make([]integrity.MaterializerConfigurer, 0, 3)
 			out.Filters.InitDefaultsOutput()
-			switch out.Filters.UidMode {
-			case def.FilterKeep: // easy, just no filter.
-			case def.FilterUse:
-				f := filter.UidFilter{out.Filters.Uid}
-				filterOptions = append(filterOptions, integrity.UseFilter(f))
-			default:
-				panic(errors.ProgrammerError.New("unhandled filter mode %v", out.Filters.UidMode))
-			}
-			switch out.Filters.GidMode {
-			case def.FilterKeep: // easy, just no filter.
-			case def.FilterUse:
-				f := filter.GidFilter{out.Filters.Gid}
-				filterOptions = append(filterOptions, integrity.UseFilter(f))
-			default:
-				panic(errors.ProgrammerError.New("unhandled filter mode %v", out.Filters.GidMode))
-			}
-			switch out.Filters.MtimeMode {
-			case def.FilterKeep: // easy, just no filter.
-			case def.FilterUse:
-				f := filter.MtimeFilter{out.Filters.Mtime}
-				filterOptions = append(filterOptions, integrity.UseFilter(f))
-			default:
-				panic(errors.ProgrammerError.New("unhandled filter mode %v", out.Filters.MtimeMode))
-			}
-
+			filterOptions := integrity.ConvertFilterConfig(out.Filters)
 			scanPath := filepath.Join(rootfs, out.MountPath)
 			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
 			try.Do(func() {
