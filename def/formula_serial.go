@@ -379,6 +379,9 @@ func describe(x interface{}) string {
 }
 
 func coerceStringList(x interface{}) ([]string, error) {
+	if w, ok := x.([]string); ok {
+		return w, nil
+	}
 	y, ok := x.([]interface{})
 	if !ok {
 		return nil, fmt.Errorf(describe(x))

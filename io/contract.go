@@ -2,7 +2,9 @@ package integrity
 
 import (
 	"github.com/inconshreveable/log15"
+	"github.com/spacemonkeygo/errors"
 
+	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io/filter"
 )
 
@@ -114,6 +116,35 @@ func UseFilter(filt filter.Filter) MaterializerConfigurer {
 	return func(opts *MaterializerOptions) {
 		opts.FilterSet = opts.FilterSet.Put(filt)
 	}
+}
+
+func ConvertFilterConfig(conf def.Filters) []MaterializerConfigurer {
+	filterOptions := make([]MaterializerConfigurer, 0, 3)
+	switch conf.UidMode {
+	case def.FilterKeep: // easy, just no filter.
+	case def.FilterUse:
+		f := filter.UidFilter{conf.Uid}
+		filterOptions = append(filterOptions, UseFilter(f))
+	default:
+		panic(errors.ProgrammerError.New("unhandled filter mode %v", conf.UidMode))
+	}
+	switch conf.GidMode {
+	case def.FilterKeep: // easy, just no filter.
+	case def.FilterUse:
+		f := filter.GidFilter{conf.Gid}
+		filterOptions = append(filterOptions, UseFilter(f))
+	default:
+		panic(errors.ProgrammerError.New("unhandled filter mode %v", conf.GidMode))
+	}
+	switch conf.MtimeMode {
+	case def.FilterKeep: // easy, just no filter.
+	case def.FilterUse:
+		f := filter.MtimeFilter{conf.Mtime}
+		filterOptions = append(filterOptions, UseFilter(f))
+	default:
+		panic(errors.ProgrammerError.New("unhandled filter mode %v", conf.MtimeMode))
+	}
+	return filterOptions
 }
 
 func EvaluateConfig(options ...MaterializerConfigurer) MaterializerOptions {

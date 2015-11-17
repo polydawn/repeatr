@@ -7,6 +7,8 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
+	"github.com/spacemonkeygo/errors"
+
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/io"
@@ -30,6 +32,10 @@ func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 				Name:  "silo",
 				Usage: "Optional.  A Silo URI to upload data to.",
 			},
+			cli.StringSliceFlag{
+				Name:  "filter",
+				Usage: "Optional.  Filters to apply when scanning.  If not provided, reasonable defaults (flattening uid, gid, and mtime) will be used.",
+			},
 		},
 		Action: func(ctx *cli.Context) {
 			// args parse
@@ -37,11 +43,16 @@ func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 			if ctx.IsSet("silo") {
 				warehouses = []string{ctx.String("silo")}
 			}
+			filters := &def.Filters{}
+			if err := filters.Unmarshal(ctx.StringSlice("filter")); err != nil {
+				panic(Error.NewWith("Malformed argument: filters could not parse: "+err.(*errors.Error).Message(), SetExitCode(EXIT_BADARGS)))
+			}
+			filters.InitDefaultsOutput()
 			outputSpec := def.Output{
 				Type:       ctx.String("kind"),
 				Warehouses: warehouses,
-				// Filters: might want
-				MountPath: ctx.String("path"),
+				Filters:    *filters,
+				MountPath:  ctx.String("path"),
 			}
 			if outputSpec.Type == "" {
 				panic(Error.NewWith("Missing argument: \"kind\" is a required parameter for scan", SetExitCode(EXIT_BADARGS)))
@@ -88,11 +99,9 @@ func Scan(outputSpec def.Output, log log15.Logger) def.Output {
 		outputSpec.MountPath,
 		warehouses,
 		log,
+		integrity.ConvertFilterConfig(outputSpec.Filters)...,
 	)
 
-	return def.Output{
-		Type:       outputSpec.Type,
-		Warehouses: outputSpec.Warehouses,
-		Hash:       string(commitID),
-	}
+	outputSpec.Hash = string(commitID)
+	return outputSpec
 }
