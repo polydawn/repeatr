@@ -75,7 +75,7 @@ func (t *DirTransmat) Materialize(
 			}
 		}
 		if warehouse == nil {
-			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
+			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
 		// Create staging arena to produce data into.
@@ -185,7 +185,7 @@ func (t DirTransmat) Scan(
 			//  there's such a thing as partial progress, and we've got it.
 			//   Perhaps in the future we should refactor scan results to include errors
 			//    values... per stage, since that gets several birds with one stone.
-			panic(integrity.WarehouseConnectionError.New("NO warehouses available -- data not saved!"))
+			panic(integrity.WarehouseUnavailableError.New("NO warehouses available -- data not saved!"))
 		}
 
 		// Open writers to save locations, and commit to each one.

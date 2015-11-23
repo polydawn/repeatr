@@ -68,26 +68,25 @@ func (t *TarTransmat) Materialize(
 		for _, uri := range siloURIs {
 			try.Do(func() {
 				stream = makeReader(dataHash, uri)
+			}).Catch(integrity.WarehouseUnavailableError, func(err *errors.Error) {
+				// fine, we'll just try the next one
+				log.Info("Warehouse does not exist, skipping", "warehouse", uri)
 			}).Catch(integrity.DataDNE, func(err *errors.Error) {
 				// fine, we'll just try the next one
-				// TODO LOGGING
-			}).Catch(integrity.WarehouseConnectionError, func(err *errors.Error) {
-				// ... this does kind of seem to indicate we should have "warehouse offline or DNE" be separate from "tcp flaked after we shook on it yo"
-				// for now we consider both fatal.  revist this when we get smarter logging, etc
-				panic(err)
+				log.Info("Warehouse does not not have the data, skipping", "warehouse", uri, "hash", dataHash)
 			}).Done()
 			if stream != nil {
 				break
 			}
 		}
 		if stream == nil {
-			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
+			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
 		// Wrap input stream with decompression as necessary
 		reader, err := Decompress(stream)
 		if err != nil {
-			panic(integrity.WarehouseConnectionError.New("could not start decompressing: %s", err))
+			panic(integrity.WarehouseIOError.New("could not start decompressing: %s", err))
 		}
 		tarReader := tar.NewReader(reader)
 

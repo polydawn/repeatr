@@ -109,7 +109,7 @@ func (wc *writeController) claimPrecommitPath() string {
 		)
 	}
 	if err != nil {
-		panic(integrity.WarehouseConnectionError.New("failed to reserve temp space in warehouse: %s", err))
+		panic(integrity.WarehouseIOError.New("failed to reserve temp space in warehouse: %s", err))
 	}
 	return precommitPath
 }
@@ -146,14 +146,14 @@ func (wc *writeController) commit(saveAs integrity.CommitID) {
 			return
 		}
 		// any other errors are quite alarming
-		panic(integrity.WarehouseConnectionError.New("failed to commit %s: %s", saveAs, err))
+		panic(integrity.WarehouseIOError.New("failed to commit %s: %s", saveAs, err))
 	} else {
 		pushedAside := pushAside(destPath)
 		err := os.Rename(wc.tmpPath, destPath)
 		if err != nil {
 			// In non-CA mode, this should only happen in case of misconfig or problems from
 			// racey use (in which case as usual, you're already Doing It Wrong and we're just being frank about it).
-			panic(integrity.WarehouseConnectionError.New("failed moving data to committed location: %s", err))
+			panic(integrity.WarehouseIOError.New("failed moving data to committed location: %s", err))
 		}
 		// Clean up.
 		//  When not using a CA mode, this involves destroying the
@@ -192,5 +192,5 @@ func pushAside(obstructionPath string) string {
 		// can't be arsed to normalize errors and I'm too mad to do it.
 		// This is the same thing ioutil.TempDir does.  And that makes me sad.
 	}
-	panic(integrity.WarehouseConnectionError.New("failed evicting old data from commit location: %s", err))
+	panic(integrity.WarehouseIOError.New("failed evicting old data from commit location: %s", err))
 }

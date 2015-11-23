@@ -60,17 +60,28 @@ var TransmatError *errors.ErrorClass = Error.NewClass("TransmatError")
 var WarehouseError *errors.ErrorClass = Error.NewClass("WarehouseError")
 
 /*
-	Raised when there are connectivity issues with a storage warehouse.
+	Raised when a warehouse is not available.
 
-	Examples include
-	a URI that specifies a warehouse that doesn't exist
-	or is offline,
-	or an IO error later while reading from that source,
-	or temporary network interruption, etc.
+	The warehouse may not exist, or may be offline, or there may be a network
+	interruption, etc.
 */
-// REVIEW : maybe `WarehouseIOError`?
-// TODO : enhance this to express temporary-ness better; permission denied on local files is totally different than tcp hiccups.
-var WarehouseConnectionError *errors.ErrorClass = WarehouseError.NewClass("WarehouseConnectionError")
+var WarehouseUnavailableError *errors.ErrorClass = WarehouseError.NewClass("WarehouseUnavailableError")
+
+/*
+	Raised when there are unexpected connectivity issues with a storage warehouse.
+*/
+var WarehouseIOError *errors.ErrorClass = WarehouseError.NewClass("WarehouseIOError")
+
+/*
+	Raised when there are clearly corrupt contents read from a warehouse.
+
+	This is distinct from a HashMismatchError in that it represents some
+	form of failure to parse data before we have even reached the stage
+	where the content's full semantic hash is computable (for example,
+	with a tar transmat, if the tar header is completely nonsense, we
+	just have to give up).
+*/
+var WarehouseCorruptionError *errors.ErrorClass = WarehouseError.NewClass("WarehouseCorruptionError")
 
 /*
 	Raised when requested data is not available from a storage warehouse.
