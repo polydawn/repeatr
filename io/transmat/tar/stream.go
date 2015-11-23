@@ -28,7 +28,7 @@ func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) 
 			if os.IsNotExist(err) {
 				panic(integrity.DataDNE.New("Unable to read %q: %s", u.String(), err))
 			} else {
-				panic(integrity.WarehouseConnectionError.New("Unable to read %q: %s", u.String(), err))
+				panic(integrity.WarehouseIOError.New("Unable to read %q: %s", u.String(), err))
 			}
 		}
 		return file
@@ -39,7 +39,7 @@ func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) 
 	case "http":
 		resp, err := http.Get(u.String())
 		if err != nil {
-			panic(integrity.WarehouseConnectionError.New("Unable to fetch %q: %s", u.String(), err))
+			panic(integrity.WarehouseIOError.New("Unable to fetch %q: %s", u.String(), err))
 		}
 		return resp.Body
 	case "https+ca":
@@ -49,7 +49,7 @@ func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) 
 	case "https":
 		resp, err := http.Get(u.String())
 		if err != nil {
-			panic(integrity.WarehouseConnectionError.New("Unable to fetch %q: %s", u.String(), err))
+			panic(integrity.WarehouseIOError.New("Unable to fetch %q: %s", u.String(), err))
 		}
 		return resp.Body
 	case "":
@@ -91,12 +91,12 @@ func makeWriteController(warehouseCoords integrity.SiloURI) StreamingWarehouseWr
 		//  should *not* create one whimsically, that's someone else's responsibility.
 		warehouseBasePath := filepath.Dir(controller.tmpPath)
 		if _, err := os.Stat(warehouseBasePath); err != nil {
-			panic(integrity.WarehouseConnectionError.New("Warehouse unavailable: %q %s", warehouseBasePath, err))
+			panic(integrity.WarehouseUnavailableError.New("Warehouse unavailable: %q %s", warehouseBasePath, err))
 		}
 		// Open file to shovel data into
 		file, err := os.OpenFile(controller.tmpPath, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			panic(integrity.WarehouseConnectionError.New("Unable to write %q: %s", controller.tmpPath, err))
+			panic(integrity.WarehouseIOError.New("Unable to write %q: %s", controller.tmpPath, err))
 		}
 		controller.stream = file
 		return controller

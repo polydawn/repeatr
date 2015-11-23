@@ -93,7 +93,7 @@ func (t *S3Transmat) Materialize(
 			break
 		}
 		if warehouseBucketName == "" {
-			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
+			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
 		// load keys from env
@@ -115,7 +115,7 @@ func (t *S3Transmat) Materialize(
 		// prepare decompression as necessary
 		reader, err := tartrans.Decompress(s3reader)
 		if err != nil {
-			panic(integrity.WarehouseConnectionError.New("could not start decompressing: %s", err))
+			panic(integrity.WarehouseCorruptionError.New("could not start decompressing: %s", err))
 		}
 		tarReader := tar.NewReader(reader)
 
@@ -275,7 +275,7 @@ func (wp *s3warehousePut) Commit(hash string) {
 	// be advised that this close method does *a lot* of work aside from connection termination.
 	// also calling it twice causes the library to wigg out and delete things, i don't even.
 	if err := wp.stream.Close(); err != nil {
-		panic(integrity.WarehouseConnectionError.Wrap(err))
+		panic(integrity.WarehouseIOError.Wrap(err))
 	}
 
 	// if the URI indicated splay behavior, rename the temp filepath to the real one;

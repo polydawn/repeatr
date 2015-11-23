@@ -117,7 +117,7 @@ func (t *GitTransmat) Materialize(
 			break
 		}
 		if siloURI == "" {
-			panic(integrity.WarehouseConnectionError.New("No warehouses were available!"))
+			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
 		// Create staging arena to produce data into.

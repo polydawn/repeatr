@@ -30,7 +30,7 @@ func makeS3reader(bucketName string, path string, keys s3gof3r.Keys) io.ReadClos
 		if err2, ok := err.(*s3gof3r.RespError); ok && err2.Code == "NoSuchKey" {
 			panic(integrity.DataDNE.New("not stored here"))
 		} else {
-			panic(integrity.WarehouseConnectionError.Wrap(err))
+			panic(integrity.WarehouseIOError.Wrap(err))
 		}
 	}
 	return w
@@ -40,7 +40,7 @@ func makeS3writer(bucketName string, path string, keys s3gof3r.Keys) io.WriteClo
 	s3 := s3gof3r.New("s3.amazonaws.com", keys)
 	w, err := s3.Bucket(bucketName).PutWriter(path, nil, s3Conf)
 	if err != nil {
-		panic(integrity.WarehouseConnectionError.Wrap(err))
+		panic(integrity.WarehouseIOError.Wrap(err))
 	}
 	return w
 }
@@ -53,7 +53,7 @@ func reloc(bucketName, oldPath, newPath string, keys s3gof3r.Keys) {
 	// So, implement our own aws copy API.
 	req, err := http.NewRequest("PUT", "", &bytes.Buffer{})
 	if err != nil {
-		panic(integrity.WarehouseConnectionError.Wrap(err))
+		panic(integrity.WarehouseIOError.Wrap(err))
 	}
 	req.URL.Scheme = s3Conf.Scheme
 	req.URL.Host = fmt.Sprintf("%s.%s", bucketName, s3.Domain)
@@ -64,15 +64,15 @@ func reloc(bucketName, oldPath, newPath string, keys s3gof3r.Keys) {
 	bucket.Sign(req)
 	resp, err := s3Conf.Client.Do(req)
 	if err != nil {
-		panic(integrity.WarehouseConnectionError.Wrap(err))
+		panic(integrity.WarehouseIOError.Wrap(err))
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		panic(integrity.WarehouseConnectionError.Wrap(newRespError(resp)))
+		panic(integrity.WarehouseIOError.Wrap(newRespError(resp)))
 	}
 	// delete previous location
 	if err := bucket.Delete(oldPath); err != nil {
-		panic(integrity.WarehouseConnectionError.Wrap(err))
+		panic(integrity.WarehouseIOError.Wrap(err))
 	}
 }
 
