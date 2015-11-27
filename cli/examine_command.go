@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 
@@ -88,7 +89,23 @@ func ExploreCommandPattern(stdout, stderr io.Writer) cli.Command {
 				Name:  "file",
 				Usage: "explore a local filesystem",
 				Action: func(ctx *cli.Context) {
-					panic("NYI")
+					trailing := ctx.Args()
+					switch len(trailing) {
+					case 0:
+						panic(Error.NewWith("`repeatr explore file` requires a path to explore", SetExitCode(EXIT_BADARGS)))
+					case 1:
+						break
+					default:
+						panic(Error.NewWith("`repeatr explore file` can only take one path at a time", SetExitCode(EXIT_BADARGS)))
+
+					}
+					// Check if it exists first for polite error message
+					_, err := os.Lstat(trailing[0])
+					if os.IsNotExist(err) {
+						panic(Error.New("that path does not exist"))
+					}
+					// Examine the stuff.
+					examinePath(trailing[0], stdout)
 				},
 			},
 			// Other kinds of explore sub-command that may come later:
