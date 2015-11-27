@@ -75,7 +75,7 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 				//  excuse for a filesystem, e.g. fuse happened or something).
 				placer.CopyingPlacer(arena.Path(), placePath, true, false)
 			}).Catch(integrity.ConfigError, func(err *errors.Error) {
-				panic(Error.New("%s", err.Message()))
+				panic(Error.NewWith(err.Message(), SetExitCode(EXIT_BADARGS)))
 			}).Catch(integrity.WarehouseUnavailableError, func(err *errors.Error) {
 				panic(Error.New("%s", err.Message()))
 			}).Catch(integrity.DataDNE, func(err *errors.Error) {

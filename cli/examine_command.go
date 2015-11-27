@@ -76,7 +76,7 @@ func ExploreCommandPattern(stdout, stderr io.Writer) cli.Command {
 						// Examine 'em.
 						examinePath(arena.Path(), stdout)
 					}).Catch(integrity.ConfigError, func(err *errors.Error) {
-						panic(Error.New("%s", err.Message()))
+						panic(Error.NewWith(err.Message(), SetExitCode(EXIT_BADARGS)))
 					}).Catch(integrity.WarehouseUnavailableError, func(err *errors.Error) {
 						panic(Error.New("%s", err.Message()))
 					}).Catch(integrity.DataDNE, func(err *errors.Error) {
