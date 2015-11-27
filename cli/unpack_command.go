@@ -75,10 +75,10 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 				//  excuse for a filesystem, e.g. fuse happened or something).
 				placer.CopyingPlacer(arena.Path(), placePath, true, false)
 			}).Catch(integrity.ConfigError, func(err *errors.Error) {
-				// proxy config errors straight to framed cli errors; the messages are already reasonable.
 				panic(Error.New("%s", err.Message()))
 			}).Catch(integrity.WarehouseUnavailableError, func(err *errors.Error) {
-				// warehouse-doesnt-exist is also already relatively self-explanitory
+				panic(Error.New("%s", err.Message()))
+			}).Catch(integrity.DataDNE, func(err *errors.Error) {
 				panic(Error.New("%s", err.Message()))
 			}).Done()
 		},

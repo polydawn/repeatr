@@ -124,10 +124,10 @@ func ExploreCommandPattern(stdout, stderr io.Writer) cli.Command {
 					panic(err)
 				}
 			}).Catch(integrity.ConfigError, func(err *errors.Error) {
-				// proxy config errors straight to framed cli errors; the messages are already reasonable.
 				panic(Error.New("%s", err.Message()))
 			}).Catch(integrity.WarehouseUnavailableError, func(err *errors.Error) {
-				// warehouse-doesnt-exist is also already relatively self-explanitory
+				panic(Error.New("%s", err.Message()))
+			}).Catch(integrity.DataDNE, func(err *errors.Error) {
 				panic(Error.New("%s", err.Message()))
 			}).Done()
 		},
