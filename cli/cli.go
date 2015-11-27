@@ -21,7 +21,7 @@ func Main(args []string, journal, output io.Writer) {
 
 	App.Commands = []cli.Command{
 		RunCommandPattern(output),
-		TwerkCommandPattern(os.Stdin, output, output), // FIXME this is too much loss of precision already
+		TwerkCommandPattern(os.Stdin, output, journal),
 		UnpackCommandPattern(journal),
 		ScanCommandPattern(output, journal),
 		ExploreCommandPattern(output, journal),
