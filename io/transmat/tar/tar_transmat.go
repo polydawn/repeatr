@@ -65,6 +65,7 @@ func (t *TarTransmat) Materialize(
 		// Our policy is to take the first path that exists.
 		//  This lets you specify a series of potential locations, and if one is unavailable we'll just take the next.
 		var stream io.Reader
+		var available bool
 		for _, uri := range siloURIs {
 			try.Do(func() {
 				stream = makeReader(dataHash, uri)
@@ -73,6 +74,7 @@ func (t *TarTransmat) Materialize(
 				log.Info("Warehouse does not exist, skipping", "warehouse", uri)
 			}).Catch(integrity.DataDNE, func(err *errors.Error) {
 				// fine, we'll just try the next one
+				available = true // but at least someone was *alive*
 				log.Info("Warehouse does not not have the data, skipping", "warehouse", uri, "hash", dataHash)
 			}).Done()
 			if stream != nil {
@@ -80,6 +82,9 @@ func (t *TarTransmat) Materialize(
 			}
 		}
 		if stream == nil {
+			if available {
+				panic(integrity.DataDNE.New("No warehouses had the data!"))
+			}
 			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 

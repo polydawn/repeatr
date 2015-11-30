@@ -17,20 +17,20 @@ import (
 func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 	return cli.Command{
 		Name:  "scan",
-		Usage: "Scan a local filesystem, optionally storing the data into a silo",
+		Usage: "Scan a local filesystem, optionally packing the data into a warehouse",
 		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "place",
+				Value: ".",
+				Usage: "Optional.  The local filesystem path to scan.  Defaults to your current directory.",
+			},
 			cli.StringFlag{
 				Name:  "kind",
 				Usage: "What kind of data storage format to work with.",
 			},
 			cli.StringFlag{
-				Name:  "path",
-				Value: ".",
-				Usage: "Optional.  The local filesystem path to scan.  Defaults to your current directory.",
-			},
-			cli.StringFlag{
-				Name:  "silo",
-				Usage: "Optional.  A Silo URI to upload data to.",
+				Name:  "where",
+				Usage: "Optional.  A URL giving coordinates to a warehouse where repeatr should store the scanned data.",
 			},
 			cli.StringSliceFlag{
 				Name:  "filter",
@@ -40,8 +40,8 @@ func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 		Action: func(ctx *cli.Context) {
 			// args parse
 			var warehouses []string
-			if ctx.IsSet("silo") {
-				warehouses = []string{ctx.String("silo")}
+			if ctx.IsSet("where") {
+				warehouses = []string{ctx.String("where")}
 			}
 			filters := &def.Filters{}
 			if err := filters.Unmarshal(ctx.StringSlice("filter")); err != nil {
@@ -52,7 +52,7 @@ func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 				Type:       ctx.String("kind"),
 				Warehouses: warehouses,
 				Filters:    *filters,
-				MountPath:  ctx.String("path"),
+				MountPath:  ctx.String("place"),
 			}
 			if outputSpec.Type == "" {
 				panic(Error.NewWith("Missing argument: \"kind\" is a required parameter for scan", SetExitCode(EXIT_BADARGS)))
