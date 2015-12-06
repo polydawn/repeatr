@@ -17,6 +17,12 @@ func (ig *InputGroup) CodecDecodeSelf(c *codec.Decoder) {
 	// I'd love to just punt to the defaults, but the `Selfer` interface doesn't come in half.
 	// SO here's a ridiculous indirection to prance around infinite recursion.
 	c.MustDecode((*map[string]*Input)(ig))
+	// Now go back over the struct and fill in MountPath as needed from the map keys.
+	for k, v := range *ig {
+		if v.MountPath == "" {
+			v.MountPath = k
+		}
+	}
 }
 
 func (mp InputGroup) asMappySlice() codec.MapBySlice {
@@ -54,6 +60,12 @@ func (og *OutputGroup) CodecDecodeSelf(c *codec.Decoder) {
 	// I'd love to just punt to the defaults, but the `Selfer` interface doesn't come in half.
 	// SO here's a ridiculous indirection to prance around infinite recursion.
 	c.MustDecode((*map[string]*Output)(og))
+	// Now go back over the struct and fill in MountPath as needed from the map keys.
+	for k, v := range *og {
+		if v.MountPath == "" {
+			v.MountPath = k
+		}
+	}
 }
 
 func (mp OutputGroup) asMappySlice() codec.MapBySlice {

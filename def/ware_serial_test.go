@@ -13,8 +13,8 @@ func TestInputGroupCodec(t *testing.T) {
 	Convey("Given an InputGroup map", t, func() {
 		// this is unordered
 		ig := def.InputGroup{
-			"betic": &def.Input{Name: "/2"},
-			"alpha": &def.Input{Name: "/1"},
+			"betic": &def.Input{MountPath: "/2"},
+			"alpha": &def.Input{MountPath: "/1"},
 		}
 
 		Convey("Encoding should work", func() {
