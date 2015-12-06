@@ -29,12 +29,20 @@ type Env map[string]string
 	then pipe the hash reported by the scan into the formula you hand to `repeatr run`.
 */
 type Escapes struct {
-	Mounts []Mount
+	Mounts MountGroup `json:"mounts,omitempty"`
 }
 
+type MountGroup []Mount
+
 type Mount struct {
-	SourcePath string
 	TargetPath string
+	SourcePath string
 	Writable   bool
 	// CONSIDER: not sure what should be default for writable.  ro should usually be a scan; but not required; you might have sockets, be using this as ipc, whatever; all of which are "crazy", relatively speaking, but that's what this is called an escape valve for.
 }
+
+type MountGroupByTargetPath MountGroup
+
+func (a MountGroupByTargetPath) Len() int           { return len(a) }
+func (a MountGroupByTargetPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a MountGroupByTargetPath) Less(i, j int) bool { return a[i].TargetPath < a[j].TargetPath }
