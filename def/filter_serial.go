@@ -13,16 +13,16 @@ import (
 var _ codec.Selfer = &Filters{}
 
 func (f *Filters) CodecEncodeSelf(c *codec.Encoder) {
-	c.Encode(f.asStringSlice())
+	c.Encode(f.AsStringSlice())
 }
 
 func (f *Filters) CodecDecodeSelf(c *codec.Decoder) {
 	var strs []string
 	c.MustDecode(&strs)
-	f.fromStringSlice(strs)
+	f.FromStringSlice(strs)
 }
 
-func (f Filters) asStringSlice() []string {
+func (f Filters) AsStringSlice() []string {
 	var strs []string
 	switch f.UidMode {
 	case FilterUninitialized:
@@ -63,7 +63,7 @@ func (f Filters) asStringSlice() []string {
 	return strs
 }
 
-func (f *Filters) fromStringSlice(strs []string) {
+func (f *Filters) FromStringSlice(strs []string) {
 	for _, line := range strs {
 		words := strings.Fields(line)
 		if len(words) < 1 {
