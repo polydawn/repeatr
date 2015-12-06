@@ -5,10 +5,10 @@ package def
 	All content is part of the conjecture.
 */
 type Action struct {
-	Entrypoint []string          `json:"command"` // executable to invoke as the task.  included in the conjecture.
-	Cwd        string            `json:"cwd"`     // working directory to set when invoking the executable.  if not set, will be defaulted to "/".
-	Env        map[string]string `json:"env"`     // environment variables.  included in the conjecture.
-	Escapes    Escapes
+	Entrypoint []string          `json:"command,omitempty"` // executable to invoke as the task.  included in the conjecture.
+	Cwd        string            `json:"cwd,omitempty"`     // working directory to set when invoking the executable.  if not set, will be defaulted to "/".
+	Env        map[string]string `json:"env,omitempty"`     // environment variables.  included in the conjecture.
+	Escapes    Escapes           `json:"escapes,omitempty"`
 }
 
 /*
