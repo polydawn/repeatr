@@ -1,5 +1,9 @@
 package def
 
+type InputGroup map[string]*Input
+
+type OutputGroup map[string]*Output
+
 /*
 	Input specifies a data source to feed into the beginning of a computation.
 
