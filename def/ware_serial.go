@@ -28,7 +28,7 @@ func (ig *InputGroup) CodecDecodeSelf(c *codec.Decoder) {
 func (mp InputGroup) asMappySlice() codec.MapBySlice {
 	keys := make([]string, len(mp))
 	var i int
-	for k, _ := range mp {
+	for k := range mp {
 		keys[i] = k
 		i++
 	}
@@ -71,7 +71,7 @@ func (og *OutputGroup) CodecDecodeSelf(c *codec.Decoder) {
 func (mp OutputGroup) asMappySlice() codec.MapBySlice {
 	keys := make([]string, len(mp))
 	var i int
-	for k, _ := range mp {
+	for k := range mp {
 		keys[i] = k
 		i++
 	}

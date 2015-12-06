@@ -15,7 +15,7 @@ func (e Env) CodecEncodeSelf(c *codec.Encoder) {
 func (mp Env) asMappySlice() codec.MapBySlice {
 	keys := make([]string, len(mp))
 	var i int
-	for k, _ := range mp {
+	for k := range mp {
 		keys[i] = k
 		i++
 	}
