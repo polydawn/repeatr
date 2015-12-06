@@ -61,3 +61,32 @@ var (
 	FilterDefaultGid   = 1000
 	FilterDefaultMtime = time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)
 )
+
+// Default filters for input are to respect everything.
+func (f *Filters) InitDefaultsInput() {
+	if f.UidMode == FilterUninitialized {
+		f.UidMode = FilterKeep
+	}
+	if f.GidMode == FilterUninitialized {
+		f.GidMode = FilterKeep
+	}
+	if f.MtimeMode == FilterUninitialized {
+		f.MtimeMode = FilterKeep
+	}
+}
+
+// Default filters for output are to flatten uid, gid, and mtime.
+func (f *Filters) InitDefaultsOutput() {
+	if f.UidMode == FilterUninitialized {
+		f.UidMode = FilterUse
+		f.Uid = FilterDefaultUid
+	}
+	if f.GidMode == FilterUninitialized {
+		f.GidMode = FilterUse
+		f.Gid = FilterDefaultGid
+	}
+	if f.MtimeMode == FilterUninitialized {
+		f.MtimeMode = FilterUse
+		f.Mtime = FilterDefaultMtime
+	}
+}
