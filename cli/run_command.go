@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
 
 	"github.com/codegangsta/cli"
@@ -59,11 +61,17 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			// Note that all other logs, progress, terminals, etc are all routed to "journal" (typically, stderr),
 			//  while this output is routed to "output" (typically, stdout), so it can be piped and parsed mechanically.
 			formula.Outputs = result.Outputs
-			err := codec.NewEncoder(output, &codec.JsonHandle{}).Encode(formula)
-			output.Write([]byte{'\n'})
+			// Do a horrific buffer dance until we can update codec to the version that supports its own indented formatting
+			var buf bytes.Buffer
+			err := codec.NewEncoder(&buf, &codec.JsonHandle{}).Encode(formula)
 			if err != nil {
 				panic(err)
 			}
+			var omg interface{}
+			json.Unmarshal(buf.Bytes(), &omg)
+			msg, _ := json.MarshalIndent(omg, "", "\t")
+			output.Write(msg)
+			output.Write([]byte{'\n'})
 			// Exit nonzero with our own "your job did not report success" indicator code, if applicable.
 			if result.ExitCode != 0 && !ignoreJobExit {
 				panic(Exit.NewWith("job finished with non-zero exit status", SetExitCode(EXIT_JOB)))
