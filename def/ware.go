@@ -39,12 +39,6 @@ type Input struct {
 	MountPath  string          `json:"mount"`          // filepath where this input should be mounted in the execution context.  included in the conjecture.
 }
 
-type InputsByName []Input
-
-func (a InputsByName) Len() int           { return len(a) }
-func (a InputsByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a InputsByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
-
 /*
 	Output describes where we intend to pick up data after a task completes.
 
@@ -105,9 +99,3 @@ type Output struct {
 	Filters    Filters
 	Conjecture bool `json:"cnj,omitempty"` // whether or not this output is expected to contain the same result, every time, when given the same set of `Input` items.
 }
-
-type OutputsByName []Output
-
-func (a OutputsByName) Len() int           { return len(a) }
-func (a OutputsByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a OutputsByName) Less(i, j int) bool { return a[i].Name < a[j].Name }

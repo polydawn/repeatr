@@ -16,8 +16,8 @@ func getBaseFormula() def.Formula {
 	projPath := filepath.Dir(filepath.Dir(testutil.OriginalDir()))
 
 	return def.Formula{
-		Inputs: []def.Input{
-			{
+		Inputs: def.InputGroup{
+			"main": {
 				Name:       "/",
 				Type:       "tar",
 				MountPath:  "/",

@@ -17,7 +17,7 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 		Action: func(ctx *cli.Context) {
 			executor := executordispatch.Get("chroot")
 			formula := def.Formula{
-				Inputs: []def.Input{{
+				Inputs: def.InputGroup{"main": {
 					Type:      "tar",
 					MountPath: "/",
 					Hash:      "lzcqJKln2_H4TIoizNBCr0qoh8u_Nb_LRwARTZL2RumfbChX031pVl46dcSCG4q3",

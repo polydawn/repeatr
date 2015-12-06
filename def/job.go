@@ -64,7 +64,7 @@ type JobResult struct {
 
 	ExitCode int // The return code of this job
 
-	Outputs []Output //The hashed outputs from this job
+	Outputs OutputGroup //The hashed outputs from this job
 
 	// More?
 }

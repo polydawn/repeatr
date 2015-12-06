@@ -1,6 +1,8 @@
 package def
 
 import (
+	"fmt"
+
 	"github.com/ugorji/go/codec"
 )
 
@@ -28,10 +30,32 @@ func (wc *WarehouseCoords) CodecDecodeSelf(c *codec.Decoder) {
 	switch val2 := val.(type) {
 	case string:
 		(*wc) = []string{val2}
-	case []string:
-		(*wc) = val2
+	case []interface{}:
+		(*wc) = coerceStringList(val2)
 	default:
 		panic(ConfigError.New("silo must be a string or list of strings"))
 	}
 
+}
+
+func coerceStringList(x interface{}) []string {
+	if w, ok := x.([]string); ok {
+		return w
+	}
+	y, ok := x.([]interface{})
+	if !ok {
+		panic(fmt.Errorf(describe(x)))
+	}
+	z := make([]string, len(y))
+	for i := range y {
+		z[i], ok = y[i].(string)
+		if !ok {
+			panic(fmt.Errorf("%s at index %d", describe(x), i))
+		}
+	}
+	return z
+}
+
+func describe(x interface{}) string {
+	return fmt.Sprintf("%T", x)
 }
