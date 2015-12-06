@@ -18,7 +18,6 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 		Convey("Launch should succeed", func() {
 			filefixture.Beta.Create("./fixture/beta")
 			formula.Inputs["part2"] = &def.Input{
-				Name:       "2-input-test",
 				Type:       "dir",
 				Hash:       filefixture.Beta_Hash,
 				Warehouses: []string{"file://./fixture/beta"},
