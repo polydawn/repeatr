@@ -20,7 +20,7 @@ func (wc WarehouseCoords) CodecEncodeSelf(c *codec.Encoder) {
 		// note: no, we're not sorting:
 		//  1) nah, don't care.  not part of conjecture anyway.
 		//  2) order actually has a meaning: order in which to try.
-		c.MustEncode(wc)
+		c.MustEncode([]string(wc))
 	}
 }
 
