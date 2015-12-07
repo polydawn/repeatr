@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/inconshreveable/log15"
@@ -85,6 +86,11 @@ func (t *GitTransmat) Materialize(
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
+
+		// Emit git version.
+		// Until we get a reasonably static version linked&contained, this is going to be an ongoing source of potential trouble.
+		gitv := git.Bake("version").CombinedOutput()
+		log.Info("using `git version`:", "v", strings.TrimSpace(gitv))
 
 		// Ping silos
 		if len(siloURIs) < 1 {
