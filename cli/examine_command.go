@@ -82,6 +82,8 @@ func ExploreCommandPattern(stdout, stderr io.Writer) cli.Command {
 						panic(Error.New("%s", err.Message()))
 					}).Catch(integrity.DataDNE, func(err *errors.Error) {
 						panic(Error.New("%s", err.Message()))
+					}).Catch(integrity.HashMismatchError, func(err *errors.Error) {
+						panic(Error.New("%s", err.Message()))
 					}).Done()
 				},
 			},
