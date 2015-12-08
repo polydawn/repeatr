@@ -13,11 +13,6 @@ cache:
   - assets
 
 script:
-  # travis started shipping a *very* old version of git in their baseimage at some point :(
-  - sudo add-apt-repository ppa:git-core/ppa
-  - sudo apt-get update
-  - sudo apt-get install --only-upgrade git
-  # now our real work
   - ./goad init
   - ./goad validate
   - ./goad install
