@@ -27,8 +27,8 @@ import (
 func CheckBasicExecution(execEng executor.Executor) {
 	Convey("SPEC: Attempting launch with a rootfs that doesn't exist should error", func(c C) {
 		formula := def.Formula{
-			Inputs: []def.Input{
-				{
+			Inputs: def.InputGroup{
+				"main": {
 					Type:      "tar",
 					MountPath: "/",
 					// Funny thing is, the URI isn't even necessarily where the buck stops;

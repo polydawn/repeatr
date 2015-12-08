@@ -6,12 +6,10 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/go-yaml/yaml"
 	"github.com/inconshreveable/log15"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
-	"polydawn.net/repeatr/lib/cereal"
 	"polydawn.net/repeatr/scheduler"
 )
 
@@ -22,19 +20,8 @@ func LoadFormulaFromFile(path string) def.Formula {
 	if err != nil {
 		panic(Error.Wrap(fmt.Errorf("Could not read formula file %q: %s", filename, err)))
 	}
-	content = cereal.Tab2space(content)
 
-	var raw interface{}
-	if err := yaml.Unmarshal(content, &raw); err != nil {
-		panic(Error.New("Could not parse formula file %q: %s", filename, err))
-	}
-	raw = cereal.StringifyMapKeys(raw)
-	formula := def.Formula{}
-	if err := formula.Unmarshal(raw); err != nil {
-		panic(Error.New("Could not parse formula file %q: %s", filename, err))
-	}
-
-	return formula
+	return *def.ParseYaml(content)
 }
 
 func RunFormula(s scheduler.Scheduler, e executor.Executor, formula def.Formula, journal io.Writer) def.JobResult {

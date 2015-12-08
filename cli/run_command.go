@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/codegangsta/cli"
+	"github.com/ugorji/go/codec"
+
 	"polydawn.net/repeatr/executor/dispatch"
 	"polydawn.net/repeatr/scheduler/dispatch"
 )
@@ -54,13 +54,16 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			}
 
 			// Output.
+			// Join the results structure with the original formula, and emit the whole thing,
+			//  just to keep it traversals consistent.
 			// Note that all other logs, progress, terminals, etc are all routed to "journal" (typically, stderr),
 			//  while this output is routed to "output" (typically, stdout), so it can be piped and parsed mechanically.
-			msg, err := json.MarshalIndent(result.Outputs, "", "\t")
+			formula.Outputs = result.Outputs
+			err := codec.NewEncoder(output, &codec.JsonHandle{Indent: -1}).Encode(formula)
 			if err != nil {
 				panic(err)
 			}
-			fmt.Fprintf(output, "%s\n", string(msg))
+			output.Write([]byte{'\n'})
 			// Exit nonzero with our own "your job did not report success" indicator code, if applicable.
 			if result.ExitCode != 0 && !ignoreJobExit {
 				panic(Exit.NewWith("job finished with non-zero exit status", SetExitCode(EXIT_JOB)))

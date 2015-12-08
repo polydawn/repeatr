@@ -8,6 +8,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/util"
@@ -44,9 +45,11 @@ func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 				warehouses = []string{ctx.String("where")}
 			}
 			filters := &def.Filters{}
-			if err := filters.Unmarshal(ctx.StringSlice("filter")); err != nil {
-				panic(Error.NewWith("Malformed argument: filters could not parse: "+err.(*errors.Error).Message(), SetExitCode(EXIT_BADARGS)))
-			}
+			try.Do(func() {
+				filters.FromStringSlice(ctx.StringSlice("filter"))
+			}).Catch(integrity.ConfigError, func(err *errors.Error) {
+				panic(Error.NewWith("Malformed argument: filters could not parse: "+err.Message(), SetExitCode(EXIT_BADARGS)))
+			}).Done()
 			filters.InitDefaultsOutput()
 			outputSpec := def.Output{
 				Type:       ctx.String("kind"),

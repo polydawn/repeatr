@@ -13,22 +13,12 @@ import (
 )
 
 // Run inputs
-func ProvisionInputs(transmat integrity.Transmat, inputs []def.Input, journal log15.Logger) map[string]integrity.Arena {
+func ProvisionInputs(transmat integrity.Transmat, inputs def.InputGroup, journal log15.Logger) map[string]integrity.Arena {
 	// start having all filesystems
 	// input names are used as keys, so must be unique
-	inputsByName := make(map[string]def.Input, len(inputs))
-	for _, in := range inputs {
-		// TODO checks should also be sooner, up in cfg parse
-		// but this check is for programmatic access as well (errors down the line can get nonobvious if you skip this).
-		if _, ok := inputsByName[in.Name]; ok {
-			panic(errors.ProgrammerError.New("duplicate name in input config"))
-		}
-		inputsByName[in.Name] = in
-	}
-	filesystems := make(map[string]integrity.Arena, len(inputs))
 	fsGather := make(chan map[string]materializerReport)
-	for _, in := range inputs {
-		go func(in def.Input) {
+	for name, in := range inputs {
+		go func(name string, in *def.Input) {
 			try.Do(func() {
 				journal.Info(fmt.Sprintf("Starting materialize for %s hash=%s", in.Type, in.Hash))
 				// todo: create validity checking api for URIs, check them all before launching anything
@@ -46,21 +36,22 @@ func ProvisionInputs(transmat integrity.Transmat, inputs []def.Input, journal lo
 				// submit report
 				journal.Info(fmt.Sprintf("Finished materialize for %s hash=%s", in.Type, in.Hash))
 				fsGather <- map[string]materializerReport{
-					in.Name: {Arena: arena},
+					name: {Arena: arena},
 				}
 			}).Catch(integrity.Error, func(err *errors.Error) {
 				journal.Warn(fmt.Sprintf("Errored during materialize for %s hash=%s", in.Type, in.Hash), "error", err.Message())
 				fsGather <- map[string]materializerReport{
-					in.Name: {Err: err},
+					name: {Err: err},
 				}
 			}).Done()
-		}(in)
+		}(name, in)
 	}
 
 	// (we don't have any output setup at this point, but if we do in the future, that'll be here.)
 
 	// gather materialized inputs
 	// any errors are re-raised immediately (TODO: this currently doesn't fan out smooth cancellations)
+	filesystems := make(map[string]integrity.Arena, len(inputs))
 	for range inputs {
 		for name, report := range <-fsGather {
 			if report.Err != nil {
@@ -76,22 +67,18 @@ func ProvisionInputs(transmat integrity.Transmat, inputs []def.Input, journal lo
 func AssembleFilesystem(
 	assemblerFn integrity.Assembler,
 	rootPath string,
-	inputs []def.Input,
+	inputs def.InputGroup,
 	inputArenas map[string]integrity.Arena,
 	hostMounts []def.Mount,
 	journal log15.Logger,
 ) integrity.Assembly {
 	journal.Info("All inputs acquired... starting assembly")
 	// process inputs
-	inputsByName := make(map[string]def.Input, len(inputs))
-	for _, in := range inputs {
-		inputsByName[in.Name] = in
-	}
 	assemblyParts := make([]integrity.AssemblyPart, 0, len(inputArenas))
 	for name, arena := range inputArenas {
 		assemblyParts = append(assemblyParts, integrity.AssemblyPart{
 			SourcePath: arena.Path(),
-			TargetPath: inputsByName[name].MountPath,
+			TargetPath: inputs[name].MountPath,
 			Writable:   true, // TODO input config should have a word about this
 		})
 	}
@@ -115,7 +102,7 @@ type materializerReport struct {
 	Err   *errors.Error   // subtype of input.Error.  (others are forbidden by contract and treated as fatal.)
 }
 
-func ProvisionOutputs(outputs []def.Output, rootfs string, journal log15.Logger) {
+func ProvisionOutputs(outputs def.OutputGroup, rootfs string, journal log15.Logger) {
 	// We no longer make output MountPaths by default.
 	// Originally, this seemed like a good idea, because it would be a
 	//  consistent stance and allow us to use more complex (e.g. mount-powered)
@@ -131,11 +118,11 @@ func ProvisionOutputs(outputs []def.Output, rootfs string, journal log15.Logger)
 }
 
 // Run outputs
-func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs string, journal log15.Logger) []def.Output {
+func PreserveOutputs(transmat integrity.Transmat, outputs def.OutputGroup, rootfs string, journal log15.Logger) def.OutputGroup {
 	// run commit on the outputs
-	scanGather := make(chan scanReport)
-	for _, out := range outputs {
-		go func(out def.Output) {
+	scanGather := make(chan map[string]scanReport)
+	for name, out := range outputs {
+		go func(name string, out *def.Output) {
 			out.Filters.InitDefaultsOutput()
 			filterOptions := integrity.ConvertFilterConfig(out.Filters)
 			scanPath := filepath.Join(rootfs, out.MountPath)
@@ -157,28 +144,33 @@ func PreserveOutputs(transmat integrity.Transmat, outputs []def.Output, rootfs s
 				out.Hash = string(commitID)
 				// submit report
 				journal.Info(fmt.Sprintf("Finished scan on %q", scanPath))
-				scanGather <- scanReport{Output: out}
+				scanGather <- map[string]scanReport{
+					name: {Output: out},
+				}
 			}).Catch(integrity.Error, func(err *errors.Error) {
 				journal.Warn(fmt.Sprintf("Errored scan on %q", scanPath), "error", err.Message())
-				scanGather <- scanReport{Err: err}
+				scanGather <- map[string]scanReport{
+					name: {Err: err},
+				}
 			}).Done()
-		}(out)
+		}(name, out)
 	}
 
 	// gather reports
-	var results []def.Output
+	results := def.OutputGroup{}
 	for range outputs {
-		report := <-scanGather
-		if report.Err != nil {
-			panic(report.Err)
+		for name, report := range <-scanGather {
+			if report.Err != nil {
+				panic(report.Err)
+			}
+			results[name] = report.Output
 		}
-		results = append(results, report.Output)
 	}
 
 	return results
 }
 
 type scanReport struct {
-	Output def.Output    // now including the hash
+	Output *def.Output   // now including the hash
 	Err    *errors.Error // subtype of output.Error.  (others are forbidden by contract and treated as fatal.)
 }
