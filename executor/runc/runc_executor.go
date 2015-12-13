@@ -99,7 +99,7 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS
 	}
 
 	try.Do(func() {
-		e.Execute(f, j, d, &r, outS, errS, journal)
+		e.Execute(f, j, d, &r, stdin, outS, errS, journal)
 	}).Catch(executor.Error, func(err *errors.Error) {
 		r.Error = err
 	}).Catch(integrity.Error, func(err *errors.Error) {
@@ -112,7 +112,7 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS
 }
 
 // Execute a formula in a specified directory. MAY PANIC.
-func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, result *def.JobResult, stdout, stderr io.WriteCloser, journal log15.Logger) {
+func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, result *def.JobResult, stdin io.Reader, stdout, stderr io.WriteCloser, journal log15.Logger) {
 	rootfsPath := filepath.Join(jobPath, "rootfs")
 
 	// Prepare inputs
@@ -133,7 +133,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 
 	// Emit configs for runc.
 	runcConfigJsonPath := filepath.Join(jobPath, "config.json")
-	cfg := EmitRuncConfigStruct(formula, job, rootfsPath)
+	cfg := EmitRuncConfigStruct(formula, job, rootfsPath, stdin != nil)
 	buf, err := json.Marshal(cfg)
 	if err != nil {
 		panic(executor.UnknownError.Wrap(err))
@@ -156,6 +156,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 
 	// Prepare command to exec
 	args := []string{
+		"--id", string(job.Id()),
 		"--root", filepath.Join(e.workspacePath, "shared"), // a tmpfs would be appropriate
 		"--log", logPath,
 		"--log-format", "json",
@@ -164,7 +165,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 		"--runtime-file", runcRuntimeJsonPath,
 	}
 	cmd := exec.Command(runcPath, args...)
-	cmd.Stdin = nil
+	cmd.Stdin = stdin
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 

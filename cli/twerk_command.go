@@ -15,7 +15,7 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 		Name:  "twerk",
 		Usage: "Run one-time-use interactive (thus nonrepeatable!) command.  All the defaults are filled in for you.  Great for experimentation.",
 		Action: func(ctx *cli.Context) {
-			executor := executordispatch.Get("chroot")
+			executor := executordispatch.Get("runc")
 			formula := def.Formula{
 				Inputs: def.InputGroup{"main": {
 					Type:      "tar",
