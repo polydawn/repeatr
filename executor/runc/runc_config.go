@@ -4,7 +4,7 @@ import (
 	"polydawn.net/repeatr/def"
 )
 
-func EmitRuncConfigStruct(frm def.Formula, job def.Job, rootPath string) interface{} {
+func EmitRuncConfigStruct(frm def.Formula, job def.Job, rootPath string, tty bool) interface{} {
 	return map[string]interface{}{
 		"version": "0.2.0",
 		"platform": map[string]interface{}{
@@ -12,7 +12,7 @@ func EmitRuncConfigStruct(frm def.Formula, job def.Job, rootPath string) interfa
 			"arch": "amd64",
 		},
 		"process": map[string]interface{}{
-			//"terminal": true,
+			"terminal": tty,
 			"user": map[string]interface{}{
 				"uid":            0,
 				"gid":            0,
