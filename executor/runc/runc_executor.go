@@ -156,6 +156,7 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 
 	// Prepare command to exec
 	args := []string{
+		"--id", string(job.Id()),
 		"--root", filepath.Join(e.workspacePath, "shared"), // a tmpfs would be appropriate
 		"--log", logPath,
 		"--log-format", "json",
