@@ -285,56 +285,65 @@ func CheckAssemblerIsolatesSource(assemblerFn integrity.Assembler) {
 
 func CheckAssemblerBareMount(assemblerFn integrity.Assembler) {
 	Convey("Bare mounts continue to see changes to the source",
-		testutil.WithTmpdir(func() {
-			// make fixture
-			filefixture.Alpha.Create("./material/alpha")
-			// assemble
-			assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
-				{TargetPath: "/", SourcePath: "./material/alpha", Writable: false, BareMount: true},
-			})
-			defer assembly.Teardown()
-			// modify on the outside
-			f, err := os.OpenFile("./material/alpha/moar", os.O_CREATE, 0644)
-			defer f.Close()
-			So(err, ShouldBeNil)
-			// the outside should see it (obviously! just a sanity check)
-			So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0))
-			// the inside should see it
-			So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0))
-		}),
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				// make fixture
+				filefixture.Alpha.Create("./material/alpha")
+				// assemble
+				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+					{TargetPath: "/", SourcePath: "./material/alpha", Writable: false, BareMount: true},
+				})
+				defer assembly.Teardown()
+				// modify on the outside
+				f, err := os.OpenFile("./material/alpha/moar", os.O_CREATE, 0644)
+				defer f.Close()
+				So(err, ShouldBeNil)
+				// the outside should see it (obviously! just a sanity check)
+				So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0))
+				// the inside should see it
+				So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0))
+			}),
+		),
 	)
 	Convey("Writable bare mounts propagate changes to the source",
-		testutil.WithTmpdir(func() {
-			// make fixture
-			filefixture.Alpha.Create("./material/alpha")
-			// assemble
-			assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
-				{TargetPath: "/", SourcePath: "./material/alpha", Writable: true, BareMount: true},
-			})
-			defer assembly.Teardown()
-			// modify on the inside
-			f, err := os.OpenFile("./assembled/moar", os.O_CREATE, 0644)
-			defer f.Close()
-			So(err, ShouldBeNil)
-			// the inside should see it (obviously! just a sanity check)
-			So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0))
-			// the outside should see it
-			So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0))
-		}),
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				// make fixture
+				filefixture.Alpha.Create("./material/alpha")
+				// assemble
+				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+					{TargetPath: "/", SourcePath: "./material/alpha", Writable: true, BareMount: true},
+				})
+				defer assembly.Teardown()
+				// modify on the inside
+				f, err := os.OpenFile("./assembled/moar", os.O_CREATE, 0644)
+				defer f.Close()
+				So(err, ShouldBeNil)
+				// the inside should see it (obviously! just a sanity check)
+				So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0))
+				// the outside should see it
+				So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0))
+			}),
+		),
 	)
 	Convey("Readonly bare mounts reject writes",
-		testutil.WithTmpdir(func() {
-			// make fixture
-			filefixture.Alpha.Create("./material/alpha")
-			// assemble
-			assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
-				{TargetPath: "/", SourcePath: "./material/alpha", Writable: false, BareMount: true},
-			})
-			defer assembly.Teardown()
-			// modify on the inside should instantly error
-			f, err := os.OpenFile("./assembled/moar", os.O_CREATE, 0644)
-			defer f.Close()
-			So(err, ShouldNotBeNil)
-		}),
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				// make fixture
+				filefixture.Alpha.Create("./material/alpha")
+				// assemble
+				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+					{TargetPath: "/", SourcePath: "./material/alpha", Writable: false, BareMount: true},
+				})
+				defer assembly.Teardown()
+				// modify on the inside should instantly error
+				f, err := os.OpenFile("./assembled/moar", os.O_CREATE, 0644)
+				defer f.Close()
+				So(err, ShouldNotBeNil)
+			}),
+		),
 	)
 }
