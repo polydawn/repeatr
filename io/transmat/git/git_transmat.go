@@ -117,6 +117,7 @@ func (t *GitTransmat) Materialize(
 			// code 128 means no connection.
 			// any other code we currently panic on (with stderr attached, but it's still ugly).
 			if code != 0 {
+				log.Info("git transmat: remote unavailable", "remote", givenURI)
 				continue
 			}
 			siloURI = givenURI
@@ -125,6 +126,7 @@ func (t *GitTransmat) Materialize(
 		if siloURI == "" {
 			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
+		log.Info("git transmat: connected to remote warehouse", "remote", siloURI)
 
 		// Create staging arena to produce data into.
 		var err error
@@ -151,6 +153,7 @@ func (t *GitTransmat) Materialize(
 		git.Bake(
 			"clone", "--bare", "--", string(siloURI), arena.gitDirPath,
 		).RunAndReport()
+		log.Info("git transmat: clone complete")
 
 		// Checkout the interesting commit.
 		buf := &bytes.Buffer{}
@@ -169,11 +172,13 @@ func (t *GitTransmat) Materialize(
 			// (blowing past this without too much fuss because we're going to switch error libraries later and it's going to fix this better.)
 			panic(Error.New("git checkout failed.  git output:\n%s", buf.String()))
 		}
+		log.Info("git transmat: checkout complete")
 		// And, do submodules.
 		git.Bake(
 			"submodule", "update", "--init",
 			gosh.Opts{Cwd: arena.workDirPath},
 		).RunAndReport()
+		log.Info("git transmat: submodules complete")
 
 		// verify total integrity
 		// actually this is a nil step; there's no such thing as "acceptHashMismatch", clone would have simply failed
