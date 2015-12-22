@@ -1,6 +1,9 @@
 package git
 
 import (
+	"bytes"
+	"strings"
+
 	"github.com/polydawn/gosh"
 
 	"polydawn.net/repeatr/io"
@@ -51,15 +54,30 @@ func (wh *Warehouse) Ping() error {
 	// TODO there's no "--" in ls-remote, so... we should forbid things starting in "-", i guess?
 	//  or use "file://" religiously?  but no, bc ssh doesn't look like "ssh://" all the time... ugh, i do not want to write a git url parser
 	//   update: yeah, using "file://" religiously is not an option.  this actually takes a *different* path than `/non/protocol/prefixed`.  not significantly, but it may impact e.g. hardlinking, iiuc
-	// TODO someday go for the usability buff of parsing git errors into something more helpful
+
+	var errBuf bytes.Buffer
 	code := git.Bake(
 		"ls-remote", wh.url,
-		gosh.Opts{OkExit: []int{0, 128}},
-	).RunAndReport().GetExitCode()
-	// code 128 means no connection.
-	// any other code we currently panic on (with stderr attached, but it's still ugly).
-	if code != 0 {
-		return integrity.WarehouseUnavailableError.New("git remote unavailable")
+		gosh.Opts{
+			// never buffer stdout; it may be long and we don't care.
+			Err:    &errBuf,
+			OkExit: gosh.AnyExit,
+		},
+	).Run().GetExitCode()
+	switch code {
+	case 0:
+		return nil
+	case 128:
+		// Code 128 appears to result from any cant-fetch scenario.
+		// So far, we've also only seen error messages where the first line
+		//  is interesting, so that's what we report.
+		msg := strings.TrimPrefix(strings.SplitN(errBuf.String(), "\n", 2)[0], "fatal: ")
+		// Known values include:
+		//  - "'%s' does not appear to be a git repository"
+		//  - "attempt to fetch/clone from a shallow repository"
+		return integrity.WarehouseUnavailableError.New("git remote unavailable: %s", msg)
+	default:
+		// We don't recognize this.
+		panic(integrity.UnknownError.New("git exit code %d (stderr: %s)", code, errBuf.String()))
 	}
-	return nil
 }
