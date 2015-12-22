@@ -100,29 +100,23 @@ func (t *GitTransmat) Materialize(
 		}
 		// Our policy is to take the first path that exists.
 		//  This lets you specify a series of potential locations,
-		var siloURI integrity.SiloURI
-		for _, givenURI := range siloURIs {
-			// shell out to git and ask it if it thinks there's a repo here
-			// TODO this and all future shellouts does NOT SUFFICIENTLY ISOLATE either config or secret keeping yet.
-			// TODO it's probably not productive to try to parse all git uris, but we should detect relative local fs paths and shitcan them at least
-			localPath := string(givenURI)
-			// TODO there's no "--" in ls-remote, so... we should forbid things starting in "-", i guess?
-			//  or use "file://" religiously?  but no, bc ssh doesn't look like "ssh://" all the time... ugh, i do not want to write a git url parser
-			//   update: yeah, using "file://" religiously is not an option.  this actually takes a *different* path than `/non/protocol/prefixed`.  not significantly, but it may impact e.g. hardlinking, iiuc
-			// TODO someday go for the usability buff of parsing git errors into something more helpful
-			code := git.Bake(
-				"ls-remote", localPath,
-				gosh.Opts{OkExit: []int{0, 128}},
-			).RunAndReport().GetExitCode()
-			// code 128 means no connection.
-			// any other code we currently panic on (with stderr attached, but it's still ugly).
-			if code != 0 {
-				continue
+		//  and if one is unavailable we'll just take the next.
+		var warehouse *Warehouse
+		for _, uri := range siloURIs {
+			wh := NewWarehouse(uri)
+			pong := wh.Ping()
+			if pong == nil {
+				log.Info("git transmat: connected to remote warehouse", "remote", uri)
+				warehouse = wh
+				break
+			} else {
+				log.Info("Warehouse unavailable, skipping",
+					"remote", uri,
+					"reason", pong.Message(),
+				)
 			}
-			siloURI = givenURI
-			break
 		}
-		if siloURI == "" {
+		if warehouse == nil {
 			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
@@ -149,8 +143,9 @@ func (t *GitTransmat) Materialize(
 		// Clone!
 		// TODO make sure all the check hard modes are enabled
 		git.Bake(
-			"clone", "--bare", "--", string(siloURI), arena.gitDirPath,
+			"clone", "--bare", "--", warehouse.url, arena.gitDirPath,
 		).RunAndReport()
+		log.Info("git transmat: clone complete")
 
 		// Checkout the interesting commit.
 		buf := &bytes.Buffer{}
@@ -169,11 +164,13 @@ func (t *GitTransmat) Materialize(
 			// (blowing past this without too much fuss because we're going to switch error libraries later and it's going to fix this better.)
 			panic(Error.New("git checkout failed.  git output:\n%s", buf.String()))
 		}
+		log.Info("git transmat: checkout complete")
 		// And, do submodules.
 		git.Bake(
 			"submodule", "update", "--init",
 			gosh.Opts{Cwd: arena.workDirPath},
 		).RunAndReport()
+		log.Info("git transmat: submodules complete")
 
 		// verify total integrity
 		// actually this is a nil step; there's no such thing as "acceptHashMismatch", clone would have simply failed

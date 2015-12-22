@@ -17,6 +17,7 @@ script:
   - ./goad validate
   - ./goad install
   - ./lib/integration/assets.sh
+  - ./goad test # most will skip without root, but it's at least important that they correctly do so
   - sudo bash -c "export PATH=$PATH:$PWD/assets ; export GOROOT=$GOROOT ; ./goad test" # unescaped dollars are eval'd in an implicit first shell
   - sudo ./goad test-acceptance
 
