@@ -26,7 +26,7 @@ func TestCoreCompliance(t *testing.T) {
 		tests.CheckScanEmptyIsCalm(Kind, New)
 		tests.CheckScanWithFilters(Kind, New)
 		// round-trip
-		tests.CheckRoundTrip(Kind, New, "s3://repeatr-test/test-"+testRunGuid+"/rt/obj.tar", "literal path")
-		tests.CheckRoundTrip(Kind, New, "s3+splay://repeatr-test/test-"+testRunGuid+"/rt-splay/heap/", "content addressible path")
+		tests.CheckRoundTrip(Kind, New, "s3://repeatr-test/test-"+testRunGuid+"/bounce/obj.tar", "literal path")
+		tests.CheckRoundTrip(Kind, New, "s3+ca://repeatr-test/test-"+testRunGuid+"/bounce-ca/heap/", "content addressible path")
 	}))
 }

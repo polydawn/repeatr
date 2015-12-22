@@ -83,7 +83,9 @@ func (t *S3Transmat) Materialize(
 			switch u.Scheme {
 			case "s3":
 				warehouseCtntAddr = false
-			case "s3+splay":
+			case "s3+splay": // deprecated
+				warehouseCtntAddr = true
+			case "s3+ca":
 				warehouseCtntAddr = true
 			default:
 				panic(integrity.ConfigError.New("unrecognized scheme: %q", u.Scheme))
@@ -216,13 +218,15 @@ func (t S3Transmat) Scan(
 			switch u.Scheme {
 			case "s3":
 				ctntAddr = false
-			case "s3+splay":
+			case "s3+splay": // deprecated
+				ctntAddr = true
+			case "s3+ca":
 				ctntAddr = true
 			default:
 				panic(integrity.ConfigError.New("unrecognized scheme: %q", u.Scheme))
 			}
 			// dial it and initialize writer to s3!
-			// if the URI indicated splay behavior, first stream data to {$bucketName}:{dirname($storePath)}/.tmp.upload.{basename($storePath)}.{random()};
+			// if the URI indicated CA behavior, first stream data to {$bucketName}:{dirname($storePath)}/.tmp.upload.{basename($storePath)}.{random()};
 			// this allows us to start uploading before the final hash is determined and relocate it later.
 			// for direct paths, upload into place, because aws already manages atomicity at that scale (and they don't have a rename or copy operation that's free, because uh...?  no time to implement it since 2006, apparently).
 			controller.keys = keys
@@ -278,7 +282,7 @@ func (wp *s3warehousePut) Commit(hash string) {
 		panic(integrity.WarehouseIOError.Wrap(err))
 	}
 
-	// if the URI indicated splay behavior, rename the temp filepath to the real one;
+	// if the URI indicated CA behavior, rename the temp filepath to the real one;
 	// the upload location is suffixed to make a CA resting place.
 	if wp.tmpPath != "" {
 		finalPath := path.Join(wp.pathPrefix, hash)
