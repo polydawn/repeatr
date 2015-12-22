@@ -104,12 +104,16 @@ func (t *GitTransmat) Materialize(
 		var warehouse *Warehouse
 		for _, uri := range siloURIs {
 			wh := NewWarehouse(uri)
-			if wh.Ping() == nil {
+			pong := wh.Ping()
+			if pong == nil {
 				log.Info("git transmat: connected to remote warehouse", "remote", uri)
 				warehouse = wh
 				break
 			} else {
-				log.Info("Warehouse unavailable, skipping", "remote", uri)
+				log.Info("Warehouse unavailable, skipping",
+					"remote", uri,
+					"reason", pong,
+				)
 			}
 		}
 		if warehouse == nil {
