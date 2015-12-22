@@ -8,9 +8,11 @@
 	(Note that this is not the only possible approach; other transports may
 	use S3 as a data warehouse, but map it to filesystems differently.)
 
-	Silo URIs must parse as URIs and have one of two schemes: "s3://" or "s3+splay://".
+	Silo URIs must parse as URIs and have one of two schemes: "s3://" or "s3+ca://".
+	("s3+splay://" is the same as "s3+ca://" and supported for backwards-compatibility,
+	but is deprecated and may be removed without notice.)
 
-	The "s3+splay://" scheme will store data in content-addressable names
+	The "s3+ca://" scheme will store data in content-addressable names
 	where the S3 bucket is the host component of the URI, and the path component
 	of the URI is used as a prefix to the full data path.
 	In this configuration, the transport is compliant with the usual expectation
