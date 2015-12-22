@@ -12,7 +12,7 @@ import (
 )
 
 /*
-	Refer to, interact with, and manage a warsehouse.
+	Refer to, interact with, and manage a warehouse.
 
 	Warehouses are generally figured to be tolerant of group management,
 	and this one is no different: operations that are atomic in the face
