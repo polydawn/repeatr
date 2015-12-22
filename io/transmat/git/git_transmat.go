@@ -112,7 +112,7 @@ func (t *GitTransmat) Materialize(
 			} else {
 				log.Info("Warehouse unavailable, skipping",
 					"remote", uri,
-					"reason", pong,
+					"reason", pong.Message(),
 				)
 			}
 		}

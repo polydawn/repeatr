@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/polydawn/gosh"
+	"github.com/spacemonkeygo/errors"
 
 	"polydawn.net/repeatr/io"
 )
@@ -48,7 +49,7 @@ func NewWarehouse(coords integrity.SiloURI) *Warehouse {
 	Returns nil if contactable; if an error, the message will be
 	an end-user-meaningful description of why the warehouse is out of reach.
 */
-func (wh *Warehouse) Ping() error {
+func (wh *Warehouse) Ping() *errors.Error {
 	// Shell out to git and ask it if it thinks there's a repo here.
 	// TODO this and all future shellouts does NOT SUFFICIENTLY ISOLATE either config or secret keeping yet.
 	// TODO there's no "--" in ls-remote, so... we should forbid things starting in "-", i guess?
@@ -75,7 +76,7 @@ func (wh *Warehouse) Ping() error {
 		// Known values include:
 		//  - "'%s' does not appear to be a git repository"
 		//  - "attempt to fetch/clone from a shallow repository"
-		return integrity.WarehouseUnavailableError.New("git remote unavailable: %s", msg)
+		return integrity.WarehouseUnavailableError.New("git remote unavailable: %s", msg).(*errors.Error)
 	default:
 		// We don't recognize this.
 		panic(integrity.UnknownError.New("git exit code %d (stderr: %s)", code, errBuf.String()))
