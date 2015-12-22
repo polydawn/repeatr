@@ -34,3 +34,15 @@
 [submodule ".gopath/src/xi2.org/x/xz"]
 	path = .gopath/src/xi2.org/x/xz
 	url = https://github.com/xi2/xz.git
+[submodule ".gopath/src/google.golang.org/api"]
+	path = .gopath/src/google.golang.org/api
+	url = https://code.googlesource.com/google-api-go-client
+[submodule ".gopath/src/google.golang.org/cloud"]
+	path = .gopath/src/google.golang.org/cloud
+	url = https://code.googlesource.com/gocloud
+[submodule ".gopath/src/golang.org/x/oauth2"]
+	path = .gopath/src/golang.org/x/oauth2
+	url = https://go.googlesource.com/oauth2
+[submodule ".gopath/src/golang.org/x/net"]
+	path = .gopath/src/golang.org/x/net
+	url = https://go.googlesource.com/net
