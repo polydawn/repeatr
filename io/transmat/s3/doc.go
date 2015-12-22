@@ -3,7 +3,7 @@
 
 	This transport uses tars as the metaphor for mapping filesystems onto S3.
 	Amazon S3 is a key-value store at heart, and (despite what some of the web
-	UI may seem to suggest)	requires more bits for file attributes, etc to manifest as a filesystem.
+	UI may seem to suggest) requires more bits for file attributes, etc to manifest as a filesystem.
 	Using tarballs gives us a place to preserve file metadata in a widely-understood way.
 	(Note that this is not the only possible approach; other transports may
 	use S3 as a data warehouse, but map it to filesystems differently.)
