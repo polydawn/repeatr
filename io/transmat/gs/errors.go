@@ -1,4 +1,4 @@
-package s3
+package gs
 
 import (
 	"github.com/spacemonkeygo/errors"
@@ -6,6 +6,7 @@ import (
 )
 
 /*
-	Raised if S3 credentials are not available.
+	Raised if GS credentials are not available.
 */
-var S3CredentialsMissingError *errors.ErrorClass = integrity.ConfigError.NewClass("InputS3CredentialsMissingError")
+var GsCredentialsMissingError *errors.ErrorClass = integrity.ConfigError.NewClass("InputGsCredentialsMissingError")
+var GsCredentialsInvalidError *errors.ErrorClass = integrity.ConfigError.NewClass("InputGsCredentialsInvalid")

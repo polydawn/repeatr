@@ -1,9 +1,8 @@
-package s3
+package gs
 
 import (
 	"testing"
 
-	"github.com/rlmcpherson/s3gof3r"
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/io/tests"
 	"polydawn.net/repeatr/lib/guid"
@@ -11,14 +10,17 @@ import (
 )
 
 func TestCoreCompliance(t *testing.T) {
-	if _, err := s3gof3r.EnvKeys(); err != nil {
-		t.Skipf("skipping s3 output tests; no s3 credentials loaded (err: %s)", err)
+	token, err := GetAccessToken()
+	if err != nil {
+		t.Skipf("skipping gs output tests; no gs credentials loaded (err: %s)", err)
 	}
-
+	if token == nil {
+		t.Fatalf("No error, yet missing token (╯°□°）╯︵ ┻━┻")
+	}
 	// group all effects of this test run under one "dir" for human reader sanity and cleanup in extremis.
 	testRunGuid := guid.New()
 
-	Convey("Spec Compliance: S3 Transmat", t, testutil.WithTmpdir(func() {
+	Convey("Spec Compliance: GS Transmat", t, testutil.WithTmpdir(func() {
 		// scanning
 		tests.CheckScanWithoutMutation(Kind, New)
 		tests.CheckScanProducesConsistentHash(Kind, New)
@@ -26,7 +28,7 @@ func TestCoreCompliance(t *testing.T) {
 		tests.CheckScanEmptyIsCalm(Kind, New)
 		tests.CheckScanWithFilters(Kind, New)
 		// round-trip
-		tests.CheckRoundTrip(Kind, New, "s3://repeatr-test/test-"+testRunGuid+"/bounce/obj.tar", "literal path")
-		tests.CheckRoundTrip(Kind, New, "s3+ca://repeatr-test/test-"+testRunGuid+"/bounce-ca/heap/", "content addressible path")
+		tests.CheckRoundTrip(Kind, New, "gs://repeatr-test/test-"+testRunGuid+"/bounce/obj.tar", "literal path")
+		tests.CheckRoundTrip(Kind, New, "gs+ca://repeatr-test/test-"+testRunGuid+"/bounce-ca/heap/", "content addressible path")
 	}))
 }

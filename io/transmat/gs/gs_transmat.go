@@ -1,4 +1,4 @@
-package s3
+package gs
 
 import (
 	"archive/tar"
@@ -13,9 +13,10 @@ import (
 	"syscall"
 
 	"github.com/inconshreveable/log15"
-	"github.com/rlmcpherson/s3gof3r"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
+
+	"golang.org/x/oauth2"
 
 	"polydawn.net/repeatr/io"
 	tartrans "polydawn.net/repeatr/io/transmat/tar"
@@ -24,11 +25,11 @@ import (
 	"polydawn.net/repeatr/lib/guid"
 )
 
-const Kind = integrity.TransmatKind("s3")
+const Kind = integrity.TransmatKind("gs")
 
-var _ integrity.Transmat = &S3Transmat{}
+var _ integrity.Transmat = &GsTransmat{}
 
-type S3Transmat struct {
+type GsTransmat struct {
 	workPath string
 }
 
@@ -39,15 +40,27 @@ func New(workPath string) integrity.Transmat {
 	if err != nil {
 		panic(integrity.TransmatError.New("Unable to set up workspace: %s", err))
 	}
-	return &S3Transmat{workPath}
+	return &GsTransmat{workPath}
 }
 
 var hasherFactory = sha512.New384
 
 /*
+	URL Scheme for Google cloud storage buckets.
+	e.g. gs://bucket-name/object-name
+*/
+const SCHEME_GS = "gs"
+
+/*
+	URL Scheme for Google cloud storage buckets using content addressable objects
+	e.g. gs+ca://bucket-name/object-name-hash
+*/
+const SCHEME_GS_CAS = "gs+ca"
+
+/*
 	Arenas produced by Dir Transmats may be relocated by simple `mv`.
 */
-func (t *S3Transmat) Materialize(
+func (t *GsTransmat) Materialize(
 	kind integrity.TransmatKind,
 	dataHash integrity.CommitID,
 	siloURIs []integrity.SiloURI,
@@ -81,11 +94,9 @@ func (t *S3Transmat) Materialize(
 			warehouseBucketName = u.Host
 			warehousePathPrefix = u.Path
 			switch u.Scheme {
-			case "s3":
+			case SCHEME_GS:
 				warehouseCtntAddr = false
-			case "s3+splay": // deprecated
-				warehouseCtntAddr = true
-			case "s3+ca":
+			case SCHEME_GS_CAS:
 				warehouseCtntAddr = true
 			default:
 				panic(integrity.ConfigError.New("unrecognized scheme: %q", u.Scheme))
@@ -98,24 +109,21 @@ func (t *S3Transmat) Materialize(
 			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
-		// load keys from env
-		// TODO someday URIs should grow smart enough to control this in a more general fashion -- but for now, host ENV is actually pretty feasible and plays easily with others.
-		// TODO should not require keys!  we're just reading, after all; anon access is 100% valid.
-		//   Buuuuut s3gof3r doesn't seem to understand empty keys; it still sends them as if to login, and AWS says 403.  So, foo.
-		keys, err := s3gof3r.EnvKeys()
+		token, err := GetAccessToken()
 		if err != nil {
-			panic(S3CredentialsMissingError.Wrap(err))
+			panic(GsCredentialsMissingError.Wrap(err))
 		}
 
-		// initialize reader from s3!
+		// initialize reader
 		getPath := warehousePathPrefix
 		if warehouseCtntAddr {
 			getPath = path.Join(warehousePathPrefix, string(dataHash))
 		}
-		s3reader := makeS3reader(warehouseBucketName, getPath, keys)
-		defer s3reader.Close()
+		gsReader := makeGsReader(warehouseBucketName, getPath, token)
+		defer gsReader.Close()
+
 		// prepare decompression as necessary
-		reader, err := tartrans.Decompress(s3reader)
+		reader, err := tartrans.Decompress(gsReader)
 		if err != nil {
 			panic(integrity.WarehouseCorruptionError.New("could not start decompressing: %s", err))
 		}
@@ -163,7 +171,7 @@ func (t *S3Transmat) Materialize(
 	return arena
 }
 
-func (t S3Transmat) Scan(
+func (t GsTransmat) Scan(
 	kind integrity.TransmatKind,
 	subjectPath string,
 	siloURIs []integrity.SiloURI,
@@ -189,55 +197,51 @@ func (t S3Transmat) Scan(
 			}
 		}
 
-		// load keys from env
-		// TODO someday URIs should grow smart enough to control this in a more general fashion -- but for now, host ENV is actually pretty feasible and plays easily with others.
-		keys, err := s3gof3r.EnvKeys()
+		token, err := GetAccessToken()
 		if err != nil {
-			panic(S3CredentialsMissingError.Wrap(err))
+			panic(GsCredentialsMissingError.Wrap(err))
 		}
 
-		// Parse URI; Find warehouses; Open output streams for writing.
-		// Since these are all behaving as just one `io.Writer` stream, this could maybe be factored out.
-		// Error handling is currently "anything -> panic".  This should probably be more resilient.  (That might need another refactor so we have an upload call per remote.)
-		// TODO : both this and the tar code that has a similar single stream idea should use an interface
-		//  And that interface should have a concept of mv so we can make atomic commits.
-		//  I'm not doing multiple URIs here until we get that, because the io.Writer interface just
-		//   doesn't cut it like it did for tars (and really, it's ignoring a major issue to use it there, too).
-		//  ...Fuck it, we're gonna do it
-		controllers := make([]*s3warehousePut, 0)
-		writers := make([]io.Writer, 0) // this is dumb, but we end up making one of these to satisfy the type conversation for MultiWriter anyway
+		// I honestly don't know what most of this does. It was part of the AWS code and so I left it.
+		// That said it appears to be related to composite object support, which is available in GCS:
+		// ```
+		//    To support parallel uploads and limited append/edit functionality,
+		//    Google Cloud Storage allows users to compose up to 32 existing objects
+		//    into a new object without transferring additional object data.
+		// ```
+		// Look here for more information: https://cloud.google.com/storage/docs/composite-objects
+		// TODO: Composite object support with GCS
+		numSilos := len(siloURIs)
+		controllers := make([]*gsWarehousePut, 0, numSilos)
+		writers := make([]io.Writer, 0, numSilos)
 		for _, givenURI := range siloURIs {
 			u, err := url.Parse(string(givenURI))
 			if err != nil {
 				panic(integrity.ConfigError.New("failed to parse URI: %s", err))
 			}
-			controller := &s3warehousePut{}
+			controller := &gsWarehousePut{}
 			controller.bucketName = u.Host
 			controller.pathPrefix = u.Path
 			var ctntAddr bool
 			switch u.Scheme {
-			case "s3":
+			case SCHEME_GS:
 				ctntAddr = false
-			case "s3+splay": // deprecated
-				ctntAddr = true
-			case "s3+ca":
+			case SCHEME_GS_CAS:
 				ctntAddr = true
 			default:
 				panic(integrity.ConfigError.New("unrecognized scheme: %q", u.Scheme))
 			}
-			// dial it and initialize writer to s3!
 			// if the URI indicated CA behavior, first stream data to {$bucketName}:{dirname($storePath)}/.tmp.upload.{basename($storePath)}.{random()};
 			// this allows us to start uploading before the final hash is determined and relocate it later.
-			// for direct paths, upload into place, because aws already manages atomicity at that scale (and they don't have a rename or copy operation that's free, because uh...?  no time to implement it since 2006, apparently).
-			controller.keys = keys
+			controller.token = token
 			if ctntAddr {
 				controller.tmpPath = path.Join(
 					path.Dir(controller.pathPrefix),
 					".tmp.upload."+path.Base(controller.pathPrefix)+"."+guid.New(),
 				)
-				controller.stream = makeS3writer(controller.bucketName, controller.tmpPath, keys)
+				controller.stream, controller.errors = makeGsWriter(controller.bucketName, controller.tmpPath, token)
 			} else {
-				controller.stream = makeS3writer(controller.bucketName, controller.pathPrefix, keys)
+				controller.stream, controller.errors = makeGsWriter(controller.bucketName, controller.pathPrefix, token)
 			}
 			controllers = append(controllers, controller)
 			writers = append(writers, controller.stream)
@@ -262,31 +266,36 @@ func (t S3Transmat) Scan(
 	return commitID
 }
 
-type s3warehousePut struct {
+type gsWarehousePut struct {
 	stream     io.WriteCloser
-	keys       s3gof3r.Keys
 	bucketName string
 	pathPrefix string
 	tmpPath    string // if set, using content-addressible mode.
+	token      *oauth2.Token
+	errors     <-chan error
 }
 
 /*
 	Fsync's the stream, and does the commit mv into place
 	using `hash` if in content-addressable mode.
 */
-func (wp *s3warehousePut) Commit(hash string) {
-	// flush and check errors on the final write to s3.
+func (wp *gsWarehousePut) Commit(hash string) {
+	// flush and check errors on the final write
 	// be advised that this close method does *a lot* of work aside from connection termination.
 	// also calling it twice causes the library to wigg out and delete things, i don't even.
 	if err := wp.stream.Close(); err != nil {
 		panic(integrity.WarehouseIOError.Wrap(err))
 	}
+	for err := range wp.errors {
+		panic(integrity.UnknownError.Wrap(err))
+	}
+	//TODO: We could check Cloud storage's content hash against ours to check for transport errors.
 
 	// if the URI indicated CA behavior, rename the temp filepath to the real one;
 	// the upload location is suffixed to make a CA resting place.
 	if wp.tmpPath != "" {
 		finalPath := path.Join(wp.pathPrefix, hash)
-		reloc(wp.bucketName, wp.tmpPath, finalPath, wp.keys)
+		reloc(wp.bucketName, wp.tmpPath, finalPath, wp.token)
 	}
 }
 

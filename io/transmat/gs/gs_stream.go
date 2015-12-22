@@ -1,86 +1,89 @@
-package s3
+package gs
 
 import (
-	"bytes"
-	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"path"
 	"time"
 
-	"github.com/rlmcpherson/s3gof3r"
+	"golang.org/x/oauth2"
+	"google.golang.org/api/storage/v1"
+
 	"polydawn.net/repeatr/io"
 )
 
-var s3Conf = &s3gof3r.Config{
-	Concurrency: 10,
-	PartSize:    20 * 1024 * 1024,
-	NTry:        10,
-	Md5Check:    false,
-	Scheme:      "https",
-	Client:      s3gof3r.ClientWithTimeout(15 * time.Second),
+func httpClient(auth *oauth2.Token) *http.Client {
+	return &http.Client{
+		Transport: &oauth2.Transport{
+			Source: oauth2.StaticTokenSource(auth),
+		},
+	}
 }
 
-func makeS3reader(bucketName string, path string, keys s3gof3r.Keys) io.ReadCloser {
-	s3 := s3gof3r.New("s3.amazonaws.com", keys)
-	w, _, err := s3.Bucket(bucketName).GetReader(path, s3Conf)
+func makeGsObjectService(token *oauth2.Token) *storage.ObjectsService {
+	httpClient := httpClient(token)
+	service, err := storage.New(httpClient)
 	if err != nil {
-		if err2, ok := err.(*s3gof3r.RespError); ok && err2.Code == "NoSuchKey" {
-			panic(integrity.DataDNE.New("not stored here"))
-		} else {
+		panic(GsCredentialsInvalidError.Wrap(err))
+	}
+	objService := storage.NewObjectsService(service)
+	return objService
+}
+
+func makeGsReader(bucketName string, path string, token *oauth2.Token) io.ReadCloser {
+	service := makeGsObjectService(token)
+	response, err := service.Get(bucketName, path).Download()
+	if err != nil {
+		panic(integrity.WarehouseIOError.Wrap(err))
+	}
+	return response.Body
+}
+
+func makeGsWriter(bucketName string, path string, token *oauth2.Token) (io.WriteCloser, <-chan error) {
+	reader, writer := io.Pipe()
+	service := makeGsObjectService(token)
+	object := &storage.Object{Name: path}
+	errCh := make(chan error, 1)
+	go func() {
+		// TODO: multipart or resumable upload using `ResumableMedia`
+		_, err := service.Insert(bucketName, object).Media(reader).Do()
+		if err != nil {
+			errCh <- integrity.WarehouseIOError.Wrap(err)
+		}
+		close(errCh)
+	}()
+	return writer, errCh
+}
+
+func reloc(bucketName, oldPath, newPath string, token *oauth2.Token) {
+	var response *storage.RewriteResponse
+	var err error
+	service := makeGsObjectService(token)
+	obj := &storage.Object{}
+	rewrite := service.Rewrite(bucketName, oldPath, bucketName, newPath, obj)
+	// Arbitrary limits, backoff required due to eventual consistency
+	limit := 100
+	backoff := 10 * time.Nanosecond
+	for i := 0; i < limit; i++ {
+		response, err = rewrite.Do()
+		if response.ServerResponse.HTTPStatusCode == http.StatusNotFound && backoff < time.Minute {
+			time.Sleep(backoff)
+			backoff = backoff + backoff
+			continue
+		}
+		if err != nil {
 			panic(integrity.WarehouseIOError.Wrap(err))
 		}
+		if response.Done {
+			break
+		}
+		rewrite = rewrite.RewriteToken(response.RewriteToken)
 	}
-	return w
-}
-
-func makeS3writer(bucketName string, path string, keys s3gof3r.Keys) io.WriteCloser {
-	s3 := s3gof3r.New("s3.amazonaws.com", keys)
-	w, err := s3.Bucket(bucketName).PutWriter(path, nil, s3Conf)
+	if !response.Done {
+		panic(integrity.WarehouseIOError.Wrap(fmt.Errorf("RewriteGsDidNotComplete")))
+	}
+	err = service.Delete(bucketName, oldPath).Do()
 	if err != nil {
 		panic(integrity.WarehouseIOError.Wrap(err))
 	}
-	return w
-}
-
-func reloc(bucketName, oldPath, newPath string, keys s3gof3r.Keys) {
-	s3 := s3gof3r.New("s3.amazonaws.com", keys)
-	bucket := s3.Bucket(bucketName)
-	// this is a POST at the bottom, and copies are a PUT.  whee.
-	//w, err := s3.Bucket(bucketName).PutWriter(newPath, copyInstruction, s3Conf)
-	// So, implement our own aws copy API.
-	req, err := http.NewRequest("PUT", "", &bytes.Buffer{})
-	if err != nil {
-		panic(integrity.WarehouseIOError.Wrap(err))
-	}
-	req.URL.Scheme = s3Conf.Scheme
-	req.URL.Host = fmt.Sprintf("%s.%s", bucketName, s3.Domain)
-	req.URL.Path = path.Clean(fmt.Sprintf("/%s", newPath))
-	// Communicate the copy source object with a header.
-	// Be advised that if this object doesn't exist, amazon reports that as a 404... yes, a 404 that has nothing to do with the query URI.
-	req.Header.Add("x-amz-copy-source", path.Join("/", bucketName, oldPath))
-	bucket.Sign(req)
-	resp, err := s3Conf.Client.Do(req)
-	if err != nil {
-		panic(integrity.WarehouseIOError.Wrap(err))
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		panic(integrity.WarehouseIOError.Wrap(newRespError(resp)))
-	}
-	// delete previous location
-	if err := bucket.Delete(oldPath); err != nil {
-		panic(integrity.WarehouseIOError.Wrap(err))
-	}
-}
-
-func newRespError(r *http.Response) *s3gof3r.RespError {
-	e := new(s3gof3r.RespError)
-	e.StatusCode = r.StatusCode
-	b, _ := ioutil.ReadAll(r.Body)
-	xml.NewDecoder(bytes.NewReader(b)).Decode(e) // parse error from response
-	r.Body.Close()
-	return e
 }
