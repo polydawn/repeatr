@@ -11,7 +11,7 @@ import (
 )
 
 /*
-	Refer to, interact with, and manage a warsehouse.
+	Refer to, interact with, and manage a warehouse.
 
 	Since this is git we're talking about, this is basically references
 	to another git repo.
