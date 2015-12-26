@@ -1,14 +1,14 @@
 package derive
 
 import (
+	"polydawn.net/repeatr/catalog"
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/io"
 )
 
 type Potential struct {
 	Plans          map[PlanID]Plan
 	LastResolution map[PlanID]Stage3
-	Cells          map[CellID]Cell
+	Catalogs       map[CatalogID]catalog.Catalog
 }
 
 type PlanID string // good luck making this not hopelessly imperial.  probably be local-only.
@@ -25,27 +25,10 @@ type Stage2 def.Formula
 
 type Stage3 def.Formula
 
-type CellID string
+type CatalogID string
 
-type Cell interface {
-	Name() CellID // here is the true imperial strike
-
-	Latest() integrity.CommitID
-
-	// so, the fun thing about this interface is: you probably
-	//  want to have a way to let it promote itself as changed.
-	//  Think e.g. 'watch' on the filesystem.
-	//  Just generally, we don't want to poll on O(n) of these;
-	//   most interactions i can think of involve the user triggering
-	//    a specific update fetch (or a webhook, or whatever).
-	// Maybe put that in a separate interface.
-	//  Lol.  Updater updater?  Yeek.
-	//   Maybe it's a good thing that FRP chat made me use a regular
-	//    noun here instead of a gerund: this is a state.
-}
-
-// Imagine this being triggered by `change := <-chan Cell`
-func (pot *Potential) Resolve(change Cell) { // ChartMap?
+// Imagine this being triggered by `change := <-chan Catalog`
+func (pot *Potential) Resolve(change catalog.Catalog) {
 	// 'Mark' phase.
 	// todo: split this; if we get many changes, this should batch.
 	// note: we don't care if a change is a revert.  that'll just settle out later in the 'reruns' filter.
@@ -64,8 +47,8 @@ func (pot *Potential) Resolve(change Cell) { // ChartMap?
 		plan := pot.Plans[id]
 		formula := Stage2(plan) // FIXME need clone func and sane mem owner defn
 		for iname, input := range formula.Inputs {
-			cellID := CellID(iname)                         // this may not always be true / this is the same type haze around pre-pin inputs showing again
-			input.Hash = string(pot.Cells[cellID].Latest()) // this string cast is because def is currently Wrong
+			cellID := CatalogID(iname)                              // this may not always be true / this is the same type haze around pre-pin inputs showing again
+			input.Hash = string(pot.Catalogs[cellID].Latest().Hash) // this string cast is because def is currently Wrong
 		}
 		formulas = append(formulas, formula)
 	}
