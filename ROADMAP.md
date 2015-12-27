@@ -25,8 +25,9 @@ And they should get exactly the same piece of software as you did.
 - [x] provide a consistent interface to many different Content-Addressable Storage systems:
   - [x] git (any git transport)
   - [x] tarballs in local files
-  - [x] tarballs in s3
   - [x] tarballs over http
+  - [x] tarballs in amazon s3
+  - [x] tarballs in google cloud storage
   - [ ] ipfs
   - [ ] venti
   - [ ] ...more!
