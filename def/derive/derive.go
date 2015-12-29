@@ -1,8 +1,8 @@
 package derive
 
 import (
-	"polydawn.net/repeatr/catalog"
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/model/catalog"
 )
 
 type Potential struct {

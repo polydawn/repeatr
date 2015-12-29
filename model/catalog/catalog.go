@@ -1,5 +1,7 @@
 package catalog
 
+// catalog should probably be flipped to a concrete type.
+
 type Catalog interface {
 	Name() string // subject to iteration.  likely to get sigs involved.
 
