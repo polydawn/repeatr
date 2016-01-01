@@ -1,26 +1,14 @@
 package catalog
 
+// catalogID will probably grow to this whole fancy struct with sigs and stuff
+//  and mime half of an SFS filesystem.  #notwithinfirstdraft
+
+// placeholder...?  we'll later need structure for verifying WoT-y ID, but this ain't it; this needs to be a simple fast map key.
+type ID string
+
 // catalog should probably be flipped to a concrete type.
 
-type Catalog interface {
-	Name() string // subject to iteration.  likely to get sigs involved.
-
-	Latest() SKU
-
-	/*
-		Ordered list of all valid versions; latest last.
-
-		Note: this may not be exactly the same thing as "all history ever".
-		When a new edition of a catalog is published, it's certainly at
-		liberty to *remove* old versions: this is like saying "no, this
-		one is really out of stock: there's security issues, please stop
-		ever considering using it".  (It's also valid to keep track of
-		old editions of catalogs so it's possible to Raise Questions
-		if something changes or disappeared unexpectedly; a catalog
-		edition should be an immutable thing, and changes roughly explainable
-		by a reasonable person.)
-	*/
-	All() []SKU
+type Book struct {
 
 	// Not yet accounted for in this design:
 	//  - Aliasing (same data kept in different kinds of warehouse, resulting in different ids).
@@ -65,6 +53,31 @@ type Catalog interface {
 	//      means it realistically won't usually happen and/or will result
 	//      in ad-hoc solutions (which will never fully penetrate, etc).  I
 	//      hesitate because I'm not convinced it passes YAGNI thresholds yet.
+}
+
+func (b *Book) ID() ID {
+	return "" // TODO NYI
+}
+
+func (b *Book) Latest() SKU {
+	return SKU{} // TODO NYI
+}
+
+/*
+	Ordered list of all valid versions; latest last.
+
+	Note: this may not be exactly the same thing as "all history ever".
+	When a new edition of a catalog is published, it's certainly at
+	liberty to *remove* old versions: this is like saying "no, this
+	one is really out of stock: there's security issues, please stop
+	ever considering using it".  (It's also valid to keep track of
+	old editions of catalogs so it's possible to Raise Questions
+	if something changes or disappeared unexpectedly; a catalog
+	edition should be an immutable thing, and changes roughly explainable
+	by a reasonable person.)
+*/
+func (b *Book) All() []SKU {
+	return nil // TODO NYI
 }
 
 // id a la https://en.wikipedia.org/wiki/Stock-keeping_unit

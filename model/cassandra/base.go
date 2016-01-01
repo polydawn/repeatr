@@ -1,5 +1,9 @@
 package cassandra
 
+import (
+	"polydawn.net/repeatr/model/catalog"
+)
+
 /*
 	Sees everything; powerless to change it.
 
@@ -9,4 +13,21 @@ package cassandra
 	alter the knowledgebase.
 */
 type Base struct {
+}
+
+/*
+	List all current catalog IDs.
+
+	In order to have an ongoing concurrency-safe interaction with the set
+	of known catalogs, subscribe to updates first,	then ask for this list,
+	then maintain merging those sets.
+*/
+func (base *Base) ListCatalogs() []catalog.ID {
+	// This might be advised to return an iterator later.
+
+	return nil // TODO NYI
+}
+
+func (base Base) Catalog(id catalog.ID) *catalog.Book {
+	return nil // TODO NYI
 }

@@ -9,8 +9,8 @@ import (
 // ObserveSet: no such interface.  harder to update asynchronously; shut up and take all and filter it yourself.
 
 /*
-	Subscribe to updates to catalogs.  A new catalog will be sent to
-	the channel every time there's new edition becomes available.
+	Subscribe to updates to catalogs.  Every time there's a new edition of
+	a catalog available, that catalog ID will be sent to the channel.
 
 	This subscription only makes it about as far as your local post
 	office -- you'll get notifications when a new edition makes it
@@ -20,7 +20,15 @@ import (
 	might well scan continuously, but a git catalog probably doesn't
 	poll the remote ever 100ns (but it might get webhooks that
 	trigger a looksee, too!).
+
+	Catalog ID (as opposed to the full book) are passed because you typically
+	always want to interact with the latest version, and catalogs themselves
+	do not contain links to their history or any ordering hints; so, you
+	always need to respond to nudges by fetching then latest edition.
+	(Specifically, this is meant to be a safeguard if you're listening to
+	more than one buffered source of updates, and you need to be sure to
+	behave correctly even if you heard about things in the wrong order.)
 */
-func (base *Base) ObserveCatalogs(<-chan *catalog.Catalog) {
+func (base *Base) ObserveCatalogs(<-chan catalog.ID) {
 	// NYI
 }
