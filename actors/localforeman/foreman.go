@@ -1,6 +1,11 @@
 package localforeman
 
 import (
+	"os"
+
+	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/guid"
+	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/model/cassandra"
 	"polydawn.net/repeatr/model/catalog"
 	"polydawn.net/repeatr/model/formula"
@@ -8,6 +13,7 @@ import (
 
 type Foreman struct {
 	cassy *cassandra.Base
+	executor executor.Executor
 }
 
 func (man *Foreman) work() {
@@ -68,8 +74,10 @@ func (man *Foreman) work() {
 		//  both *easier* and *more correct* than something that's scoped to PlanID.
 
 		// Run.
-		// TODO this is the easy part: shell out to the rest of repeatr.
-		// TODO this should probably be able to emit acceptance-test formulas.
+		for _, formula := range formulas {
+			job := man.executor.Start(def.Formula(*formula), def.JobID(guid.New()), nil, os.Stderr)
+			job.Wait()
+		}
 
 		// Commit.
 		// TODO just push the stage3 formulas back to storage.
