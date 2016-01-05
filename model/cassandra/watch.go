@@ -29,6 +29,8 @@ import (
 	more than one buffered source of updates, and you need to be sure to
 	behave correctly even if you heard about things in the wrong order.)
 */
-func (base *Base) ObserveCatalogs(<-chan catalog.ID) {
-	// NYI
+func (kb *Base) ObserveCatalogs(ch chan<- catalog.ID) {
+	kb.mutex.Lock()
+	defer kb.mutex.Unlock()
+	kb.catalogObservers = append(kb.catalogObservers, ch)
 }

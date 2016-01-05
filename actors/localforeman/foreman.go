@@ -4,15 +4,15 @@ import (
 	"os"
 
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/executor"
+	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/model/cassandra"
 	"polydawn.net/repeatr/model/catalog"
 	"polydawn.net/repeatr/model/formula"
 )
 
 type Foreman struct {
-	cassy *cassandra.Base
+	cassy    *cassandra.Base
 	executor executor.Executor
 }
 
@@ -43,18 +43,9 @@ func (man *Foreman) work() {
 		case catID = <-catalogChan: // Voom
 		case catID = <-oldCatalogChan: // Voom
 		}
-		cat := man.cassy.Catalog(catID)
 
 		// 'Mark' phase: See what we can do with it.
-		plans := man.getPlanList()
-		markedSet := make([]*formula.Plan, 0)
-		for _, plan := range plans {
-			for iname, _ := range plan.Inputs { // INDEXABLE
-				if iname == string(cat.ID()) {
-					markedSet = append(markedSet, plan)
-				}
-			}
-		}
+		markedSet := man.cassy.SelectPlansByInputCatalog(catID)
 
 		// 'Fill' phase.
 		formulas := make([]*formula.Stage2, 0)
@@ -85,10 +76,4 @@ func (man *Foreman) work() {
 		//  a new edition of a catalog, they can do that by asking
 		//   cassy to observe new run records like this one as they come in.
 	}
-}
-
-func (man *Foreman) getPlanList() []*formula.Plan {
-	return nil // TODO NYI cassy should have this
-	// can probably pretend this is immutable for first pass, but later
-	//  will need the same updating strategy as catalogs, plus removal.
 }

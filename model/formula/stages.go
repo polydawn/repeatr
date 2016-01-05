@@ -13,3 +13,9 @@ type Plan def.Formula
 type Stage2 def.Formula
 
 type Stage3 def.Formula
+
+type PlanID string
+
+type Stage2ID string
+
+type Stage3ID string

@@ -9,6 +9,7 @@ type ID string
 // catalog should probably be flipped to a concrete type.
 
 type Book struct {
+	Tracks map[string][]SKU
 
 	// Not yet accounted for in this design:
 	//  - Aliasing (same data kept in different kinds of warehouse, resulting in different ids).
@@ -60,7 +61,12 @@ func (b *Book) ID() ID {
 }
 
 func (b *Book) Latest() SKU {
-	return SKU{} // TODO NYI
+	defaultTrack := b.Tracks[""]
+	n := len(defaultTrack)
+	if n < 1 {
+		return SKU{}
+	}
+	return defaultTrack[n-1]
 }
 
 /*
@@ -77,7 +83,7 @@ func (b *Book) Latest() SKU {
 	by a reasonable person.)
 */
 func (b *Book) All() []SKU {
-	return nil // TODO NYI
+	return b.Tracks[""]
 }
 
 // id a la https://en.wikipedia.org/wiki/Stock-keeping_unit
