@@ -15,21 +15,21 @@ import (
 	alter the knowledgebase.
 */
 type Base struct {
-	mutex    sync.Mutex
-	plans    map[formula.PlanID]*formula.Plan
-	catalogs map[catalog.ID]*catalog.Book
-	formulas map[formula.Stage2ID]*formula.Stage2
-	results  map[formula.Stage3ID]*formula.Stage3
+	mutex       sync.Mutex
+	commissions map[formula.CommissionID]*formula.Commission
+	catalogs    map[catalog.ID]*catalog.Book
+	formulas    map[formula.Stage2ID]*formula.Stage2
+	results     map[formula.Stage3ID]*formula.Stage3
 
 	catalogObservers []chan<- catalog.ID
 }
 
 func New() *Base {
 	return &Base{
-		plans:    make(map[formula.PlanID]*formula.Plan),
-		catalogs: make(map[catalog.ID]*catalog.Book),
-		formulas: make(map[formula.Stage2ID]*formula.Stage2),
-		results:  make(map[formula.Stage3ID]*formula.Stage3),
+		commissions: make(map[formula.CommissionID]*formula.Commission),
+		catalogs:    make(map[catalog.ID]*catalog.Book),
+		formulas:    make(map[formula.Stage2ID]*formula.Stage2),
+		results:     make(map[formula.Stage3ID]*formula.Stage3),
 	}
 }
 
@@ -68,11 +68,11 @@ func (kb *Base) Catalog(id catalog.ID) *catalog.Book {
 	return kb.catalogs[id]
 }
 
-func (kb *Base) SelectPlansByInputCatalog(catIDs ...catalog.ID) []*formula.Plan {
+func (kb *Base) SelectCommissionsByInputCatalog(catIDs ...catalog.ID) []*formula.Commission {
 	kb.mutex.Lock()
 	defer kb.mutex.Unlock()
-	markedSet := make([]*formula.Plan, 0)
-	for _, plan := range kb.plans {
+	markedSet := make([]*formula.Commission, 0)
+	for _, plan := range kb.commissions {
 		for iname, _ := range plan.Inputs { // INDEXABLE
 			for _, catID := range catIDs {
 				if iname == string(catID) {

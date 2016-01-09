@@ -45,7 +45,7 @@ func (man *Foreman) work() {
 		}
 
 		// 'Mark' phase: See what we can do with it.
-		markedSet := man.cassy.SelectPlansByInputCatalog(catID)
+		markedSet := man.cassy.SelectCommissionsByInputCatalog(catID)
 
 		// 'Fill' phase.
 		formulas := make([]*formula.Stage2, 0)
