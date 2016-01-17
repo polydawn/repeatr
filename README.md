@@ -149,8 +149,17 @@ the test suite for these areas will be skipped without root, so to run the *whol
 sudo ./goad test
 ```
 
+Contributing
+------------
 
-### Errata
+- Repeatr is Apache v2 licensed.  We're very gung ho on freedom, and always love help.
+- Need help navigating the code?  Check out the [code layout overview](doc/dev/code-layout.md).
+- Ready to propose a code change?  Kindly give the [contribution guidelines](CONTRIBUTING.md) a gander.
+- Just have a spelling correction or grammar nit?  Every little bit helps, please send 'em in!
+
+
+Errata
+------
 
 Repeatr tries to use the most efficient systems available on your host by default.
 Specifically, for making copy-on-write filesystems for isolating jobs, if you have AUFS available,
