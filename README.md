@@ -61,7 +61,7 @@ Where's the Magic?
 For more about what makes Repeatr special, check out these docs:
 
 - [doc/formulas](doc/formulas.md) : A Formula is how Repeatr describes a precise unit of work.
-
+- [doc/containers](doc/containers.md) : Repeatr is container-agonostic, and supports several choices for how to get the isolation you need.
 
 Try it out
 ----------
