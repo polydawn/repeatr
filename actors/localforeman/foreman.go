@@ -69,13 +69,15 @@ func (man *Foreman) pump() {
 
 	// 'Fill' phase.
 	formulas := make([]*formula.Stage2, 0)
-	for _, plan := range markedSet {
-		formula := (*formula.Stage2)(plan) // FIXME need clone func and sane mem owner defn
+	reasons := make(map[formula.CommissionID]*formula.Stage2)
+	for _, commish := range markedSet {
+		formula := (*formula.Stage2)(&commish.Formula) // FIXME need clone func and sane mem owner defn
 		for iname, input := range formula.Inputs {
 			cellID := catalog.ID(iname)                                  // this may not always be true / this is the same type haze around pre-pin inputs showing again
 			input.Hash = string(man.cassy.Catalog(cellID).Latest().Hash) // this string cast is because def is currently Wrong
 		}
 		formulas = append(formulas, formula)
+		reasons[commish.ID] = formula
 	}
 
 	// 'Seenit' filter.
@@ -86,6 +88,9 @@ func (man *Foreman) pump() {
 	// TODO
 
 	// Planning phase: update our internal concept of what's up next.
+	for reason, formula := range reasons {
+		man.currentPlans.push(formula, reason)
+	}
 }
 
 /*
@@ -103,6 +108,26 @@ type currentPlans struct {
 
 	// map from cmid to queue index (so we can delete/replace things if they're now out of date).
 	commissionIndex map[formula.CommissionID]int
+}
+
+func (p *currentPlans) push(f *formula.Stage2, reason formula.CommissionID) {
+	if i, ok := p.commissionIndex[reason]; ok {
+		p.queue[i] = f
+	} else {
+		i = len(p.queue)
+		p.queue = append(p.queue, f)
+		p.commissionIndex[reason] = i
+	}
+}
+
+func (p *currentPlans) poll() *formula.Stage2 {
+	l := len(p.queue)
+	if l == 0 {
+		return nil
+	}
+	v := p.queue[0]
+	p.queue = p.queue[1:]
+	return v
 }
 
 func (man *Foreman) evoke() {

@@ -1,9 +1,10 @@
 package cassandra
 
 import (
+	"sync"
+
 	"polydawn.net/repeatr/model/catalog"
 	"polydawn.net/repeatr/model/formula"
-	"sync"
 )
 
 /*
@@ -53,12 +54,12 @@ func (kb *Base) ListCatalogs() []catalog.ID {
 
 func (kb *Base) PublishCatalog(book *catalog.Book) {
 	kb.mutex.Lock()
-	kb.catalogs[book.ID()] = book
+	kb.catalogs[book.ID] = book
 	var observers []chan<- catalog.ID
 	copy(kb.catalogObservers, observers)
 	kb.mutex.Unlock()
 	for _, obvs := range observers {
-		obvs <- book.ID()
+		obvs <- book.ID
 	}
 }
 

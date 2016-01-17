@@ -9,6 +9,8 @@ type ID string
 // catalog should probably be flipped to a concrete type.
 
 type Book struct {
+	ID ID
+
 	Tracks map[string][]SKU
 
 	// Not yet accounted for in this design:
@@ -54,10 +56,6 @@ type Book struct {
 	//      means it realistically won't usually happen and/or will result
 	//      in ad-hoc solutions (which will never fully penetrate, etc).  I
 	//      hesitate because I'm not convinced it passes YAGNI thresholds yet.
-}
-
-func (b *Book) ID() ID {
-	return "" // TODO NYI
 }
 
 func (b *Book) Latest() SKU {
