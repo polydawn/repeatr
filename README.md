@@ -81,8 +81,8 @@ chmod +x repeatr demo.sh
 sudo ./demo.sh
 ```
 
-Note that several sections of repeatr require elevated priviledges to run (sandboxing and mounting);
-as a result, running the demo needs sudo priviledges.
+Note that several sections of repeatr require elevated privileges to run (sandboxing and mounting);
+as a result, running the demo needs sudo privileges.
 
 After this, you also have the repeatr binary available, so you can play with it yourself!
 When in doubt, try `repeatr help` or `repeatr [subcommand] help`.
@@ -142,7 +142,7 @@ git clone https://github.com/polydawn/repeatr.git && cd repeatr
 ./goad test
 ```
 
-Note that several sections of repeatr require elevated priviledges to run (sandboxing and mounting);
+Note that several sections of repeatr require elevated privileges to run (sandboxing and mounting);
 the test suite for these areas will be skipped without root, so to run the *whole* suite, sudo is required:
 
 ```
