@@ -69,6 +69,23 @@ else
 			exit 4
 		}
 		;;
+	bench)
+		profPath="$GOPATH/tmp/prof/"
+		mkdir -p "$profPath"
+		go generate "$SUBSECTION"
+		set +e ; shift ; shift ; set -e
+		go test -i "$SUBSECTION" "$@" &&
+		GOCONVEY_REPORTER=silent \
+		go test \
+		-run=XXX -bench=. \
+		-o "$profPath/bench.bin" \
+		-cpuprofile="$profPath/cpu.pprof" \
+		"$SUBSECTION" "$@"  || {
+			echo -e "\n${COLOR_BG_RED}some benchmarks failed!${COLOR_OFF}"
+			exit 4
+		}
+		# go tool pprof --text .gopath/tmp/prof/bench.bin .gopath/tmp/prof/cpu.pprof
+		;;
 	test-acceptance)
 		[ -x "$GOPATH/bin/repeatr" ] || { echo "run 'goad install' first" 2>&1 ; exit 19; }
 		# demo and basic acceptance scenarios should run just about anywhere
