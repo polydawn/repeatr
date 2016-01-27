@@ -14,7 +14,7 @@ import (
 type Foreman struct {
 	// configuration
 
-	cassy    *cassandra.Base
+	cassy    cassandra.Cassandra
 	executor executor.Executor
 
 	// work state

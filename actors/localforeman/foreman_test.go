@@ -5,13 +5,13 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"polydawn.net/repeatr/model/cassandra"
+	"polydawn.net/repeatr/model/cassandra/impl/mem"
 	"polydawn.net/repeatr/model/catalog"
 )
 
 func Test(t *testing.T) {
 	Convey("Given a small knowledge base", t, func(c C) {
-		kb := cassandra.New()
+		kb := cassandra_mem.New()
 		// publish artifact "apollo" -- default track only, single release
 		kb.PublishCatalog(&catalog.Book{
 			catalog.ID("apollo"),
