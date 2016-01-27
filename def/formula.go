@@ -13,3 +13,10 @@ type Formula struct {
 	Outputs OutputGroup `json:"outputs"` // set of expected outputs.  sorted order.  conditionally included in the conjecture (configurable per output).
 	//SchedulingInfo interface{} // configures what execution framework is used and impl-specific additional parameters to that (minimum node memory, etc).  not considered part of the conjecture.
 }
+
+func (f Formula) Clone() *Formula {
+	f.Inputs = f.Inputs.Clone()
+	// punt on going deep on f.Action because we do truly always treat that as immutable
+	f.Outputs = f.Outputs.Clone()
+	return &f
+}
