@@ -33,11 +33,16 @@ func Test(t *testing.T) {
 				cassy: kb,
 			}
 			mgr.register()
-			mgr.pump()
-			mgr.pump()
+			pumpn(mgr, 2)
 
 			// There *are* no plans if there's just catalogs and no formulas!
 			So(mgr.currentPlans.queue, ShouldHaveLength, 0)
 		})
 	})
+}
+
+func pumpn(mgr *Foreman, n int) {
+	for i := 0; i < n; i++ {
+		mgr.pump()
+	}
 }
