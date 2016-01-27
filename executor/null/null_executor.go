@@ -66,13 +66,13 @@ func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal i
 			job.Result.Outputs = def.OutputGroup{}
 			for _, name := range keys {
 				hasher.Write([]byte(name))
-				job.Result.Outputs[name] = f.Outputs[name]
+				job.Result.Outputs[name] = f.Outputs[name].Clone()
 				job.Result.Outputs[name].Hash = base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 			}
 		case Nondeterministic:
 			job.Result.Outputs = def.OutputGroup{}
 			for name, spec := range f.Outputs {
-				job.Result.Outputs[name] = spec
+				job.Result.Outputs[name] = spec.Clone()
 				job.Result.Outputs[name].Hash = guid.New()
 			}
 		case SadExit:
