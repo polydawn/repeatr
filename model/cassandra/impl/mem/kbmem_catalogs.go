@@ -30,8 +30,8 @@ func (kb *Base) ObserveCatalogs(ch chan<- catalog.ID) {
 func (kb *Base) PublishCatalog(book *catalog.Book) {
 	kb.mutex.Lock()
 	kb.catalogs[book.ID] = book
-	var observers []chan<- catalog.ID
-	copy(kb.catalogObservers, observers)
+	observers := make([]chan<- catalog.ID, len(kb.catalogObservers))
+	copy(observers, kb.catalogObservers)
 	kb.mutex.Unlock()
 	for _, obvs := range observers {
 		obvs <- book.ID

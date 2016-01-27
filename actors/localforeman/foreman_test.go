@@ -19,6 +19,14 @@ var (
 			{"tar", "a1"},
 		}},
 	}
+	// okay, more releases now
+	cat_apollo2 = &catalog.Book{
+		catalog.ID("apollo"),
+		map[string][]catalog.SKU{"": []catalog.SKU{
+			{"tar", "a1"},
+			{"tar", "a2"},
+		}},
+	}
 
 	// artifact "balogna" -- default track only, two releases
 	cat_balogna2 = &catalog.Book{
@@ -76,11 +84,12 @@ func Test(t *testing.T) {
 		kb.PublishCommission(cmsh_narp)
 		kb.PublishCommission(cmsh_yis)
 
+		mgr := &Foreman{
+			cassy: kb,
+		}
+		mgr.register()
+
 		Convey("Formulas are emitted for all plans using latest editions of catalogs", func() {
-			mgr := &Foreman{
-				cassy: kb,
-			}
-			mgr.register()
 			pumpn(mgr, 2)
 
 			// this is actually testing multiple things: related comissions are triggered,
@@ -89,6 +98,24 @@ func Test(t *testing.T) {
 			So(plans.queue, ShouldHaveLength, 1)
 			So(plans.queue[0].Inputs["apollo"], ShouldNotBeNil)
 			So(plans.queue[0].Inputs["apollo"].Hash, ShouldEqual, "a1")
+		})
+
+		Convey("After crashing more catalogs in concurrently", func() {
+			kb.PublishCatalog(cat_apollo2)
+			So(kb.ListCatalogs(), ShouldHaveLength, 2)
+
+			Convey("Formulas are emitted for all plans using latest editions of catalogs", func() {
+				pumpn(mgr, 3)
+
+				// We should still only have one formula...
+				// The semantics of `select` mean there may or may not have been two *generated*,
+				// but since they share the same commission, one should be dropped.
+				// There's also no danger of the "newer" one being dropped, since catalog notifications are by ID, not content.
+				plans := mgr.currentPlans
+				So(plans.queue, ShouldHaveLength, 1)
+				So(plans.queue[0].Inputs["apollo"], ShouldNotBeNil)
+				So(plans.queue[0].Inputs["apollo"].Hash, ShouldEqual, "a2")
+			})
 		})
 	})
 }

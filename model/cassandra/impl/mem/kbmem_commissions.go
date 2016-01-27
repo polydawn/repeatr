@@ -30,8 +30,8 @@ func (kb *Base) ObserveCommissions(ch chan<- formula.CommissionID) {
 func (kb *Base) PublishCommission(cmsh *formula.Commission) {
 	kb.mutex.Lock()
 	kb.commissions[cmsh.ID] = cmsh
-	var observers []chan<- formula.CommissionID
-	copy(kb.commissionObservers, observers)
+	observers := make([]chan<- formula.CommissionID, len(kb.commissionObservers))
+	copy(observers, kb.commissionObservers)
 	kb.mutex.Unlock()
 	for _, obvs := range observers {
 		obvs <- cmsh.ID
