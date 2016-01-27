@@ -21,7 +21,7 @@ type Foreman struct {
 
 	chNewCatalog <-chan catalog.ID
 	chOldCatalog <-chan catalog.ID
-	currentPlans currentPlans
+	currentPlans plans
 }
 
 func (man *Foreman) work() {
@@ -106,7 +106,7 @@ func (man *Foreman) pump() {
 	and it may also decide to cancel some plans in response to new info.
 	(Also, it's a checkpoint for use in testing.)
 */
-type currentPlans struct {
+type plans struct {
 	// flat list of what formulas we want to run next, in order.
 	queue []*formula.Stage2
 
@@ -114,7 +114,7 @@ type currentPlans struct {
 	commissionIndex map[formula.CommissionID]int
 }
 
-func (p *currentPlans) push(f *formula.Stage2, reason formula.CommissionID) {
+func (p *plans) push(f *formula.Stage2, reason formula.CommissionID) {
 	if i, ok := p.commissionIndex[reason]; ok {
 		p.queue[i] = f
 	} else {
@@ -124,7 +124,7 @@ func (p *currentPlans) push(f *formula.Stage2, reason formula.CommissionID) {
 	}
 }
 
-func (p *currentPlans) poll() *formula.Stage2 {
+func (p *plans) poll() *formula.Stage2 {
 	l := len(p.queue)
 	if l == 0 {
 		return nil
