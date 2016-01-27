@@ -21,7 +21,7 @@ func Test(t *testing.T) {
 		})
 		// publish artifact "balogna" -- default track only, two releases
 		kb.PublishCatalog(&catalog.Book{
-			catalog.ID("apollo"),
+			catalog.ID("balogna"),
 			map[string][]catalog.SKU{"": []catalog.SKU{
 				{"tar", "b1"},
 				{"tar", "b2"},
@@ -29,9 +29,15 @@ func Test(t *testing.T) {
 		})
 
 		Convey("Formulas are emitted for all plans using latest editions of catalogs", func() {
-			// TODO fragile; desire a way to check if we can stop pumping :/ don't want to block in event of bugs
+			mgr := &Foreman{
+				cassy: kb,
+			}
+			mgr.register()
+			mgr.pump()
+			mgr.pump()
 
-			// should also be able to test an *empty* knowledge base produces no action but doesn't crash (!)
+			// There *are* no plans if there's just catalogs and no formulas!
+			So(mgr.currentPlans.queue, ShouldHaveLength, 0)
 		})
 	})
 }

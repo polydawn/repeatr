@@ -53,6 +53,7 @@ func (man *Foreman) register() {
 	for _, cat := range oldCats {
 		oldCatalogChan <- cat
 	}
+	man.chOldCatalog = oldCatalogChan
 }
 
 // runs in a loop, accepting events, generating new formulas, and adding them to currentPlans.
