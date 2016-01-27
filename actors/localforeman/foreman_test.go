@@ -11,33 +11,59 @@ import (
 	"polydawn.net/repeatr/model/formula"
 )
 
-func Test(t *testing.T) {
-	Convey("Given a small knowledge base", t, func(c C) {
-		kb := cassandra_mem.New()
-		// publish artifact "apollo" -- default track only, single release
-		kb.PublishCatalog(&catalog.Book{
-			catalog.ID("apollo"),
-			map[string][]catalog.SKU{"": []catalog.SKU{
-				{"tar", "a1"},
-			}},
-		})
-		// publish artifact "balogna" -- default track only, two releases
-		kb.PublishCatalog(&catalog.Book{
-			catalog.ID("balogna"),
-			map[string][]catalog.SKU{"": []catalog.SKU{
-				{"tar", "b1"},
-				{"tar", "b2"},
-			}},
-		})
-		// publish a commission -- something to interact with
-		kb.PublishCommission(&formula.Commission{
-			ID: formula.CommissionID("yis"),
-			Formula: def.Formula{ // this inclusion is clunky, wtb refactor
-				Inputs: def.InputGroup{
-					"apollo": &def.Input{},
-				},
+var (
+	// artifact "apollo" -- default track only, single release
+	cat_apollo1 = &catalog.Book{
+		catalog.ID("apollo"),
+		map[string][]catalog.SKU{"": []catalog.SKU{
+			{"tar", "a1"},
+		}},
+	}
+
+	// artifact "balogna" -- default track only, two releases
+	cat_balogna2 = &catalog.Book{
+		catalog.ID("balogna"),
+		map[string][]catalog.SKU{"": []catalog.SKU{
+			{"tar", "b1"},
+			{"tar", "b2"},
+		}},
+	}
+)
+
+var (
+	// commission consuming apollo
+	cmsh_yis = &formula.Commission{
+		ID: formula.CommissionID("yis"),
+		Formula: def.Formula{ // this inclusion is clunky, wtb refactor
+			Inputs: def.InputGroup{
+				"apollo": &def.Input{},
 			},
+		},
+	}
+)
+
+func Test(t *testing.T) {
+	Convey("Given a knowledge base with just some catalogs", t, func(c C) {
+		kb := cassandra_mem.New()
+		kb.PublishCatalog(cat_apollo1)
+		kb.PublishCatalog(cat_balogna2)
+
+		Convey("Foreman plans no formulas because there are no commissions", func() {
+			mgr := &Foreman{
+				cassy: kb,
+			}
+			mgr.register()
+			pumpn(mgr, 2)
+
+			So(mgr.currentPlans.queue, ShouldHaveLength, 0)
 		})
+	})
+
+	Convey("Given a knowledge base with some catalogs and a commission", t, func(c C) {
+		kb := cassandra_mem.New()
+		kb.PublishCatalog(cat_apollo1)
+		kb.PublishCatalog(cat_balogna2)
+		kb.PublishCommission(cmsh_yis)
 
 		Convey("Formulas are emitted for all plans using latest editions of catalogs", func() {
 			mgr := &Foreman{
