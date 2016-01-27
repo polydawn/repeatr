@@ -87,9 +87,11 @@ func (man *Foreman) pump() {
 	// 'Seenit' filter.
 	// TODO
 	// Compute Stage2 identifiers and index by that.  If it's been seen before, forget it.
+	// Turns out not to be relevant often (replace-by-commission does the same thing, unless two diff commissions formed the same result).
 
 	// Commit phase: push the stage2 formula back to the knowledge base.
 	// TODO
+	// ... Not actually sure if this is useful without the stage3 to go with it.
 
 	// Planning phase: update our internal concept of what's up next.
 	for reason, formula := range reasons {
