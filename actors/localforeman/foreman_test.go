@@ -31,6 +31,16 @@ var (
 )
 
 var (
+	// commission consuming nothing relevant
+	cmsh_narp = &formula.Commission{
+		ID: formula.CommissionID("narp"),
+		Formula: def.Formula{ // this inclusion is clunky, wtb refactor
+			Inputs: def.InputGroup{
+				"whatever": &def.Input{},
+			},
+		},
+	}
+
 	// commission consuming apollo
 	cmsh_yis = &formula.Commission{
 		ID: formula.CommissionID("yis"),
@@ -59,10 +69,11 @@ func Test(t *testing.T) {
 		})
 	})
 
-	Convey("Given a knowledge base with some catalogs and a commission", t, func(c C) {
+	Convey("Given a knowledge base with some catalogs and somes commissions", t, func(c C) {
 		kb := cassandra_mem.New()
 		kb.PublishCatalog(cat_apollo1)
 		kb.PublishCatalog(cat_balogna2)
+		kb.PublishCommission(cmsh_narp)
 		kb.PublishCommission(cmsh_yis)
 
 		Convey("Formulas are emitted for all plans using latest editions of catalogs", func() {
@@ -72,6 +83,8 @@ func Test(t *testing.T) {
 			mgr.register()
 			pumpn(mgr, 2)
 
+			// this is actually testing multiple things: related comissions are triggered,
+			//  and also unrelated *aren't*.
 			So(mgr.currentPlans.queue, ShouldHaveLength, 1)
 		})
 	})
