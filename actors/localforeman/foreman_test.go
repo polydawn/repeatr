@@ -85,7 +85,10 @@ func Test(t *testing.T) {
 
 			// this is actually testing multiple things: related comissions are triggered,
 			//  and also unrelated *aren't*.
-			So(mgr.currentPlans.queue, ShouldHaveLength, 1)
+			plans := mgr.currentPlans
+			So(plans.queue, ShouldHaveLength, 1)
+			So(plans.queue[0].Inputs["apollo"], ShouldNotBeNil)
+			So(plans.queue[0].Inputs["apollo"].Hash, ShouldEqual, "a1")
 		})
 	})
 }
