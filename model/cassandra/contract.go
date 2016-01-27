@@ -55,5 +55,9 @@ type Cassandra interface {
 
 	//////////////////////////////// Commissions ////////////////////////////////
 
+	ObserveCommissions(ch chan<- formula.CommissionID)
+
+	PublishCommission(cmsh *formula.Commission)
+
 	SelectCommissionsByInputCatalog(catIDs ...catalog.ID) []*formula.Commission
 }

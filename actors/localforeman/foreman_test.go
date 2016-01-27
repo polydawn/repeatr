@@ -5,8 +5,10 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/model/cassandra/impl/mem"
 	"polydawn.net/repeatr/model/catalog"
+	"polydawn.net/repeatr/model/formula"
 )
 
 func Test(t *testing.T) {
@@ -27,6 +29,15 @@ func Test(t *testing.T) {
 				{"tar", "b2"},
 			}},
 		})
+		// publish a commission -- something to interact with
+		kb.PublishCommission(&formula.Commission{
+			ID: formula.CommissionID("yis"),
+			Formula: def.Formula{ // this inclusion is clunky, wtb refactor
+				Inputs: def.InputGroup{
+					"apollo": &def.Input{},
+				},
+			},
+		})
 
 		Convey("Formulas are emitted for all plans using latest editions of catalogs", func() {
 			mgr := &Foreman{
@@ -35,8 +46,7 @@ func Test(t *testing.T) {
 			mgr.register()
 			pumpn(mgr, 2)
 
-			// There *are* no plans if there's just catalogs and no formulas!
-			So(mgr.currentPlans.queue, ShouldHaveLength, 0)
+			So(mgr.currentPlans.queue, ShouldHaveLength, 1)
 		})
 	})
 }

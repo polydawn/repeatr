@@ -20,3 +20,20 @@ func (kb *Base) SelectCommissionsByInputCatalog(catIDs ...catalog.ID) []*formula
 	}
 	return markedSet
 }
+
+func (kb *Base) ObserveCommissions(ch chan<- formula.CommissionID) {
+	kb.mutex.Lock()
+	defer kb.mutex.Unlock()
+	kb.commissionObservers = append(kb.commissionObservers, ch)
+}
+
+func (kb *Base) PublishCommission(cmsh *formula.Commission) {
+	kb.mutex.Lock()
+	kb.commissions[cmsh.ID] = cmsh
+	var observers []chan<- formula.CommissionID
+	copy(kb.commissionObservers, observers)
+	kb.mutex.Unlock()
+	for _, obvs := range observers {
+		obvs <- cmsh.ID
+	}
+}

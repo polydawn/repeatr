@@ -54,6 +54,9 @@ func (man *Foreman) register() {
 		oldCatalogChan <- cat
 	}
 	man.chOldCatalog = oldCatalogChan
+
+	// other misc init (can't be arsed to seperate since it's also an "exactly once, at start" thing)
+	man.currentPlans.commissionIndex = make(map[formula.CommissionID]int)
 }
 
 // runs in a loop, accepting events, generating new formulas, and adding them to currentPlans.

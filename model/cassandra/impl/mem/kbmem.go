@@ -15,7 +15,8 @@ type Base struct {
 	formulas    map[formula.Stage2ID]*formula.Stage2
 	results     map[formula.Stage3ID]*formula.Stage3
 
-	catalogObservers []chan<- catalog.ID
+	commissionObservers []chan<- formula.CommissionID
+	catalogObservers    []chan<- catalog.ID
 }
 
 func New() cassandra.Cassandra {
