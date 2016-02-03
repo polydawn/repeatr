@@ -7,6 +7,7 @@ import (
 type ExitCode byte
 
 const (
+	EXIT_SUCCESS      = ExitCode(0)
 	EXIT_BADARGS      = ExitCode(1)
 	EXIT_UNKNOWNPANIC = ExitCode(2)  // same code as golang uses when the process dies naturally on an unhandled panic.
 	EXIT_USER         = ExitCode(3)  // grab bag for general user input errors (try to make a more specific code if possible/useful)

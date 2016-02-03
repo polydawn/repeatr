@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/codegangsta/cli"
@@ -50,7 +51,10 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			result := RunFormula(scheduler, executor, formula, ctx.App.Writer)
 			// Exit if the job failed collosally (if it just had a nonzero exit code, that's acceptable).
 			if result.Error != nil {
-				panic(Error.NewWith("job execution errored", SetExitCode(EXIT_USER)))
+				panic(Exit.NewWith(
+					fmt.Sprintf("job execution errored: %s", result.Error.Message()),
+					SetExitCode(EXIT_USER), // TODO review exit code
+				))
 			}
 
 			// Output.
