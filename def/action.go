@@ -37,8 +37,7 @@ type MountGroup []Mount
 type Mount struct {
 	TargetPath string
 	SourcePath string
-	Writable   bool
-	// CONSIDER: not sure what should be default for writable.  ro should usually be a scan; but not required; you might have sockets, be using this as ipc, whatever; all of which are "crazy", relatively speaking, but that's what this is called an escape valve for.
+	Writable   bool // defaults to false.  if you forget a conf word -> fail safe.
 }
 
 type MountGroupByTargetPath MountGroup

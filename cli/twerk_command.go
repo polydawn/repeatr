@@ -27,6 +27,14 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 				}},
 				Action: def.Action{
 					Entrypoint: []string{"bash"},
+					Escapes: def.Escapes{
+						Mounts: []def.Mount{{
+							SourcePath: ".",
+							TargetPath: "/whee",
+							Writable:   true,
+						}},
+					},
+					Cwd: "/whee",
 				},
 			}
 
