@@ -37,10 +37,18 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 			go io.Copy(stderr, job.Outputs().Reader(2))
 			result := job.Wait()
 			if result.Error != nil {
-				fmt.Fprintf(ctx.App.Writer, "error: %s\n", result.Error)
-			} else {
-				fmt.Fprintf(ctx.App.Writer, "done; exit code %d\n", result.ExitCode)
+				panic(Exit.NewWith(
+					fmt.Sprintf("job execution errored: %s", result.Error.Message()),
+					SetExitCode(EXIT_USER), // TODO review exit code
+				))
 			}
+			if result.ExitCode != 0 {
+				panic(Exit.NewWith(
+					fmt.Sprintf("done; action finished with exit status %d", result.ExitCode),
+					SetExitCode(EXIT_JOB),
+				))
+			}
+			panic(Exit.NewWith("done; action reported successful exit status", SetExitCode(EXIT_SUCCESS)))
 		},
 	}
 }
