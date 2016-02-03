@@ -121,8 +121,7 @@ var HashActualKey errors.DataKey = errors.GenSym()
 	the local filesystem (e.g. permission denied to read during a `Scan`
 	or permission denied or out-of-space during a write during `Materialize`).
 */
-// REVIEW : I keep feeling like we need a more expressive name for this.  It's 'Arena' elsewhere, but that doesn't really feel jive here.
-var MoorError *errors.ErrorClass = Error.NewClass("MoorError")
+var AssemblyError *errors.ErrorClass = Error.NewClass("AssemblyError")
 
 /*
 	Wraps any other unknown errors just to emphasize the system that raised them;
