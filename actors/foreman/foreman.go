@@ -59,7 +59,16 @@ func (man *Foreman) register() {
 	man.currentPlans.commissionIndex = make(map[formula.CommissionID]int)
 }
 
-// runs in a loop, accepting events, generating new formulas, and adding them to currentPlans.
+/*
+	`Pump` accepts events, generates new formulas, and adds plans to run
+	them to currentPlans.  Pumping should be run in a loop.  Pumping will
+	block indefinitely if there are no new events from the knowledgebase.
+
+	Formulas produced by pumping are not immediately committed back to the
+	knowledge base; since the knowledgebase may GC any references not
+	justified by a release catalog, it only makes sense to commit the
+	formulas after they've been executed.
+*/
 func (man *Foreman) pump() {
 	// Select a new and interesting catalog.
 	var catID catalog.ID
@@ -84,15 +93,6 @@ func (man *Foreman) pump() {
 		reasons[commish.ID] = formula
 	}
 
-	// 'Seenit' filter.
-	// TODO
-	// Compute Stage2 identifiers and index by that.  If it's been seen before, forget it.
-	// Turns out not to be relevant often (replace-by-commission does the same thing, unless two diff commissions formed the same result).
-
-	// Commit phase: push the stage2 formula back to the knowledge base.
-	// TODO
-	// ... Not actually sure if this is useful without the stage3 to go with it.
-
 	// Planning phase: update our internal concept of what's up next.
 	for reason, formula := range reasons {
 		man.currentPlans.push(&plan{formula, reason})
@@ -109,7 +109,6 @@ func (man *Foreman) evoke() {
 
 	// Commit phase: push the stage3 formulas back to storage.
 	// TODO
-	// If someone wants to react to these new run records by publishing
-	//  a new edition of a catalog, they can do that by asking
-	//   cassy to observe new run records like this one as they come in.
+	// We may also need to trigger release criteria *before* this, for
+	//  the usual gc-strong-ref purposes.
 }
