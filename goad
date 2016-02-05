@@ -1,32 +1,47 @@
 #!/bin/bash
-set -e
-
-# Set up gopath.  Autodetect go install if necessary.
-cd "$( dirname "${BASH_SOURCE[0]}" )"
-export GOPATH="$PWD"/.gopath/
-
-# Right now we need nsinit on the PATH.
-PATH=$PWD/assets:$PATH
-
-# subsection arg?
-[ -z "$2" ] && SUBSECTION="./..." || SUBSECTION="./$2"
-
+set -euo pipefail
 
 # Project details
 name="repeatr"
-pkg="polydawn.net/$name"
-cmd="$pkg/cmd/repeatr"
+pkg="polydawn.net/$name" # everything under here will be tested
+cmd="$pkg/cmd/$name"     # if you have a main.main not at the repo root, set this
 
-# For demo runs and tests, ask them to lump all their state in one, unique dir.
+
+
+### other config scripts?  invoke here.
+LDFLAGS=""
+
+### For demo runs and tests, ask them to lump all their state in one, unique dir.
 mkdir -p /tmp/repeatr-test/
 chmod 01777 /tmp/repeatr-test/ 2>/dev/null || true
 export REPEATR_BASE="/tmp/repeatr-test/$(date +%Y.%m.%d..%H.%M.%S)..$RANDOM$RANDOM"
 
-if [ -z "$1" ] ; then
+### misc jank (needs cleanup)
+# Right now we need nsinit on the PATH.  But this form of asset mngment is silly and should be removed
+PATH=$PWD/assets:$PATH
+
+
+
+# Set up gopath -- relative to this dir, so we work in isolation.
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+export GOPATH="$PWD"/.gopath/
+
+# subcommand arg?
+SUBCOMMAND=${1:-}
+
+# subsection arg?
+SUBSECTION=${2:-"..."}
+SUBSECTION="./$SUBSECTION"
+
+
+
+
+
+if [ -z "$SUBCOMMAND" ] ; then
 	(
 		go generate "$SUBSECTION"
 		go fmt "$SUBSECTION"
-		go install "$cmd" && {
+		go install -ldflags "$LDFLAGS" "$cmd" && {
 			echo -e "\E[1;32minstall successful.\E[0;m\n"
 		} || {
 			echo -e "\E[1;41minstall failed!\E[0;m"
@@ -40,10 +55,10 @@ if [ -z "$1" ] ; then
 		}
 	)
 else
-	case "$1" in
+	shift # munch $subcommand from passing on in "$@"
+	case "$SUBCOMMAND" in
 	-)
 		# passthrough for other commands
-		shift
 		go "$@"
 		;;
 	env)
@@ -57,10 +72,13 @@ else
 		# it's your responsibility to do this the first time
 		# (we don't do it at the front of every build because it will move submodules if you already have them, and that might not be what you want as you're plowing along)
 		git submodule update --init
+		# also make sure the self-symlink exists.  should be committed anyway (but then, this is also useful for project-first-steps.)
+		mkdir -p "$(dirname ".gopath/src/$pkg")"
+		ln -snf "$(echo "${pkg//[^\/]}/" | sed s#/#../#g)"../ ".gopath/src/$pkg"
 		;;
 	test)
 		go generate "$SUBSECTION"
-		set +e ; shift ; shift ; set -e
+		set +e ; shift ; set -e # munch $subsection from passing on in "$@"
 		go test -i "$SUBSECTION" "$@" &&
 		go test -v "$SUBSECTION" "$@" && {
 			echo -e "\n\E[1;32mall tests green.\E[0;m"
@@ -69,22 +87,29 @@ else
 			exit 4
 		}
 		;;
+	install)
+		go generate "./..."
+		go install -ldflags "$LDFLAGS" "$cmd"
+		;;
+	exec)
+		"$GOPATH/bin/$name" "$@"
+		;;
 	bench)
 		profPath="$GOPATH/tmp/prof/"
 		mkdir -p "$profPath"
 		go generate "$SUBSECTION"
-		set +e ; shift ; shift ; set -e
+		set +e ; shift ; set -e # munch $subsection from passing on in "$@"
 		go test -i "$SUBSECTION" "$@" &&
 		GOCONVEY_REPORTER=silent \
 		go test \
-		-run=XXX -bench=. \
-		-o "$profPath/bench.bin" \
-		-cpuprofile="$profPath/cpu.pprof" \
-		"$SUBSECTION" "$@"  || {
-			echo -e "\n${COLOR_BG_RED}some benchmarks failed!${COLOR_OFF}"
-			exit 4
+			-run=XXX -bench=. \
+			-o "$profPath/bench.bin" \
+			-cpuprofile="$profPath/cpu.pprof" \
+			"$SUBSECTION" "$@"  || {
+				echo -e "\E[1;41msome benchmarks failed!\E[0;m"
+				exit 4
 		}
-		# go tool pprof --text .gopath/tmp/prof/bench.bin .gopath/tmp/prof/cpu.pprof
+		# use e.g.: go tool pprof --text .gopath/tmp/prof/bench.bin .gopath/tmp/prof/cpu.pprof
 		;;
 	test-acceptance)
 		[ -x "$GOPATH/bin/repeatr" ] || { echo "run 'goad install' first" 2>&1 ; exit 19; }
@@ -92,19 +117,13 @@ else
 		./demo.sh -t
 		./lib/integration/runAll.sh
 		# repeat-thyself should usually run, but it has to sit out in travis PR-mode because of the synthetic commit which isn't actually cloneable
+		TRAVIS="${TRAVIS:-}"
+		TRAVIS_PULL_REQUEST="${TRAVIS_PULL_REQUEST:-}"
 		if [ "$TRAVIS" == 'true' -a "$TRAVIS_PULL_REQUEST" != 'false' ]; then
 			echo "skipping repeat-thyself test" 1>&2
 		else
 			./repeat-thyself.sh
 		fi
-		;;
-	install)
-		go generate "./..."
-		go install "$cmd"
-		;;
-	exec)
-		shift
-		"$GOPATH/bin/$name" "$@"
 		;;
 	fmt)
 		go fmt "$SUBSECTION"
@@ -174,9 +193,8 @@ else
 		repeatr --version
 		;;
 	*)
-		echo "Usage: $0 {init|test|install|exec|fmt|doc|cover|validate|clean}" 1>&2;
+		echo "Usage: $0 {init|test|install|bench|exec|fmt|doc|cover|validate|clean}" 1>&2;
 		exit 1
 	;;
-esac
-
+	esac
 fi
