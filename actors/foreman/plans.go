@@ -1,4 +1,4 @@
-package localforeman
+package foreman
 
 import (
 	"polydawn.net/repeatr/model/formula"
