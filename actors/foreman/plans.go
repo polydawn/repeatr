@@ -4,6 +4,11 @@ import (
 	"polydawn.net/repeatr/model/formula"
 )
 
+type plan struct {
+	formula        *formula.Stage2
+	commissionedBy formula.CommissionID
+}
+
 /*
 	An atom capturing the foreman's current best idea of what formulas
 	it wants to evaluate next.
@@ -18,29 +23,29 @@ import (
 	    requesting a re-execution; this level of the api doesn't know.)
 */
 type plans struct {
-	// flat list of what formulas we want to run next, in order.
-	queue []*formula.Stage2
+	// flat list of what plans we want to run next, in order.  0->next.
+	queue []*plan
 
 	// map from cmid to queue index (so we can delete/replace things if they're now out of date).
 	commissionIndex map[formula.CommissionID]int
 }
 
-func (p *plans) push(f *formula.Stage2, reason formula.CommissionID) {
-	if i, ok := p.commissionIndex[reason]; ok {
-		p.queue[i] = f
+func (ps *plans) push(p *plan) {
+	if i, ok := ps.commissionIndex[p.commissionedBy]; ok {
+		ps.queue[i] = p
 	} else {
-		i = len(p.queue)
-		p.queue = append(p.queue, f)
-		p.commissionIndex[reason] = i
+		i = len(ps.queue)
+		ps.queue = append(ps.queue, p)
+		ps.commissionIndex[p.commissionedBy] = i
 	}
 }
 
-func (p *plans) poll() *formula.Stage2 {
-	l := len(p.queue)
+func (ps *plans) poll() *plan {
+	l := len(ps.queue)
 	if l == 0 {
 		return nil
 	}
-	v := p.queue[0]
-	p.queue = p.queue[1:]
+	v := ps.queue[0]
+	ps.queue = ps.queue[1:]
 	return v
 }

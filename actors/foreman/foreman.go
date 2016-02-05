@@ -95,14 +95,14 @@ func (man *Foreman) pump() {
 
 	// Planning phase: update our internal concept of what's up next.
 	for reason, formula := range reasons {
-		man.currentPlans.push(formula, reason)
+		man.currentPlans.push(&plan{formula, reason})
 	}
 }
 
 func (man *Foreman) evoke() {
 	// Run.
-	for _, formula := range man.currentPlans.queue {
-		job := man.executor.Start(def.Formula(*formula), def.JobID(guid.New()), nil, os.Stderr)
+	for _, p := range man.currentPlans.queue {
+		job := man.executor.Start(def.Formula(*p.formula), def.JobID(guid.New()), nil, os.Stderr)
 		job.Wait()
 	}
 	// TODO all sorts of other housekeeping on the queue

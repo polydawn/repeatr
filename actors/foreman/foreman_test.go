@@ -108,8 +108,8 @@ func TestBasicPlanning(t *testing.T) {
 				//  and also unrelated *aren't*.
 				plans := mgr.currentPlans
 				So(plans.queue, ShouldHaveLength, 1)
-				So(plans.queue[0].Inputs["apollo"], ShouldNotBeNil)
-				So(plans.queue[0].Inputs["apollo"].Hash, ShouldEqual, "a1")
+				So(plans.queue[0].formula.Inputs["apollo"], ShouldNotBeNil)
+				So(plans.queue[0].formula.Inputs["apollo"].Hash, ShouldEqual, "a1")
 			})
 
 			Convey("After crashing more catalogs in concurrently", func() {
@@ -125,8 +125,8 @@ func TestBasicPlanning(t *testing.T) {
 					// There's also no danger of the "newer" one being dropped, since catalog notifications are by ID, not content.
 					plans := mgr.currentPlans
 					So(plans.queue, ShouldHaveLength, 1)
-					So(plans.queue[0].Inputs["apollo"], ShouldNotBeNil)
-					So(plans.queue[0].Inputs["apollo"].Hash, ShouldEqual, "a2")
+					So(plans.queue[0].formula.Inputs["apollo"], ShouldNotBeNil)
+					So(plans.queue[0].formula.Inputs["apollo"].Hash, ShouldEqual, "a2")
 				})
 			})
 		})
@@ -149,10 +149,10 @@ func TestBasicPlanning(t *testing.T) {
 
 				plans := mgr.currentPlans
 				So(plans.queue, ShouldHaveLength, 2)
-				So(plans.queue[0].Inputs["apollo"], ShouldNotBeNil)
-				So(plans.queue[0].Inputs["apollo"].Hash, ShouldEqual, "a1")
-				So(plans.queue[1].Inputs["apollo"], ShouldNotBeNil)
-				So(plans.queue[1].Inputs["apollo"].Hash, ShouldEqual, "a1")
+				So(plans.queue[0].formula.Inputs["apollo"], ShouldNotBeNil)
+				So(plans.queue[0].formula.Inputs["apollo"].Hash, ShouldEqual, "a1")
+				So(plans.queue[1].formula.Inputs["apollo"], ShouldNotBeNil)
+				So(plans.queue[1].formula.Inputs["apollo"].Hash, ShouldEqual, "a1")
 				// look at the current commission records; they can be in either order
 				So(plans.commissionIndex, ShouldHaveLength, 2)
 				idx_yis := plans.commissionIndex[cmsh_yis.ID]
@@ -168,10 +168,10 @@ func TestBasicPlanning(t *testing.T) {
 
 						plans := mgr.currentPlans
 						So(plans.queue, ShouldHaveLength, 2)
-						So(plans.queue[0].Inputs["apollo"], ShouldNotBeNil)
-						So(plans.queue[0].Inputs["apollo"].Hash, ShouldEqual, "a2")
-						So(plans.queue[1].Inputs["apollo"], ShouldNotBeNil)
-						So(plans.queue[1].Inputs["apollo"].Hash, ShouldEqual, "a2")
+						So(plans.queue[0].formula.Inputs["apollo"], ShouldNotBeNil)
+						So(plans.queue[0].formula.Inputs["apollo"].Hash, ShouldEqual, "a2")
+						So(plans.queue[1].formula.Inputs["apollo"], ShouldNotBeNil)
+						So(plans.queue[1].formula.Inputs["apollo"].Hash, ShouldEqual, "a2")
 						// commission records can still be in either order, just has to be same
 						So(plans.commissionIndex, ShouldHaveLength, 2)
 						So(plans.commissionIndex[cmsh_yis.ID], ShouldEqual, idx_yis)
