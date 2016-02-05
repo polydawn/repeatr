@@ -117,6 +117,8 @@ else
 		./demo.sh -t
 		./lib/integration/runAll.sh
 		# repeat-thyself should usually run, but it has to sit out in travis PR-mode because of the synthetic commit which isn't actually cloneable
+		TRAVIS="${TRAVIS:-}"
+		TRAVIS_PULL_REQUEST="${TRAVIS_PULL_REQUEST:-}"
 		if [ "$TRAVIS" == 'true' -a "$TRAVIS_PULL_REQUEST" != 'false' ]; then
 			echo "skipping repeat-thyself test" 1>&2
 		else
