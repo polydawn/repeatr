@@ -20,7 +20,7 @@ func TestReleasing(t *testing.T) {
 			newEditions := makeReleases(
 				kb,
 				&plan{},
-				(*formula.Stage3)(&def.Formula{}),
+				&formula.Stage3{},
 			)
 
 			So(newEditions, ShouldHaveLength, 0)
@@ -30,12 +30,12 @@ func TestReleasing(t *testing.T) {
 			newEditions := makeReleases(
 				kb,
 				&plan{},
-				(*formula.Stage3)(&def.Formula{
+				&formula.Stage3{
 					Outputs: def.OutputGroup{
 						"coquet": &def.Output{Hash: "c1"},
 						"danish": &def.Output{Hash: "d1"},
 					},
-				}),
+				},
 			)
 
 			So(newEditions, ShouldHaveLength, 2)
@@ -59,11 +59,11 @@ func TestReleasing(t *testing.T) {
 				newEditions := makeReleases(
 					kb,
 					&plan{commissionedBy: "elate"},
-					(*formula.Stage3)(&def.Formula{
+					&formula.Stage3{
 						Outputs: def.OutputGroup{
 							"emu": &def.Output{Hash: "e2"},
 						},
-					}),
+					},
 				)
 
 				// First of all, new catalogs should still have the hot stuff
