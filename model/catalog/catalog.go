@@ -13,6 +13,27 @@ type Book struct {
 
 	Tracks map[string][]SKU
 
+	// Totally accounted for and awesome in this design:
+	//  - Tracks (e.g. subscribing to the "4.x" series of "gcc" but not the "5.x").
+	//        We did it.  Tracks are a thing.
+	//        The blank string is the name of the default track.  The default
+	//      track is required.  All others are optional.
+	//        It would be possible to do this from one layer out, but I think
+	//      the cognitive and maintence overhead would be damaging -- mostly
+	//      because catalogs are shaping up to be our fundamental unit of naming,
+	//      and people really do want "gcc" to be a name, and not "gcc-5".
+	//      Similarly, the signing keys for those things had better dang well be
+	//      the same.
+	//        Building named tracks which must themselves be linear does
+	//      still seem like a good idea for sidesteping version nomenclature
+	//      wars entirely.  Want "stable" and "testing" tracks?  Fine.  Want
+	//      a track for every "Major.Minor" of your psuedo-semver?  Fine.
+	//      (Honestly, I kind of like the impact this might have on version
+	//      stability and naming conventions.  "Did you promise this would
+	//      have nonbreaking API changes [Y/N]" in a very literal way seems
+	//      much more clear and empowering than dealing with the cultural
+	//      tidal zones that result when people put "~>3.6.1" in configs.)
+	//
 	// Not yet accounted for in this design:
 	//  - Aliasing (same data kept in different kinds of warehouse, resulting in different ids).
 	//        Not clear how the caller would pick the most preferred type, since the
@@ -30,23 +51,6 @@ type Book struct {
 	//      that can't be resolved there, it's just as well to continue punting
 	//      here, and let it be resolved yet one more layer further up: with
 	//      future porting created by another layer of (as yet unnecessary) namespaces.
-	//  - Tracks (e.g. subscribing to the "4.x" series of "gcc" but not the "5.x").
-	//        We *should* probably add this here.
-	//        It would be possible to do this from one layer out, but I think
-	//      the cognitive and maintence overhead would be damaging -- mostly
-	//      because catalogs are shaping up to be our fundamental unit of naming,
-	//      and people really do want "gcc" to be a name, and not "gcc-5".
-	//      Similarly, the signing keys for those things had better dang well be
-	//      the same.
-	//        Building named tracks which must themselves be linear does
-	//      still seem like a good idea for sidesteping version nomenclature
-	//      wars entirely.  Want "stable" and "testing" tracks?  Fine.  Want
-	//      a track for every "Major.Minor" of your psuedo-semver?  Fine.
-	//      (Honestly, I kind of like the impact this might have on version
-	//      stability and naming conventions.  "Did you promise this would
-	//      have nonbreaking API changes [Y/N]" in a very literal way seems
-	//      much more clear and empowering than dealing with the cultural
-	//      tidal zones that result when people put "~>3.6.1" in configs.)
 	//  - Flags and tags (marking something "insecure" or "unsupported" without delisting it).
 	//        Not sure if this can be done without causing headaches.
 	//      Namely, if there's a tag string we don't recognize, what do --
