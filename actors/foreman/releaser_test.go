@@ -48,5 +48,35 @@ func TestReleasing(t *testing.T) {
 				"d1",
 			})
 		})
+
+		Convey("Given a knowledgebase with some existing catalogs", func() {
+			kb.PublishCatalog(cat_apollo1)
+			kb.PublishCatalog(cat_balogna2)
+
+			Convey("A result with outputs proposes new catalogs", func() {
+				newEditions := makeReleases(
+					kb,
+					&plan{},
+					(*formula.Stage3)(&def.Formula{
+						Outputs: def.OutputGroup{
+							"apollo": &def.Output{Hash: "a3"},
+							"danish": &def.Output{Hash: "d1"},
+						},
+					}),
+				)
+
+				So(newEditions, ShouldHaveLength, 2)
+				gatheredLatestHashes := []string{
+					newEditions[0].Latest().Hash,
+					newEditions[1].Latest().Hash,
+				}
+				sort.Strings(gatheredLatestHashes)
+				So(gatheredLatestHashes, ShouldResemble, []string{
+					"a3",
+					"d1",
+				})
+			})
+		})
+
 	})
 }
