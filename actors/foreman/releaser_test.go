@@ -8,6 +8,7 @@ import (
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/model/cassandra/impl/mem"
+	"polydawn.net/repeatr/model/catalog"
 	"polydawn.net/repeatr/model/formula"
 )
 
@@ -50,31 +51,28 @@ func TestReleasing(t *testing.T) {
 		})
 
 		Convey("Given a knowledgebase with some existing catalogs", func() {
-			kb.PublishCatalog(cat_apollo1)
-			kb.PublishCatalog(cat_balogna2)
+			kb.PublishCatalog(catalog.New(catalog.ID("elate::emu")).Release(
+				"", catalog.SKU{Hash: "e1"},
+			))
 
-			Convey("A result with outputs proposes new catalogs", func() {
+			Convey("Proposed new catalogs include prior states", func() {
 				newEditions := makeReleases(
 					kb,
-					&plan{},
+					&plan{commissionedBy: "elate"},
 					(*formula.Stage3)(&def.Formula{
 						Outputs: def.OutputGroup{
-							"apollo": &def.Output{Hash: "a3"},
-							"danish": &def.Output{Hash: "d1"},
+							"emu": &def.Output{Hash: "e2"},
 						},
 					}),
 				)
 
-				So(newEditions, ShouldHaveLength, 2)
-				gatheredLatestHashes := []string{
-					newEditions[0].Latest().Hash,
-					newEditions[1].Latest().Hash,
-				}
-				sort.Strings(gatheredLatestHashes)
-				So(gatheredLatestHashes, ShouldResemble, []string{
-					"a3",
-					"d1",
-				})
+				// First of all, new catalogs should still have the hot stuff
+				So(newEditions, ShouldHaveLength, 1)
+				So(newEditions[0].Latest().Hash, ShouldEqual, "e2")
+				// Also, the new one should to have the existing history
+				So(newEditions[0].Tracks[""], ShouldHaveLength, 2)
+				So(newEditions[0].Tracks[""][0].Hash, ShouldEqual, "e1")
+				So(newEditions[0].Tracks[""][1].Hash, ShouldEqual, "e2")
 			})
 		})
 
