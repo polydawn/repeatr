@@ -84,7 +84,7 @@ func (man *Foreman) pump() {
 	formulas := make([]*formula.Stage2, 0)
 	reasons := make(map[formula.CommissionID]*formula.Stage2)
 	for _, commish := range markedSet {
-		formula := (*formula.Stage2)(&commish.Formula) // FIXME need clone func and sane mem owner defn
+		formula := (*formula.Stage2)(commish.Formula.Clone())
 		for iname, input := range formula.Inputs {
 			cellID := catalog.ID(iname)                                  // this may not always be true / this is the same type haze around pre-pin inputs showing again
 			input.Hash = string(man.cassy.Catalog(cellID).Latest().Hash) // this string cast is because def is currently Wrong
