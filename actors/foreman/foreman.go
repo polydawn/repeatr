@@ -136,11 +136,12 @@ func (man *Foreman) evoke() {
 
 	// Any releases?
 	newEditions := makeReleases(man.cassy, p, result)
-	// TODO wrap up on committing them to the kb
-	_ = newEditions
 
-	// Commit phase: push the stage3 formulas back to storage.
-	// TODO
-	// We may also need to trigger release criteria *before* this, for
-	//  the usual gc-strong-ref purposes.
+	// Commit 'em.
+	for _, ed := range newEditions {
+		man.cassy.PublishCatalog(ed)
+		// TODO also backpedal and -- now that we've got a release
+		//  that gives us strong-ref to justify our stuff to a gc --
+		//   commit the formulas that got us here
+	}
 }
