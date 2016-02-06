@@ -13,29 +13,16 @@ import (
 
 var (
 	// artifact "apollo" -- default track only, single release
-	cat_apollo1 = &catalog.Book{
-		catalog.ID("apollo"),
-		map[string][]catalog.SKU{"": []catalog.SKU{
-			{"tar", "a1"},
-		}},
-	}
+	cat_apollo1 = catalog.New(catalog.ID("apollo")).
+			Release("", catalog.SKU{"tar", "a1"})
 	// okay, more releases now
-	cat_apollo2 = &catalog.Book{
-		catalog.ID("apollo"),
-		map[string][]catalog.SKU{"": []catalog.SKU{
-			{"tar", "a1"},
-			{"tar", "a2"},
-		}},
-	}
+	cat_apollo2 = cat_apollo1.
+			Release("", catalog.SKU{"tar", "a2"})
 
 	// artifact "balogna" -- default track only, two releases
-	cat_balogna2 = &catalog.Book{
-		catalog.ID("balogna"),
-		map[string][]catalog.SKU{"": []catalog.SKU{
-			{"tar", "b1"},
-			{"tar", "b2"},
-		}},
-	}
+	cat_balogna2 = catalog.New(catalog.ID("balogna")).
+			Release("", catalog.SKU{"tar", "b1"}).
+			Release("", catalog.SKU{"tar", "b2"})
 )
 
 var (

@@ -51,9 +51,9 @@ func TestReleasing(t *testing.T) {
 		})
 
 		Convey("Given a knowledgebase with some existing catalogs", func() {
-			kb.PublishCatalog(catalog.New(catalog.ID("elate::emu")).Release(
-				"", catalog.SKU{Hash: "e1"},
-			))
+			kb.PublishCatalog(catalog.New(catalog.ID("elate::emu")).
+				Release("", catalog.SKU{Hash: "e1"}),
+			)
 
 			Convey("Proposed new catalogs include prior states", func() {
 				newEditions := makeReleases(
