@@ -80,6 +80,39 @@ func TestPipeline(t *testing.T) {
 				So(allCatIDs[2], ShouldEqual, "E::x")
 				So(kb.Catalog(catalog.ID("B::x")).Tracks[""], ShouldHaveLength, 1)
 				So(kb.Catalog(catalog.ID("E::x")).Tracks[""], ShouldHaveLength, 1)
+
+				// pump event 'E' (it's noise, shouldn't trigger anything)
+				So(mgr.chNewCatalog, ShouldHaveLength, 1)
+				pumpn(mgr, 1)
+			},
+		})
+		steps = append(steps, step{
+			"Deliver catalog 'C'; expect commission 'D' to fly",
+			func() {
+				kb.PublishCatalog(catalog.New(catalog.ID("C")).Release(
+					"", catalog.SKU{Hash: "c1"},
+				))
+				pumpn(mgr, 1)
+
+				// D has both required inputs now so it can run
+				So(mgr.currentPlans.queue, ShouldHaveLength, 1)
+				mgr.evoke()
+				So(mgr.currentPlans.queue, ShouldHaveLength, 0)
+
+				// we should get double D releases!
+				allCatIDs := kb.ListCatalogs()
+				sort.Sort(catalog.IDs(allCatIDs))
+				So(allCatIDs, ShouldHaveLength, 6)
+				So(allCatIDs[5], ShouldEqual, "E::x") // sorted, natch
+				So(allCatIDs[2], ShouldEqual, "C")
+				So(allCatIDs[3], ShouldEqual, "D::x")
+				So(allCatIDs[4], ShouldEqual, "D::y")
+				So(kb.Catalog(catalog.ID("D::x")).Tracks[""], ShouldHaveLength, 1)
+				So(kb.Catalog(catalog.ID("D::y")).Tracks[""], ShouldHaveLength, 1)
+
+				// pump both 'D::*' events (trailing noise)
+				So(mgr.chNewCatalog, ShouldHaveLength, 2)
+				pumpn(mgr, 2)
 			},
 		})
 		chain := func() {}
