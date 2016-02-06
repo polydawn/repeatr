@@ -101,7 +101,7 @@ func TestBasicPlanning(t *testing.T) {
 			}
 			mgr.register()
 
-			Convey("Formulas are emitted for all plans using latest editions of catalogs", func() {
+			Convey("Formulas are emitted for all commissions using latest editions of catalogs", func() {
 				pumpn(mgr, 2)
 
 				// this is actually testing multiple things: related comissions are triggered,
@@ -116,7 +116,7 @@ func TestBasicPlanning(t *testing.T) {
 				kb.PublishCatalog(cat_apollo2)
 				So(kb.ListCatalogs(), ShouldHaveLength, 2)
 
-				Convey("Formulas are emitted for all plans using latest editions of catalogs", func() {
+				Convey("Formulas are emitted for each commission using the updated catalogs", func() {
 					pumpn(mgr, 3)
 
 					// We should still only have one formula...
@@ -144,7 +144,7 @@ func TestBasicPlanning(t *testing.T) {
 			}
 			mgr.register()
 
-			Convey("Formulas are emitted for all plans using latest editions of catalogs", func() {
+			Convey("Formulas are emitted for all commissions using latest editions of catalogs", func() {
 				pumpn(mgr, 2)
 
 				plans := mgr.currentPlans
