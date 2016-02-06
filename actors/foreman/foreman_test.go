@@ -23,6 +23,9 @@ var (
 	cat_balogna2 = catalog.New(catalog.ID("balogna")).
 			Release("", catalog.SKU{"tar", "b1"}).
 			Release("", catalog.SKU{"tar", "b2"})
+
+	// artifact "falsetto" -- it's a trap!  no actual releases!
+	cat_falsetto0 = catalog.New(catalog.ID("falsetto"))
 )
 
 var (
@@ -53,6 +56,17 @@ var (
 			Inputs: def.InputGroup{
 				"apollo":  &def.Input{},
 				"balogna": &def.Input{},
+			},
+		},
+	}
+
+	// comission consuming apollo and falsetto (the trick)
+	cmsh_xilence = &formula.Commission{
+		ID: formula.CommissionID("xilence"),
+		Formula: def.Formula{ // this inclusion is clunky, wtb refactor
+			Inputs: def.InputGroup{
+				"apollo":   &def.Input{},
+				"falsetto": &def.Input{},
 			},
 		},
 	}
@@ -218,6 +232,28 @@ func TestBasicPlanning(t *testing.T) {
 							So(plans.leasesIndex, ShouldHaveLength, 0)
 						})
 					})
+				})
+			})
+		})
+
+		Convey("Given a knowledge base with a commission missing catalogs", func() {
+			kb := cassandra_mem.New()
+			kb.PublishCommission(cmsh_xilence)
+			kb.PublishCatalog(cat_apollo1) // one of the two deps
+
+			Convey("Foreman plans no formulas because it can't satisfy deps", func() {
+				// these are basically "it shouldn't blow up tests".
+				mgr := &Foreman{cassy: kb}
+				mgr.register()
+				pumpn(mgr, 1)
+
+				So(mgr.currentPlans.queue, ShouldHaveLength, 0)
+
+				Convey("Adding the missing catalog, but empty, still triggers nothing", func() {
+					kb.PublishCatalog(cat_falsetto0)
+					pumpn(mgr, 1)
+
+					So(mgr.currentPlans.queue, ShouldHaveLength, 0)
 				})
 			})
 		})

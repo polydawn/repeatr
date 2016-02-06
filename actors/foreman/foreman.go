@@ -85,9 +85,23 @@ func (man *Foreman) pump() {
 	reasons := make(map[formula.CommissionID]*formula.Stage2)
 	for _, commish := range markedSet {
 		formula := (*formula.Stage2)(commish.Formula.Clone())
+		flies := true
 		for iname, input := range formula.Inputs {
-			cellID := catalog.ID(iname)                                  // this may not always be true / this is the same type haze around pre-pin inputs showing again
-			input.Hash = string(man.cassy.Catalog(cellID).Latest().Hash) // this string cast is because def is currently Wrong
+			reqCat := man.cassy.Catalog(catalog.ID(iname))
+			if reqCat == nil { // if the catalog isn't here, bail
+				// TODO also probably 'warn'-worthy
+				flies = false
+				break
+			}
+			reqLatest := reqCat.Latest()
+			if reqLatest == (catalog.SKU{}) { // if it contains nothing, bail
+				flies = false
+				break
+			}
+			input.Hash = string(reqLatest.Hash) // this string cast is because def is currently Wrong
+		}
+		if !flies {
+			continue
 		}
 		formulas = append(formulas, formula)
 		reasons[commish.ID] = formula
