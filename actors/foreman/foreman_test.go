@@ -153,11 +153,7 @@ func TestBasicPlanning(t *testing.T) {
 				So(plans.queue[0].formula.Inputs["apollo"].Hash, ShouldEqual, "a1")
 				So(plans.queue[1].formula.Inputs["apollo"], ShouldNotBeNil)
 				So(plans.queue[1].formula.Inputs["apollo"].Hash, ShouldEqual, "a1")
-				// look at the current commission records; they can be in either order
 				So(plans.commissionIndex, ShouldHaveLength, 2)
-				idx_yis := plans.commissionIndex[cmsh_yis.ID]
-				idx_woosh := plans.commissionIndex[cmsh_whoosh.ID]
-				So(idx_woosh+idx_yis, ShouldEqual, 1)
 
 				Convey("After crashing more catalogs in concurrently", func() {
 					kb.PublishCatalog(cat_apollo2)
@@ -172,10 +168,68 @@ func TestBasicPlanning(t *testing.T) {
 						So(plans.queue[0].formula.Inputs["apollo"].Hash, ShouldEqual, "a2")
 						So(plans.queue[1].formula.Inputs["apollo"], ShouldNotBeNil)
 						So(plans.queue[1].formula.Inputs["apollo"].Hash, ShouldEqual, "a2")
-						// commission records can still be in either order, just has to be same
 						So(plans.commissionIndex, ShouldHaveLength, 2)
-						So(plans.commissionIndex[cmsh_yis.ID], ShouldEqual, idx_yis)
-						So(plans.commissionIndex[cmsh_whoosh.ID], ShouldEqual, idx_woosh)
+					})
+				})
+
+				Convey("Leasing some tasks should work", func() {
+					plans := mgr.currentPlans
+					p, ltok := plans.LeaseNext()
+					So(p, ShouldNotBeNil)
+					So(ltok, ShouldNotResemble, "")
+
+					Convey("Queue should remain, but commissionIndex drop", func() {
+						So(plans.queue, ShouldHaveLength, 2)
+						So(plans.commissionIndex, ShouldHaveLength, 1)
+						So(plans.leasesIndex, ShouldHaveLength, 1)
+					})
+
+					Convey("After crashing more catalogs in concurrently", func() {
+						kb.PublishCatalog(cat_apollo2)
+						So(kb.ListCatalogs(), ShouldHaveLength, 2)
+
+						Convey("Already leased plans should not be replaced", func() {
+							pumpn(mgr, 1)
+
+							plans := mgr.currentPlans
+							So(plans.queue, ShouldHaveLength, 3)
+							So(plans.queue[0].formula.Inputs["apollo"], ShouldNotBeNil)
+							So(plans.queue[0].formula.Inputs["apollo"].Hash, ShouldEqual, "a1")
+							So(plans.queue[1].formula.Inputs["apollo"], ShouldNotBeNil)
+							So(plans.queue[1].formula.Inputs["apollo"].Hash, ShouldEqual, "a2")
+							So(plans.queue[1].formula.Inputs["apollo"], ShouldNotBeNil)
+							So(plans.queue[1].formula.Inputs["apollo"].Hash, ShouldEqual, "a2")
+							So(plans.commissionIndex, ShouldHaveLength, 2)
+							So(plans.leasesIndex, ShouldHaveLength, 1)
+						})
+					})
+
+					Convey("Finishing a plan should remove it", func() {
+						plans.Finish(ltok)
+						So(plans.queue, ShouldHaveLength, 1)
+						So(plans.commissionIndex, ShouldHaveLength, 1)
+						So(plans.leasesIndex, ShouldHaveLength, 0)
+
+						Convey("Unleasing it afterward should no-op", func() {
+							plans.Unlease(ltok)
+							So(plans.queue, ShouldHaveLength, 1)
+							So(plans.commissionIndex, ShouldHaveLength, 1)
+							So(plans.leasesIndex, ShouldHaveLength, 0)
+						})
+					})
+
+					Convey("Unleasing a plan should leave it there", func() {
+						plans.Unlease(ltok)
+						So(plans.queue, ShouldHaveLength, 2)
+						So(plans.commissionIndex, ShouldHaveLength, 1)
+						So(plans.leasesIndex, ShouldHaveLength, 0)
+
+						Convey("Finishing it afterward should no-op", func() {
+							plans.Finish(ltok)
+							So(plans.queue, ShouldHaveLength, 2)
+							So(plans.commissionIndex, ShouldHaveLength, 1)
+							So(plans.leasesIndex, ShouldHaveLength, 0)
+						})
 					})
 				})
 			})

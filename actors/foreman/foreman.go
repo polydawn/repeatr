@@ -21,7 +21,7 @@ type Foreman struct {
 
 	chNewCatalog <-chan catalog.ID
 	chOldCatalog <-chan catalog.ID
-	currentPlans plans
+	currentPlans *plans
 }
 
 func (man *Foreman) work() {
@@ -56,7 +56,7 @@ func (man *Foreman) register() {
 	man.chOldCatalog = oldCatalogChan
 
 	// other misc init (can't be arsed to seperate since it's also an "exactly once, at start" thing)
-	man.currentPlans.commissionIndex = make(map[formula.CommissionID]int)
+	man.currentPlans = NewPlans()
 }
 
 /*
@@ -95,17 +95,27 @@ func (man *Foreman) pump() {
 
 	// Planning phase: update our internal concept of what's up next.
 	for reason, formula := range reasons {
-		man.currentPlans.push(&plan{formula, reason})
+		man.currentPlans.Push(&plan{
+			formula:        formula,
+			commissionedBy: reason,
+		})
 	}
 }
 
 func (man *Foreman) evoke() {
-	// Run.
-	for _, p := range man.currentPlans.queue {
-		job := man.executor.Start(def.Formula(*p.formula), def.JobID(guid.New()), nil, os.Stderr)
-		job.Wait()
+	// Request a task.
+	p, leaseToken := man.currentPlans.LeaseNext()
+	if leaseToken == "" {
+		return
 	}
-	// TODO all sorts of other housekeeping on the queue
+	// Automatically unlease it if something goes off the rails.
+	//  (If we signal success, unlease is no-op'd.)
+	defer man.currentPlans.Unlease(leaseToken)
+
+	// Launch
+	job := man.executor.Start(def.Formula(*p.formula), def.JobID(guid.New()), nil, os.Stderr)
+	job.Wait()
+	man.currentPlans.Finish(leaseToken)
 
 	// Commit phase: push the stage3 formulas back to storage.
 	// TODO
