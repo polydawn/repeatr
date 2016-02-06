@@ -62,6 +62,13 @@ type Book struct {
 	//      hesitate because I'm not convinced it passes YAGNI thresholds yet.
 }
 
+func New(id ID) *Book {
+	return &Book{
+		ID:     id,
+		Tracks: make(map[string][]SKU),
+	}
+}
+
 func (b *Book) Latest() SKU {
 	defaultTrack := b.Tracks[""]
 	n := len(defaultTrack)
@@ -86,6 +93,22 @@ func (b *Book) Latest() SKU {
 */
 func (b *Book) All() []SKU {
 	return b.Tracks[""]
+}
+
+/*
+	Release a new product!  Returns a whole new Catalog edition.
+*/
+func (b *Book) Release(trackName string, ware SKU) *Book {
+	nextEdition := b.clone()
+	nextEdition.Tracks[trackName] = append(nextEdition.Tracks[trackName], ware)
+	return nextEdition
+}
+func (b *Book) clone() *Book {
+	nextEdition := New(b.ID)
+	for k, v := range b.Tracks {
+		nextEdition.Tracks[k] = v
+	}
+	return nextEdition
 }
 
 // id a la https://en.wikipedia.org/wiki/Stock-keeping_unit
