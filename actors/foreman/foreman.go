@@ -114,8 +114,16 @@ func (man *Foreman) evoke() {
 
 	// Launch
 	job := man.executor.Start(def.Formula(*p.formula), def.JobID(guid.New()), nil, os.Stderr)
-	job.Wait()
+	jobResult := job.Wait()
 	man.currentPlans.Finish(leaseToken)
+	// Assemble results // todo everything about jobresult is a mangle, plz refactor
+	result := (*formula.Stage3)(def.Formula(*p.formula).Clone())
+	result.Outputs = jobResult.Outputs
+
+	// Any releases?
+	newEditions := makeReleases(man.cassy, p, result)
+	// TODO wrap up on committing them to the kb
+	_ = newEditions
 
 	// Commit phase: push the stage3 formulas back to storage.
 	// TODO
