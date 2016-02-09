@@ -24,13 +24,12 @@ func ParseYaml(ser []byte) *Formula {
 	}
 	var buf bytes.Buffer
 	if err := codec.NewEncoder(&buf, codecBounceHandler).Encode(raw); err != nil {
-		panic(ConfigError.New("Could not parse formula (stg2): %s", err))
+		panic(ConfigError.New("Could not parse formula: %s", err))
 	}
 	// Actually decode with the smart codecs.
 	var frm Formula
 	if err := codec.NewDecoder(&buf, codecBounceHandler).Decode(&frm); err != nil {
-		// one would really hope this is impossible...
-		panic(ConfigError.New("Could not parse formula (stg3): %s", err))
+		panic(ConfigError.New("Could not parse formula: %s", err))
 	}
 	return &frm
 }
