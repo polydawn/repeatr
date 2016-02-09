@@ -7,13 +7,15 @@ import (
 	"path/filepath"
 
 	"github.com/inconshreveable/log15"
+	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/scheduler"
 )
 
-func LoadFormulaFromFile(path string) def.Formula {
+func LoadFormulaFromFile(path string) (frm def.Formula) {
 	filename, _ := filepath.Abs(path)
 
 	content, err := ioutil.ReadFile(filename)
@@ -21,7 +23,12 @@ func LoadFormulaFromFile(path string) def.Formula {
 		panic(Error.Wrap(fmt.Errorf("Could not read formula file %q: %s", filename, err)))
 	}
 
-	return *def.ParseYaml(content)
+	try.Do(func() {
+		frm = *def.ParseYaml(content)
+	}).Catch(def.ConfigError, func(err *errors.Error) {
+		panic(Error.Wrap(err))
+	}).Done()
+	return
 }
 
 func RunFormula(s scheduler.Scheduler, e executor.Executor, formula def.Formula, journal io.Writer) def.JobResult {
