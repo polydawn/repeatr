@@ -19,6 +19,9 @@ func (ig *InputGroup) CodecDecodeSelf(c *codec.Decoder) {
 	c.MustDecode((*map[string]*Input)(ig))
 	// Now go back over the struct and fill in MountPath as needed from the map keys.
 	for k, v := range *ig {
+		if v == nil {
+			panic(ConfigError.New("input %q configuration is empty", k))
+		}
 		if v.MountPath == "" {
 			v.MountPath = k
 		}
@@ -62,6 +65,9 @@ func (og *OutputGroup) CodecDecodeSelf(c *codec.Decoder) {
 	c.MustDecode((*map[string]*Output)(og))
 	// Now go back over the struct and fill in MountPath as needed from the map keys.
 	for k, v := range *og {
+		if v == nil {
+			panic(ConfigError.New("output %q configuration is empty", k))
+		}
 		if v.MountPath == "" {
 			v.MountPath = k
 		}
