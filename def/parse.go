@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	"github.com/go-yaml/yaml"
+	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
 
 	"polydawn.net/repeatr/lib/cereal"
@@ -20,17 +21,16 @@ func ParseYaml(ser []byte) *Formula {
 	//  because it doesn't have any mechanisms to accept in-memory structs.
 	var raw interface{}
 	if err := yaml.Unmarshal(ser, &raw); err != nil {
-		panic(ConfigError.New("Could not parse formula: %s", err))
+		panic(ConfigError.New("Could not parse formula: %s", errors.GetMessage(err)))
 	}
 	var buf bytes.Buffer
 	if err := codec.NewEncoder(&buf, codecBounceHandler).Encode(raw); err != nil {
-		panic(ConfigError.New("Could not parse formula (stg2): %s", err))
+		panic(ConfigError.New("Could not parse formula: %s", errors.GetMessage(err)))
 	}
 	// Actually decode with the smart codecs.
 	var frm Formula
 	if err := codec.NewDecoder(&buf, codecBounceHandler).Decode(&frm); err != nil {
-		// one would really hope this is impossible...
-		panic(ConfigError.New("Could not parse formula (stg3): %s", err))
+		panic(ConfigError.New("Could not parse formula: %s", errors.GetMessage(err)))
 	}
 	return &frm
 }
