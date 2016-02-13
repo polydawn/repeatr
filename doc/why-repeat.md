@@ -39,7 +39,9 @@ In any situation where quality is critical and transparency is a must, Repeatr c
 Today more than ever, computing is central to our lives.
 We need trust in our digital systems to be safe and secure:
 in everything from communicating with friends to running businesses confidently,
-to... keeping a mechanical heart beating, for some of us.
+to keeping power plants running.  For some of us, it might even be as close to
+home as software keeping a mechanical heart beating.
+Confidence is our computers is not optional; it's a survival requirement.
 
 And yet, even within Open Source software, how do we really trust that programs
 we run are the ones we think we have the source to?
@@ -51,11 +53,11 @@ This is a known problem.  And
 [Repeats](https://theintercept.com/2015/03/10/ispy-cia-campaign-steal-apples-secrets/)
 [Itself](https://people.torproject.org/~mikeperry/transient/2014MozillaReproducible.pdf).
 
-Open Source is great.  Package signing is great.  Neither is enough!
+Open Source is great.  Package signing is great.  *_Neither_ _is_ _enough_!*
 We need reproducible builds so we can make a link between the source and
 binary that anyone can audit, and anyone can reproduce.
 
-Repeatr Formulas describe that link.  They are, by design,
+(Repeatr Formulas)[formulas.md] describe that link.  They are, by design,
   - a concise
     - language-agonostic
       - distro-agnostic
