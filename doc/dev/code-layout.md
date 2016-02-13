@@ -27,6 +27,6 @@ If you're using Repeatr, but not interested in modifying it, you can skip this d
 - `scheduler` -- deprecated, forget it exists.
 - `testutil`
   - Code only meant to be used in testing.  If this is ever referenced by another package outside of the "_test.go" files, it's a bug.
-- actors -- coming soon
-- catalog -- coming soon
-- model -- coming soon
+- actors -- coming soon -- part of the auto-update/pipeline builds system
+- catalog -- coming soon -- part of the auto-update/pipeline builds system
+- model -- coming soon -- part of the auto-update/pipeline builds system

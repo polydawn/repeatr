@@ -23,12 +23,13 @@ Matching these two properties means we can make things that are repeatable,
 reliably working the same way, month after month... even year after year, and decade after... well, you get the idea.
 
 What's more: anything you run in repeatr can spit out more data and we'll give it the same kind of immutable IDs.
-These can be used to build the environment for another process.
+These can be used to build the environment for another process: [formulas](doc/formulas.md) have the same inputs as outputs.
 Chaining processes together is easy.
 Building an entire system this way means every step is auditable and reproducible by anyone with access to the raw materials.
 
 Repeatability is the cornerstone of science and engineering.
 `repeatr` is about making it easy for all your digital stuff.
+
 
 
 What is this good for?
@@ -63,99 +64,33 @@ For more about what makes Repeatr special, check out these docs:
 - [doc/formulas](doc/formulas.md) : A Formula is how Repeatr describes a precise unit of work.
 - [doc/containers](doc/containers.md) : Repeatr is container-agonostic, and supports several choices for how to get the isolation you need.
 
-Try it out
-----------
-
-### Run the Demo
-
-The quickest way to see for yourself what repeatr can do is try the demo.
-The demo script will show off some basic examples of using repeatr, and doesn't require anything but a repeatr binary.
 
 
-```bash
-# Get repeatr and get the demo script
-wget https://repeatr.s3.amazonaws.com/repeatr
-wget https://repeatr.s3.amazonaws.com/demo.sh
-chmod +x repeatr demo.sh
-# Run the demo!
-sudo ./demo.sh
-```
+Get Started Repeating
+---------------------
 
-Note that several sections of repeatr require elevated privileges to run (sandboxing and mounting);
-as a result, running the demo needs sudo privileges.
+First, [get Repeatr](http://repeatr.io/install).
+Or, if you'd prefer to build from source, follow the [dev build docs](doc/dev/building-repeatr.md).
 
-After this, you also have the repeatr binary available, so you can play with it yourself!
+Then, try out the demo script in this repo: `demo.sh` covers a bunch of basic functions
+and has formulas you can fork to start your own projects.
+
+Or, look at how Repeatr builds Repeatr repeatedly: `repeat-theyself.sh` is a real-world example
+of a full software build -- Repeatr's.
+
 When in doubt, try `repeatr help` or `repeatr [subcommand] help`.
 These should give you more information about what the various commands do and how to use them.
-A great place to start messing around is to grab the config snippets embedded in the demo and run with those;
-there's more example configs in the repo in the `lib/integration/*.json` files.
 
 
-### Run the Demo -- from source!
-
-First, clone our repository and its dependencies, then fire off `demo.sh`:
-
-```bash
-# Clone
-git clone https://github.com/polydawn/repeatr.git && cd repeatr
-# Build from source (including fetching dependencies)
-./goad init
-./goad install
-# Run the demo!
-sudo ./demo.sh
-```
-
-(This assumes you have a go compiler already -- if not, check out https://golang.org/dl/ and grab the right package for your platform.)
-
-After this, you also have the repeatr binary available, so you can play with it yourself:
-
-```
-# See usage
-.gopath/bin/repeatr
-
-# Try an example!
-sudo .gopath/bin/repeatr run -i lib/integration/basic.json
-
-# See the forumla repeatr just ran
-cat lib/integration/basic.json
-
-# See the /var/log output repeatr has generated!
-tar -tf basic.tar
-```
-
-Remember, when in doubt, try `repeatr help` or `repeatr [subcommand] help`.
-These should give you more information about what the various commands do and how to use them.
-
-
-### Developing
-
-Setting up a full development environment and running the test suites is similar:
-
-```bash
-# Clone
-git clone https://github.com/polydawn/repeatr.git && cd repeatr
-# Build from source (including fetching dependencies)
-./goad init
-./lib/integration/assets.sh
-./goad install
-# Run the entire test suite
-./goad test
-```
-
-Note that several sections of repeatr require elevated privileges to run (sandboxing and mounting);
-the test suite for these areas will be skipped without root, so to run the *whole* suite, sudo is required:
-
-```
-sudo ./goad test
-```
 
 Contributing
 ------------
 
-- Repeatr is Apache v2 licensed.  We're very gung ho on freedom, and always love help.
+- Repeatr is Apache v2 licensed.  We're very gung ho on freedom, and if you'd like to help, the more the merrier!
 - Need help navigating the code?  Check out the [code layout overview](doc/dev/code-layout.md).
 - Ready to propose a code change?  Kindly give the [contribution guidelines](CONTRIBUTING.md) a gander.
 - Just have a spelling correction or grammar nit?  Every little bit helps, please send 'em in!
+
 
 
 Errata
@@ -165,4 +100,4 @@ Repeatr tries to use the most efficient systems available on your host by defaul
 Specifically, for making copy-on-write filesystems for isolating jobs, if you have AUFS available,
 repeatr will use it; if you don't, repeatr falls back to doing a (much slower) regular filesystem copy,
 and warn you that it's taking a slow route.
-How you install AUFS may very per system, but on ubuntu `apt-get install aufs-tools && modprobe aufs` should work.
+How you install AUFS may very per system, but on ubuntu `apt-get install aufs-tools` should work.
