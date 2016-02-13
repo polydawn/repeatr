@@ -1,10 +1,8 @@
-# repeatr [![Build status](https://img.shields.io/travis/polydawn/repeatr/master.svg?style=flat-square)](https://travis-ci.org/polydawn/repeatr)
+# [builds]⨯[containers]⨯[binary-transparency] = [Repeatr] [![Build status](https://img.shields.io/travis/polydawn/repeatr/master.svg?style=flat-square)](https://travis-ci.org/polydawn/repeatr)
 
 ```
 repeatr run same_thing_in > same_thing_out
 ```
-
-[builds]⨯[containers]⨯[binary-transparency] = [Repeatr]
 
 Building software should be like `1 + 2 = 3` -- start with the same numbers,
 add 'em, and you should always get the same thing.
