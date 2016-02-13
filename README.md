@@ -10,12 +10,23 @@ Half joking, also for reals: repeatr gives you sandboxes where there's an audit 
 
 
 
-Technical Elevator Pitch
-------------------------
+
+
+Why?
+----
+
+Repeatability is the cornerstone of science and engineering.
+
+(No?  Okay, go read [doc/why-repeat](doc/why-repeat.md) and I'll see if I can convince you!)
+
+
+
+How?
+----
 
 - Containers!
 - Content-addressable storage!
-- Decentralized! Host your own!
+- A Formula!
 
 Repeatr combines sandboxing (so your know your application is working independently from the rest of the system)
 with data provisioning based on immutable IDs that pinpoint exactly one thing (meaning you can always start with a known system state).
@@ -27,41 +38,13 @@ These can be used to build the environment for another process: [formulas](doc/f
 Chaining processes together is easy.
 Building an entire system this way means every step is auditable and reproducible by anyone with access to the raw materials.
 
-Repeatability is the cornerstone of science and engineering.
-`repeatr` is about making it easy for all your digital stuff.
-
-
-
-What is this good for?
-----------------------
-
-Data processing.  Science.  Building software.  Doing analysis.  Responsible journalism.
-Anywhere where it's appropriate to show your work, it's appropriate to use Repeatr.
-
-Consider the following:
-
-- Sandboxing to make sure your processes are consistent -- like a Continuous Integration system, but also ready to help you debug consistency itself.
-- Immutable deployments -- and we mean it.  Once the formula is committed, everything is pinned down and guaranteed to deliver.  Ops teams delivering IT infrastructure can rest easy.
-- Data warehousing -- where file corruption can mean millions of dollars in damage from inaccurate data or expensive calculations that need to be re-run, repeatr detects issues before they cause problems.  Storing data on untrusted third-party storage is safe because integrity guarantees are baked in to the system.
-- Repeatable, reproducible pipelines -- when transparency is important, repeatr makes planning work and leaving an audit log one and the same: exact reproducibility is simply natural.
-- Roll it back -- formulas used in the past continue to work.  Forever.  If you change your data, and later discover you want to run with an older configuration again, that's *always* possible.
-
-If you're a programmer, think of it like source control, but for your entire environment, with precise commits, rollback, and even bisect capabilities.
-
-If you're a researcher, think of it like your lab notebook, but you write the notebook first, and then Repeatr runs the experiment *for* you according to your exact instructions.
-
-If you're a journalist, think of it like citing sources, but not only can readers and editors look up your citations, they can also run the analysis themselves in one click.
-
-In any situation where quality is critical and transparency is a must, repeatr can help you raise the bar.
-
-
 
 Where's the Magic?
 ------------------
 
 For more about what makes Repeatr special, check out these docs:
 
-- [doc/formulas](doc/formulas.md) : A Formula is how Repeatr describes a precise unit of work.
+- [doc/formulas](doc/formulas.md) : A Formula is how Repeatr describes a precise unit of work.  The Formula is a language-agonostic API suitable for describing any environment.
 - [doc/containers](doc/containers.md) : Repeatr is container-agonostic, and supports several choices for how to get the isolation you need.
 
 
