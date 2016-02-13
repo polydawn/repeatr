@@ -4,56 +4,66 @@
 repeatr run same_thing_in > same_thing_out
 ```
 
-Building software should be like `1 + 2 = 3` -- start with the same numbers,
-add 'em, and you should always get the same thing.
+Repeatr is a tool for running processes repeatedly.  Repeatr is designed to make task definition precise, environment setup portable, and results reproducible.
 
-Repeatr is applying the same theology to complex systems -- write down all the
-inputs precisely, do the same operation, and always get the same thing.
+Some of Repeatr's key features and goals include:
 
-Or, more seriously:
-*Clean sandboxes, made with free-range locally-sourced perfectly manicured sand.
-We provide an audit trail for every grain of sand in your environment,
-detailing where it came from and how it was formed.
-With Repeatr, you can be confident you have the absolute highest quality software (Er, sand)
-sourced directly from the producers.*
+- *Zero-ambiguity environment*: Repeatr is developed on the principle of "precise-by-default".  All files in your environment are managed by content-addressible storage (think: pinned as if by a git commit hash).
+- *Deep-time reproducibility*: Repeatr represents a commitment to reproducible results today, tomorrow, next week, next year, and... you get the picture.  Repeatr configuration explicitly enforces a split between << data identity >> and << data location >>.  The former never changes; the latter is explicitly variable.
+- *Communicable results*: Repeatr describes processes in a [Formula](doc/formulas.md).  Communicating a Formula -- via email, gist, pastebin, whatever -- should be enough for anyone to repeat your work.
+- *Variation builds on precision*: Repeatr designs for systems like automatic updates and matrix tests on environmental variations by building them *on top* of Formulas.  This allows clear identification of each version/test/etc, making it possible to clearly report what's been covered and what needs to be finished.  Other tools can generate and consume Formulas as an API, plotting complex pipelines and checking reproducibility of results however they see fit.
+
+
+
+Project Status
+--------------
+
+Alpha.  Feel free to use it in whatever environment you like, but currently,
+breaking changes to formats are possible and there's not going to be a lot of
+hand-holding on migrations until we reach a higher level of maturity.
+
+That said, Repeatr is self-hosting Repeatr's builds, so, we're not entirely
+*un*-invested in stability, either :)
+
+Working:
+
+- Filesystem transport pulling in from git, and storing content in tar (with plugins for working directly with http, AWS S3, and GCS).
+- [Contained execution](doc/containers.md) using pluggable backends for isolation.
+- [Formulas](doc/formulas.md) as a format for declaring filesystems, environments, a process, and what outputs to scan and keep.
+- Results returned as a Formula including content-addressible hashes over the requests outputs.
+- Configurable filters to automatically remove the most common problems with reproducibility (file timestamps, local permissions, etc).
+- Automatically uploading result filesystems.  Keep 'em as records, or use them in the next stage of a multi-step process.
+
+Future work:
+
+- More filesystem transport plugins.
+- More executor systems (currently all our choices are linux containers at heart; full VMs would be nice.)
+- More robust error handling and user-facing messaging.
+- More built-ins for easily dropping as many privileges as possible inside the container.
+- Better tooling around mirroring storage, and cleaning up old/dangling/uninteresting objects.
+- See also the [roadmap](ROADMAP.md).
 
 
 
 Why?
 ----
 
-Repeatability is the cornerstone of science and engineering.
+Building software should be like `1 + 2 = 3` -- start with the same numbers,
+add 'em, and you should always get the same thing.
 
+Repeatr is applying the same theology to complex systems -- write down all the
+inputs precisely, do the same operation, and always get the same thing.
+
+Aside from the sheer simplicity argument... Repeatability is the cornerstone of science and engineering.
 (No?  Okay, go read [doc/why-repeat](doc/why-repeat.md) and I'll see if I can convince you!)
 
-
-
-How?
-----
-
-- Containers!
-- Content-addressable storage!
-- A [Formula](doc/formulas.md)!
-
-Repeatr combines sandboxing (so your know your application is working independently from the rest of the system)
-with content-addressable storage (data provisioning based on immutable IDs that pinpoint exactly one thing -- meaning you can always start with a known system state).
-Matching these two properties means we can make things that are repeatable,
-reliably working the same way, month after month... even year after year, and decade after... well, you get the idea.
-
-What's more: anything you run in repeatr can spit out more data and we'll give it the same kind of immutable IDs.
-These can be used to build the environment for another process: [formulas](doc/formulas.md) have the same inputs as outputs.
-Chain together formulas to build an entire system this way, and the result will be
-a complete means every step is auditable and reproducible by anyone with access to the raw materials.
-
-For more about what makes Repeatr special, check out these docs:
-
-- [doc/formulas](doc/formulas.md) : A Formula is how Repeatr describes a precise unit of work.  The Formula is a language-agonostic API suitable for describing any environment.
-- [doc/containers](doc/containers.md) : Repeatr is container-agonostic, and supports several choices for how to get the isolation you need.
+Getting the ability to repeat a process knocked out early makes everything else
+both easier and safer.
 
 
 
-Get Started Repeating
----------------------
+Getting Started
+---------------
 
 First, [get Repeatr](http://repeatr.io/install).
 Or, if you'd prefer to build from source, follow the [build instructions](doc/dev/building-repeatr.md).
