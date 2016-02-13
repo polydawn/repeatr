@@ -48,7 +48,10 @@ we run are the ones we think we have the source to?
 
 We don't.
 
-This is a known problem.  And
+This is a known problem.
+We've had [CVEs where a single bit flipped](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2002-0083)
+in the executable was dangerous.
+And
 [History](https://twitter.com/bcrypt/status/645757802384719872)
 [Repeats](https://theintercept.com/2015/03/10/ispy-cia-campaign-steal-apples-secrets/)
 [Itself](https://people.torproject.org/~mikeperry/transient/2014MozillaReproducible.pdf).
