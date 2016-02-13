@@ -52,22 +52,25 @@ This is a known problem.
 We've had [CVEs where a single bit flipped](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2002-0083)
 in the executable was dangerous.
 And
-[History](https://twitter.com/bcrypt/status/645757802384719872)
-[Repeats](https://theintercept.com/2015/03/10/ispy-cia-campaign-steal-apples-secrets/)
+[History](https://twitter.com/bcrypt/status/645757802384719872)...
+[Repeats](https://theintercept.com/2015/03/10/ispy-cia-campaign-steal-apples-secrets/)...
 [Itself](https://people.torproject.org/~mikeperry/transient/2014MozillaReproducible.pdf).
 
 Open Source is great.  Package signing is great.  *_Neither_ _is_ _enough_!*
 We need reproducible builds so we can make a link between the source and
 binary that anyone can audit, and anyone can reproduce.
 
-(Repeatr Formulas)[formulas.md] describe that link.  They are, by design,
+[Repeatr Formulas](formulas.md) describe that link.  They are, by design,
+
   - a concise
     - language-agonostic
       - distro-agnostic
         - well-defined canonical format
+
 ... which precisely captures an environment and process so we can permanently
 capture the transitions from source to binary.
 
 Package a Formula with your binary when you release software; sign the whole thing.
+Now your users can check the binary they got really comes from the source.
 
 Let's go build some trusted software, eh?

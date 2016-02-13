@@ -1,4 +1,4 @@
-# [builds]⨯[containers]⨯[binary-transparency] = [Repeatr] [![Build status](https://img.shields.io/travis/polydawn/repeatr/master.svg?style=flat-square)](https://travis-ci.org/polydawn/repeatr)
+# Repeatr [![Build status](https://img.shields.io/travis/polydawn/repeatr/master.svg?style=flat-square)](https://travis-ci.org/polydawn/repeatr)
 
 ```
 repeatr run same_thing_in > same_thing_out
@@ -7,16 +7,15 @@ repeatr run same_thing_in > same_thing_out
 Building software should be like `1 + 2 = 3` -- start with the same numbers,
 add 'em, and you should always get the same thing.
 
-Repeatr is applying the same theology to complex systems --- write down all the
-inputs precisely, do the same operation, and always get the same thing!
+Repeatr is applying the same theology to complex systems -- write down all the
+inputs precisely, do the same operation, and always get the same thing.
 
-
-Alternately, you could joke that Repeatr is:
-Clean sandboxes, made with free-range locally-sourced perfectly manicured sand --
+Or, more seriously:
+*Clean sandboxes, made with free-range locally-sourced perfectly manicured sand.
 We provide an audit trail for every grain of sand in your environment,
 detailing where it came from and how it was formed.
 With Repeatr, you can be confident you have the absolute highest quality software (Er, sand)
-sourced directly from the producers.
+sourced directly from the producers.*
 
 
 
@@ -34,22 +33,17 @@ How?
 
 - Containers!
 - Content-addressable storage!
-- A Formula!
+- A [Formula](doc/formulas.md)!
 
 Repeatr combines sandboxing (so your know your application is working independently from the rest of the system)
-with data provisioning based on immutable IDs that pinpoint exactly one thing (meaning you can always start with a known system state).
+with content-addressable storage (data provisioning based on immutable IDs that pinpoint exactly one thing -- meaning you can always start with a known system state).
 Matching these two properties means we can make things that are repeatable,
 reliably working the same way, month after month... even year after year, and decade after... well, you get the idea.
 
 What's more: anything you run in repeatr can spit out more data and we'll give it the same kind of immutable IDs.
 These can be used to build the environment for another process: [formulas](doc/formulas.md) have the same inputs as outputs.
-Chaining processes together is easy.
-Building an entire system this way means every step is auditable and reproducible by anyone with access to the raw materials.
-
-
-
-Where's the Magic?
-------------------
+Chain together formulas to build an entire system this way, and the result will be
+a complete means every step is auditable and reproducible by anyone with access to the raw materials.
 
 For more about what makes Repeatr special, check out these docs:
 
@@ -62,7 +56,7 @@ Get Started Repeating
 ---------------------
 
 First, [get Repeatr](http://repeatr.io/install).
-Or, if you'd prefer to build from source, follow the [dev build docs](doc/dev/building-repeatr.md).
+Or, if you'd prefer to build from source, follow the [build instructions](doc/dev/building-repeatr.md).
 
 Then, try out the demo script in this repo: `demo.sh` covers a bunch of basic functions
 and has formulas you can fork to start your own projects.
