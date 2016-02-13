@@ -4,11 +4,21 @@
 repeatr run same_thing_in > same_thing_out
 ```
 
-Clean sandboxes, made with free-range locally-sourced perfectly manicured sand.
+[builds]⨯[containers]⨯[binary-transparency] = [Repeatr]
 
-Half joking, also for reals: repeatr gives you sandboxes where there's an audit trail for every grain of sand in your environment, detailing where it came from and how it was formed.
+Building software should be like `1 + 2 = 3` -- start with the same numbers,
+add 'em, and you should always get the same thing.
+
+Repeatr is applying the same theology to complex systems --- write down all the
+inputs precisely, do the same operation, and always get the same thing!
 
 
+Alternately, you could joke that Repeatr is:
+Clean sandboxes, made with free-range locally-sourced perfectly manicured sand --
+We provide an audit trail for every grain of sand in your environment,
+detailing where it came from and how it was formed.
+With Repeatr, you can be confident you have the absolute highest quality software (Er, sand)
+sourced directly from the producers.
 
 
 
@@ -37,6 +47,7 @@ What's more: anything you run in repeatr can spit out more data and we'll give i
 These can be used to build the environment for another process: [formulas](doc/formulas.md) have the same inputs as outputs.
 Chaining processes together is easy.
 Building an entire system this way means every step is auditable and reproducible by anyone with access to the raw materials.
+
 
 
 Where's the Magic?
