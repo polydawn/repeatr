@@ -70,11 +70,13 @@ func Caps(m Mode) []string {
 		return []string{
 			"CAP_AUDIT_WRITE",
 			"CAP_KILL",
+			"CAP_NET_BIND_SERVICE",
 		}
 	case Fakeroot:
 		return []string{
 			"CAP_AUDIT_WRITE",
 			"CAP_KILL",
+			"CAP_NET_BIND_SERVICE",
 		}
 	case Dacroot:
 		return []string{
