@@ -84,7 +84,6 @@ func Caps(m Mode) []string {
 			"CAP_FSETID",
 			"CAP_FOWNER",
 			"CAP_KILL",
-			"CAP_MKNOD", // extremely terrifying
 			"CAP_NET_BIND_SERVICE",
 			"CAP_NET_RAW",
 			"CAP_SETGID",
