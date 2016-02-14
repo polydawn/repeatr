@@ -4,7 +4,7 @@ import (
 	"github.com/spacemonkeygo/errors"
 )
 
-type Mode string
+type Policy string
 
 const (
 	/*
@@ -20,7 +20,7 @@ const (
 
 		This is the safest mode to run as.  And, naturally, the default.
 	*/
-	Someguy = "someguy"
+	Someguy = Policy("someguy")
 
 	/*
 		Operate with uid=0, but drop all interesting capabilities.
@@ -34,7 +34,7 @@ const (
 		don't actually require very special priviledges during the work
 		you need them to do (`apt` tools are frequently an example of this).
 	*/
-	Fakeroot = "fakeroot"
+	Fakeroot = Policy("fakeroot")
 
 	/*
 		Operate with uid=0, with some of the most dangers capabilities
@@ -48,7 +48,7 @@ const (
 		This mode is the most similar to what you would experience with
 		docker defaults.
 	*/
-	Dacroot = "dacroot"
+	Dacroot = Policy("dacroot")
 
 	/*
 		Operate with uid=0 and *ALL CAPABILITIES*.
@@ -61,10 +61,10 @@ const (
 		the machine and updating the kernel.  Seriously, *only* use
 		with trusted code.
 	*/
-	Sysad = "sysad"
+	Sysad = Policy("sysad")
 )
 
-func Caps(m Mode) []string {
+func Caps(m Policy) []string {
 	switch m {
 	case Someguy:
 		return []string{
