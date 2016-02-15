@@ -4,6 +4,22 @@ type InputGroup map[string]*Input
 
 type OutputGroup map[string]*Output
 
+func (g InputGroup) Clone() InputGroup {
+	r := make(InputGroup, len(g))
+	for k, v := range g {
+		r[k] = v.Clone()
+	}
+	return r
+}
+
+func (g OutputGroup) Clone() OutputGroup {
+	r := make(OutputGroup, len(g))
+	for k, v := range g {
+		r[k] = v.Clone()
+	}
+	return r
+}
+
 /*
 	Input specifies a data source to feed into the beginning of a computation.
 
@@ -36,6 +52,13 @@ type Input struct {
 	Hash       string          `json:"hash"`           // identifying hash of input data.  included in the conjecture.
 	Warehouses WarehouseCoords `json:"silo,omitempty"` // secondary content lookup descriptor.  not considered part of the conjecture.
 	MountPath  string          `json:"mount"`          // filepath where this input should be mounted in the execution context.  included in the conjecture.
+}
+
+func (i Input) Clone() *Input {
+	w2 := make(WarehouseCoords, len(i.Warehouses))
+	copy(w2, i.Warehouses)
+	i.Warehouses = w2
+	return &i
 }
 
 /*
@@ -96,4 +119,12 @@ type Output struct {
 	MountPath  string          `json:"mount"`          // filepath where this output will be yanked from the job when it reaches completion.  included in the conjecture (iff the whole output is).
 	Filters    Filters         `json:"filters,omitempty"`
 	Conjecture bool            `json:"cnj,omitempty"` // whether or not this output is expected to contain the same result, every time, when given the same set of `Input` items.
+}
+
+func (o Output) Clone() *Output {
+	w2 := make(WarehouseCoords, len(o.Warehouses))
+	copy(w2, o.Warehouses)
+	o.Warehouses = w2
+	// filters are complex but also all immutable, so ignorable
+	return &o
 }
