@@ -11,7 +11,37 @@ type Action struct {
 	Escapes    Escapes  `json:"escapes,omitempty"`
 }
 
+func (a Action) Clone() Action {
+	cpyEntrypoint := make([]string, len(a.Entrypoint))
+	copy(cpyEntrypoint, a.Entrypoint)
+	a.Entrypoint = cpyEntrypoint
+	a.Env = a.Env.Clone()
+	// punt on escapes, still haven't seen an excuse to mutate
+	return a
+}
+
 type Env map[string]string
+
+func (e Env) Clone() Env {
+	r := make(Env, len(e))
+	for k, v := range e {
+		r[k] = v
+	}
+	return r
+}
+
+/*
+	Merge given env map into the object.
+	Existing values are preferred,	new values are added.
+	Mutates; `Clone()` first to avoid if necessary.
+*/
+func (keep Env) Merge(other Env) {
+	for k, v := range other {
+		if _, ok := keep[k]; !ok {
+			keep[k] = v
+		}
+	}
+}
 
 /*
 	Escapes are features that give up repeatr's promises about repeatability,

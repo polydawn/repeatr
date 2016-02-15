@@ -4,23 +4,19 @@ import (
 	"polydawn.net/repeatr/def"
 )
 
-func ApplyDefaults(frm def.Formula) def.Formula {
-	// TODO frm = *frm.Clone()
-	// set cwd if blank
+/*
+	Apply default configuration, returning a new formula with the changes.
+*/
+func ApplyDefaults(frm *def.Formula) *def.Formula {
+	frm = frm.Clone()
+	frm.Action.Env.Merge(DefaultEnv())
 	if frm.Action.Cwd == "" {
 		frm.Action.Cwd = DefaultCwd()
 	}
-	// merge env
-	for k, v := range Env() {
-		if _, ok := frm.Action.Env[k]; !ok {
-			frm.Action.Env[k] = v
-		}
-	}
-	// done
 	return frm
 }
 
-func Env() def.Env {
+func DefaultEnv() def.Env {
 	return def.Env{
 		"PATH": "",
 		"HOME": "",
