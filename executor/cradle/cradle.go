@@ -6,6 +6,7 @@ import (
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
+	"polydawn.net/repeatr/lib/fs"
 )
 
 /*
@@ -20,10 +21,22 @@ func MakeCradle(rootfsPath string, frm def.Formula) {
 	ensureIdentity(rootfsPath, frm.Action.Policy)
 }
 
-// TODO : also support support empty dir as an input type for freehand
-// Note: does *not* ensure that the working dir is empty.
+/*
+	Ensure that the working directory specified in the formula exists, and
+	if it had to be created, make it owned and writable by the user that
+	the contained process will be launched as.  (If it already existed, do
+	nothing; presumably you know what you're doing and intended whatever
+	content is already there and whatever permissions are already in effect.)
+*/
 func ensureWorkingDir(rootfsPath string, frm def.Formula) {
-	os.MkdirAll(filepath.Join(rootfsPath, frm.Action.Cwd), 0755) // TODO root up to tip?  or all new dirs at $uid?
+	pth := filepath.Join(rootfsPath, frm.Action.Cwd)
+	fs.MkdirAllWithAttribs(pth, fs.Metadata{
+		Mode:       0755,
+		ModTime:    def.Epochwhen,
+		AccessTime: def.Epochwhen,
+		Uid:        0, // TODO define map(policy)->posixUser, apply that here
+		Gid:        0, // TODO define map(policy)->posixUser, apply that here
+	})
 }
 
 func ensureHomeDir(rootfsPath string, policy def.Policy) {
@@ -74,7 +87,6 @@ func ensureTempDir(rootfsPath string) {
 	alter our behavior based on it -- cradle is about enforcing *absolute*
 	minimum viable behaviors and fallbacks, not parsing and smoothing
 	every concievable fractal of at-one-time-in-history-valid configuration.
-
 */
 func ensureIdentity(rootfsPath string, policy def.Policy) {
 
