@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/executor"
 )
 
 /*
@@ -45,15 +46,15 @@ func ensureTempDir(rootfsPath string) {
 	}
 	// for unexpected complaints, bail
 	if !os.IsNotExist(err) {
-		panic(err) // TODO category for here??
+		panic(executor.SetupError.New("cradle: could not ensure reasonable /tmp: %s", err))
 	}
 	// mkdir if not exist
 	if err := os.Mkdir(pth, stickyMode); err != nil {
-		panic(err) // TODO category for here??
+		panic(executor.SetupError.New("cradle: could not ensure reasonable /tmp: %s", err))
 	}
 	// chmod it *again* because unit tests reveal that `os.Mkdir` is subject to umask
 	if err := os.Chmod(pth, stickyMode); err != nil {
-		panic(err) // TODO category for here??
+		panic(executor.SetupError.New("cradle: could not ensure reasonable /tmp: %s", err))
 	}
 }
 

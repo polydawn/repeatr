@@ -8,9 +8,18 @@ import (
 var Error *errors.ErrorClass = errors.NewClass("ExecutorError")
 
 /*
-	Error raised when an executor cannot operate due to invalid setup.
+	Error raised when an executor cannot operate due to invalid user
+	configuration.  The configuration needs to be reviewed before there's
+	any point in retrying.
 */
 var ConfigError *errors.ErrorClass = Error.NewClass("ExecutorConfigError")
+
+/*
+	Error raised when there were problems setting up the sandbox and
+	environment.  This means your process didn't make it to launch.
+	This should not be seen in normal, healthy operation.
+*/
+var SetupError *errors.ErrorClass = Error.NewClass("ExecutorSetupError")
 
 /*
 	Error raised when there are serious issues with task launch.
