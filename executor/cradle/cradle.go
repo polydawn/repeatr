@@ -22,11 +22,11 @@ func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 	os.MkdirAll(filepath.Join(rootfsPath, frm.Action.Cwd), 0755) // TODO root up to tip?  or all new dirs at $uid?
 }
 
-func ensureHomeDir(rootfsPath string, policy Policy) {
+func ensureHomeDir(rootfsPath string, policy def.Policy) {
 
 }
 
-func ensureTempDir(rootfsPath string, policy Policy) {
+func ensureTempDir(rootfsPath string, policy def.Policy) {
 
 }
 
@@ -48,6 +48,6 @@ func ensureTempDir(rootfsPath string, policy Policy) {
 	every concievable fractal of at-one-time-in-history-valid configuration.
 
 */
-func ensureIdentity(rootfsPath string, policy Policy) {
+func ensureIdentity(rootfsPath string, policy def.Policy) {
 
 }
