@@ -12,7 +12,7 @@ import (
 	May not be implemented/enforced by all executors (e.g. chroot is
 	simply not capable of these).
 */
-func Caps(m def.Policy) []string {
+func CapsForPolicy(m def.Policy) []string {
 	switch m {
 	case def.PolicyRoutine:
 		return []string{

@@ -30,22 +30,44 @@ func MakeCradle(rootfsPath string, frm def.Formula) {
 */
 func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 	pth := filepath.Join(rootfsPath, frm.Action.Cwd)
+	uinfo := UserinfoForPolicy(frm.Action.Policy)
 	fs.MkdirAllWithAttribs(pth, fs.Metadata{
 		Mode:       0755,
 		ModTime:    def.Epochwhen,
 		AccessTime: def.Epochwhen,
-		Uid:        0, // TODO define map(policy)->posixUser, apply that here
-		Gid:        0, // TODO define map(policy)->posixUser, apply that here
+		Uid:        uinfo.Uid,
+		Gid:        uinfo.Gid,
 	})
 }
 
-func ensureHomeDir(rootfsPath string, policy def.Policy) {
+/*
+	Ensure that the default homedir for the policy's default userinfo exists,
+	and if it had to be created, make it owned and writable by the user that
+	the contained process will be launched as.  (If it already existed, do
+	nothing; presumably you know what you're doing and intended whatever
+	content is already there and whatever permissions are already in effect.)
 
+	Also note if you do this on a filesystem where "/home" doesn't yet
+	exist, you'll get a "/home" that is owned by the policy's default user
+	(not root, which you might typically be accustomed to).
+*/
+func ensureHomeDir(rootfsPath string, policy def.Policy) {
+	uinfo := UserinfoForPolicy(policy)
+	pth := filepath.Join(rootfsPath, uinfo.Home)
+	fs.MkdirAllWithAttribs(pth, fs.Metadata{
+		Mode:       0755,
+		ModTime:    def.Epochwhen,
+		AccessTime: def.Epochwhen,
+		Uid:        uinfo.Uid,
+		Gid:        uinfo.Gid,
+	})
 }
 
 /*
 	Ensure `/tmp` exists and anyone can write there.
 	The sticky bit will be applied and permissions set to 777.
+	If `/tmp` didn't already exist, the owner and group will be =0;
+	otherwise if it was already present they will be unchanged.
 
 	Edge case note: will follow symlinks.
 */
@@ -89,5 +111,5 @@ func ensureTempDir(rootfsPath string) {
 	every concievable fractal of at-one-time-in-history-valid configuration.
 */
 func ensureIdentity(rootfsPath string, policy def.Policy) {
-
+	// TODO we'll come back to this in a future iteration.
 }
