@@ -34,7 +34,7 @@ func TestTarOutputCompat(t *testing.T) {
 						)
 
 						// sanity check that there's a file.
-						So("./output.tar", testutil.ShouldBeFile, os.FileMode(0))
+						So("./output.tar", testutil.ShouldBeFile, os.FileMode(0644))
 
 						// now exec tar, and check that it doesn't barf outright.
 						// this is not well isolated from the host; consider improving that a todo.
