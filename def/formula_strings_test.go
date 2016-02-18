@@ -53,4 +53,30 @@ func TestStringParse(t *testing.T) {
 			So(mountsCfg[0].TargetPath, ShouldEqual, "/breakout")
 		})
 	})
+
+	Convey("Given a formula with cradle overrides", t, func() {
+		Convey("False is false", func() {
+			content := []byte(`
+			action:
+				cradle: false
+			`)
+			formula := def.ParseYaml(content)
+			So(formula.Action.Cradle, ShouldNotBeNil)
+			So(*formula.Action.Cradle, ShouldEqual, false)
+		})
+		Convey("True is true", func() {
+			content := []byte(`
+			action:
+				cradle: true
+			`)
+			formula := def.ParseYaml(content)
+			So(formula.Action.Cradle, ShouldNotBeNil)
+			So(*formula.Action.Cradle, ShouldEqual, true)
+		})
+		Convey("Absense is nil", func() {
+			content := []byte(``)
+			formula := def.ParseYaml(content)
+			So(formula.Action.Cradle, ShouldBeNil)
+		})
+	})
 }
