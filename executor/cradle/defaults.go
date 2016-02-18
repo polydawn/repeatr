@@ -9,17 +9,20 @@ import (
 */
 func ApplyDefaults(frm *def.Formula) *def.Formula {
 	frm = frm.Clone()
-	frm.Action.Env.Merge(DefaultEnv())
+	if frm.Action.Policy == "" {
+		frm.Action.Policy = def.PolicyRoutine
+	}
+	frm.Action.Env.Merge(DefaultEnv(frm.Action.Policy))
 	if frm.Action.Cwd == "" {
 		frm.Action.Cwd = DefaultCwd()
 	}
 	return frm
 }
 
-func DefaultEnv() def.Env {
+func DefaultEnv(p def.Policy) def.Env {
 	return def.Env{
-		"PATH": "",
-		"HOME": "",
+		"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+		"HOME": UserinfoForPolicy(p).Home,
 	}
 }
 

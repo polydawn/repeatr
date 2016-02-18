@@ -14,6 +14,7 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/basicjob"
+	"polydawn.net/repeatr/executor/cradle"
 	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/flak"
@@ -31,9 +32,8 @@ func (e *Executor) Configure(workspacePath string) {
 }
 
 func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal io.Writer) def.Job {
-
-	// Prepare the forumla for execution on this host
-	def.ValidateAll(&f)
+	// Fill in default config for anything still blank.
+	f = *cradle.ApplyDefaults(&f)
 
 	job := basicjob.New(id)
 	jobReady := make(chan struct{})
@@ -110,6 +110,9 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	)
 	defer assembly.Teardown() // What ever happens: Disassemble filesystem
 	util.ProvisionOutputs(f.Outputs, rootfs, journal)
+	if f.Action.Cradle == nil || *(f.Action.Cradle) == true {
+		cradle.MakeCradle(rootfs, f)
+	}
 
 	// chroot's are pretty easy.
 	cmdName := f.Action.Entrypoint[0]

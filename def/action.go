@@ -8,7 +8,8 @@ type Action struct {
 	Entrypoint []string `json:"command,omitempty"` // executable to invoke as the task.  included in the conjecture.
 	Cwd        string   `json:"cwd,omitempty"`     // working directory to set when invoking the executable.  if not set, will be defaulted to "/".
 	Env        Env      `json:"env,omitempty"`     // environment variables.  included in the conjecture.
-	Policy     Policy   `json:"policy,omitempty"`
+	Policy     Policy   `json:"policy,omitempty"`  // policy naming user level and security mode.
+	Cradle     *bool    `json:"cradle,omitempty"`  // default/nil interpreted as true; set to false to disable ensuring cradle during setup.
 	Escapes    Escapes  `json:"escapes,omitempty"`
 }
 

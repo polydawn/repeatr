@@ -18,6 +18,7 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/basicjob"
+	"polydawn.net/repeatr/executor/cradle"
 	"polydawn.net/repeatr/executor/util"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/assets"
@@ -51,8 +52,8 @@ func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal i
 	//   - they should be realigned until they actually assist the defers and cleanups
 	//     - e.g. withErrorCapture, withJobWorkPath, withFilesystems, etc
 
-	// Prepare the forumla for execution on this host
-	def.ValidateAll(&f)
+	// Fill in default config for anything still blank.
+	f = *cradle.ApplyDefaults(&f)
 
 	job := basicjob.New(id)
 	jobReady := make(chan struct{})
@@ -130,6 +131,9 @@ func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, res
 		journal,
 	)
 	defer assembly.Teardown()
+	if formula.Action.Cradle == nil || *(formula.Action.Cradle) == true {
+		cradle.MakeCradle(rootfsPath, formula)
+	}
 
 	// Emit configs for runc.
 	runcConfigJsonPath := filepath.Join(jobPath, "config.json")
