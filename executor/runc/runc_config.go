@@ -41,10 +41,7 @@ func EmitRuncConfigStruct(frm def.Formula, job def.Job, rootPath string, tty boo
 			},
 		},
 		"linux": map[string]interface{}{
-			"capabilities": []interface{}{
-				"CAP_AUDIT_WRITE",
-				"CAP_KILL",
-			},
+			"capabilities": cradle.CapsForPolicy(frm.Action.Policy),
 		},
 	}
 }
