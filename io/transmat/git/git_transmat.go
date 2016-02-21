@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -38,13 +39,28 @@ func New(workPath string) integrity.Transmat {
 	return &GitTransmat{workPath}
 }
 
+const (
+	git_uid = 1000
+	git_gid = 1000
+)
+
 var git gosh.Command = gosh.Gosh(
 	"git",
 	gosh.NullIO,
-	gosh.Opts{Env: map[string]string{
-		"GIT_CONFIG_NOSYSTEM": "true",
-		"HOME":                "/dev/null",
-	}},
+	gosh.Opts{
+		Env: map[string]string{
+			"GIT_CONFIG_NOSYSTEM": "true",
+			"HOME":                "/dev/null",
+		},
+		Launcher: gosh.ExecCustomizingLauncher(func(cmd *exec.Cmd) {
+			cmd.SysProcAttr = &syscall.SysProcAttr{
+				Credential: &syscall.Credential{
+					Uid: uint32(git_uid),
+					Gid: uint32(git_gid),
+				},
+			}
+		}),
+	},
 )
 
 /*
