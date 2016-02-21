@@ -45,7 +45,7 @@ func CapsForPolicy(m def.Policy) []string {
 	case def.PolicySysad:
 		return []string{
 			"CAP_AUDIT_CONTROL",
-			"CAP_AUDIT_READ",
+			//"CAP_AUDIT_READ", // currently regarded as 'unknown' by runc...?
 			"CAP_AUDIT_WRITE",
 			"CAP_BLOCK_SUSPEND",
 			"CAP_CHOWN",
