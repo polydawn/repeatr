@@ -53,6 +53,7 @@ action:
 			export GOROOT=/app/go/go
 			export PATH=\$PATH:/app/go/go/bin
 			./goad install
+	policy: uidzero
 	cwd: "/task/repeatr/"
 	env:
 		"GITCOMMIT": "${GITCOMMIT}"

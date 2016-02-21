@@ -117,8 +117,13 @@ func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobRe
 	// chroot's are pretty easy.
 	cmdName := f.Action.Entrypoint[0]
 	cmd := exec.Command(cmdName, f.Action.Entrypoint[1:]...)
+	userinfo := cradle.UserinfoForPolicy(f.Action.Policy)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Chroot:    rootfs,
+		Chroot: rootfs,
+		Credential: &syscall.Credential{
+			Uid: uint32(userinfo.Uid),
+			Gid: uint32(userinfo.Gid),
+		},
 		Pdeathsig: syscall.SIGKILL,
 	}
 
