@@ -6,7 +6,6 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/executor/chroot"
-	"polydawn.net/repeatr/executor/nsinit"
 	"polydawn.net/repeatr/executor/null"
 	"polydawn.net/repeatr/executor/runc"
 )
@@ -21,8 +20,6 @@ func Get(desire string) executor.Executor {
 	switch desire {
 	case "null":
 		executor = &null.Executor{}
-	case "nsinit":
-		executor = &nsinit.Executor{}
 	case "chroot":
 		executor = &chroot.Executor{}
 	case "runc":

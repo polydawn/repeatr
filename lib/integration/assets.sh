@@ -35,9 +35,5 @@ resolveAsset() {
 # Basic ubuntu container; trivially cleaned from a Docker mirror
 resolveAsset "ubuntu.tar.gz" "0b6c6d8318dd8906397384f0a16c01754c29521124abbb6f67886caaec2eb2c3953f8c00dc5cba3734bd7bbae51b007b"
 
-# Nsinit binary; to be upgraded later
-resolveAsset "nsinit" "f48447a3e3d44dc94e04c25aac61b979d4a24a894fcd83453fe79a294c04d5a0f4a338d3fba43dd7eb2db5e3e429479a"
-chmod +x assets/nsinit
-
 
 echo "Assets downloaded."
