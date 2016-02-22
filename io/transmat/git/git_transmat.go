@@ -14,6 +14,7 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/lib/fs"
 )
 
 const Kind = integrity.TransmatKind("git")
@@ -38,13 +39,39 @@ func New(workPath string) integrity.Transmat {
 	return &GitTransmat{workPath}
 }
 
+const (
+	git_uid = 1000
+	git_gid = 1000
+)
+
 var git gosh.Command = gosh.Gosh(
 	"git",
 	gosh.NullIO,
-	gosh.Opts{Env: map[string]string{
-		"GIT_CONFIG_NOSYSTEM": "true",
-		"HOME":                "/dev/null",
-	}},
+	gosh.Opts{
+		Env: map[string]string{
+			"GIT_CONFIG_NOSYSTEM": "true",
+			"HOME":                "/dev/null",
+		},
+		// We would *LOVE* to uncomment this block and drop privs.
+		// However, it's currently practically un-supportable: git running
+		// on a host that doesn't contain a username mapped to this uid
+		// will error on launch -- yep, it's one of *those* programs
+		// (at least as of 1.9.1; more recent upstreams *may* have patched it;
+		// haven't tested exhaustively yet.)
+		// To address this, we'd either need containerized-git (which may
+		// limit portability in some other undesirable fashions; ideally
+		// transmats should work without such heavy weaponry), or distributing
+		// a reference a particular (and likely patched) version of git.
+		// ----------------------------------------------------------------
+		//	Launcher: gosh.ExecCustomizingLauncher(func(cmd *exec.Cmd) {
+		//		cmd.SysProcAttr = &syscall.SysProcAttr{
+		//			Credential: &syscall.Credential{
+		//				Uid: uint32(git_uid),
+		//				Gid: uint32(git_gid),
+		//			},
+		//		}
+		//	}),
+	},
 )
 
 /*
@@ -130,6 +157,9 @@ func (t *GitTransmat) Materialize(
 		if err != nil {
 			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
 		}
+		if err := os.Chmod(arena.workDirPath, 0755); err != nil {
+			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
+		}
 
 		// From now on, all our git commands will have these overriden paths:
 		// This gives us a working tree without ".git".
@@ -171,6 +201,13 @@ func (t *GitTransmat) Materialize(
 			gosh.Opts{Cwd: arena.workDirPath},
 		).RunAndReport()
 		log.Info("git transmat: submodules complete")
+
+		// Since git doesn't convey permission bits, the default value
+		// should be 1000 (consistent with being accessible under the "routine" policy).
+		// Chown/chmod everything as such.
+		if err := fs.Chownr(arena.workDirPath, git_uid, git_gid); err != nil {
+			panic(integrity.TransmatError.New("Unable to coerce perms: %s", err))
+		}
 
 		// verify total integrity
 		// actually this is a nil step; there's no such thing as "acceptHashMismatch", clone would have simply failed
