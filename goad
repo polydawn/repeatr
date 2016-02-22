@@ -16,10 +16,6 @@ mkdir -p /tmp/repeatr-test/
 chmod 01777 /tmp/repeatr-test/ 2>/dev/null || true
 export REPEATR_BASE="/tmp/repeatr-test/$(date +%Y.%m.%d..%H.%M.%S)..$RANDOM$RANDOM"
 
-### misc jank (needs cleanup)
-# Right now we need nsinit on the PATH.  But this form of asset mngment is silly and should be removed
-PATH=$PWD/assets:$PATH
-
 
 
 # Set up gopath -- relative to this dir, so we work in isolation.
