@@ -29,6 +29,13 @@ package def
 */
 type Policy string
 
+var PolicyValues = []Policy{
+	PolicyRoutine,
+	PolicyUidZero,
+	PolicyGovernor,
+	PolicySysad,
+}
+
 const (
 	/*
 		Operate with a low uid, as if you were a regular user on a

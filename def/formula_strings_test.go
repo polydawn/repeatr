@@ -6,6 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/testutil"
 )
 
 func TestStringParse(t *testing.T) {
@@ -77,6 +78,24 @@ func TestStringParse(t *testing.T) {
 			content := []byte(``)
 			formula := def.ParseYaml(content)
 			So(formula.Action.Cradle, ShouldBeNil)
+		})
+	})
+
+	Convey("Given a formula with policy settings", t, func() {
+		Convey("Valid enum values parse", func() {
+			content := []byte(`
+			action:
+				policy: governor
+			`)
+			formula := def.ParseYaml(content)
+			So(formula.Action.Policy, ShouldEqual, def.PolicyGovernor)
+		})
+		Convey("Non-enum values should be rejected", func() {
+			content := []byte(`
+			action:
+				policy: nonsense
+			`)
+			So(func() { def.ParseYaml(content) }, testutil.ShouldPanicWith, def.ConfigError)
 		})
 	})
 }
