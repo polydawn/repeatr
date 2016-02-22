@@ -2,7 +2,6 @@ package git
 
 import (
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -28,8 +27,6 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 	//  both of these could be addressed with upgrades to filefixtures in the future.
 	Convey("Given a local git repo", t, testutil.Requires(
 		testutil.WithTmpdir(func(c C) {
-			os.Chown(".", git_uid, git_gid) // chown tempdir: git isn't running with root privs.
-
 			git := git.Bake(gosh.Opts{Env: map[string]string{
 				"GIT_AUTHOR_NAME":     "repeatr",
 				"GIT_AUTHOR_EMAIL":    "repeatr",
