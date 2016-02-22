@@ -300,9 +300,9 @@ func CheckAssemblerBareMount(assemblerFn integrity.Assembler) {
 				defer f.Close()
 				So(err, ShouldBeNil)
 				// the outside should see it (obviously! just a sanity check)
-				So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0))
+				So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0644))
 				// the inside should see it
-				So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0))
+				So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0644))
 			}),
 		),
 	)
@@ -322,9 +322,9 @@ func CheckAssemblerBareMount(assemblerFn integrity.Assembler) {
 				defer f.Close()
 				So(err, ShouldBeNil)
 				// the inside should see it (obviously! just a sanity check)
-				So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0))
+				So("./material/alpha/moar", testutil.ShouldBeFile, os.FileMode(0644))
 				// the outside should see it
-				So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0))
+				So("./assembled/moar", testutil.ShouldBeFile, os.FileMode(0644))
 			}),
 		),
 	)

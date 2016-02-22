@@ -2,9 +2,11 @@ package runc
 
 import (
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/executor/cradle"
 )
 
 func EmitRuncConfigStruct(frm def.Formula, job def.Job, rootPath string, tty bool) interface{} {
+	userinfo := cradle.UserinfoForPolicy(frm.Action.Policy)
 	return map[string]interface{}{
 		"version": "0.2.0",
 		"platform": map[string]interface{}{
@@ -14,8 +16,8 @@ func EmitRuncConfigStruct(frm def.Formula, job def.Job, rootPath string, tty boo
 		"process": map[string]interface{}{
 			"terminal": tty,
 			"user": map[string]interface{}{
-				"uid":            0,
-				"gid":            0,
+				"uid":            userinfo.Uid,
+				"gid":            userinfo.Gid,
 				"additionalGids": nil,
 			},
 			"args": frm.Action.Entrypoint,
@@ -39,10 +41,7 @@ func EmitRuncConfigStruct(frm def.Formula, job def.Job, rootPath string, tty boo
 			},
 		},
 		"linux": map[string]interface{}{
-			"capabilities": []interface{}{
-				"CAP_AUDIT_WRITE",
-				"CAP_KILL",
-			},
+			"capabilities": cradle.CapsForPolicy(frm.Action.Policy),
 		},
 	}
 }

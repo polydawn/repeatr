@@ -35,9 +35,8 @@ func ShouldBeFile(actual interface{}, expected ...interface{}) string {
 		if !ok {
 			return "You must provide a FileMode as the second argument to this assertion, if any."
 		}
-		modeType := info.Mode() & os.ModeType
-		if modeType != mode {
-			return fmt.Sprintf("Expected file to have mode %v but it had %v instead!", mode, modeType)
+		if info.Mode() != mode {
+			return fmt.Sprintf("Expected file to have mode %v but it had %v instead!", mode, info.Mode())
 		}
 		return ""
 	default:

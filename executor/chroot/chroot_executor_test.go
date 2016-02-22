@@ -23,6 +23,8 @@ func Test(t *testing.T) {
 				tests.CheckPwdBehavior(execEng)
 				tests.CheckEnvBehavior(execEng)
 				//tests.CheckHostnameBehavior(execEng) // not supportable with chroot
+
+				tests.CheckUidBehavior(execEng)
 			}),
 		),
 	)

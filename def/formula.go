@@ -16,7 +16,7 @@ type Formula struct {
 
 func (f Formula) Clone() *Formula {
 	f.Inputs = f.Inputs.Clone()
-	// punt on going deep on f.Action because we do truly always treat that as immutable
+	f.Action = f.Action.Clone()
 	f.Outputs = f.Outputs.Clone()
 	return &f
 }

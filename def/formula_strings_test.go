@@ -6,6 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/testutil"
 )
 
 func TestStringParse(t *testing.T) {
@@ -51,6 +52,50 @@ func TestStringParse(t *testing.T) {
 			So(len(mountsCfg), ShouldEqual, 1)
 			So(mountsCfg[0].SourcePath, ShouldEqual, "/host/files")
 			So(mountsCfg[0].TargetPath, ShouldEqual, "/breakout")
+		})
+	})
+
+	Convey("Given a formula with cradle overrides", t, func() {
+		Convey("False is false", func() {
+			content := []byte(`
+			action:
+				cradle: false
+			`)
+			formula := def.ParseYaml(content)
+			So(formula.Action.Cradle, ShouldNotBeNil)
+			So(*formula.Action.Cradle, ShouldEqual, false)
+		})
+		Convey("True is true", func() {
+			content := []byte(`
+			action:
+				cradle: true
+			`)
+			formula := def.ParseYaml(content)
+			So(formula.Action.Cradle, ShouldNotBeNil)
+			So(*formula.Action.Cradle, ShouldEqual, true)
+		})
+		Convey("Absense is nil", func() {
+			content := []byte(``)
+			formula := def.ParseYaml(content)
+			So(formula.Action.Cradle, ShouldBeNil)
+		})
+	})
+
+	Convey("Given a formula with policy settings", t, func() {
+		Convey("Valid enum values parse", func() {
+			content := []byte(`
+			action:
+				policy: governor
+			`)
+			formula := def.ParseYaml(content)
+			So(formula.Action.Policy, ShouldEqual, def.PolicyGovernor)
+		})
+		Convey("Non-enum values should be rejected", func() {
+			content := []byte(`
+			action:
+				policy: nonsense
+			`)
+			So(func() { def.ParseYaml(content) }, testutil.ShouldPanicWith, def.ConfigError)
 		})
 	})
 }

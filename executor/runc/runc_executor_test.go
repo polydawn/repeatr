@@ -24,6 +24,8 @@ func Test(t *testing.T) {
 				tests.CheckPwdBehavior(execEng)
 				tests.CheckEnvBehavior(execEng)
 				tests.CheckHostnameBehavior(execEng)
+
+				tests.CheckUidBehavior(execEng)
 			}),
 		),
 	)
