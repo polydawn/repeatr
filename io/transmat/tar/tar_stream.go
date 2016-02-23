@@ -2,6 +2,7 @@ package tar
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"encoding/base64"
 	"fmt"
 	"hash"
@@ -24,12 +25,22 @@ import (
 	"polydawn.net/repeatr/lib/treewalk"
 )
 
-// Walks `basePath`, hashing it, pushing the encoded tar to `file`, and returning the final hash.
+/*
+	Walks `basePath`, hashing it, encoding the contents as a tar and sending the gzip'd
+	stream to `file`, and returning the final hash after all files have been walked.
+*/
 func Save(file io.Writer, basePath string, filterset filter.FilterSet, hasherFactory func() hash.Hash) string {
+	// Stream the tar and compress on the way out.
+	//  Note on compression levels: The default is 6; and per per http://tukaani.org/lzma/benchmarks.html
+	//  this appears quite reasonable: higher levels appear to have minimal size payoffs, but significantly rising compress time costs;
+	//  decompression time does not vary with compression level.
+	// Save a gzip reference just to close it; tar.Writer doesn't passthru its own close.
+	gzWriter := gzip.NewWriter(file)
+	defer gzWriter.Close()
+	tarWriter := tar.NewWriter(gzWriter)
+	defer tarWriter.Close()
 	// walk filesystem, copying and accumulating data for integrity check
 	bucket := &fshash.MemoryBucket{}
-	tarWriter := tar.NewWriter(file)
-	defer tarWriter.Close()
 	if err := saveWalk(basePath, tarWriter, filterset, bucket, hasherFactory); err != nil {
 		panic(err) // TODO this is not well typed, and does not clearly indicate whether scanning or committing had the problem
 	}
