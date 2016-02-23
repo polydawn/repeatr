@@ -18,7 +18,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "executor, e",
-				Value: "chroot",
+				Value: "runc",
 				Usage: "Which executor to use",
 			},
 			cli.StringFlag{
