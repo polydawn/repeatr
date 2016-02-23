@@ -22,11 +22,6 @@ func RunCommandPattern(output io.Writer) cli.Command {
 				Usage: "Which executor to use",
 			},
 			cli.StringFlag{
-				Name:  "scheduler, s",
-				Value: "linear",
-				Usage: "Which scheduler to use",
-			},
-			cli.StringFlag{
 				Name:  "input, i",
 				Usage: "Location of input formula (json format)",
 			},
@@ -38,7 +33,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 		Action: func(ctx *cli.Context) {
 			// Parse args
 			executor := executordispatch.Get(ctx.String("executor"))
-			scheduler := schedulerdispatch.Get(ctx.String("scheduler"))
+			scheduler := schedulerdispatch.Get("linear")
 			formulaPaths := ctx.String("input")
 			ignoreJobExit := ctx.Bool("ignore-job-exit")
 			// Parse formula
