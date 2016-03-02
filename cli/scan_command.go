@@ -54,7 +54,7 @@ func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 			outputSpec := def.Output{
 				Type:       ctx.String("kind"),
 				Warehouses: warehouses,
-				Filters:    *filters,
+				Filters:    filters,
 				MountPath:  ctx.String("place"),
 			}
 			if outputSpec.Type == "" {
@@ -102,7 +102,7 @@ func Scan(outputSpec def.Output, log log15.Logger) def.Output {
 		outputSpec.MountPath,
 		warehouses,
 		log,
-		integrity.ConvertFilterConfig(outputSpec.Filters)...,
+		integrity.ConvertFilterConfig(*outputSpec.Filters)...,
 	)
 
 	outputSpec.Hash = string(commitID)

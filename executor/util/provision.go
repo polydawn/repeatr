@@ -123,8 +123,9 @@ func PreserveOutputs(transmat integrity.Transmat, outputs def.OutputGroup, rootf
 	scanGather := make(chan map[string]scanReport)
 	for name, out := range outputs {
 		go func(name string, out *def.Output) {
+			out.Filters = &def.Filters{}
 			out.Filters.InitDefaultsOutput()
-			filterOptions := integrity.ConvertFilterConfig(out.Filters)
+			filterOptions := integrity.ConvertFilterConfig(*out.Filters)
 			scanPath := filepath.Join(rootfs, out.MountPath)
 			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
 			try.Do(func() {
