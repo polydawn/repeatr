@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/codegangsta/cli"
@@ -92,6 +93,16 @@ func RunCommandPattern(output io.Writer) cli.Command {
 					fmt.Sprintf("job execution errored: %s", result.Error.Message()),
 					SetExitCode(EXIT_USER), // TODO review exit code
 				))
+			}
+
+			// Place the exit code among the results.
+			//  This is so a caller can unambiguously see the job's exit code;
+			//  while we do attempt to forward a pass-vs-fail signal through our
+			//  own exit code by default, we can only piggyback so much signal;
+			//  we also need space to report our own errors distinctly.
+			result.Outputs["$exitcode"] = &def.Output{
+				Type: "exitcode",
+				Hash: strconv.Itoa(result.ExitCode),
 			}
 
 			// Output.
