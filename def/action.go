@@ -34,15 +34,17 @@ func (e Env) Clone() Env {
 
 /*
 	Merge given env map into the object.
-	Existing values are preferred,	new values are added.
+	Existing values are preferred, new values are added.
 	Mutates; `Clone()` first to avoid if necessary.
+	Returns the mutated reference for convenient chaining.
 */
-func (keep Env) Merge(other Env) {
+func (keep Env) Merge(other Env) Env {
 	for k, v := range other {
 		if _, ok := keep[k]; !ok {
 			keep[k] = v
 		}
 	}
+	return keep
 }
 
 /*
