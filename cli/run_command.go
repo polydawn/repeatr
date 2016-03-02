@@ -3,10 +3,12 @@ package cli
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/codegangsta/cli"
 	"github.com/ugorji/go/codec"
 
+	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor/dispatch"
 	"polydawn.net/repeatr/scheduler/dispatch"
 )
@@ -17,7 +19,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 		Usage: "Run a formula",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "executor, e",
+				Name:  "executor",
 				Value: "runc",
 				Usage: "Which executor to use",
 			},
@@ -29,6 +31,10 @@ func RunCommandPattern(output io.Writer) cli.Command {
 				Name:  "patch, p",
 				Usage: "files with additional pieces of formula to apply before launch",
 			},
+			cli.StringSliceFlag{
+				Name:  "env, e",
+				Usage: "apply additional environment vars to formula before launch (overrides 'patch').  Format like '-e KEY=val'",
+			},
 		},
 		Action: func(ctx *cli.Context) {
 			// Parse args
@@ -36,6 +42,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			scheduler := schedulerdispatch.Get("linear")
 			ignoreJobExit := ctx.Bool("ignore-job-exit")
 			patchPaths := ctx.StringSlice("patch")
+			envArgs := ctx.StringSlice("env")
 			// One (and only one) formula should follow;
 			//  we don't have a way to unambiguously output more than one result formula at the moment.
 			var formulaPath string
@@ -59,6 +66,19 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			//  Apply each one as it's loaded.
 			for _, patchPath := range patchPaths {
 				formula.ApplyPatch(LoadFormulaFromFile(patchPath))
+			}
+			// Any env var overrides stomp even on top of patches.
+			for _, envArg := range envArgs {
+				parts := strings.SplitN(envArg, "=", 2)
+				if len(parts) < 2 {
+					panic(Error.NewWith(
+						"env arguments must have an equal sign (like this: '-e KEY=val').",
+						SetExitCode(EXIT_BADARGS),
+					))
+				}
+				formula.ApplyPatch(def.Formula{Action: def.Action{
+					Env: map[string]string{parts[0]: parts[1]},
+				}})
 			}
 
 			// TODO Don't reeeeally want the 'run once' command going through the schedulers.
