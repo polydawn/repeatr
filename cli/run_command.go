@@ -25,12 +25,17 @@ func RunCommandPattern(output io.Writer) cli.Command {
 				Name:  "ignore-job-exit",
 				Usage: "If true, repeatr will exit with 0/success even if the job exited nonzero.",
 			},
+			cli.StringSliceFlag{
+				Name:  "patch, p",
+				Usage: "files with additional pieces of formula to apply before launch",
+			},
 		},
 		Action: func(ctx *cli.Context) {
 			// Parse args
 			executor := executordispatch.Get(ctx.String("executor"))
 			scheduler := schedulerdispatch.Get("linear")
 			ignoreJobExit := ctx.Bool("ignore-job-exit")
+			patchPaths := ctx.StringSlice("patch")
 			// One (and only one) formula should follow;
 			//  we don't have a way to unambiguously output more than one result formula at the moment.
 			var formulaPath string
@@ -50,6 +55,11 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			}
 			// Parse formula
 			formula := LoadFormulaFromFile(formulaPath)
+			// Parse patches into formulas as well.
+			//  Apply each one as it's loaded.
+			for _, patchPath := range patchPaths {
+				formula.ApplyPatch(LoadFormulaFromFile(patchPath))
+			}
 
 			// TODO Don't reeeeally want the 'run once' command going through the schedulers.
 			//  Having a path that doesn't invoke that complexity unnecessarily, and also is more clearly allowed to use the current terminal, is want.
