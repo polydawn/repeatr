@@ -1,6 +1,7 @@
 recent /// not yet released
 ---------------------------
 
+- Feature: `repeatr run` now outputs the exit code in the structure it sends to stdout, so it can be mechanically extracted and clearly disambiguated from repeatr's own exit code.
 - Feature: `repeatr run` now accepts additional snippets of partial formulas with the `-p` flag, and will patch them onto its main argument.  This allows simple scripts to provide custom values to a run without needed to sprout a whole json/yaml parser.  The fully patched values will appear in the formula emitted at the end of the run along with the output hashes, as you might expect.  Use judiciously; this functionality makes sense in `repeatr run` since one-off runs are its MO, but not all upcoming features will support this particular escape valve (in particular, pipelines certainly won't).  Currently only env vars are merged.
 - Feature `repeatr run` now accepts env vars with the `-e` flag, and will patch them onto the formula.  This is shorthand for doing the same with `-p`.
 - Bugfix: When using 'tar' transports with 'http' or 'https' URLs, HTTP status codes of 404 will now be reported as `DataDNE` errors.  Previously, this would be incorrectly reported as existing but corrupt data.
