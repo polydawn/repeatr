@@ -18,17 +18,8 @@ func RunCommandPattern(output io.Writer) cli.Command {
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "executor, e",
-				Value: "chroot",
+				Value: "runc",
 				Usage: "Which executor to use",
-			},
-			cli.StringFlag{
-				Name:  "scheduler, s",
-				Value: "linear",
-				Usage: "Which scheduler to use",
-			},
-			cli.StringFlag{
-				Name:  "input, i",
-				Usage: "Location of input formula (json format)",
 			},
 			cli.BoolFlag{
 				Name:  "ignore-job-exit",
@@ -38,11 +29,27 @@ func RunCommandPattern(output io.Writer) cli.Command {
 		Action: func(ctx *cli.Context) {
 			// Parse args
 			executor := executordispatch.Get(ctx.String("executor"))
-			scheduler := schedulerdispatch.Get(ctx.String("scheduler"))
-			formulaPaths := ctx.String("input")
+			scheduler := schedulerdispatch.Get("linear")
 			ignoreJobExit := ctx.Bool("ignore-job-exit")
+			// One (and only one) formula should follow;
+			//  we don't have a way to unambiguously output more than one result formula at the moment.
+			var formulaPath string
+			switch l := len(ctx.Args()); {
+			case l < 1:
+				panic(Error.NewWith(
+					"repeatr-run requires a path to a formula as the last argument",
+					SetExitCode(EXIT_BADARGS),
+				))
+			case l > 1:
+				panic(Error.NewWith(
+					"repeatr-run requires exactly one formula as the last argument",
+					SetExitCode(EXIT_BADARGS),
+				))
+			case l == 1:
+				formulaPath = ctx.Args()[0]
+			}
 			// Parse formula
-			formula := LoadFormulaFromFile(formulaPaths)
+			formula := LoadFormulaFromFile(formulaPath)
 
 			// TODO Don't reeeeally want the 'run once' command going through the schedulers.
 			//  Having a path that doesn't invoke that complexity unnecessarily, and also is more clearly allowed to use the current terminal, is want.
