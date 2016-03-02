@@ -1,6 +1,7 @@
 recent /// not yet released
 ---------------------------
 
+- Bugfix: When using 'tar' transports with 'http' or 'https' URLs, HTTP status codes of 404 will now be reported as `DataDNE` errors.  Previously, this would be incorrectly reported as existing but corrupt data.
 - Change: `repeatr run` now accepts the formula file as a positional argument (you can get rid of the `-i ` in all your scripts).
 - Change: The default executor in `repeatr run` is now 'runc' instead of 'chroot'.  (You can continue to use the chroot executor by flagging `-e chroot`.)
 - Improvement: All transports which store filesystems in tar format (this includes 'tar', 's3' and 'gc') now upload gzip compressed data by default.
