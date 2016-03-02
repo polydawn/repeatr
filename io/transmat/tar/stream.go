@@ -51,7 +51,14 @@ func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) 
 		if err != nil {
 			panic(integrity.WarehouseIOError.New("Unable to fetch %q: %s", u.String(), err))
 		}
-		return resp.Body
+		switch resp.StatusCode {
+		case 200:
+			return resp.Body
+		case 404:
+			panic(integrity.DataDNE.New("Fetch %q: not found", u.String()))
+		default:
+			panic(integrity.WarehouseIOError.New("Unable to fetch %q: http status %s", u.String(), resp.Status))
+		}
 	case "":
 		panic(integrity.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
 	default:
