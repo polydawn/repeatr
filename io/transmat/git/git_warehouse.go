@@ -55,6 +55,9 @@ func (wh *Warehouse) Ping() *errors.Error {
 	// TODO there's no "--" in ls-remote, so... we should forbid things starting in "-", i guess?
 	//  or use "file://" religiously?  but no, bc ssh doesn't look like "ssh://" all the time... ugh, i do not want to write a git url parser
 	//   update: yeah, using "file://" religiously is not an option.  this actually takes a *different* path than `/non/protocol/prefixed`.  not significantly, but it may impact e.g. hardlinking, iiuc
+	// TODO jesus christ it's a lion get in the car: `git ls-remote .` and `./` are a special case and return results even if the repo root is *above* your cwd, even though git clone will disagree for obvious reasons.
+	// TODO but wait there's more: call now, and you'll discover that `git ls-remote ../sibling` works fine (and so does clone), but if you do it from *inside* the same repo, it just says no-such-repo (but clone still works!)
+	// so tl;dr literally everything about url validation in git is completely batshit insane.  ESPECIALLY around local file paths.
 
 	var errBuf bytes.Buffer
 	code := git.Bake(
