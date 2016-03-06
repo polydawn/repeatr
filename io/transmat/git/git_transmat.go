@@ -173,7 +173,10 @@ func (t *GitTransmat) Materialize(
 		// Clone!
 		// TODO make sure all the check hard modes are enabled
 		git.Bake(
-			"clone", "--bare", "--", warehouse.url, arena.gitDirPath,
+			"clone",
+			"--bare", // we want to make the checkout somewhere else, so we do it ourselves in a separate step.
+			//"--local", // beg for use of hardlink optimizations.  supposedly self-disables on non-local urls, but also doesn't detect and thus collapses on cross-device, so no-go.
+			"--", warehouse.url, arena.gitDirPath,
 		).RunAndReport()
 		log.Info("git transmat: clone complete")
 
