@@ -8,6 +8,7 @@ recent /// not yet released
 - Change: `repeatr run` now accepts the formula file as a positional argument (you can get rid of the `-i ` in all your scripts).
 - Change: The default executor in `repeatr run` is now 'runc' instead of 'chroot'.  (You can continue to use the chroot executor by flagging `--executor chroot`.)
 - Improvement: All transports which store filesystems in tar format (this includes 'tar', 's3' and 'gc') now upload gzip compressed data by default.
+- Bugfix: When using the 'git' transport, relative paths like ".." are now handled much more reasonably.  (Internally, all paths are absolutized by repeatr before invoking git, to work around a series of very interesting git behaviors; however, since git metadata is already not exposed to the filesystem inside containment, this change should be quite transparent.)
 
 
 v0.11 -- f6095637190f63c9318df74a93c51a230ff85176 -- 21 Feb 2016
