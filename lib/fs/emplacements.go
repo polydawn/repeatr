@@ -291,14 +291,14 @@ func mkdirAll(path string, hdr Metadata) (stack []string, topMTime time.Time, er
 }
 
 /*
-	`os.Chown`, recursively.
+	`os.Lchown`, recursively.
 */
 func Chownr(path string, uid, gid int) error {
 	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if err := os.Chown(path, uid, gid); err != nil {
+		if err := os.Lchown(path, uid, gid); err != nil {
 			return err
 		}
 		return nil
