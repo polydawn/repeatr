@@ -79,7 +79,7 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 				So(filepath.Join(arena.Path(), ".git"), testutil.ShouldBeNotFile)
 			})
 
-			SkipConvey("Materialization should work, even when cwd is inside the repo", FailureContinues, func() {
+			Convey("Materialization should work, even when cwd is inside the repo", FailureContinues, func() {
 				So(os.Mkdir("repo-a/meta", 0755), ShouldBeNil)
 				testutil.UsingDir("repo-a/meta", func() {
 					uris := []integrity.SiloURI{integrity.SiloURI("./..")}

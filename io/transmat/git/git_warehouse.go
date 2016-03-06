@@ -2,6 +2,7 @@ package git
 
 import (
 	"bytes"
+	"path/filepath"
 	"strings"
 
 	"github.com/polydawn/gosh"
@@ -35,12 +36,72 @@ type Warehouse struct {
 */
 func NewWarehouse(coords integrity.SiloURI) *Warehouse {
 	wh := &Warehouse{}
-	// TODO we currently don't parse the URL at all, actually.
-	// `url.Parse` could be made to apply, but there's really nothing we
-	//  can explicitly blacklist, and we also don't internally need to
-	//   do any mode-switches here (git is already and always CAS).
-	wh.url = string(coords)
+	wh.url = hammerRelativePaths(string(coords))
 	return wh
+}
+
+/*
+	Desperately attempt to sanitize paths for git.
+
+	This is almost certainly flawed; but frankly, so is git's handling of
+	these things: it's not consistent across all commands (specifically,
+	`git clone` and `git ls-remote`).  We're going for best-effort here,
+	and slightly-better-than-not-trying -- low bars though those are.
+
+	Git has a MAJORLY hard time consistently understanding local paths; so,
+	we give up; internally all paths shall be absolutized because there's
+	simply no functional choice.
+
+	Here's a short list of issues we're concerned with:
+
+	  - There's no "--" in ls-remote, so in order to avoid ambiguity with
+	    arguments, we forbid things starting in "-".
+	  - `git ls-remote .` and `git ls-remote ./` are a special case and will
+	    return results even if the repo root is *above* your cwd, even
+	    though git clone will disagree for obvious reasons.
+	  - `git ls-remote ../sibling` works fine (and so does clone), but if
+	    you do it from *inside* the same repo, it just says no-such-repo
+	    (...but clone still works!)
+	  - `ls-remote` in particular is really willing to take you on a ride:
+	    if you have a repo-A, you make another git repo-B *inside* repo-A,
+	    then you can `ls-remote ..` correctly....
+	  - ....but if you then create a dir inside of repo-B, cd into it, and
+	    try `git ls-remote ../` again you'll get the info from **repo-A**,
+	    the grandparent.
+	  - So basically, relative paths in git simply Don't Work and are
+	    apparently Not Supported.
+
+	Beyond that, we mostly punt.  It's essentially impossible to validate
+	everything in advance in the same way that git will feel.
+	The area we're *really* minding here is where we've observed
+	`git clone` and `git ls-remote` behaviors to drift apart, because
+	that's exceptionally nasty to deal with or report about clearly.
+*/
+func hammerRelativePaths(coords string) string {
+	if len(coords) < 1 {
+		return coords
+	}
+	// If things start with a "-", just... no.  Git lacks consistent ability
+	//  to handle this unambiguously, so we're not even going to try.
+	if coords[0] == '-' {
+		panic(integrity.ConfigError.New("invalid git remote: cannot start with '-'"))
+	}
+	// If something looks like a relative path, absolutize it.
+	//  There's a *litany* of issues this works around.
+	//  If you had an ssh URL with a username starting in dot, eh, god help you.
+	//  Note that we're not chasing after "file://" stuff here; git has
+	//   even more other opinions about that already.
+	if coords[0] == '.' {
+		abs, err := filepath.Abs(coords)
+		if err != nil {
+			panic(integrity.TransmatError.Wrap(err))
+		}
+		return abs
+	}
+	// There's no point in trying to parse the rest as a URL and sanitize it;
+	//  it's both practically and theoretically impossible to accurately seek
+	//   parity with how git may choose to see things.
+	return coords
 }
 
 /*
@@ -51,15 +112,8 @@ func NewWarehouse(coords integrity.SiloURI) *Warehouse {
 */
 func (wh *Warehouse) Ping() *errors.Error {
 	// Shell out to git and ask it if it thinks there's a repo here.
-	// TODO this and all future shellouts does NOT SUFFICIENTLY ISOLATE either config or secret keeping yet.
-	// TODO there's no "--" in ls-remote, so... we should forbid things starting in "-", i guess?
-	//  or use "file://" religiously?  but no, bc ssh doesn't look like "ssh://" all the time... ugh, i do not want to write a git url parser
-	//   update: yeah, using "file://" religiously is not an option.  this actually takes a *different* path than `/non/protocol/prefixed`.  not significantly, but it may impact e.g. hardlinking, iiuc
-	// TODO jesus christ it's a lion get in the car: `git ls-remote .` and `./` are a special case and return results even if the repo root is *above* your cwd, even though git clone will disagree for obvious reasons.
-	// TODO but wait there's more: call now, and you'll discover that `git ls-remote ../sibling` works fine (and so does clone), but if you do it from *inside* the same repo, it just says no-such-repo (but clone still works!)
-	// TODO just take notes on the fine quality now: if you make another git repo-b *inside* git-repo-a, then a dir inside of repo-b, then cd there, then `git ls-remote ../` you'll get the remotes from **repo-a**, the grandparent.  yessss.
-	// so tl;dr literally everything about url validation in git is completely batshit insane.  ESPECIALLY around local file paths.
-
+	//  `git ls-remote` is our best option here for checking out that location and making sure it's advertising refs,
+	//    while refraining from any alarmingly heavyweight operations or data transfers.
 	var errBuf bytes.Buffer
 	code := git.Bake(
 		"ls-remote", wh.url,
