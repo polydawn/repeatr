@@ -13,8 +13,13 @@ import (
 // this doesn't map to git commits because the formulas do; we're intentionally
 // making the formulas standalone as usual (you should be able to pastebin them).
 var versions = []string{
-	"v0.5",
+	"v0.11",
+	"v0.10",
+	"v0.9",
+	"v0.8",
+	"v0.7",
 	"v0.6",
+	"v0.5",
 }
 
 var exit = 0
