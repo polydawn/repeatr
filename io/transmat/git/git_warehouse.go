@@ -57,6 +57,7 @@ func (wh *Warehouse) Ping() *errors.Error {
 	//   update: yeah, using "file://" religiously is not an option.  this actually takes a *different* path than `/non/protocol/prefixed`.  not significantly, but it may impact e.g. hardlinking, iiuc
 	// TODO jesus christ it's a lion get in the car: `git ls-remote .` and `./` are a special case and return results even if the repo root is *above* your cwd, even though git clone will disagree for obvious reasons.
 	// TODO but wait there's more: call now, and you'll discover that `git ls-remote ../sibling` works fine (and so does clone), but if you do it from *inside* the same repo, it just says no-such-repo (but clone still works!)
+	// TODO just take notes on the fine quality now: if you make another git repo-b *inside* git-repo-a, then a dir inside of repo-b, then cd there, then `git ls-remote ../` you'll get the remotes from **repo-a**, the grandparent.  yessss.
 	// so tl;dr literally everything about url validation in git is completely batshit insane.  ESPECIALLY around local file paths.
 
 	var errBuf bytes.Buffer
