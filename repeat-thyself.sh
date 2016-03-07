@@ -67,4 +67,4 @@ EOF
 
 
 ### run it!
-time repeatr run -i <(echo "${Formula}")
+time repeatr run <(echo "${Formula}")

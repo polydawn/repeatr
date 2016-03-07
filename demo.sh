@@ -62,8 +62,8 @@ echo -e "${clblue}#  Stdout goes to your terminal; any 'output' specifications a
 echo -e "${clblue}#  This first run might take a while -- it's downloading an operating system image first!${cnone}"
 (
 	mkdir -p "${demodir}/local-warehouse"
-	tellRunning "repeatr run -i some-json-config-files.conf"
-	time repeatr run -i <(cat <<-EOF
+	tellRunning "repeatr run some-json-config-files.conf"
+	time repeatr run <(cat <<-EOF
 	{
 		"inputs": {
 			"/": {
@@ -94,8 +94,8 @@ awaitack
 echo -e "${clblue}# The \`repeatr run\` command can used cached assets to start jobs faster.${cnone}"
 echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts instantly.${cnone}"
 (
-	tellRunning "time repeatr run -i some-json-config-files.conf"
-	time repeatr run -i <(cat <<-EOF
+	tellRunning "time repeatr run some-json-config-files.conf"
+	time repeatr run <(cat <<-EOF
 	{
 		"inputs": {
 			"/": {
