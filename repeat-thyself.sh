@@ -67,4 +67,4 @@ EOF
 
 
 ### run it!
-time repeatr run <(echo "${Formula}")
+time repeatr run $CI_FLAGS <(echo "${Formula}")

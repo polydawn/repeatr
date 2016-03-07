@@ -63,7 +63,7 @@ echo -e "${clblue}#  This first run might take a while -- it's downloading an op
 (
 	mkdir -p "${demodir}/local-warehouse"
 	tellRunning "repeatr run some-json-config-files.conf"
-	time repeatr run <(cat <<-EOF
+	time repeatr run $CI_FLAGS <(cat <<-EOF
 	{
 		"inputs": {
 			"/": {
@@ -95,7 +95,7 @@ echo -e "${clblue}# The \`repeatr run\` command can used cached assets to start 
 echo -e "${clblue}#  Here we use the same rootfs image of ubuntu, so it starts instantly.${cnone}"
 (
 	tellRunning "time repeatr run some-json-config-files.conf"
-	time repeatr run <(cat <<-EOF
+	time repeatr run $CI_FLAGS <(cat <<-EOF
 	{
 		"inputs": {
 			"/": {
