@@ -1,5 +1,10 @@
-v0.12 -- tip -- 07 Mar 2016
+recent /// not yet released
 ---------------------------
+
+
+
+v0.12 -- 1d280923b7b1e8621375e545bbc206a1c30ddad0 -- 07 Mar 2016
+----------------------------------------------------------------
 
 The major highlights of v0.12 are some improved flexibility in commands (you
 can now apply "patches" to formulas for quick-n-easy configuration), and performance

@@ -15,7 +15,7 @@ func Main(args []string, journal, output io.Writer) {
 
 	App.Name = "repeatr"
 	App.Usage = "Run it. Run it again."
-	App.Version = "v0.12"
+	App.Version = "v0.12+dev"
 
 	App.Writer = journal
 
