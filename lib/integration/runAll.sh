@@ -9,6 +9,6 @@ cd "$DIR"/../..
 
 for formula in `ls -1 lib/integration/*.json`; do
     echo $formula
-    time ./goad exec run -i $formula
+    time ./goad exec run $CI_FLAGS $formula
     echo
 done
