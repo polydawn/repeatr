@@ -1,3 +1,21 @@
+Releases
+========
+
+Getting them
+------------
+
+Binary release tarballs are available from GitHub: https://github.com/polydawn/repeatr/releases/
+(Individual downloads have URLs like https://github.com/polydawn/repeatr/releases/download/release%2Fv0.12/repeatr-linux-amd64-v0.12.tar.gz ).
+
+You may be thinking to yourself "dang, bootstrapping is hard" and
+"how do I get this awesome tool for fetching and installing pinned, reliable versions of stuff... in an awesome way that's also pinned?"
+Try (toolstrap.sh)[toolstrap.sh] as a working example of how to grab a Repeatr release and install it using just bash and system tools like `sha384sum`.
+Or, use whatever works for you!  This script is simply a readymade option with minimal deps -- it's not the only answer, just a solid answer if you're looking for a starting point.
+
+
+Building them
+-------------
+
 Repeatr releases are scripted in repeatr; and they are, of course, expected to be
 deterministic.
 
@@ -20,8 +38,10 @@ Formulas explicitly specify GOOS and GOARCH for clarity (at present this is redu
 because the pinned go compiler has these defaults as well).
 
 Formulas prefer to be run from this cwd.
-This isn't a strict requirement, but relative paths to assets are set up to e.g.
-refer to your local git clone for convenience, etc, if this cwd is respected.
+You should be able to run them anywhere, but if you start with some other working dir,
+you make need to create directories for assets to be stored.
+If you use this cwd, those directories are already there for you, and the formulas will
+refer to your local git clone for convenience, etc.
 
 Formulas are quite redundant between each version;
 the build & packaging process typically does not change significantly from release to release.
