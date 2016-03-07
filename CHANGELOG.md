@@ -1,6 +1,19 @@
 recent /// not yet released
 ---------------------------
 
+
+
+v0.12 -- 1d280923b7b1e8621375e545bbc206a1c30ddad0 -- 07 Mar 2016
+----------------------------------------------------------------
+
+The major highlights of v0.12 are some improved flexibility in commands (you
+can now apply "patches" to formulas for quick-n-easy configuration), and performance
+improvements (compression is finally enabled for most storage).
+
+The default executor for `repeatr run` is now the 'runc' system -- meaning fine-grained
+capabilities and security features from the Policy system introduced in v0.11 will
+now be impactful in the default modes.
+
 - Feature: `repeatr run` now outputs the exit code in the structure it sends to stdout, so it can be mechanically extracted and clearly disambiguated from repeatr's own exit code.
 - Feature: `repeatr run` now accepts additional snippets of partial formulas with the `-p` flag, and will patch them onto its main argument.  This allows simple scripts to provide custom values to a run without needed to sprout a whole json/yaml parser.  The fully patched values will appear in the formula emitted at the end of the run along with the output hashes, as you might expect.  Use judiciously; this functionality makes sense in `repeatr run` since one-off runs are its MO, but not all upcoming features will support this particular escape valve (in particular, pipelines certainly won't).  Currently only env vars are merged.
 - Feature `repeatr run` now accepts env vars with the `-e` flag, and will patch them onto the formula.  This is shorthand for doing the same with `-p`.
