@@ -27,11 +27,12 @@ func Main(args []string, journal, output io.Writer) {
 		ExploreCommandPattern(output, journal),
 	}
 
-	// Reporting "no help topic for 'zyx'" and exiting with a *zero* is... silly.
-	// A failure to hit a command should be an error.  Like, if a bash script does `repeatr somethingimportant`, there's no way it shouldn't *stop* when that's not there.
+	// Slight touch to the phrasing on subcommands not found.
 	App.CommandNotFound = func(ctx *cli.Context, command string) {
-		fmt.Fprintf(ctx.App.Writer, "'%s %v' is not a repeatr subcommand\n", ctx.App.Name, command)
-		os.Exit(int(EXIT_BADARGS))
+		panic(Exit.NewWith(
+			fmt.Sprintf("Incorrect usage: '%s %v' is not a repeatr subcommand\n", ctx.App.Name, command),
+			SetExitCode(EXIT_BADARGS),
+		))
 	}
 
 	// Put some more info in our version printer.
@@ -54,5 +55,10 @@ func Main(args []string, journal, output io.Writer) {
 		},
 	)
 
-	App.Run(args)
+	if err := App.Run(args); err != nil {
+		panic(Exit.NewWith(
+			fmt.Sprintf("Incorrect usage: %s", err),
+			SetExitCode(EXIT_BADARGS),
+		))
+	}
 }
