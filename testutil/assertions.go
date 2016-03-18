@@ -11,9 +11,8 @@ import (
 
 /*
 	'actual' should be path; 'expected' may be empty (in which case it checks
-	that anything with an inode exists) or a filemode (in which case it will
-	check for that file type, ignoring all bits outside of the `os.ModeType`
-	range; and '0' must be used for plain file (there is no const)).
+	that anything with an inode exists) or a filemode (all bits will be
+	asserted against -- permissions as well as the `os.ModeType` range).
 */
 func ShouldBeFile(actual interface{}, expected ...interface{}) string {
 	filename, ok := actual.(string)
