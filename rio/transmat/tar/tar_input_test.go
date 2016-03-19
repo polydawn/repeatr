@@ -64,7 +64,7 @@ func TestTarInputCompat(t *testing.T) {
 			Convey("Given a fixture tarball complete with base dir", func() {
 				checkEquivalence(
 					"BX0jm4jRNCg1KMbZfv4zp7ZaShx9SUXKaDrO-Xy6mWIoWOCFP5VnDHDDR3nU4PrR",
-					filepath.Join(projPath, "data/fixture/tar_withBase.tgz"),
+					filepath.Join(projPath, "meta/fixtures/tar_withBase.tgz"),
 					false,
 				)
 			})
@@ -72,7 +72,7 @@ func TestTarInputCompat(t *testing.T) {
 			Convey("Given a fixture tarball lacking base dir", func() {
 				checkEquivalence(
 					"ZdV3xhCGWeJmsfeHpDF4nF9stwvdskYwcepKMcOf7a2ziax1YGjQvGTJjRWFkvG1",
-					filepath.Join(projPath, "data/fixture/tar_sansBase.tgz"),
+					filepath.Join(projPath, "meta/fixtures/tar_sansBase.tgz"),
 					true,
 				)
 			})
@@ -108,14 +108,14 @@ func TestTarInputCompat(t *testing.T) {
 				Convey("Given a fixture tarball complete with base dir", func() {
 					checkBounce(
 						"BX0jm4jRNCg1KMbZfv4zp7ZaShx9SUXKaDrO-Xy6mWIoWOCFP5VnDHDDR3nU4PrR",
-						filepath.Join(projPath, "data/fixture/tar_withBase.tgz"),
+						filepath.Join(projPath, "meta/fixtures/tar_withBase.tgz"),
 					)
 				})
 
 				Convey("Given a fixture tarball lacking base dir", func() {
 					checkBounce(
 						"ZdV3xhCGWeJmsfeHpDF4nF9stwvdskYwcepKMcOf7a2ziax1YGjQvGTJjRWFkvG1",
-						filepath.Join(projPath, "data/fixture/tar_sansBase.tgz"),
+						filepath.Join(projPath, "meta/fixtures/tar_sansBase.tgz"),
 					)
 				})
 			}),
