@@ -2,6 +2,3 @@
 /.gopath/pkg/
 
 /core/cli/version.go
-
-/assets/
-/formula.json
