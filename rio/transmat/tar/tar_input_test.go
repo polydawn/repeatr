@@ -14,8 +14,6 @@ import (
 	"polydawn.net/repeatr/rio"
 )
 
-const ubuntuTarballHash = "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL"
-
 func TestTarInputCompat(t *testing.T) {
 	projPath, _ := os.Getwd()
 	projPath = filepath.Dir(filepath.Dir(filepath.Dir(projPath)))
@@ -78,16 +76,6 @@ func TestTarInputCompat(t *testing.T) {
 					true,
 				)
 			})
-
-			Convey("Given a fixture tarball containing ubuntu",
-				testutil.Requires(testutil.RequiresLongRun, func() {
-					checkEquivalence(
-						ubuntuTarballHash,
-						filepath.Join(projPath, "assets/ubuntu.tar.gz"),
-						true,
-					)
-				}),
-			)
 		})),
 	)
 
@@ -130,16 +118,6 @@ func TestTarInputCompat(t *testing.T) {
 						filepath.Join(projPath, "data/fixture/tar_sansBase.tgz"),
 					)
 				})
-
-				// this won't fly until we support hardlinks; the original asset uses them.
-				//	Convey("Given a fixture tarball containing ubuntu",
-				//		testutil.Requires(testutil.RequiresLongRun, func() {
-				//			checkBounce(
-				//				ubuntuTarballHash,
-				//				filepath.Join(projPath, "assets/ubuntu.tar.gz"),
-				//			)
-				//		}),
-				//	)
 			}),
 		),
 	)
