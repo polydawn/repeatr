@@ -11,13 +11,13 @@ import (
 	"github.com/polydawn/gosh"
 
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/io/placer"
-	"polydawn.net/repeatr/io/transmat/cachedir"
-	"polydawn.net/repeatr/io/transmat/dir"
-	"polydawn.net/repeatr/io/transmat/git"
-	"polydawn.net/repeatr/io/transmat/s3"
-	"polydawn.net/repeatr/io/transmat/tar"
+	"polydawn.net/repeatr/rio"
+	"polydawn.net/repeatr/rio/placer"
+	"polydawn.net/repeatr/rio/transmat/cachedir"
+	"polydawn.net/repeatr/rio/transmat/dir"
+	"polydawn.net/repeatr/rio/transmat/git"
+	"polydawn.net/repeatr/rio/transmat/s3"
+	"polydawn.net/repeatr/rio/transmat/tar"
 )
 
 /*

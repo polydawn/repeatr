@@ -11,8 +11,8 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/core/executor/util"
-	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/io/placer"
+	"polydawn.net/repeatr/rio"
+	"polydawn.net/repeatr/rio/placer"
 )
 
 func UnpackCommandPattern(stderr io.Writer) cli.Command {

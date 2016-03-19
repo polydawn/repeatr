@@ -20,10 +20,10 @@ import (
 	"polydawn.net/repeatr/core/executor/cradle"
 	"polydawn.net/repeatr/core/executor/util"
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/io/assets"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/streamer"
+	"polydawn.net/repeatr/rio"
+	"polydawn.net/repeatr/rio/assets"
 )
 
 // interface assertion

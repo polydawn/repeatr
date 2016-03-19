@@ -16,10 +16,10 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/core/executor/util"
-	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/io/filter"
 	"polydawn.net/repeatr/lib/fshash"
 	"polydawn.net/repeatr/lib/treewalk"
+	"polydawn.net/repeatr/rio"
+	"polydawn.net/repeatr/rio/filter"
 )
 
 func ExploreCommandPattern(stdout, stderr io.Writer) cli.Command {

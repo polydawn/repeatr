@@ -9,7 +9,7 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/rio"
 )
 
 // Run inputs

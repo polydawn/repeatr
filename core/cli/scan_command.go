@@ -12,7 +12,7 @@ import (
 
 	"polydawn.net/repeatr/core/executor/util"
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/io"
+	"polydawn.net/repeatr/rio"
 )
 
 func ScanCommandPattern(output, stderr io.Writer) cli.Command {
