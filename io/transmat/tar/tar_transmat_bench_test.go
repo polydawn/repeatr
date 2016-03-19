@@ -7,7 +7,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/io/tests"
-	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/lib/testutil"
 )
 
 func BenchmarkTarScan(b *testing.B) {

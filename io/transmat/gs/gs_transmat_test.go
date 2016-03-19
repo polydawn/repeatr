@@ -6,7 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/io/tests"
 	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/lib/testutil"
 )
 
 func TestCoreCompliance(t *testing.T) {

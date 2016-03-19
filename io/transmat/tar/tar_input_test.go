@@ -10,8 +10,8 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/fspatch"
-	"polydawn.net/repeatr/testutil"
-	"polydawn.net/repeatr/testutil/filefixture"
+	"polydawn.net/repeatr/lib/testutil"
+	"polydawn.net/repeatr/lib/testutil/filefixture"
 )
 
 const ubuntuTarballHash = "uJRF46th6rYHt0zt_n3fcDuBfGFVPS6lzRZla5hv6iDoh5DVVzxUTMMzENfPoboL"

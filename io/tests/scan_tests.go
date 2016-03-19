@@ -8,8 +8,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/io/filter"
-	"polydawn.net/repeatr/testutil"
-	"polydawn.net/repeatr/testutil/filefixture"
+	"polydawn.net/repeatr/lib/testutil"
+	"polydawn.net/repeatr/lib/testutil/filefixture"
 )
 
 // TODO : surprisingly few of these tests cover actually saving content to a warehouse.

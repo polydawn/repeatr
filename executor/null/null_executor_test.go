@@ -7,7 +7,7 @@ import (
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/lib/testutil"
 )
 
 func Test(t *testing.T) {

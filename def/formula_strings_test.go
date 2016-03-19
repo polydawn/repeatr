@@ -6,7 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/lib/testutil"
 )
 
 func TestStringParse(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"github.com/polydawn/gosh"
 	. "github.com/smartystreets/goconvey/convey"
 	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/lib/testutil"
 )
 
 //func TestCoreCompliance(t *testing.T) {

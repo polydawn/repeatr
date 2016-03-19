@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/lib/testutil"
 )
 
 /*

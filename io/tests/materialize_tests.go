@@ -6,8 +6,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"polydawn.net/repeatr/io"
-	"polydawn.net/repeatr/testutil"
-	"polydawn.net/repeatr/testutil/filefixture"
+	"polydawn.net/repeatr/lib/testutil"
+	"polydawn.net/repeatr/lib/testutil/filefixture"
 )
 
 /*

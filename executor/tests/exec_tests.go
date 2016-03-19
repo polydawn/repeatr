@@ -8,7 +8,7 @@ import (
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/io"
 	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/lib/testutil"
 )
 
 /*

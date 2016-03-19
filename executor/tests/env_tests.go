@@ -10,7 +10,7 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
 	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/lib/testutil"
 )
 
 func CheckPwdBehavior(execEng executor.Executor) {

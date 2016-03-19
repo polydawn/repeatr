@@ -7,7 +7,7 @@ import (
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/executor"
-	"polydawn.net/repeatr/testutil"
+	"polydawn.net/repeatr/lib/testutil"
 )
 
 // NOTE WELL: while many of these tests embed "1000" as the low-priv UID, it is considered unspecified,
