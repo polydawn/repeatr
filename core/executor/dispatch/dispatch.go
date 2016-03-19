@@ -4,9 +4,9 @@ import (
 	"path/filepath"
 
 	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/core/executor/chroot"
-	"polydawn.net/repeatr/core/executor/null"
-	"polydawn.net/repeatr/core/executor/runc"
+	"polydawn.net/repeatr/core/executor/impl/chroot"
+	"polydawn.net/repeatr/core/executor/impl/null"
+	"polydawn.net/repeatr/core/executor/impl/runc"
 	"polydawn.net/repeatr/def"
 )
 
