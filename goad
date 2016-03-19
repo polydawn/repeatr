@@ -155,8 +155,8 @@ else
 	validate)
 		# run all validations and exit non-zero after all of them if any fail
 		validators=()
-		validators+=("./contrib/validate-dco")
-		validators+=("./contrib/validate-gofmt")
+		validators+=("./meta/validators/validate-dco")
+		validators+=("./meta/validators/validate-gofmt")
 		invalid=""
 		for validator in ${validators[@]}; do
 			echo -e "\E[1;34m==== checking $validator ... ====\E[0;m"
