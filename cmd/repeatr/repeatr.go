@@ -9,7 +9,7 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
-	"polydawn.net/repeatr/cli"
+	"polydawn.net/repeatr/core/cli"
 )
 
 func main() {
