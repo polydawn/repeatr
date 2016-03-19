@@ -21,7 +21,7 @@ import (
 	"polydawn.net/repeatr/lib/fshash"
 	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/rio"
-	tartrans "polydawn.net/repeatr/rio/transmat/tar"
+	tartrans "polydawn.net/repeatr/rio/transmat/impl/tar"
 )
 
 const Kind = rio.TransmatKind("s3")

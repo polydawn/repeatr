@@ -8,8 +8,8 @@ import (
 
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/rio"
-	"polydawn.net/repeatr/rio/transmat/cachedir"
-	"polydawn.net/repeatr/rio/transmat/tar"
+	"polydawn.net/repeatr/rio/transmat/impl/cachedir"
+	"polydawn.net/repeatr/rio/transmat/impl/tar"
 )
 
 var assets = map[string]rio.CommitID{

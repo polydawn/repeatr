@@ -16,7 +16,7 @@ import (
 
 func TestTarInputCompat(t *testing.T) {
 	projPath, _ := os.Getwd()
-	projPath = filepath.Dir(filepath.Dir(filepath.Dir(projPath)))
+	projPath = filepath.Dir(filepath.Dir(filepath.Dir(filepath.Dir(projPath))))
 
 	Convey("Unpacking tars should match exec untar", t,
 		testutil.Requires(testutil.RequiresRoot, testutil.WithTmpdir(func(c C) {

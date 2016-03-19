@@ -13,11 +13,11 @@ import (
 	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/rio"
 	"polydawn.net/repeatr/rio/placer"
-	"polydawn.net/repeatr/rio/transmat/cachedir"
-	"polydawn.net/repeatr/rio/transmat/dir"
-	"polydawn.net/repeatr/rio/transmat/git"
-	"polydawn.net/repeatr/rio/transmat/s3"
-	"polydawn.net/repeatr/rio/transmat/tar"
+	"polydawn.net/repeatr/rio/transmat/impl/cachedir"
+	"polydawn.net/repeatr/rio/transmat/impl/dir"
+	"polydawn.net/repeatr/rio/transmat/impl/git"
+	"polydawn.net/repeatr/rio/transmat/impl/s3"
+	"polydawn.net/repeatr/rio/transmat/impl/tar"
 )
 
 /*
