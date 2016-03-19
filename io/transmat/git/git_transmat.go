@@ -17,24 +17,24 @@ import (
 	"polydawn.net/repeatr/lib/fs"
 )
 
-const Kind = integrity.TransmatKind("git")
+const Kind = rio.TransmatKind("git")
 
-var _ integrity.Transmat = &GitTransmat{}
+var _ rio.Transmat = &GitTransmat{}
 
 type GitTransmat struct {
 	workPath string
 }
 
-var _ integrity.TransmatFactory = New
+var _ rio.TransmatFactory = New
 
-func New(workPath string) integrity.Transmat {
+func New(workPath string) rio.Transmat {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
-		panic(integrity.TransmatError.New("Unable to set up workspace: %s", err))
+		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
 	}
 	workPath, err = filepath.Abs(workPath)
 	if err != nil {
-		panic(integrity.TransmatError.New("Unable to set up workspace: %s", err))
+		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
 	}
 	return &GitTransmat{workPath}
 }
@@ -100,16 +100,16 @@ var git gosh.Command = gosh.Gosh(
 	same repos in order to save reclones.
 */
 func (t *GitTransmat) Materialize(
-	kind integrity.TransmatKind,
-	dataHash integrity.CommitID,
-	siloURIs []integrity.SiloURI,
+	kind rio.TransmatKind,
+	dataHash rio.CommitID,
+	siloURIs []rio.SiloURI,
 	log log15.Logger,
-	options ...integrity.MaterializerConfigurer,
-) integrity.Arena {
+	options ...rio.MaterializerConfigurer,
+) rio.Arena {
 	var arena gitArena
 	try.Do(func() {
 		// Basic validation and config
-		//config := integrity.EvaluateConfig(options...)
+		//config := rio.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
@@ -121,7 +121,7 @@ func (t *GitTransmat) Materialize(
 
 		// Ping silos
 		if len(siloURIs) < 1 {
-			panic(integrity.ConfigError.New("Materialization requires at least one data source!"))
+			panic(rio.ConfigError.New("Materialization requires at least one data source!"))
 			// Note that it's possible a caching layer will satisfy things even without data sources...
 			//  but if that was going to happen, it already would have by now.
 		}
@@ -144,21 +144,21 @@ func (t *GitTransmat) Materialize(
 			}
 		}
 		if warehouse == nil {
-			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
+			panic(rio.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
 		// Create staging arena to produce data into.
 		var err error
 		arena.gitDirPath, err = ioutil.TempDir(t.workPath, "")
 		if err != nil {
-			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
+			panic(rio.TransmatError.New("Unable to create arena: %s", err))
 		}
 		arena.workDirPath, err = ioutil.TempDir(t.workPath, "")
 		if err != nil {
-			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
+			panic(rio.TransmatError.New("Unable to create arena: %s", err))
 		}
 		if err := os.Chmod(arena.workDirPath, 0755); err != nil {
-			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
+			panic(rio.TransmatError.New("Unable to create arena: %s", err))
 		}
 
 		// From now on, all our git commands will have these overriden paths:
@@ -189,7 +189,7 @@ func (t *GitTransmat) Materialize(
 			gosh.Opts{Err: buf, Out: buf},
 		).Run()
 		if bytes.HasPrefix(buf.Bytes(), []byte("fatal: reference is not a tree: ")) {
-			panic(integrity.DataDNE.New("hash %q not found in this repo", dataHash))
+			panic(rio.DataDNE.New("hash %q not found in this repo", dataHash))
 		}
 		if p.GetExitCode() != 0 {
 			// catchall.
@@ -209,41 +209,41 @@ func (t *GitTransmat) Materialize(
 		// should be 1000 (consistent with being accessible under the "routine" policy).
 		// Chown/chmod everything as such.
 		if err := fs.Chownr(arena.workDirPath, git_uid, git_gid); err != nil {
-			panic(integrity.TransmatError.New("Unable to coerce perms: %s", err))
+			panic(rio.TransmatError.New("Unable to coerce perms: %s", err))
 		}
 
 		// verify total integrity
 		// actually this is a nil step; there's no such thing as "acceptHashMismatch", clone would have simply failed
 		arena.hash = dataHash
-	}).Catch(integrity.Error, func(err *errors.Error) {
+	}).Catch(rio.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
-		panic(integrity.UnknownError.Wrap(err))
+		panic(rio.UnknownError.Wrap(err))
 	}).Done()
 	return arena
 }
 
 func (t GitTransmat) Scan(
-	kind integrity.TransmatKind,
+	kind rio.TransmatKind,
 	subjectPath string,
-	siloURIs []integrity.SiloURI,
+	siloURIs []rio.SiloURI,
 	log log15.Logger,
-	options ...integrity.MaterializerConfigurer,
-) integrity.CommitID {
-	var commitID integrity.CommitID
+	options ...rio.MaterializerConfigurer,
+) rio.CommitID {
+	var commitID rio.CommitID
 	try.Do(func() {
 		// Basic validation and config
-		//config := integrity.EvaluateConfig(options...)
+		//config := rio.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
 		// Get off my lawn.
 		panic(errors.NotImplementedError.New("The git transmat does not support scan."))
-	}).Catch(integrity.Error, func(err *errors.Error) {
+	}).Catch(rio.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
-		panic(integrity.UnknownError.Wrap(err))
+		panic(rio.UnknownError.Wrap(err))
 	}).Done()
 	return commitID
 }
@@ -251,14 +251,14 @@ func (t GitTransmat) Scan(
 type gitArena struct {
 	gitDirPath  string
 	workDirPath string
-	hash        integrity.CommitID
+	hash        rio.CommitID
 }
 
 func (a gitArena) Path() string {
 	return a.workDirPath
 }
 
-func (a gitArena) Hash() integrity.CommitID {
+func (a gitArena) Hash() rio.CommitID {
 	return a.hash
 }
 

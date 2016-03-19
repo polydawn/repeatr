@@ -18,7 +18,7 @@ import (
 //   of testing the commit-to-remote concern as an isolated unit... if we
 //   had more APIs around warehouse state inspection.  Big task.  Tackle soon.
 
-func CheckScanWithoutMutation(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
+func CheckScanWithoutMutation(kind rio.TransmatKind, transmatFabFn rio.TransmatFactory) {
 	Convey("SPEC: Scanning a filesystem shouldn't change it", testutil.Requires(
 		testutil.RequiresRoot,
 		func(c C) {
@@ -39,7 +39,7 @@ func CheckScanWithoutMutation(kind integrity.TransmatKind, transmatFabFn integri
 	))
 }
 
-func CheckScanProducesConsistentHash(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
+func CheckScanProducesConsistentHash(kind rio.TransmatKind, transmatFabFn rio.TransmatFactory) {
 	Convey("SPEC: Applying the output to a filesystem twice should produce the same hash", testutil.Requires(
 		testutil.RequiresRoot,
 		func(c C) {
@@ -60,7 +60,7 @@ func CheckScanProducesConsistentHash(kind integrity.TransmatKind, transmatFabFn 
 	))
 }
 
-func CheckScanProducesDistinctHashes(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
+func CheckScanProducesDistinctHashes(kind rio.TransmatKind, transmatFabFn rio.TransmatFactory) {
 	Convey("SPEC: Applying the output to two different filesystems should produce different hashes", testutil.Requires(
 		testutil.RequiresRoot,
 		func(c C) {
@@ -77,7 +77,7 @@ func CheckScanProducesDistinctHashes(kind integrity.TransmatKind, transmatFabFn 
 	)
 }
 
-func CheckScanEmptyIsCalm(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
+func CheckScanEmptyIsCalm(kind rio.TransmatKind, transmatFabFn rio.TransmatFactory) {
 	Convey("SPEC: Scanning a nonexistent filesystem should return an empty commitID", func(c C) {
 		transmat := transmatFabFn("./workdir")
 		commitID := transmat.Scan(kind, "./does-not-exist", nil, testutil.TestLogger(c))
@@ -85,7 +85,7 @@ func CheckScanEmptyIsCalm(kind integrity.TransmatKind, transmatFabFn integrity.T
 	})
 }
 
-func CheckScanWithFilters(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory) {
+func CheckScanWithFilters(kind rio.TransmatKind, transmatFabFn rio.TransmatFactory) {
 	Convey("SPEC: Filesystems only differing by mtime should have same hash after mtime filter", testutil.Requires(
 		testutil.RequiresRoot,
 		func(c C) {
@@ -98,8 +98,8 @@ func CheckScanWithFilters(kind integrity.TransmatKind, transmatFabFn integrity.T
 			// set up a filter.  can set their times to anything, as long as its the same
 			filt := filter.MtimeFilter{time.Unix(1000000, 9000)}
 			// scan both filesystems with the transmat
-			commitID1 := transmat.Scan(kind, "./alpha1", nil, testutil.TestLogger(c), integrity.UseFilter(filt))
-			commitID2 := transmat.Scan(kind, "./alpha2", nil, testutil.TestLogger(c), integrity.UseFilter(filt))
+			commitID1 := transmat.Scan(kind, "./alpha1", nil, testutil.TestLogger(c), rio.UseFilter(filt))
+			commitID2 := transmat.Scan(kind, "./alpha2", nil, testutil.TestLogger(c), rio.UseFilter(filt))
 			// should be same
 			So(commitID2, ShouldEqual, commitID1)
 		}),
@@ -118,8 +118,8 @@ func CheckScanWithFilters(kind integrity.TransmatKind, transmatFabFn integrity.T
 			ufilt := filter.UidFilter{10401}
 			gfilt := filter.GidFilter{10401}
 			// scan both filesystems with the transmat
-			commitID1 := transmat.Scan(kind, "./alpha1", nil, testutil.TestLogger(c), integrity.UseFilter(ufilt), integrity.UseFilter(gfilt))
-			commitID2 := transmat.Scan(kind, "./alpha2", nil, testutil.TestLogger(c), integrity.UseFilter(ufilt), integrity.UseFilter(gfilt))
+			commitID1 := transmat.Scan(kind, "./alpha1", nil, testutil.TestLogger(c), rio.UseFilter(ufilt), rio.UseFilter(gfilt))
+			commitID2 := transmat.Scan(kind, "./alpha2", nil, testutil.TestLogger(c), rio.UseFilter(ufilt), rio.UseFilter(gfilt))
 			// should be same
 			So(commitID2, ShouldEqual, commitID1)
 		}),
@@ -134,7 +134,7 @@ func CheckScanWithFilters(kind integrity.TransmatKind, transmatFabFn integrity.T
 	are not in fact race-safe), but it does check for sanity
 	around the basic operations of convergence, esp in CA storage.
 */
-func CheckMultipleCommit(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory, bounceURI string, addtnlDesc ...string) {
+func CheckMultipleCommit(kind rio.TransmatKind, transmatFabFn rio.TransmatFactory, bounceURI string, addtnlDesc ...string) {
 	Convey("SPEC: Committing the same content twice must be safe"+testutil.AdditionalDescription(addtnlDesc...), testutil.Requires(
 		testutil.RequiresRoot,
 		func(c C) {
@@ -142,7 +142,7 @@ func CheckMultipleCommit(kind integrity.TransmatKind, transmatFabFn integrity.Tr
 			// set up fixtures
 			filefixture.Alpha.Create("./alpha")
 			// scan twice with the transmat, and commit to warehouse
-			uris := []integrity.SiloURI{integrity.SiloURI(bounceURI)}
+			uris := []rio.SiloURI{rio.SiloURI(bounceURI)}
 			commitID1 := transmat.Scan(kind, "./alpha", uris, testutil.TestLogger(c))
 			commitID2 := transmat.Scan(kind, "./alpha", uris, testutil.TestLogger(c))
 			// survival is winning: the main test was actually that scan #2 didn't panic.

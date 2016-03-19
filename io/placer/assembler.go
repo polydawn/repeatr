@@ -8,18 +8,18 @@ import (
 	"polydawn.net/repeatr/lib/fs"
 )
 
-func NewAssembler(p integrity.Placer) integrity.Assembler {
+func NewAssembler(p rio.Placer) rio.Assembler {
 	return defaultAssembler{p}.Assemble
 }
 
 type defaultAssembler struct {
-	Placer integrity.Placer
+	Placer rio.Placer
 }
 
-var _ integrity.Assembler = defaultAssembler{}.Assemble
+var _ rio.Assembler = defaultAssembler{}.Assemble
 
-func (a defaultAssembler) Assemble(basePath string, parts []integrity.AssemblyPart) integrity.Assembly {
-	sort.Sort(integrity.AssemblyPartsByPath(parts))
+func (a defaultAssembler) Assemble(basePath string, parts []rio.AssemblyPart) rio.Assembly {
+	sort.Sort(rio.AssemblyPartsByPath(parts))
 	housekeeping := &defaultAssembly{}
 	for _, part := range parts {
 		destBasePath := filepath.Join(basePath, part.TargetPath)
@@ -41,10 +41,10 @@ func (a defaultAssembler) Assemble(basePath string, parts []integrity.AssemblyPa
 	to included steps which are required for correct operation of output gathering.
 */
 type defaultAssembly struct {
-	emplacements []integrity.Emplacement
+	emplacements []rio.Emplacement
 }
 
-func (a *defaultAssembly) record(r integrity.Emplacement) {
+func (a *defaultAssembly) record(r rio.Emplacement) {
 	a.emplacements = append(a.emplacements, r)
 }
 

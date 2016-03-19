@@ -34,7 +34,7 @@ func makeGsReader(bucketName string, path string, token *oauth2.Token) io.ReadCl
 	service := makeGsObjectService(token)
 	response, err := service.Get(bucketName, path).Download()
 	if err != nil {
-		panic(integrity.WarehouseIOError.Wrap(err))
+		panic(rio.WarehouseIOError.Wrap(err))
 	}
 	return response.Body
 }
@@ -48,7 +48,7 @@ func makeGsWriter(bucketName string, path string, token *oauth2.Token) (io.Write
 		// TODO: multipart or resumable upload using `ResumableMedia`
 		_, err := service.Insert(bucketName, object).Media(reader).Do()
 		if err != nil {
-			errCh <- integrity.WarehouseIOError.Wrap(err)
+			errCh <- rio.WarehouseIOError.Wrap(err)
 		}
 		close(errCh)
 	}()
@@ -72,7 +72,7 @@ func reloc(bucketName, oldPath, newPath string, token *oauth2.Token) {
 			continue
 		}
 		if err != nil {
-			panic(integrity.WarehouseIOError.Wrap(err))
+			panic(rio.WarehouseIOError.Wrap(err))
 		}
 		if response.Done {
 			break
@@ -80,10 +80,10 @@ func reloc(bucketName, oldPath, newPath string, token *oauth2.Token) {
 		rewrite = rewrite.RewriteToken(response.RewriteToken)
 	}
 	if !response.Done {
-		panic(integrity.WarehouseIOError.Wrap(fmt.Errorf("RewriteGsDidNotComplete")))
+		panic(rio.WarehouseIOError.Wrap(fmt.Errorf("RewriteGsDidNotComplete")))
 	}
 	err = service.Delete(bucketName, oldPath).Do()
 	if err != nil {
-		panic(integrity.WarehouseIOError.Wrap(err))
+		panic(rio.WarehouseIOError.Wrap(err))
 	}
 }

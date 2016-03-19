@@ -27,10 +27,10 @@ func TestTarInputCompat(t *testing.T) {
 
 				// apply it; hope it doesn't blow up
 				arena := transmat.Materialize(
-					integrity.TransmatKind("tar"),
-					integrity.CommitID(hash),
-					[]integrity.SiloURI{
-						integrity.SiloURI("file://" + filename),
+					rio.TransmatKind("tar"),
+					rio.CommitID(hash),
+					[]rio.SiloURI{
+						rio.SiloURI("file://" + filename),
 					},
 					testutil.TestLogger(c),
 				)
@@ -101,19 +101,19 @@ func TestTarInputCompat(t *testing.T) {
 
 					// apply it; hope it doesn't blow up
 					arena := transmat.Materialize(
-						integrity.TransmatKind("tar"),
-						integrity.CommitID(hash),
-						[]integrity.SiloURI{
-							integrity.SiloURI("file://" + filename),
+						rio.TransmatKind("tar"),
+						rio.CommitID(hash),
+						[]rio.SiloURI{
+							rio.SiloURI("file://" + filename),
 						},
 						testutil.TestLogger(c),
 					)
 					defer arena.Teardown()
 
 					// scan and compare
-					commitID := transmat.Scan(integrity.TransmatKind("tar"), arena.Path(), nil, testutil.TestLogger(c))
+					commitID := transmat.Scan(rio.TransmatKind("tar"), arena.Path(), nil, testutil.TestLogger(c))
 					// debug: gosh.Sh("tar", "--utc", "-xOvf", filename)
-					So(commitID, ShouldEqual, integrity.CommitID(hash))
+					So(commitID, ShouldEqual, rio.CommitID(hash))
 
 				}
 

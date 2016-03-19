@@ -15,9 +15,9 @@ import (
 	"polydawn.net/repeatr/lib/fspatch"
 )
 
-var _ integrity.Placer = CopyingPlacer
+var _ rio.Placer = CopyingPlacer
 
-func CopyingPlacer(srcBasePath, destBasePath string, _ bool, bareMount bool) integrity.Emplacement {
+func CopyingPlacer(srcBasePath, destBasePath string, _ bool, bareMount bool) rio.Emplacement {
 	srcBaseStat, err := os.Stat(srcBasePath)
 	if err != nil || !srcBaseStat.IsDir() {
 		panic(Error.New("copyingplacer: srcPath %q must be dir: %s", srcBasePath, err))
@@ -86,9 +86,9 @@ func (e copyEmplacement) Teardown() {
 	}
 }
 
-var _ integrity.Placer = BindPlacer
+var _ rio.Placer = BindPlacer
 
-func BindPlacer(srcPath, destPath string, writable bool, _ bool) integrity.Emplacement {
+func BindPlacer(srcPath, destPath string, writable bool, _ bool) rio.Emplacement {
 	srcStat, err := os.Stat(srcPath)
 	if err != nil || !srcStat.IsDir() {
 		panic(Error.New("bindplacer: srcPath %q must be dir: %s", srcPath, err))
@@ -120,7 +120,7 @@ func (e bindEmplacement) Teardown() {
 	}
 }
 
-func NewAufsPlacer(workPath string) integrity.Placer {
+func NewAufsPlacer(workPath string) rio.Placer {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
@@ -129,7 +129,7 @@ func NewAufsPlacer(workPath string) integrity.Placer {
 	if err != nil {
 		panic(errors.IOError.Wrap(err))
 	}
-	return func(srcBasePath, destBasePath string, writable bool, bareMount bool) integrity.Emplacement {
+	return func(srcBasePath, destBasePath string, writable bool, bareMount bool) rio.Emplacement {
 		srcBaseStat, err := os.Stat(srcBasePath)
 		if err != nil || !srcBaseStat.IsDir() {
 			panic(Error.New("aufsplacer: srcPath %q must be dir: %s", srcBasePath, err))

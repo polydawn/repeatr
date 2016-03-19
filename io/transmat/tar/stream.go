@@ -12,10 +12,10 @@ import (
 	"polydawn.net/repeatr/lib/guid"
 )
 
-func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) io.ReadCloser {
+func makeReader(dataHash rio.CommitID, warehouseCoords rio.SiloURI) io.ReadCloser {
 	u, err := url.Parse(string(warehouseCoords))
 	if err != nil {
-		panic(integrity.ConfigError.New("failed to parse URI: %s", err))
+		panic(rio.ConfigError.New("failed to parse URI: %s", err))
 	}
 	switch u.Scheme {
 	case "file+ca":
@@ -26,9 +26,9 @@ func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) 
 		file, err := os.OpenFile(u.Path, os.O_RDONLY, 0644)
 		if err != nil {
 			if os.IsNotExist(err) {
-				panic(integrity.DataDNE.New("Unable to read %q: %s", u.String(), err))
+				panic(rio.DataDNE.New("Unable to read %q: %s", u.String(), err))
 			} else {
-				panic(integrity.WarehouseIOError.New("Unable to read %q: %s", u.String(), err))
+				panic(rio.WarehouseIOError.New("Unable to read %q: %s", u.String(), err))
 			}
 		}
 		return file
@@ -39,7 +39,7 @@ func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) 
 	case "http":
 		resp, err := http.Get(u.String())
 		if err != nil {
-			panic(integrity.WarehouseIOError.New("Unable to fetch %q: %s", u.String(), err))
+			panic(rio.WarehouseIOError.New("Unable to fetch %q: %s", u.String(), err))
 		}
 		return resp.Body
 	case "https+ca":
@@ -49,20 +49,20 @@ func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) 
 	case "https":
 		resp, err := http.Get(u.String())
 		if err != nil {
-			panic(integrity.WarehouseIOError.New("Unable to fetch %q: %s", u.String(), err))
+			panic(rio.WarehouseIOError.New("Unable to fetch %q: %s", u.String(), err))
 		}
 		switch resp.StatusCode {
 		case 200:
 			return resp.Body
 		case 404:
-			panic(integrity.DataDNE.New("Fetch %q: not found", u.String()))
+			panic(rio.DataDNE.New("Fetch %q: not found", u.String()))
 		default:
-			panic(integrity.WarehouseIOError.New("Unable to fetch %q: http status %s", u.String(), resp.Status))
+			panic(rio.WarehouseIOError.New("Unable to fetch %q: http status %s", u.String(), resp.Status))
 		}
 	case "":
-		panic(integrity.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
+		panic(rio.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
 	default:
-		panic(integrity.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
+		panic(rio.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
 	}
 }
 
@@ -73,10 +73,10 @@ func makeReader(dataHash integrity.CommitID, warehouseCoords integrity.SiloURI) 
 //	io.Closer
 //}
 
-func makeWriteController(warehouseCoords integrity.SiloURI) StreamingWarehouseWriteController {
+func makeWriteController(warehouseCoords rio.SiloURI) StreamingWarehouseWriteController {
 	u, err := url.Parse(string(warehouseCoords))
 	if err != nil {
-		panic(integrity.ConfigError.New("failed to parse URI: %s", err))
+		panic(rio.ConfigError.New("failed to parse URI: %s", err))
 	}
 	controller := &fileWarehouseWriteController{
 		pathPrefix: u.Path,
@@ -98,12 +98,12 @@ func makeWriteController(warehouseCoords integrity.SiloURI) StreamingWarehouseWr
 		//  should *not* create one whimsically, that's someone else's responsibility.
 		warehouseBasePath := filepath.Dir(controller.tmpPath)
 		if _, err := os.Stat(warehouseBasePath); err != nil {
-			panic(integrity.WarehouseUnavailableError.New("Warehouse unavailable: %q %s", warehouseBasePath, err))
+			panic(rio.WarehouseUnavailableError.New("Warehouse unavailable: %q %s", warehouseBasePath, err))
 		}
 		// Open file to shovel data into
 		file, err := os.OpenFile(controller.tmpPath, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			panic(integrity.WarehouseIOError.New("Unable to write %q: %s", controller.tmpPath, err))
+			panic(rio.WarehouseIOError.New("Unable to write %q: %s", controller.tmpPath, err))
 		}
 		controller.stream = file
 		return controller
@@ -114,17 +114,17 @@ func makeWriteController(warehouseCoords integrity.SiloURI) StreamingWarehouseWr
 	case "https+ca":
 		fallthrough
 	case "https":
-		panic(integrity.ConfigError.New("http transports are only supported for read-only use"))
+		panic(rio.ConfigError.New("http transports are only supported for read-only use"))
 	case "":
-		panic(integrity.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
+		panic(rio.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
 	default:
-		panic(integrity.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
+		panic(rio.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
 	}
 }
 
 type StreamingWarehouseWriteController interface {
 	Writer() io.Writer
-	Commit(dataHash integrity.CommitID)
+	Commit(dataHash rio.CommitID)
 }
 
 type fileWarehouseWriteController struct {
@@ -137,7 +137,7 @@ type fileWarehouseWriteController struct {
 func (wc *fileWarehouseWriteController) Writer() io.Writer {
 	return wc.stream
 }
-func (wc *fileWarehouseWriteController) Commit(dataHash integrity.CommitID) {
+func (wc *fileWarehouseWriteController) Commit(dataHash rio.CommitID) {
 	wc.stream.Close()
 	var finalPath string
 	if wc.ctntAddr {

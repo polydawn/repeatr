@@ -26,38 +26,38 @@ import (
 
 	If you're building your own transports and data warehousing integrations,
 	you'll need to assemble your own Transmat instead of this one --
-	`integrity.DispatchingTransmat` is good for composing them so you can still
+	`rio.DispatchingTransmat` is good for composing them so you can still
 	use one interface to get any kind of data you want.
 */
-func DefaultTransmat() integrity.Transmat {
+func DefaultTransmat() rio.Transmat {
 	workDir := filepath.Join(def.Base(), "io")
-	dirCacher := cachedir.New(filepath.Join(workDir, "dircacher"), map[integrity.TransmatKind]integrity.TransmatFactory{
-		integrity.TransmatKind("dir"): dir.New,
-		integrity.TransmatKind("tar"): tar.New,
-		integrity.TransmatKind("s3"):  s3.New,
+	dirCacher := cachedir.New(filepath.Join(workDir, "dircacher"), map[rio.TransmatKind]rio.TransmatFactory{
+		rio.TransmatKind("dir"): dir.New,
+		rio.TransmatKind("tar"): tar.New,
+		rio.TransmatKind("s3"):  s3.New,
 	})
-	gitCacher := cachedir.New(filepath.Join(workDir, "dircacher-git"), map[integrity.TransmatKind]integrity.TransmatFactory{
-		integrity.TransmatKind("git"): git.New,
+	gitCacher := cachedir.New(filepath.Join(workDir, "dircacher-git"), map[rio.TransmatKind]rio.TransmatFactory{
+		rio.TransmatKind("git"): git.New,
 	})
-	universalTransmat := integrity.NewDispatchingTransmat(map[integrity.TransmatKind]integrity.Transmat{
-		integrity.TransmatKind("dir"): dirCacher,
-		integrity.TransmatKind("tar"): dirCacher,
-		integrity.TransmatKind("s3"):  dirCacher,
-		integrity.TransmatKind("git"): gitCacher,
+	universalTransmat := rio.NewDispatchingTransmat(map[rio.TransmatKind]rio.Transmat{
+		rio.TransmatKind("dir"): dirCacher,
+		rio.TransmatKind("tar"): dirCacher,
+		rio.TransmatKind("s3"):  dirCacher,
+		rio.TransmatKind("git"): gitCacher,
 	})
 	return universalTransmat
 }
 
-func BestAssembler() integrity.Assembler {
+func BestAssembler() rio.Assembler {
 	if bestAssembler == nil {
 		bestAssembler = determineBestAssembler()
 	}
 	return bestAssembler
 }
 
-var bestAssembler integrity.Assembler
+var bestAssembler rio.Assembler
 
-func determineBestAssembler() integrity.Assembler {
+func determineBestAssembler() rio.Assembler {
 	if os.Getuid() != 0 {
 		// Can't mount without root.
 		fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: need root privs to use faster systems.\n")

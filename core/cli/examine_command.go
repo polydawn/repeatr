@@ -68,21 +68,21 @@ func ExploreCommandPattern(stdout, stderr io.Writer) cli.Command {
 					try.Do(func() {
 						// Materialize the things.
 						arena := util.DefaultTransmat().Materialize(
-							integrity.TransmatKind(ctx.String("kind")),
-							integrity.CommitID(ctx.String("hash")),
-							[]integrity.SiloURI{integrity.SiloURI(ctx.String("where"))},
+							rio.TransmatKind(ctx.String("kind")),
+							rio.CommitID(ctx.String("hash")),
+							[]rio.SiloURI{rio.SiloURI(ctx.String("where"))},
 							log,
 						)
 						defer arena.Teardown()
 						// Examine 'em.
 						examinePath(arena.Path(), stdout)
-					}).Catch(integrity.ConfigError, func(err *errors.Error) {
+					}).Catch(rio.ConfigError, func(err *errors.Error) {
 						panic(Error.NewWith(err.Message(), SetExitCode(EXIT_BADARGS)))
-					}).Catch(integrity.WarehouseUnavailableError, func(err *errors.Error) {
+					}).Catch(rio.WarehouseUnavailableError, func(err *errors.Error) {
 						panic(Error.New("%s", err.Message()))
-					}).Catch(integrity.DataDNE, func(err *errors.Error) {
+					}).Catch(rio.DataDNE, func(err *errors.Error) {
 						panic(Error.New("%s", err.Message()))
-					}).Catch(integrity.HashMismatchError, func(err *errors.Error) {
+					}).Catch(rio.HashMismatchError, func(err *errors.Error) {
 						panic(Error.New("%s", err.Message()))
 					}).Done()
 				},

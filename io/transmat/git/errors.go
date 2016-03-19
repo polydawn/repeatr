@@ -11,4 +11,4 @@ import (
 	Git is a fractal of error handling and fuzzy string matching, so this
 	is used more than one might like.
 */
-var Error *errors.ErrorClass = integrity.Error.NewClass("GitError")
+var Error *errors.ErrorClass = rio.Error.NewClass("GitError")

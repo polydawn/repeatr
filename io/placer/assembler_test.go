@@ -81,7 +81,7 @@ func TestAufsPlacerCompliance(t *testing.T) {
 }
 
 // you probs want to create that assembler with a variety of placers
-func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
+func CheckAssemblerGetsDataIntoPlace(assemblerFn rio.Assembler) {
 	Convey("Assembly with just a root fs works",
 		testutil.Requires(
 			testutil.RequiresRoot,
@@ -89,7 +89,7 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				filefixture.Alpha.Create("./material/alpha")
 				assembleAndScan(
 					assemblerFn,
-					[]integrity.AssemblyPart{
+					[]rio.AssemblyPart{
 						{TargetPath: "/", SourcePath: "./material/alpha"},
 					},
 					filefixture.Alpha,
@@ -106,7 +106,7 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				filefixture.Beta.Create("./material/beta")
 				assembleAndScan(
 					assemblerFn,
-					[]integrity.AssemblyPart{
+					[]rio.AssemblyPart{
 						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
 						{TargetPath: "/a", SourcePath: "./material/beta", Writable: true},
 					},
@@ -127,7 +127,7 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				filefixture.Beta.Create("./material/beta")
 				assembleAndScan(
 					assemblerFn,
-					[]integrity.AssemblyPart{
+					[]rio.AssemblyPart{
 						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
 						{TargetPath: "/q", SourcePath: "./material/beta", Writable: true},
 					},
@@ -148,7 +148,7 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				filefixture.Beta.Create("./material/beta")
 				assembleAndScan(
 					assemblerFn,
-					[]integrity.AssemblyPart{
+					[]rio.AssemblyPart{
 						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
 						// this one's interesting because ./b/c is already a file
 						{TargetPath: "/b", SourcePath: "./material/beta", Writable: true},
@@ -170,7 +170,7 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				filefixture.Beta.Create("./material/beta")
 				assembleAndScan(
 					assemblerFn,
-					[]integrity.AssemblyPart{
+					[]rio.AssemblyPart{
 						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
 						{TargetPath: "/q", SourcePath: "./material/beta", Writable: true},
 						{TargetPath: "/w", SourcePath: "./material/beta", Writable: true},
@@ -193,7 +193,7 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 				filefixture.Beta.Create("./material/beta")
 				assembleAndScan(
 					assemblerFn,
-					[]integrity.AssemblyPart{
+					[]rio.AssemblyPart{
 						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
 						{TargetPath: "/a", SourcePath: "./material/beta", Writable: true},
 						{TargetPath: "/d/d/d", SourcePath: "./material/beta", Writable: true},
@@ -223,9 +223,9 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn integrity.Assembler) {
 	// - everything about changes and ensuring they're isolated... deserves a whole battery
 }
 
-func assembleAndScan(assemblerFn integrity.Assembler, parts []integrity.AssemblyPart, expected filefixture.Fixture) {
+func assembleAndScan(assemblerFn rio.Assembler, parts []rio.AssemblyPart, expected filefixture.Fixture) {
 	Convey("Assembly should not blow up", FailureContinues, func() {
-		var assembly integrity.Assembly
+		var assembly rio.Assembly
 		So(func() {
 			assembly = assemblerFn("./assembled", parts)
 		}, ShouldNotPanic)
@@ -243,13 +243,13 @@ func assembleAndScan(assemblerFn integrity.Assembler, parts []integrity.Assembly
 	})
 }
 
-func CheckAssemblerRespectsReadonly(assemblerFn integrity.Assembler) {
+func CheckAssemblerRespectsReadonly(assemblerFn rio.Assembler) {
 	Convey("Writing to a readonly placement should return EROFS",
 		testutil.Requires(
 			testutil.RequiresRoot,
 			testutil.WithTmpdir(func() {
 				filefixture.Alpha.Create("./material/alpha")
-				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+				assembly := assemblerFn("./assembled", []rio.AssemblyPart{
 					{TargetPath: "/", SourcePath: "./material/alpha", Writable: false},
 				})
 				defer assembly.Teardown()
@@ -263,13 +263,13 @@ func CheckAssemblerRespectsReadonly(assemblerFn integrity.Assembler) {
 	)
 }
 
-func CheckAssemblerIsolatesSource(assemblerFn integrity.Assembler) {
+func CheckAssemblerIsolatesSource(assemblerFn rio.Assembler) {
 	Convey("Writing to a placement should not alter the source",
 		testutil.Requires(
 			testutil.RequiresRoot,
 			testutil.WithTmpdir(func() {
 				filefixture.Alpha.Create("./material/alpha")
-				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+				assembly := assemblerFn("./assembled", []rio.AssemblyPart{
 					{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
 				})
 				defer assembly.Teardown()
@@ -283,7 +283,7 @@ func CheckAssemblerIsolatesSource(assemblerFn integrity.Assembler) {
 	)
 }
 
-func CheckAssemblerBareMount(assemblerFn integrity.Assembler) {
+func CheckAssemblerBareMount(assemblerFn rio.Assembler) {
 	Convey("Bare mounts continue to see changes to the source",
 		testutil.Requires(
 			testutil.RequiresRoot,
@@ -291,7 +291,7 @@ func CheckAssemblerBareMount(assemblerFn integrity.Assembler) {
 				// make fixture
 				filefixture.Alpha.Create("./material/alpha")
 				// assemble
-				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+				assembly := assemblerFn("./assembled", []rio.AssemblyPart{
 					{TargetPath: "/", SourcePath: "./material/alpha", Writable: false, BareMount: true},
 				})
 				defer assembly.Teardown()
@@ -313,7 +313,7 @@ func CheckAssemblerBareMount(assemblerFn integrity.Assembler) {
 				// make fixture
 				filefixture.Alpha.Create("./material/alpha")
 				// assemble
-				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+				assembly := assemblerFn("./assembled", []rio.AssemblyPart{
 					{TargetPath: "/", SourcePath: "./material/alpha", Writable: true, BareMount: true},
 				})
 				defer assembly.Teardown()
@@ -335,7 +335,7 @@ func CheckAssemblerBareMount(assemblerFn integrity.Assembler) {
 				// make fixture
 				filefixture.Alpha.Create("./material/alpha")
 				// assemble
-				assembly := assemblerFn("./assembled", []integrity.AssemblyPart{
+				assembly := assemblerFn("./assembled", []rio.AssemblyPart{
 					{TargetPath: "/", SourcePath: "./material/alpha", Writable: false, BareMount: true},
 				})
 				defer assembly.Teardown()

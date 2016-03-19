@@ -13,7 +13,7 @@ import (
 )
 
 // Run inputs
-func ProvisionInputs(transmat integrity.Transmat, inputs def.InputGroup, journal log15.Logger) map[string]integrity.Arena {
+func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15.Logger) map[string]rio.Arena {
 	// start having all filesystems
 	// input names are used as keys, so must be unique
 	fsGather := make(chan map[string]materializerReport)
@@ -22,14 +22,14 @@ func ProvisionInputs(transmat integrity.Transmat, inputs def.InputGroup, journal
 			try.Do(func() {
 				journal.Info(fmt.Sprintf("Starting materialize for %s hash=%s", in.Type, in.Hash))
 				// todo: create validity checking api for URIs, check them all before launching anything
-				warehouses := make([]integrity.SiloURI, len(in.Warehouses))
+				warehouses := make([]rio.SiloURI, len(in.Warehouses))
 				for i, wh := range in.Warehouses {
-					warehouses[i] = integrity.SiloURI(wh)
+					warehouses[i] = rio.SiloURI(wh)
 				}
 				// invoke transmat (blocking, potentially long time)
 				arena := transmat.Materialize(
-					integrity.TransmatKind(in.Type),
-					integrity.CommitID(in.Hash),
+					rio.TransmatKind(in.Type),
+					rio.CommitID(in.Hash),
 					warehouses,
 					journal,
 				)
@@ -38,7 +38,7 @@ func ProvisionInputs(transmat integrity.Transmat, inputs def.InputGroup, journal
 				fsGather <- map[string]materializerReport{
 					name: {Arena: arena},
 				}
-			}).Catch(integrity.Error, func(err *errors.Error) {
+			}).Catch(rio.Error, func(err *errors.Error) {
 				journal.Warn(fmt.Sprintf("Errored during materialize for %s hash=%s", in.Type, in.Hash), "error", err.Message())
 				fsGather <- map[string]materializerReport{
 					name: {Err: err},
@@ -51,7 +51,7 @@ func ProvisionInputs(transmat integrity.Transmat, inputs def.InputGroup, journal
 
 	// gather materialized inputs
 	// any errors are re-raised immediately (TODO: this currently doesn't fan out smooth cancellations)
-	filesystems := make(map[string]integrity.Arena, len(inputs))
+	filesystems := make(map[string]rio.Arena, len(inputs))
 	for range inputs {
 		for name, report := range <-fsGather {
 			if report.Err != nil {
@@ -65,18 +65,18 @@ func ProvisionInputs(transmat integrity.Transmat, inputs def.InputGroup, journal
 }
 
 func AssembleFilesystem(
-	assemblerFn integrity.Assembler,
+	assemblerFn rio.Assembler,
 	rootPath string,
 	inputs def.InputGroup,
-	inputArenas map[string]integrity.Arena,
+	inputArenas map[string]rio.Arena,
 	hostMounts []def.Mount,
 	journal log15.Logger,
-) integrity.Assembly {
+) rio.Assembly {
 	journal.Info("All inputs acquired... starting assembly")
 	// process inputs
-	assemblyParts := make([]integrity.AssemblyPart, 0, len(inputArenas))
+	assemblyParts := make([]rio.AssemblyPart, 0, len(inputArenas))
 	for name, arena := range inputArenas {
-		assemblyParts = append(assemblyParts, integrity.AssemblyPart{
+		assemblyParts = append(assemblyParts, rio.AssemblyPart{
 			SourcePath: arena.Path(),
 			TargetPath: inputs[name].MountPath,
 			Writable:   true, // TODO input config should have a word about this
@@ -84,7 +84,7 @@ func AssembleFilesystem(
 	}
 	// process mounts
 	for _, mount := range hostMounts {
-		assemblyParts = append(assemblyParts, integrity.AssemblyPart{
+		assemblyParts = append(assemblyParts, rio.AssemblyPart{
 			SourcePath: mount.SourcePath,
 			TargetPath: mount.TargetPath,
 			Writable:   mount.Writable,
@@ -98,8 +98,8 @@ func AssembleFilesystem(
 }
 
 type materializerReport struct {
-	Arena integrity.Arena // if success
-	Err   *errors.Error   // subtype of input.Error.  (others are forbidden by contract and treated as fatal.)
+	Arena rio.Arena     // if success
+	Err   *errors.Error // subtype of input.Error.  (others are forbidden by contract and treated as fatal.)
 }
 
 func ProvisionOutputs(outputs def.OutputGroup, rootfs string, journal log15.Logger) {
@@ -118,25 +118,25 @@ func ProvisionOutputs(outputs def.OutputGroup, rootfs string, journal log15.Logg
 }
 
 // Run outputs
-func PreserveOutputs(transmat integrity.Transmat, outputs def.OutputGroup, rootfs string, journal log15.Logger) def.OutputGroup {
+func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs string, journal log15.Logger) def.OutputGroup {
 	// run commit on the outputs
 	scanGather := make(chan map[string]scanReport)
 	for name, out := range outputs {
 		go func(name string, out *def.Output) {
 			out.Filters = &def.Filters{}
 			out.Filters.InitDefaultsOutput()
-			filterOptions := integrity.ConvertFilterConfig(*out.Filters)
+			filterOptions := rio.ConvertFilterConfig(*out.Filters)
 			scanPath := filepath.Join(rootfs, out.MountPath)
 			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
 			try.Do(func() {
 				// todo: create validity checking api for URIs, check them all before launching anything
-				warehouses := make([]integrity.SiloURI, len(out.Warehouses))
+				warehouses := make([]rio.SiloURI, len(out.Warehouses))
 				for i, wh := range out.Warehouses {
-					warehouses[i] = integrity.SiloURI(wh)
+					warehouses[i] = rio.SiloURI(wh)
 				}
 				// invoke transmat (blocking, potentially long time)
 				commitID := transmat.Scan(
-					integrity.TransmatKind(out.Type),
+					rio.TransmatKind(out.Type),
 					scanPath,
 					warehouses,
 					journal,
@@ -148,7 +148,7 @@ func PreserveOutputs(transmat integrity.Transmat, outputs def.OutputGroup, rootf
 				scanGather <- map[string]scanReport{
 					name: {Output: out},
 				}
-			}).Catch(integrity.Error, func(err *errors.Error) {
+			}).Catch(rio.Error, func(err *errors.Error) {
 				journal.Warn(fmt.Sprintf("Errored scan on %q", scanPath), "error", err.Message())
 				scanGather <- map[string]scanReport{
 					name: {Err: err},

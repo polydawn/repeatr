@@ -8,4 +8,4 @@ import (
 /*
 	Raised if S3 credentials are not available.
 */
-var S3CredentialsMissingError *errors.ErrorClass = integrity.ConfigError.NewClass("InputS3CredentialsMissingError")
+var S3CredentialsMissingError *errors.ErrorClass = rio.ConfigError.NewClass("InputS3CredentialsMissingError")

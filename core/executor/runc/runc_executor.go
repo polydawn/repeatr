@@ -103,7 +103,7 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS
 		e.Execute(f, j, d, &r, stdin, outS, errS, journal)
 	}).Catch(executor.Error, func(err *errors.Error) {
 		r.Error = err
-	}).Catch(integrity.Error, func(err *errors.Error) {
+	}).Catch(rio.Error, func(err *errors.Error) {
 		r.Error = err
 	}).CatchAll(func(err error) {
 		r.Error = executor.UnknownError.Wrap(err).(*errors.Error)

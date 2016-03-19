@@ -18,7 +18,7 @@ import (
 	- Places it in a new filesystem with the input system and the scanned hash
 	- Checks the new filesystem matches the original
 */
-func CheckRoundTrip(kind integrity.TransmatKind, transmatFabFn integrity.TransmatFactory, bounceURI string, addtnlDesc ...string) {
+func CheckRoundTrip(kind rio.TransmatKind, transmatFabFn rio.TransmatFactory, bounceURI string, addtnlDesc ...string) {
 	Convey("SPEC: Round-trip scanning and remaking a filesystem should agree on hash and content"+testutil.AdditionalDescription(addtnlDesc...), testutil.Requires(
 		testutil.RequiresRoot,
 		func(c C) {
@@ -27,13 +27,13 @@ func CheckRoundTrip(kind integrity.TransmatKind, transmatFabFn integrity.Transma
 
 			for _, fixture := range filefixture.All {
 				Convey(fmt.Sprintf("- Fixture %q", fixture.Name), FailureContinues, func() {
-					uris := []integrity.SiloURI{integrity.SiloURI(bounceURI)}
+					uris := []rio.SiloURI{rio.SiloURI(bounceURI)}
 					// setup fixture
 					fixture.Create("./fixture")
 					// scan it with the transmat
 					dataHash := transmat.Scan(kind, "./fixture", uris, log)
 					// materialize what we just scanned (along the way, requires hash match)
-					arena := transmat.Materialize(kind, dataHash, uris, log, integrity.AcceptHashMismatch)
+					arena := transmat.Materialize(kind, dataHash, uris, log, rio.AcceptHashMismatch)
 					// assert hash match
 					// (normally survival would attest this, but we used the `AcceptHashMismatch` to supress panics in the name of letting the test see more after failures.)
 					So(arena.Hash(), ShouldEqual, dataHash)

@@ -25,20 +25,20 @@ import (
 	"polydawn.net/repeatr/lib/guid"
 )
 
-const Kind = integrity.TransmatKind("gs")
+const Kind = rio.TransmatKind("gs")
 
-var _ integrity.Transmat = &GsTransmat{}
+var _ rio.Transmat = &GsTransmat{}
 
 type GsTransmat struct {
 	workPath string
 }
 
-var _ integrity.TransmatFactory = New
+var _ rio.TransmatFactory = New
 
-func New(workPath string) integrity.Transmat {
+func New(workPath string) rio.Transmat {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
-		panic(integrity.TransmatError.New("Unable to set up workspace: %s", err))
+		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
 	}
 	return &GsTransmat{workPath}
 }
@@ -61,23 +61,23 @@ const SCHEME_GS_CAS = "gs+ca"
 	Arenas produced by Dir Transmats may be relocated by simple `mv`.
 */
 func (t *GsTransmat) Materialize(
-	kind integrity.TransmatKind,
-	dataHash integrity.CommitID,
-	siloURIs []integrity.SiloURI,
+	kind rio.TransmatKind,
+	dataHash rio.CommitID,
+	siloURIs []rio.SiloURI,
 	log log15.Logger,
-	options ...integrity.MaterializerConfigurer,
-) integrity.Arena {
+	options ...rio.MaterializerConfigurer,
+) rio.Arena {
 	var arena dirArena
 	try.Do(func() {
 		// Basic validation and config
-		config := integrity.EvaluateConfig(options...)
+		config := rio.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
 		// Parse URI; Find warehouses.
 		if len(siloURIs) < 1 {
-			panic(integrity.ConfigError.New("Materialization requires at least one data source!"))
+			panic(rio.ConfigError.New("Materialization requires at least one data source!"))
 			// Note that it's possible a caching layer will satisfy things even without data sources...
 			//  but if that was going to happen, it already would have by now.
 		}
@@ -89,7 +89,7 @@ func (t *GsTransmat) Materialize(
 		for _, givenURI := range siloURIs {
 			u, err := url.Parse(string(givenURI))
 			if err != nil {
-				panic(integrity.ConfigError.New("failed to parse URI: %s", err))
+				panic(rio.ConfigError.New("failed to parse URI: %s", err))
 			}
 			warehouseBucketName = u.Host
 			warehousePathPrefix = u.Path
@@ -99,14 +99,14 @@ func (t *GsTransmat) Materialize(
 			case SCHEME_GS_CAS:
 				warehouseCtntAddr = true
 			default:
-				panic(integrity.ConfigError.New("unrecognized scheme: %q", u.Scheme))
+				panic(rio.ConfigError.New("unrecognized scheme: %q", u.Scheme))
 			}
 			// TODO figure out how to check for data (or at least warehouse!) presence;
 			//  currently just assuming the first one's golden, and blowing up later if it's not.
 			break
 		}
 		if warehouseBucketName == "" {
-			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
+			panic(rio.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
 		token, err := GetAccessToken()
@@ -125,14 +125,14 @@ func (t *GsTransmat) Materialize(
 		// prepare decompression as necessary
 		reader, err := tartrans.Decompress(gsReader)
 		if err != nil {
-			panic(integrity.WarehouseCorruptionError.New("could not start decompressing: %s", err))
+			panic(rio.WarehouseCorruptionError.New("could not start decompressing: %s", err))
 		}
 		tarReader := tar.NewReader(reader)
 
 		// Create staging arena to produce data into.
 		arena.path, err = ioutil.TempDir(t.workPath, "")
 		if err != nil {
-			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
+			panic(rio.TransmatError.New("Unable to create arena: %s", err))
 		}
 
 		// walk input tar stream, placing data and accumulating hashes and metadata for integrity check
@@ -148,7 +148,7 @@ func (t *GsTransmat) Materialize(
 		// verify total integrity
 		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
 		if err != nil {
-			panic(integrity.ConfigError.New("Could not parse hash: %s", err))
+			panic(rio.ConfigError.New("Could not parse hash: %s", err))
 		}
 		if bytes.Equal(actualTreeHash, expectedTreeHash) {
 			// excellent, got what we asked for.
@@ -158,30 +158,30 @@ func (t *GsTransmat) Materialize(
 			if config.AcceptHashMismatch {
 				// if we're tolerating mismatches, report the actual hash through different mechanisms.
 				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
-				arena.hash = integrity.CommitID(actualTreeHash)
+				arena.hash = rio.CommitID(actualTreeHash)
 			} else {
-				panic(integrity.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
+				panic(rio.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
 			}
 		}
-	}).Catch(integrity.Error, func(err *errors.Error) {
+	}).Catch(rio.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
-		panic(integrity.UnknownError.Wrap(err))
+		panic(rio.UnknownError.Wrap(err))
 	}).Done()
 	return arena
 }
 
 func (t GsTransmat) Scan(
-	kind integrity.TransmatKind,
+	kind rio.TransmatKind,
 	subjectPath string,
-	siloURIs []integrity.SiloURI,
+	siloURIs []rio.SiloURI,
 	log log15.Logger,
-	options ...integrity.MaterializerConfigurer,
-) integrity.CommitID {
-	var commitID integrity.CommitID
+	options ...rio.MaterializerConfigurer,
+) rio.CommitID {
+	var commitID rio.CommitID
 	try.Do(func() {
 		// Basic validation and config
-		config := integrity.EvaluateConfig(options...)
+		config := rio.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
@@ -217,7 +217,7 @@ func (t GsTransmat) Scan(
 		for _, givenURI := range siloURIs {
 			u, err := url.Parse(string(givenURI))
 			if err != nil {
-				panic(integrity.ConfigError.New("failed to parse URI: %s", err))
+				panic(rio.ConfigError.New("failed to parse URI: %s", err))
 			}
 			controller := &gsWarehousePut{}
 			controller.bucketName = u.Host
@@ -229,7 +229,7 @@ func (t GsTransmat) Scan(
 			case SCHEME_GS_CAS:
 				ctntAddr = true
 			default:
-				panic(integrity.ConfigError.New("unrecognized scheme: %q", u.Scheme))
+				panic(rio.ConfigError.New("unrecognized scheme: %q", u.Scheme))
 			}
 			// if the URI indicated CA behavior, first stream data to {$bucketName}:{dirname($storePath)}/.tmp.upload.{basename($storePath)}.{random()};
 			// this allows us to start uploading before the final hash is determined and relocate it later.
@@ -252,16 +252,16 @@ func (t GsTransmat) Scan(
 		}
 
 		// walk, fwrite, hash
-		commitID = integrity.CommitID(tartrans.Save(stream, subjectPath, config.FilterSet, hasherFactory))
+		commitID = rio.CommitID(tartrans.Save(stream, subjectPath, config.FilterSet, hasherFactory))
 
 		// commit
 		for _, controller := range controllers {
 			controller.Commit(string(commitID))
 		}
-	}).Catch(integrity.Error, func(err *errors.Error) {
+	}).Catch(rio.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
-		panic(integrity.UnknownError.Wrap(err))
+		panic(rio.UnknownError.Wrap(err))
 	}).Done()
 	return commitID
 }
@@ -284,10 +284,10 @@ func (wp *gsWarehousePut) Commit(hash string) {
 	// be advised that this close method does *a lot* of work aside from connection termination.
 	// also calling it twice causes the library to wigg out and delete things, i don't even.
 	if err := wp.stream.Close(); err != nil {
-		panic(integrity.WarehouseIOError.Wrap(err))
+		panic(rio.WarehouseIOError.Wrap(err))
 	}
 	for err := range wp.errors {
-		panic(integrity.UnknownError.Wrap(err))
+		panic(rio.UnknownError.Wrap(err))
 	}
 	//TODO: We could check Cloud storage's content hash against ours to check for transport errors.
 
@@ -301,14 +301,14 @@ func (wp *gsWarehousePut) Commit(hash string) {
 
 type dirArena struct {
 	path string
-	hash integrity.CommitID
+	hash rio.CommitID
 }
 
 func (a dirArena) Path() string {
 	return a.path
 }
 
-func (a dirArena) Hash() integrity.CommitID {
+func (a dirArena) Hash() rio.CommitID {
 	return a.hash
 }
 
@@ -319,6 +319,6 @@ func (a dirArena) Teardown() {
 		if e2, ok := err.(*os.PathError); ok && e2.Err == syscall.ENOENT && e2.Path == a.path {
 			return
 		}
-		panic(integrity.TransmatError.New("Failed to tear down arena: %s", err))
+		panic(rio.TransmatError.New("Failed to tear down arena: %s", err))
 	}
 }

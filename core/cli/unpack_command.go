@@ -61,9 +61,9 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 				os.MkdirAll(placePath, 0755)
 				// Materialize the things.
 				arena := util.DefaultTransmat().Materialize(
-					integrity.TransmatKind(ctx.String("kind")),
-					integrity.CommitID(hash),
-					[]integrity.SiloURI{integrity.SiloURI(ctx.String("where"))},
+					rio.TransmatKind(ctx.String("kind")),
+					rio.CommitID(hash),
+					[]rio.SiloURI{rio.SiloURI(ctx.String("where"))},
 					log,
 				)
 				defer arena.Teardown()
@@ -74,11 +74,11 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 				//  pointer into a shared cache that already existed (or other non-relocatable
 				//  excuse for a filesystem, e.g. fuse happened or something).
 				placer.CopyingPlacer(arena.Path(), placePath, true, false)
-			}).Catch(integrity.ConfigError, func(err *errors.Error) {
+			}).Catch(rio.ConfigError, func(err *errors.Error) {
 				panic(Error.NewWith(err.Message(), SetExitCode(EXIT_BADARGS)))
-			}).Catch(integrity.WarehouseUnavailableError, func(err *errors.Error) {
+			}).Catch(rio.WarehouseUnavailableError, func(err *errors.Error) {
 				panic(Error.New("%s", err.Message()))
-			}).Catch(integrity.DataDNE, func(err *errors.Error) {
+			}).Catch(rio.DataDNE, func(err *errors.Error) {
 				panic(Error.New("%s", err.Message()))
 			}).Done()
 		},

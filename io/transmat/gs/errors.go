@@ -8,5 +8,5 @@ import (
 /*
 	Raised if GS credentials are not available.
 */
-var GsCredentialsMissingError *errors.ErrorClass = integrity.ConfigError.NewClass("InputGsCredentialsMissingError")
-var GsCredentialsInvalidError *errors.ErrorClass = integrity.ConfigError.NewClass("InputGsCredentialsInvalid")
+var GsCredentialsMissingError *errors.ErrorClass = rio.ConfigError.NewClass("InputGsCredentialsMissingError")
+var GsCredentialsInvalidError *errors.ErrorClass = rio.ConfigError.NewClass("InputGsCredentialsInvalid")

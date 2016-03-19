@@ -18,20 +18,20 @@ import (
 	"polydawn.net/repeatr/lib/fshash"
 )
 
-const Kind = integrity.TransmatKind("tar")
+const Kind = rio.TransmatKind("tar")
 
-var _ integrity.Transmat = &TarTransmat{}
+var _ rio.Transmat = &TarTransmat{}
 
 type TarTransmat struct {
 	workPath string
 }
 
-var _ integrity.TransmatFactory = New
+var _ rio.TransmatFactory = New
 
-func New(workPath string) integrity.Transmat {
+func New(workPath string) rio.Transmat {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
-		panic(integrity.TransmatError.New("Unable to set up workspace: %s", err))
+		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
 	}
 	return &TarTransmat{workPath}
 }
@@ -42,23 +42,23 @@ var hasherFactory = sha512.New384
 	Arenas produced by Tar Transmats may be relocated by simple `mv`.
 */
 func (t *TarTransmat) Materialize(
-	kind integrity.TransmatKind,
-	dataHash integrity.CommitID,
-	siloURIs []integrity.SiloURI,
+	kind rio.TransmatKind,
+	dataHash rio.CommitID,
+	siloURIs []rio.SiloURI,
 	log log15.Logger,
-	options ...integrity.MaterializerConfigurer,
-) integrity.Arena {
+	options ...rio.MaterializerConfigurer,
+) rio.Arena {
 	var arena tarArena
 	try.Do(func() {
 		// Basic validation and config
-		config := integrity.EvaluateConfig(options...)
+		config := rio.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
 		// Ping silos
 		if len(siloURIs) < 1 {
-			panic(integrity.ConfigError.New("Materialization requires at least one data source!"))
+			panic(rio.ConfigError.New("Materialization requires at least one data source!"))
 			// Note that it's possible a caching layer will satisfy things even without data sources...
 			//  but if that was going to happen, it already would have by now.
 		}
@@ -69,10 +69,10 @@ func (t *TarTransmat) Materialize(
 		for _, uri := range siloURIs {
 			try.Do(func() {
 				stream = makeReader(dataHash, uri)
-			}).Catch(integrity.WarehouseUnavailableError, func(err *errors.Error) {
+			}).Catch(rio.WarehouseUnavailableError, func(err *errors.Error) {
 				// fine, we'll just try the next one
 				log.Info("Warehouse does not exist, skipping", "warehouse", uri)
-			}).Catch(integrity.DataDNE, func(err *errors.Error) {
+			}).Catch(rio.DataDNE, func(err *errors.Error) {
 				// fine, we'll just try the next one
 				available = true // but at least someone was *alive*
 				log.Info("Warehouse does not not have the data, skipping", "warehouse", uri, "hash", dataHash)
@@ -83,22 +83,22 @@ func (t *TarTransmat) Materialize(
 		}
 		if stream == nil {
 			if available {
-				panic(integrity.DataDNE.New("No warehouses had the data!"))
+				panic(rio.DataDNE.New("No warehouses had the data!"))
 			}
-			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
+			panic(rio.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
 		// Wrap input stream with decompression as necessary
 		reader, err := Decompress(stream)
 		if err != nil {
-			panic(integrity.WarehouseIOError.New("could not start decompressing: %s", err))
+			panic(rio.WarehouseIOError.New("could not start decompressing: %s", err))
 		}
 		tarReader := tar.NewReader(reader)
 
 		// Create staging arena to produce data into.
 		arena.path, err = ioutil.TempDir(t.workPath, "")
 		if err != nil {
-			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
+			panic(rio.TransmatError.New("Unable to create arena: %s", err))
 		}
 
 		// walk input tar stream, placing data and accumulating hashes and metadata for integrity check
@@ -114,7 +114,7 @@ func (t *TarTransmat) Materialize(
 		// verify total integrity
 		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
 		if err != nil {
-			panic(integrity.ConfigError.New("Could not parse hash: %s", err))
+			panic(rio.ConfigError.New("Could not parse hash: %s", err))
 		}
 		if bytes.Equal(actualTreeHash, expectedTreeHash) {
 			// excellent, got what we asked for.
@@ -124,30 +124,30 @@ func (t *TarTransmat) Materialize(
 			if config.AcceptHashMismatch {
 				// if we're tolerating mismatches, report the actual hash through different mechanisms.
 				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
-				arena.hash = integrity.CommitID(actualTreeHash)
+				arena.hash = rio.CommitID(actualTreeHash)
 			} else {
-				panic(integrity.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
+				panic(rio.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
 			}
 		}
-	}).Catch(integrity.Error, func(err *errors.Error) {
+	}).Catch(rio.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
-		panic(integrity.UnknownError.Wrap(err))
+		panic(rio.UnknownError.Wrap(err))
 	}).Done()
 	return arena
 }
 
 func (t TarTransmat) Scan(
-	kind integrity.TransmatKind,
+	kind rio.TransmatKind,
 	subjectPath string,
-	siloURIs []integrity.SiloURI,
+	siloURIs []rio.SiloURI,
 	log log15.Logger,
-	options ...integrity.MaterializerConfigurer,
-) integrity.CommitID {
-	var commitID integrity.CommitID
+	options ...rio.MaterializerConfigurer,
+) rio.CommitID {
+	var commitID rio.CommitID
 	try.Do(func() {
 		// Basic validation and config
-		config := integrity.EvaluateConfig(options...)
+		config := rio.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
@@ -179,30 +179,30 @@ func (t TarTransmat) Scan(
 		}
 
 		// walk, fwrite, hash
-		commitID = integrity.CommitID(Save(stream, subjectPath, config.FilterSet, hasherFactory))
+		commitID = rio.CommitID(Save(stream, subjectPath, config.FilterSet, hasherFactory))
 
 		// commit
 		for _, controller := range controllers {
 			controller.Commit(commitID)
 		}
-	}).Catch(integrity.Error, func(err *errors.Error) {
+	}).Catch(rio.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
-		panic(integrity.UnknownError.Wrap(err))
+		panic(rio.UnknownError.Wrap(err))
 	}).Done()
 	return commitID
 }
 
 type tarArena struct {
 	path string
-	hash integrity.CommitID
+	hash rio.CommitID
 }
 
 func (a tarArena) Path() string {
 	return a.path
 }
 
-func (a tarArena) Hash() integrity.CommitID {
+func (a tarArena) Hash() rio.CommitID {
 	return a.hash
 }
 
@@ -213,6 +213,6 @@ func (a tarArena) Teardown() {
 		if e2, ok := err.(*os.PathError); ok && e2.Err == syscall.ENOENT && e2.Path == a.path {
 			return
 		}
-		panic(integrity.TransmatError.New("Failed to tear down arena: %s", err))
+		panic(rio.TransmatError.New("Failed to tear down arena: %s", err))
 	}
 }

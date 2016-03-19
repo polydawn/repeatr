@@ -47,7 +47,7 @@ func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 			filters := &def.Filters{}
 			try.Do(func() {
 				filters.FromStringSlice(ctx.StringSlice("filter"))
-			}).Catch(integrity.ConfigError, func(err *errors.Error) {
+			}).Catch(rio.ConfigError, func(err *errors.Error) {
 				panic(Error.NewWith("Malformed argument: filters could not parse: "+err.Message(), SetExitCode(EXIT_BADARGS)))
 			}).Done()
 			filters.InitDefaultsOutput()
@@ -88,9 +88,9 @@ func Scan(outputSpec def.Output, log log15.Logger) def.Output {
 	// TODO validate MountPath exists, give nice errors
 
 	// todo: create validity checking api for URIs, check them all before launching anything
-	warehouses := make([]integrity.SiloURI, len(outputSpec.Warehouses))
+	warehouses := make([]rio.SiloURI, len(outputSpec.Warehouses))
 	for i, wh := range outputSpec.Warehouses {
-		warehouses[i] = integrity.SiloURI(wh)
+		warehouses[i] = rio.SiloURI(wh)
 	}
 
 	// So, this CLI command is *not* in its rights to change the subject area,
@@ -98,11 +98,11 @@ func Scan(outputSpec def.Output, log log15.Logger) def.Output {
 	commitID := util.DefaultTransmat().Scan(
 		// All of this stuff that's type-coercing?
 		//  Yeah these are hints that this stuff should be facing data validation.
-		integrity.TransmatKind(outputSpec.Type),
+		rio.TransmatKind(outputSpec.Type),
 		outputSpec.MountPath,
 		warehouses,
 		log,
-		integrity.ConvertFilterConfig(*outputSpec.Filters)...,
+		rio.ConvertFilterConfig(*outputSpec.Filters)...,
 	)
 
 	outputSpec.Hash = string(commitID)

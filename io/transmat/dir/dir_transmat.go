@@ -17,20 +17,20 @@ import (
 	"polydawn.net/repeatr/lib/fshash"
 )
 
-const Kind = integrity.TransmatKind("dir")
+const Kind = rio.TransmatKind("dir")
 
-var _ integrity.Transmat = &DirTransmat{}
+var _ rio.Transmat = &DirTransmat{}
 
 type DirTransmat struct {
 	workPath string
 }
 
-var _ integrity.TransmatFactory = New
+var _ rio.TransmatFactory = New
 
-func New(workPath string) integrity.Transmat {
+func New(workPath string) rio.Transmat {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
-		panic(integrity.TransmatError.New("Unable to set up workspace: %s", err))
+		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
 	}
 	return &DirTransmat{workPath}
 }
@@ -41,23 +41,23 @@ var hasherFactory = sha512.New384
 	Arenas produced by Dir Transmats may be relocated by simple `mv`.
 */
 func (t *DirTransmat) Materialize(
-	kind integrity.TransmatKind,
-	dataHash integrity.CommitID,
-	siloURIs []integrity.SiloURI,
+	kind rio.TransmatKind,
+	dataHash rio.CommitID,
+	siloURIs []rio.SiloURI,
 	log log15.Logger,
-	options ...integrity.MaterializerConfigurer,
-) integrity.Arena {
+	options ...rio.MaterializerConfigurer,
+) rio.Arena {
 	var arena dirArena
 	try.Do(func() {
 		// Basic validation and config
-		config := integrity.EvaluateConfig(options...)
+		config := rio.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
 		// Ping silos
 		if len(siloURIs) < 1 {
-			panic(integrity.ConfigError.New("Materialization requires at least one data source!"))
+			panic(rio.ConfigError.New("Materialization requires at least one data source!"))
 			// Note that it's possible a caching layer will satisfy things even without data sources...
 			//  but if that was going to happen, it already would have by now.
 		}
@@ -75,14 +75,14 @@ func (t *DirTransmat) Materialize(
 			}
 		}
 		if warehouse == nil {
-			panic(integrity.WarehouseUnavailableError.New("No warehouses were available!"))
+			panic(rio.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
 
 		// Create staging arena to produce data into.
 		var err error
 		arena.path, err = ioutil.TempDir(t.workPath, "")
 		if err != nil {
-			panic(integrity.TransmatError.New("Unable to create arena: %s", err))
+			panic(rio.TransmatError.New("Unable to create arena: %s", err))
 		}
 
 		// walk filesystem, copying and accumulating data for integrity check
@@ -98,7 +98,7 @@ func (t *DirTransmat) Materialize(
 		// verify total integrity
 		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
 		if err != nil {
-			panic(integrity.ConfigError.New("Could not parse hash: %s", err))
+			panic(rio.ConfigError.New("Could not parse hash: %s", err))
 		}
 		if bytes.Equal(actualTreeHash, expectedTreeHash) {
 			// excellent, got what we asked for.
@@ -108,30 +108,30 @@ func (t *DirTransmat) Materialize(
 			if config.AcceptHashMismatch {
 				// if we're tolerating mismatches, report the actual hash through different mechanisms.
 				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
-				arena.hash = integrity.CommitID(actualTreeHash)
+				arena.hash = rio.CommitID(actualTreeHash)
 			} else {
-				panic(integrity.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
+				panic(rio.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
 			}
 		}
-	}).Catch(integrity.Error, func(err *errors.Error) {
+	}).Catch(rio.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
-		panic(integrity.UnknownError.Wrap(err))
+		panic(rio.UnknownError.Wrap(err))
 	}).Done()
 	return arena
 }
 
 func (t DirTransmat) Scan(
-	kind integrity.TransmatKind,
+	kind rio.TransmatKind,
 	subjectPath string,
-	siloURIs []integrity.SiloURI,
+	siloURIs []rio.SiloURI,
 	log log15.Logger,
-	options ...integrity.MaterializerConfigurer,
-) integrity.CommitID {
-	var commitID integrity.CommitID
+	options ...rio.MaterializerConfigurer,
+) rio.CommitID {
+	var commitID rio.CommitID
 	try.Do(func() {
 		// Basic validation and config
-		config := integrity.EvaluateConfig(options...)
+		config := rio.EvaluateConfig(options...)
 		if kind != Kind {
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
@@ -156,7 +156,7 @@ func (t DirTransmat) Scan(
 			}
 			// hash whole tree
 			actualTreeHash := fshash.Hash(bucket, hasherFactory)
-			commitID = integrity.CommitID(base64.URLEncoding.EncodeToString(actualTreeHash))
+			commitID = rio.CommitID(base64.URLEncoding.EncodeToString(actualTreeHash))
 		}
 
 		// First... no save locations is a special case: still need to hash.
@@ -185,7 +185,7 @@ func (t DirTransmat) Scan(
 			//  there's such a thing as partial progress, and we've got it.
 			//   Perhaps in the future we should refactor scan results to include errors
 			//    values... per stage, since that gets several birds with one stone.
-			panic(integrity.WarehouseUnavailableError.New("NO warehouses available -- data not saved!"))
+			panic(rio.WarehouseUnavailableError.New("NO warehouses available -- data not saved!"))
 		}
 
 		// Open writers to save locations, and commit to each one.
@@ -197,24 +197,24 @@ func (t DirTransmat) Scan(
 			wc.commit(commitID)
 			log.Info("Commited to warehouse", "warehouse", warehouse.localPath, "hash", commitID)
 		}
-	}).Catch(integrity.Error, func(err *errors.Error) {
+	}).Catch(rio.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
-		panic(integrity.UnknownError.Wrap(err))
+		panic(rio.UnknownError.Wrap(err))
 	}).Done()
 	return commitID
 }
 
 type dirArena struct {
 	path string
-	hash integrity.CommitID
+	hash rio.CommitID
 }
 
 func (a dirArena) Path() string {
 	return a.path
 }
 
-func (a dirArena) Hash() integrity.CommitID {
+func (a dirArena) Hash() rio.CommitID {
 	return a.hash
 }
 

@@ -6,4 +6,4 @@ import (
 	"polydawn.net/repeatr/io"
 )
 
-var ErrLoadingAsset *errors.ErrorClass = integrity.Error.NewClass("ErrLoadingAsset")
+var ErrLoadingAsset *errors.ErrorClass = rio.Error.NewClass("ErrLoadingAsset")

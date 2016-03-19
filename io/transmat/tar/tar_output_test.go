@@ -27,8 +27,8 @@ func TestTarOutputCompat(t *testing.T) {
 						transmat.Scan(
 							Kind,
 							"./data",
-							[]integrity.SiloURI{
-								integrity.SiloURI("file://output.tar"),
+							[]rio.SiloURI{
+								rio.SiloURI("file://output.tar"),
 							},
 							testutil.TestLogger(c),
 						)

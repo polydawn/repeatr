@@ -42,7 +42,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 
 		Convey("We should get an error from the warehouse", func() {
 			result := execEng.Start(formula, def.JobID(guid.New()), nil, testutil.Writer{c}).Wait()
-			So(result.Error, testutil.ShouldBeErrorClass, integrity.WarehouseError)
+			So(result.Error, testutil.ShouldBeErrorClass, rio.WarehouseError)
 		})
 
 		Convey("The job exit code should clearly indicate failure", FailureContinues, func() {

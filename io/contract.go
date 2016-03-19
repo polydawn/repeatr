@@ -1,4 +1,4 @@
-package integrity
+package rio
 
 import (
 	"github.com/inconshreveable/log15"
@@ -60,7 +60,7 @@ type Transmat interface {
 		The only requirement is that it look roughly like a posix filesystem.
 
 		Composability: Transmats may delegate based on the `TransmatKind`
-		parameter.  See `integrity.DispatchingTransmat` for an example of this.
+		parameter.  See `rio.DispatchingTransmat` for an example of this.
 
 	*/
 	Materialize(kind TransmatKind, dataHash CommitID, siloURIs []SiloURI, log log15.Logger, options ...MaterializerConfigurer) Arena

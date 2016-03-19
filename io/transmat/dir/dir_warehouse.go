@@ -30,11 +30,11 @@ type Warehouse struct {
 	May panic with:
 	  - Config Error: if the URI is unparsable or has an unsupported scheme.
 */
-func NewWarehouse(coords integrity.SiloURI) *Warehouse {
+func NewWarehouse(coords rio.SiloURI) *Warehouse {
 	wh := &Warehouse{}
 	u, err := url.Parse(string(coords))
 	if err != nil {
-		panic(integrity.ConfigError.New("failed to parse URI: %s", err))
+		panic(rio.ConfigError.New("failed to parse URI: %s", err))
 	}
 	switch u.Scheme {
 	case "file+ca":
@@ -43,9 +43,9 @@ func NewWarehouse(coords integrity.SiloURI) *Warehouse {
 	case "file":
 		wh.localPath = filepath.Join(u.Host, u.Path) // file uris don't have hosts
 	case "":
-		panic(integrity.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
+		panic(rio.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
 	default:
-		panic(integrity.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
+		panic(rio.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
 	}
 	return wh
 }
@@ -66,7 +66,7 @@ func (wh *Warehouse) Ping() bool {
 /*
 	Return the (local) path expected for a given piece of data.
 */
-func (wh *Warehouse) GetShelf(dataHash integrity.CommitID) string {
+func (wh *Warehouse) GetShelf(dataHash rio.CommitID) string {
 	if wh.ctntAddr {
 		return filepath.Join(wh.localPath, string(dataHash))
 	} else {
@@ -109,7 +109,7 @@ func (wc *writeController) claimPrecommitPath() string {
 		)
 	}
 	if err != nil {
-		panic(integrity.WarehouseIOError.New("failed to reserve temp space in warehouse: %s", err))
+		panic(rio.WarehouseIOError.New("failed to reserve temp space in warehouse: %s", err))
 	}
 	return precommitPath
 }
@@ -119,7 +119,7 @@ func (wc *writeController) claimPrecommitPath() string {
 	Caller must be an adult and specify the hash truthfully.
 	Closes the writer and invalidates any future use.
 */
-func (wc *writeController) commit(saveAs integrity.CommitID) {
+func (wc *writeController) commit(saveAs rio.CommitID) {
 	// This is a rather alarming flow chart and almost makes me want to
 	//  split apart the implementations for CA and non-CA entirely,
 	//   but here goes:
@@ -146,14 +146,14 @@ func (wc *writeController) commit(saveAs integrity.CommitID) {
 			return
 		}
 		// any other errors are quite alarming
-		panic(integrity.WarehouseIOError.New("failed to commit %s: %s", saveAs, err))
+		panic(rio.WarehouseIOError.New("failed to commit %s: %s", saveAs, err))
 	} else {
 		pushedAside := pushAside(destPath)
 		err := os.Rename(wc.tmpPath, destPath)
 		if err != nil {
 			// In non-CA mode, this should only happen in case of misconfig or problems from
 			// racey use (in which case as usual, you're already Doing It Wrong and we're just being frank about it).
-			panic(integrity.WarehouseIOError.New("failed moving data to committed location: %s", err))
+			panic(rio.WarehouseIOError.New("failed moving data to committed location: %s", err))
 		}
 		// Clean up.
 		//  When not using a CA mode, this involves destroying the
@@ -192,5 +192,5 @@ func pushAside(obstructionPath string) string {
 		// can't be arsed to normalize errors and I'm too mad to do it.
 		// This is the same thing ioutil.TempDir does.  And that makes me sad.
 	}
-	panic(integrity.WarehouseIOError.New("failed evicting old data from commit location: %s", err))
+	panic(rio.WarehouseIOError.New("failed evicting old data from commit location: %s", err))
 }

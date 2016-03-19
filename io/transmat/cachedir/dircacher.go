@@ -10,7 +10,7 @@ import (
 	"polydawn.net/repeatr/io"
 )
 
-var _ integrity.Transmat = &CachingTransmat{}
+var _ rio.Transmat = &CachingTransmat{}
 
 /*
 	Proxies a Transmat (or set of dispatchable Transmats), keeping a cache of
@@ -37,36 +37,36 @@ var _ integrity.Transmat = &CachingTransmat{}
 	that preserves integrity of the cached filesystem.
 */
 type CachingTransmat struct {
-	integrity.DispatchingTransmat
+	rio.DispatchingTransmat
 	workPath string
 }
 
-func New(workPath string, transmats map[integrity.TransmatKind]integrity.TransmatFactory) *CachingTransmat {
+func New(workPath string, transmats map[rio.TransmatKind]rio.TransmatFactory) *CachingTransmat {
 	// Note that this *could* be massaged to fit the TransmatFactory signiture, but there doesn't
 	//  seem to be a compelling reason to do so; there's not really any circumstance where
 	//  you'd want to put a caching factory into a TransmatFactory registry as if it was a plugin.
 	err := os.MkdirAll(filepath.Join(workPath, "committed"), 0755)
 	if err != nil {
-		panic(integrity.TransmatError.New("Unable to create cacher work dirs: %s", err))
+		panic(rio.TransmatError.New("Unable to create cacher work dirs: %s", err))
 	}
-	dispatch := make(map[integrity.TransmatKind]integrity.Transmat, len(transmats))
+	dispatch := make(map[rio.TransmatKind]rio.Transmat, len(transmats))
 	for kind, factoryFn := range transmats {
 		dispatch[kind] = factoryFn(filepath.Join(workPath, "stg", string(kind)))
 	}
 	ct := &CachingTransmat{
-		*integrity.NewDispatchingTransmat(dispatch),
+		*rio.NewDispatchingTransmat(dispatch),
 		workPath,
 	}
 	return ct
 }
 
 func (ct *CachingTransmat) Materialize(
-	kind integrity.TransmatKind,
-	dataHash integrity.CommitID,
-	siloURIs []integrity.SiloURI,
+	kind rio.TransmatKind,
+	dataHash rio.CommitID,
+	siloURIs []rio.SiloURI,
 	log log15.Logger,
-	options ...integrity.MaterializerConfigurer,
-) integrity.Arena {
+	options ...rio.MaterializerConfigurer,
+) rio.Arena {
 	if dataHash == "" {
 		// if you can't give us a hash, we can't cache.
 		// also this is almost certainly doomed unless one of your options is `AcceptHashMismatch`, but that's not ours to check.
@@ -85,11 +85,11 @@ func (ct *CachingTransmat) Materialize(
 				err2.Err == syscall.EBUSY || err2.Err == syscall.ENOTEMPTY {
 				// oh, fine.  somebody raced us to it.
 				if err := os.RemoveAll(arena.Path()); err != nil {
-					panic(integrity.TransmatError.New("Error cleaning up cancelled cache: %s", err)) // not systemically fatal, but like, wtf mate.
+					panic(rio.TransmatError.New("Error cleaning up cancelled cache: %s", err)) // not systemically fatal, but like, wtf mate.
 				}
 				return catchingTransmatArena{permPath}
 			}
-			panic(integrity.TransmatError.New("Error commiting %q into cache: %s", err))
+			panic(rio.TransmatError.New("Error commiting %q into cache: %s", err))
 		}
 	}
 	return catchingTransmatArena{permPath}
@@ -99,6 +99,6 @@ type catchingTransmatArena struct {
 	path string
 }
 
-func (a catchingTransmatArena) Path() string             { return a.path }
-func (a catchingTransmatArena) Hash() integrity.CommitID { return a.Hash() }
-func (a catchingTransmatArena) Teardown()                { /* none */ }
+func (a catchingTransmatArena) Path() string       { return a.path }
+func (a catchingTransmatArena) Hash() rio.CommitID { return a.Hash() }
+func (a catchingTransmatArena) Teardown()          { /* none */ }

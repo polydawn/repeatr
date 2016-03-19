@@ -34,7 +34,7 @@ type Warehouse struct {
 	May panic with:
 	  - Config Error: if the URI is unparsable or has an unsupported scheme.
 */
-func NewWarehouse(coords integrity.SiloURI) *Warehouse {
+func NewWarehouse(coords rio.SiloURI) *Warehouse {
 	wh := &Warehouse{}
 	wh.url = hammerRelativePaths(string(coords))
 	return wh
@@ -84,7 +84,7 @@ func hammerRelativePaths(coords string) string {
 	// If things start with a "-", just... no.  Git lacks consistent ability
 	//  to handle this unambiguously, so we're not even going to try.
 	if coords[0] == '-' {
-		panic(integrity.ConfigError.New("invalid git remote: cannot start with '-'"))
+		panic(rio.ConfigError.New("invalid git remote: cannot start with '-'"))
 	}
 	// If something looks like a relative path, absolutize it.
 	//  There's a *litany* of issues this works around.
@@ -94,7 +94,7 @@ func hammerRelativePaths(coords string) string {
 	if coords[0] == '.' {
 		abs, err := filepath.Abs(coords)
 		if err != nil {
-			panic(integrity.TransmatError.Wrap(err))
+			panic(rio.TransmatError.Wrap(err))
 		}
 		return abs
 	}
@@ -134,9 +134,9 @@ func (wh *Warehouse) Ping() *errors.Error {
 		// Known values include:
 		//  - "'%s' does not appear to be a git repository"
 		//  - "attempt to fetch/clone from a shallow repository"
-		return integrity.WarehouseUnavailableError.New("git remote unavailable: %s", msg).(*errors.Error)
+		return rio.WarehouseUnavailableError.New("git remote unavailable: %s", msg).(*errors.Error)
 	default:
 		// We don't recognize this.
-		panic(integrity.UnknownError.New("git exit code %d (stderr: %s)", code, errBuf.String()))
+		panic(rio.UnknownError.New("git exit code %d (stderr: %s)", code, errBuf.String()))
 	}
 }

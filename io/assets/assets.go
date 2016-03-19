@@ -12,8 +12,8 @@ import (
 	"polydawn.net/repeatr/io/transmat/tar"
 )
 
-var assets = map[string]integrity.CommitID{
-	"runc": integrity.CommitID("GWQ-0zuTIZDrY_noJMUb2zTSfxJJp9ldhfbQB7dRCQ-kzzaAoLVFFwWozoQJnHJf"),
+var assets = map[string]rio.CommitID{
+	"runc": rio.CommitID("GWQ-0zuTIZDrY_noJMUb2zTSfxJJp9ldhfbQB7dRCQ-kzzaAoLVFFwWozoQJnHJf"),
 }
 
 /*
@@ -36,12 +36,12 @@ func Get(assetName string) string {
 	// Note: haven't got an API that proxies all the monitoring options yet.
 	// Be nice to have that someday, but tbh we need to develop the core of that further first.
 
-	var arena integrity.Arena
+	var arena rio.Arena
 	try.Do(func() {
 		arena = transmat().Materialize(
-			integrity.TransmatKind("tar"),
+			rio.TransmatKind("tar"),
 			assets[assetName],
-			[]integrity.SiloURI{
+			[]rio.SiloURI{
 				"http+ca://repeatr.s3.amazonaws.com/assets/",
 			},
 			log15.New(log15.DiscardHandler), // this is foolish, but i just feel Wrong requiring a logger as an arg to `asset.Get`.
@@ -65,10 +65,10 @@ func Get(assetName string) string {
 	only makes sense for the asset system to use the tar transmat,
 	since that's so easily bundled without large extraneous components.
 */
-func transmat() integrity.Transmat {
+func transmat() rio.Transmat {
 	workDir := filepath.Join(def.Base(), "assets")
-	dirCacher := cachedir.New(filepath.Join(workDir, "cache"), map[integrity.TransmatKind]integrity.TransmatFactory{
-		integrity.TransmatKind("tar"): tar.New,
+	dirCacher := cachedir.New(filepath.Join(workDir, "cache"), map[rio.TransmatKind]rio.TransmatFactory{
+		rio.TransmatKind("tar"): tar.New,
 	})
 	return dirCacher
 }

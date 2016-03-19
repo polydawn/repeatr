@@ -1,4 +1,4 @@
-package integrity
+package rio
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 )
 
 /*
-	Groups all errors emitted by the integrity IO system.
+	Groups all errors emitted by the Repeatable Input/Output systems.
 
 	Roughly, errors are categorized by what part of the system hit the
 	problem (and thus who needs to be involved in fixing settings, etc).

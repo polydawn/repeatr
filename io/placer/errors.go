@@ -6,4 +6,4 @@ import (
 	"polydawn.net/repeatr/io"
 )
 
-var Error *errors.ErrorClass = integrity.AssemblyError.NewClass("PlacerError")
+var Error *errors.ErrorClass = rio.AssemblyError.NewClass("PlacerError")
