@@ -75,7 +75,7 @@ func (t *TarTransmat) Materialize(
 			}).Catch(rio.DataDNE, func(err *errors.Error) {
 				// fine, we'll just try the next one
 				available = true // but at least someone was *alive*
-				log.Info("Warehouse does not not have the data, skipping", "warehouse", uri, "hash", dataHash)
+				log.Info("Warehouse does not have the data, skipping", "warehouse", uri, "hash", dataHash)
 			}).Done()
 			if stream != nil {
 				break
