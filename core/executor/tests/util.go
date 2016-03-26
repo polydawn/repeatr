@@ -2,6 +2,7 @@ package tests
 
 import (
 	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/rio/assets"
 )
 
 /*
@@ -12,12 +13,10 @@ func getBaseFormula() def.Formula {
 	return def.Formula{
 		Inputs: def.InputGroup{
 			"main": {
-				Type:      "tar",
-				MountPath: "/",
-				Hash:      "aLMH4qK1EdlPDavdhErOs0BPxqO0i6lUaeRE4DuUmnNMxhHtF56gkoeSulvwWNqT",
-				Warehouses: []string{
-					"http+ca://repeatr.s3.amazonaws.com/assets/",
-				},
+				Type:       "tar",
+				MountPath:  "/",
+				Hash:       "aLMH4qK1EdlPDavdhErOs0BPxqO0i6lUaeRE4DuUmnNMxhHtF56gkoeSulvwWNqT",
+				Warehouses: assets.WarehouseCoords2(),
 			},
 		},
 	}

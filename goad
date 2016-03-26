@@ -12,9 +12,11 @@ cmd="$pkg/cmd/$name"     # if you have a main.main not at the repo root, set thi
 LDFLAGS=""
 
 ### For demo runs and tests, ask them to lump all their state in one, unique dir.
+### At the same time, tell it to use this local filesystem for assets.
 mkdir -p /tmp/repeatr-test/
 chmod 01777 /tmp/repeatr-test/ 2>/dev/null || true
 export REPEATR_BASE="/tmp/repeatr-test/$(date +%Y.%m.%d..%H.%M.%S)..$RANDOM$RANDOM"
+export REPEATR_ASSETS="file+ca://$PWD/meta/assets-cache/"
 
 
 

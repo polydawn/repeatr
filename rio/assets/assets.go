@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/inconshreveable/log15"
@@ -14,6 +15,32 @@ import (
 
 var assets = map[string]rio.CommitID{
 	"runc": rio.CommitID("GWQ-0zuTIZDrY_noJMUb2zTSfxJJp9ldhfbQB7dRCQ-kzzaAoLVFFwWozoQJnHJf"),
+}
+
+func WarehouseCoords() []rio.SiloURI {
+	return append(
+		PreferredWarehouseCoords(),
+		rio.SiloURI("http+ca://repeatr.s3.amazonaws.com/assets/"),
+	)
+}
+
+// FIXME silly API, seealso comments in `def.WarehouseCoords`; refactor of def package will obliviate this function
+func WarehouseCoords2() def.WarehouseCoords {
+	wcs := make(def.WarehouseCoords, 0, 2)
+	for _, x := range WarehouseCoords() {
+		wcs = append(wcs, string(x))
+	}
+	return wcs
+}
+
+func PreferredWarehouseCoords() []rio.SiloURI {
+	val := os.Getenv("REPEATR_ASSETS")
+	if val != "" {
+		return []rio.SiloURI{
+			rio.SiloURI(val),
+		}
+	}
+	return nil
 }
 
 /*
@@ -32,18 +59,12 @@ var assets = map[string]rio.CommitID{
 	an assets cache without fuss.
 */
 func Get(assetName string) string {
-
-	// Note: haven't got an API that proxies all the monitoring options yet.
-	// Be nice to have that someday, but tbh we need to develop the core of that further first.
-
 	var arena rio.Arena
 	try.Do(func() {
 		arena = transmat().Materialize(
 			rio.TransmatKind("tar"),
 			assets[assetName],
-			[]rio.SiloURI{
-				"http+ca://repeatr.s3.amazonaws.com/assets/",
-			},
+			WarehouseCoords(),
 			log15.New(log15.DiscardHandler), // this is foolish, but i just feel Wrong requiring a logger as an arg to `asset.Get`.
 		)
 	}).CatchAll(func(err error) {
