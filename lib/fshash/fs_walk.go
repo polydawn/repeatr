@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 
 	"polydawn.net/repeatr/def"
-	"polydawn.net/repeatr/io/filter"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
+	"polydawn.net/repeatr/rio/filter"
 )
 
 func FillBucket(srcBasePath, destBasePath string, bucket Bucket, filterset filter.FilterSet, hasherFactory func() hash.Hash) error {

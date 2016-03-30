@@ -12,9 +12,11 @@ cmd="$pkg/cmd/$name"     # if you have a main.main not at the repo root, set thi
 LDFLAGS=""
 
 ### For demo runs and tests, ask them to lump all their state in one, unique dir.
+### At the same time, tell it to use this local filesystem for assets.
 mkdir -p /tmp/repeatr-test/
 chmod 01777 /tmp/repeatr-test/ 2>/dev/null || true
 export REPEATR_BASE="/tmp/repeatr-test/$(date +%Y.%m.%d..%H.%M.%S)..$RANDOM$RANDOM"
+export REPEATR_ASSETS="file+ca://$PWD/meta/assets-cache/"
 
 
 
@@ -155,8 +157,8 @@ else
 	validate)
 		# run all validations and exit non-zero after all of them if any fail
 		validators=()
-		validators+=("./contrib/validate-dco")
-		validators+=("./contrib/validate-gofmt")
+		validators+=("./meta/validators/validate-dco")
+		validators+=("./meta/validators/validate-gofmt")
 		invalid=""
 		for validator in ${validators[@]}; do
 			echo -e "\E[1;34m==== checking $validator ... ====\E[0;m"
