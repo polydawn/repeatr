@@ -127,7 +127,7 @@ func (man *Foreman) evoke() {
 	defer man.currentPlans.Unlease(leaseToken)
 
 	// Launch
-	job := man.executor.Start(def.Formula(*p.formula), def.JobID(guid.New()), nil, os.Stderr)
+	job := man.executor.Start(def.Formula(*p.formula), executor.JobID(guid.New()), nil, os.Stderr)
 	jobResult := job.Wait()
 	man.currentPlans.Finish(leaseToken)
 	// Assemble results // todo everything about jobresult is a mangle, plz refactor

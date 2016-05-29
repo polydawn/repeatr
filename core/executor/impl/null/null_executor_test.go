@@ -6,6 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"polydawn.net/repeatr/api/def"
+	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/lib/guid"
 	"polydawn.net/repeatr/lib/testutil"
 )

@@ -2,6 +2,7 @@ package runc
 
 import (
 	"polydawn.net/repeatr/api/def"
+	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/cradle"
 )
 
