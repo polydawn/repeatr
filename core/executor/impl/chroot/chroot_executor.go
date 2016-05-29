@@ -31,7 +31,7 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal io.Writer) def.Job {
+func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, journal io.Writer) executor.Job {
 	// Fill in default config for anything still blank.
 	f = *cradle.ApplyDefaults(&f)
 
@@ -73,8 +73,8 @@ func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal i
 }
 
 // Executes a job, catching any panics.
-func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS, errS io.WriteCloser, journal log15.Logger) def.JobResult {
-	r := def.JobResult{
+func (e *Executor) Run(f def.Formula, j executor.Job, d string, stdin io.Reader, outS, errS io.WriteCloser, journal log15.Logger) executor.JobResult {
+	r := executor.JobResult{
 		ID:       j.Id(),
 		ExitCode: -1,
 	}
@@ -93,7 +93,7 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS
 }
 
 // Execute a formula in a specified directory. MAY PANIC.
-func (e *Executor) Execute(f def.Formula, j def.Job, d string, result *def.JobResult, stdin io.Reader, outS, errS io.WriteCloser, journal log15.Logger) {
+func (e *Executor) Execute(f def.Formula, j executor.Job, d string, result *executor.JobResult, stdin io.Reader, outS, errS io.WriteCloser, journal log15.Logger) {
 	// Prepare inputs
 	transmat := util.DefaultTransmat()
 	inputArenas := util.ProvisionInputs(transmat, f.Inputs, journal)

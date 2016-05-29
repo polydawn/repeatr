@@ -36,10 +36,10 @@ type Executor interface {
 
 
 		// Executes a job, catching any panics.
-		func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
+		func (e *Executor) Run(f def.Formula, j executor.Job, d string) executor.JobResult {
 
 		// Execute a forumla in a specified directory. MAY PANIC.
-		func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
+		func (e *Executor) Execute(f def.Formula, j executor.Job, d string) executor.JobResult {
 
 
 		An executor should absolutely not be tied down, so leaving these implicit for now.

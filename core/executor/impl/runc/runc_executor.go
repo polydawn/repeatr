@@ -37,7 +37,7 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal io.Writer) def.Job {
+func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, journal io.Writer) executor.Job {
 	// TODO this function sig and its interface are long overdue for an aggressive refactor.
 	// - `journal` is Rong.  The streams mux should be accessible after this function's scope!
 	//   - either that or it's time to get cracking on saving the stream mux as an output
@@ -93,8 +93,8 @@ func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal i
 }
 
 // Executes a job, catching any panics.
-func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS, errS io.WriteCloser, journal log15.Logger) def.JobResult {
-	r := def.JobResult{
+func (e *Executor) Run(f def.Formula, j executor.Job, d string, stdin io.Reader, outS, errS io.WriteCloser, journal log15.Logger) executor.JobResult {
+	r := executor.JobResult{
 		ID:       j.Id(),
 		ExitCode: -1,
 	}
@@ -113,7 +113,7 @@ func (e *Executor) Run(f def.Formula, j def.Job, d string, stdin io.Reader, outS
 }
 
 // Execute a formula in a specified directory. MAY PANIC.
-func (e *Executor) Execute(formula def.Formula, job def.Job, jobPath string, result *def.JobResult, stdin io.Reader, stdout, stderr io.WriteCloser, journal log15.Logger) {
+func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string, result *executor.JobResult, stdin io.Reader, stdout, stderr io.WriteCloser, journal log15.Logger) {
 	rootfsPath := filepath.Join(jobPath, "rootfs")
 
 	// Prepare inputs
