@@ -15,11 +15,11 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/basicjob"
 	"polydawn.net/repeatr/core/executor/cradle"
 	"polydawn.net/repeatr/core/executor/util"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/streamer"
 	"polydawn.net/repeatr/rio"

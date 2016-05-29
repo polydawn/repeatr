@@ -5,8 +5,8 @@ import (
 	"io"
 
 	"github.com/codegangsta/cli"
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor/dispatch"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/guid"
 )
 

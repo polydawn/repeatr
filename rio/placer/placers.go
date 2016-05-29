@@ -9,7 +9,7 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
 	"polydawn.net/repeatr/rio"

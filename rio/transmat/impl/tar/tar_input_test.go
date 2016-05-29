@@ -7,7 +7,7 @@ import (
 
 	"github.com/polydawn/gosh"
 	. "github.com/smartystreets/goconvey/convey"
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/lib/fspatch"
 	"polydawn.net/repeatr/lib/testutil"
 	"polydawn.net/repeatr/lib/testutil/filefixture"

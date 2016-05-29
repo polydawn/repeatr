@@ -5,7 +5,7 @@ import (
 	"path"
 
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/treewalk"
 )

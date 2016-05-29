@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/rio/assets"
 )
 

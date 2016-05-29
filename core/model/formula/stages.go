@@ -6,7 +6,7 @@ import (
 
 	"github.com/ugorji/go/codec"
 
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 )
 
 // These types are all aliases for the same thing:

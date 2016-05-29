@@ -3,8 +3,8 @@ package scheduler
 import (
 	"io"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/def"
 )
 
 /*

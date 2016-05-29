@@ -10,7 +10,7 @@ import (
 
 	"github.com/polydawn/gosh"
 
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/rio"
 	"polydawn.net/repeatr/rio/placer"
 	"polydawn.net/repeatr/rio/transmat/impl/cachedir"

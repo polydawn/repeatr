@@ -4,9 +4,9 @@ import (
 	"io"
 	"runtime"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/scheduler"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/guid"
 )
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/lib/fspatch"
 )
 

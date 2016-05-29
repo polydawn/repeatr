@@ -3,11 +3,11 @@ package executordispatch
 import (
 	"path/filepath"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/impl/chroot"
 	"polydawn.net/repeatr/core/executor/impl/null"
 	"polydawn.net/repeatr/core/executor/impl/runc"
-	"polydawn.net/repeatr/def"
 )
 
 // TODO: This should not require a global string -> class map :|

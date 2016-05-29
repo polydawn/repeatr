@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
 )
 

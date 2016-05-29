@@ -1,8 +1,8 @@
 package runc
 
 import (
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor/cradle"
-	"polydawn.net/repeatr/def"
 )
 
 func EmitRuncConfigStruct(frm def.Formula, job def.Job, rootPath string, tty bool) interface{} {

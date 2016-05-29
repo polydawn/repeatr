@@ -6,10 +6,10 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/model/cassandra/impl/mem"
 	"polydawn.net/repeatr/core/model/catalog"
 	"polydawn.net/repeatr/core/model/formula"
-	"polydawn.net/repeatr/def"
 )
 
 func TestReleasing(t *testing.T) {

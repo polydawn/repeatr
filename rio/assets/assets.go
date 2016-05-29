@@ -7,7 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/rio"
 	"polydawn.net/repeatr/rio/transmat/impl/cachedir"
 	"polydawn.net/repeatr/rio/transmat/impl/tar"

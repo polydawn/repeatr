@@ -9,9 +9,9 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/ugorji/go/codec"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor/dispatch"
 	"polydawn.net/repeatr/core/scheduler/dispatch"
-	"polydawn.net/repeatr/def"
 )
 
 func RunCommandPattern(output io.Writer) cli.Command {
