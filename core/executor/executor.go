@@ -3,7 +3,7 @@ package executor
 import (
 	"io"
 
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 )
 
 /*
@@ -29,7 +29,7 @@ type Executor interface {
 		It is assumed that any job-specific filesystem state will be cleaned up by the executor.
 
 	*/
-	Start(def.Formula, def.JobID, io.Reader, io.Writer) def.Job
+	Start(def.Formula, JobID, io.Reader, io.Writer) Job
 
 	/*
 		ADDITIONALLY, we have some patterns that are merely conventions:

@@ -1,16 +1,18 @@
-package def
+package executor
 
-// Note: somewhat dubious whether these should be in the def package.
-// Almost about this stuff has anything to do with communicating formulas.
-// Consider breaking it out.  The 'def' package docs are pretty much supposed
-// to pass muster as config docs, and this just isn't relevant to that.
-// And just look at these unrelated imports as another hint.  Streamer?  jeesh.
+// Note: this interface is entirely dubious.
+// - streams don't necessarily work like that
+// - jobID is just kind of generally spacey
+// - the results struct is simply a hot mess
+// ... almost all of this should be replaced by `def.RunRecord` things.
+// Output *streams* are still interesting, but need to be accessible via `api/act`.
 
 import (
 	"io"
 
 	"github.com/spacemonkeygo/errors"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/lib/streamer"
 )
 
@@ -64,7 +66,7 @@ type JobResult struct {
 
 	ExitCode int // The return code of this job
 
-	Outputs OutputGroup //The hashed outputs from this job
+	Outputs def.OutputGroup //The hashed outputs from this job
 
 	// More?
 }
