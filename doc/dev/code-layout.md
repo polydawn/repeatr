@@ -30,3 +30,23 @@ If you're using Repeatr, but not interested in modifying it, you can skip this d
 - actors -- coming soon -- part of the auto-update/pipeline builds system
 - catalog -- coming soon -- part of the auto-update/pipeline builds system
 - model -- coming soon -- part of the auto-update/pipeline builds system
+
+
+### nuevo
+
+- `core`
+  - `core/executors`: containment engines.
+  - `core/model`: all of the specs for how to describe formulas
+    - Both individual formulas, and in large coordinated groups with update systems.
+    - All the API and serialization surface; no other imports
+    - The `Wares` and `Filters` interfaces are a notable exception: they're in the `rio` package group.
+- `rio`
+  - Repeatable Input/Output.  The `Wares` interface lives here.
+  - May depend on `lib`, but that's it -- a command could be built on `rio` and do all repeatr's data transport stuff
+- `lib`
+  - Small libraries -- things that could easily be broken out into externalized libraries entirely, but aren't significant enough to justify the management overhead of their own git repos.
+  - Some IO stuff (and even hashing of it) falls into `lib` on the theory it might be reusable for a large-data-diffing tool, or similar.
+- `doc`: you're lookin' at it.
+- `examples`: Shell scripts drive around the other Repeatr commands.
+- `meta`: Build utilities, Release scripts, and other meta-project leftovers.
+- `cmd`: Contains a package for each executable to build.
