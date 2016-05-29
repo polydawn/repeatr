@@ -27,6 +27,11 @@ func MakeCradle(rootfsPath string, frm def.Formula) {
 	the contained process will be launched as.  (If it already existed, do
 	nothing; presumably you know what you're doing and intended whatever
 	content is already there and whatever permissions are already in effect.)
+
+	TODO: review this policy of "if it exists, leave it".  This has super
+	confusing and frustrated results if you, say, have an input or mount
+	aimed at "/task/whatever".  Though that... could also be better addressed
+	by giving cradle more of a roll in filesystem assembly.
 */
 func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 	pth := filepath.Join(rootfsPath, frm.Action.Cwd)
