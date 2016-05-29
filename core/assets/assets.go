@@ -1,3 +1,7 @@
+/*
+	`assets` is a helper package for materializing large assets
+	and plugins for repeatr's internal usage.
+*/
 package assets
 
 import (
@@ -8,6 +12,7 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/api/def"
+	"polydawn.net/repeatr/core/jank"
 	"polydawn.net/repeatr/rio"
 	"polydawn.net/repeatr/rio/transmat/impl/cachedir"
 	"polydawn.net/repeatr/rio/transmat/impl/tar"
@@ -87,7 +92,7 @@ func Get(assetName string) string {
 	since that's so easily bundled without large extraneous components.
 */
 func transmat() rio.Transmat {
-	workDir := filepath.Join(def.Base(), "assets")
+	workDir := filepath.Join(jank.Base(), "assets")
 	dirCacher := cachedir.New(filepath.Join(workDir, "cache"), map[rio.TransmatKind]rio.TransmatFactory{
 		rio.TransmatKind("tar"): tar.New,
 	})

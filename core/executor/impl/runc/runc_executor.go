@@ -16,6 +16,7 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 
 	"polydawn.net/repeatr/api/def"
+	"polydawn.net/repeatr/core/assets"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/basicjob"
 	"polydawn.net/repeatr/core/executor/cradle"
@@ -23,7 +24,6 @@ import (
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/streamer"
 	"polydawn.net/repeatr/rio"
-	"polydawn.net/repeatr/rio/assets"
 )
 
 // interface assertion

@@ -22,7 +22,8 @@ If you're using Repeatr, but not interested in modifying it, you can skip this d
   - `core/model`: organization for coordinated groups of commissions with update systems.
   - `core/actors`: logic that runs on `core/model` to produce auto-updating systems.
   - `core/cli`: todo -- bit of a mess.  Pieces will move under `cmd` or `api/act`.
-  - `score/scheduler`: todo -- bit of a mess.  Will disappear entirely.
+  - `core/scheduler`: todo -- bit of a mess.  Will disappear entirely.
+  - `core/jank`: todo -- lost code and overly global references that need refactor.
 - `rio`
   - The heavy-lifting parts of data transport and Repeatable Input/Output.
     - `rio/assets`: Mechanisms for bootstrapping other plugins that have their own file bundles.
