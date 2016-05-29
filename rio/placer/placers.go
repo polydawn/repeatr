@@ -9,7 +9,6 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
-	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
 	"polydawn.net/repeatr/rio"
@@ -59,7 +58,7 @@ func CopyingPlacer(srcBasePath, destBasePath string, _ bool, bareMount bool) rio
 	}
 	postVisit := func(filenode *fs.FilewalkNode) error {
 		if filenode.Info.IsDir() {
-			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), def.Epochwhen, filenode.Info.ModTime()); err != nil {
+			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), fs.Epochwhen, filenode.Info.ModTime()); err != nil {
 				return err
 			}
 		}

@@ -33,8 +33,8 @@ func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 	uinfo := UserinfoForPolicy(frm.Action.Policy)
 	fs.MkdirAllWithAttribs(pth, fs.Metadata{
 		Mode:       0755,
-		ModTime:    def.Epochwhen,
-		AccessTime: def.Epochwhen,
+		ModTime:    fs.Epochwhen,
+		AccessTime: fs.Epochwhen,
 		Uid:        uinfo.Uid,
 		Gid:        uinfo.Gid,
 	})
@@ -56,8 +56,8 @@ func ensureHomeDir(rootfsPath string, policy def.Policy) {
 	pth := filepath.Join(rootfsPath, uinfo.Home)
 	fs.MkdirAllWithAttribs(pth, fs.Metadata{
 		Mode:       0755,
-		ModTime:    def.Epochwhen,
-		AccessTime: def.Epochwhen,
+		ModTime:    fs.Epochwhen,
+		AccessTime: fs.Epochwhen,
 		Uid:        uinfo.Uid,
 		Gid:        uinfo.Gid,
 	})

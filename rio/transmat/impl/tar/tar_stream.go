@@ -16,7 +16,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
 
-	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fshash"
@@ -105,10 +104,10 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 			hdr.Name = "./" + hdr.Name
 		}
 		if hdr.ModTime.IsZero() {
-			hdr.ModTime = def.Epochwhen
+			hdr.ModTime = fs.Epochwhen
 		}
 		if hdr.AccessTime.IsZero() {
-			hdr.AccessTime = def.Epochwhen
+			hdr.AccessTime = fs.Epochwhen
 		}
 		// conjure parents, if necessary.  tar format allows implicit parent dirs.
 		// Note that if any of the implicitly conjured dirs is specified later, unpacking won't notice,
