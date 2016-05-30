@@ -3,7 +3,7 @@
 package fspatch
 
 import (
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 )
 
 func Lgetxattr(path string, attr string) ([]byte, error) {

@@ -1,8 +1,14 @@
 package def
 
 import (
+	"fmt"
+
 	"github.com/ugorji/go/codec"
 )
+
+func describe(x interface{}) string {
+	return fmt.Sprintf("%T", x)
+}
 
 var _ codec.MapBySlice = mappySlice{}
 

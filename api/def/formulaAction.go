@@ -1,6 +1,21 @@
 package def
 
 /*
+	Action describes the computation to be run once the inputs have been set up.
+	All content is part of the conjecture.
+*/
+type Action struct {
+	Entrypoint []string `json:"command,omitempty"` // executable to invoke as the task.  included in the conjecture.
+	Cwd        string   `json:"cwd,omitempty"`     // working directory to set when invoking the executable.  if not set, will be defaulted to "/".
+	Env        Env      `json:"env,omitempty"`     // environment variables.  included in the conjecture.
+	Policy     Policy   `json:"policy,omitempty"`  // policy naming user level and security mode.
+	Cradle     *bool    `json:"cradle,omitempty"`  // default/nil interpreted as true; set to false to disable ensuring cradle during setup.
+	Escapes    Escapes  `json:"escapes,omitempty"`
+}
+
+type Env map[string]string
+
+/*
 	`Policy` constants enumerate the priviledge levels and default situation
 	to start a contained process in.
 
@@ -112,3 +127,30 @@ const (
 	*/
 	PolicySysad = Policy("sysad")
 )
+
+/*
+	Escapes are features that give up repeatr's promises about repeatability,
+	but make it possible to use repeatr's execution engines and data transports
+	anyway.
+
+	For example, one "escape" is to make a writable mount of a host
+	filesystem.  This instantly breaks all portability guarantees... but is
+	incredibly useful if you want to use repeatr inputs to ship an application
+	that is then allowed to interact statefully with a host machine.
+
+	If you want to use data from a host machine, but still want trackable
+	repeatability guarantees, consider using a pipeline instead of host mounts:
+	use `repeatr scan --type=dir` to hash the data (and optionally store copies),
+	then pipe the hash reported by the scan into the formula you hand to `repeatr run`.
+*/
+type Escapes struct {
+	Mounts MountGroup `json:"mounts,omitempty"`
+}
+
+type MountGroup []Mount
+
+type Mount struct {
+	TargetPath string
+	SourcePath string
+	Writable   bool // defaults to false.  if you forget a conf word -> fail safe.
+}

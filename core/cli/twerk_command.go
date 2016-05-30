@@ -5,8 +5,9 @@ import (
 	"io"
 
 	"github.com/codegangsta/cli"
+	"polydawn.net/repeatr/api/def"
+	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/dispatch"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/guid"
 )
 
@@ -15,7 +16,7 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 		Name:  "twerk",
 		Usage: "Run one-time-use interactive (thus nonrepeatable!) command.  All the defaults are filled in for you.  Great for experimentation.",
 		Action: func(ctx *cli.Context) {
-			executor := executordispatch.Get("runc")
+			execr := executordispatch.Get("runc")
 			formula := def.Formula{
 				Inputs: def.InputGroup{"main": {
 					Type:      "tar",
@@ -40,7 +41,7 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 
 			// TODO bonus points if you eventually can get the default mode to have no setuid binaries, in addition to making a spare user and dropping privs immediately.
 
-			job := executor.Start(formula, def.JobID(guid.New()), stdin, ctx.App.Writer)
+			job := execr.Start(formula, executor.JobID(guid.New()), stdin, ctx.App.Writer)
 			go io.Copy(stdout, job.Outputs().Reader(1))
 			go io.Copy(stderr, job.Outputs().Reader(2))
 			result := job.Wait()

@@ -3,7 +3,7 @@ package cradle
 import (
 	"github.com/spacemonkeygo/errors"
 
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 )
 
 /*

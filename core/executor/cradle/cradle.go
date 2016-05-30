@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
 )
 
@@ -27,14 +27,19 @@ func MakeCradle(rootfsPath string, frm def.Formula) {
 	the contained process will be launched as.  (If it already existed, do
 	nothing; presumably you know what you're doing and intended whatever
 	content is already there and whatever permissions are already in effect.)
+
+	TODO: review this policy of "if it exists, leave it".  This has super
+	confusing and frustrated results if you, say, have an input or mount
+	aimed at "/task/whatever".  Though that... could also be better addressed
+	by giving cradle more of a roll in filesystem assembly.
 */
 func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 	pth := filepath.Join(rootfsPath, frm.Action.Cwd)
 	uinfo := UserinfoForPolicy(frm.Action.Policy)
 	fs.MkdirAllWithAttribs(pth, fs.Metadata{
 		Mode:       0755,
-		ModTime:    def.Epochwhen,
-		AccessTime: def.Epochwhen,
+		ModTime:    fs.Epochwhen,
+		AccessTime: fs.Epochwhen,
 		Uid:        uinfo.Uid,
 		Gid:        uinfo.Gid,
 	})
@@ -56,8 +61,8 @@ func ensureHomeDir(rootfsPath string, policy def.Policy) {
 	pth := filepath.Join(rootfsPath, uinfo.Home)
 	fs.MkdirAllWithAttribs(pth, fs.Metadata{
 		Mode:       0755,
-		ModTime:    def.Epochwhen,
-		AccessTime: def.Epochwhen,
+		ModTime:    fs.Epochwhen,
+		AccessTime: fs.Epochwhen,
 		Uid:        uinfo.Uid,
 		Gid:        uinfo.Gid,
 	})

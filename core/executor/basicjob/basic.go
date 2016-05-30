@@ -3,23 +3,23 @@ package basicjob
 import (
 	"io"
 
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/lib/streamer"
 )
 
 type BasicJob struct {
-	ID def.JobID
+	ID executor.JobID
 
 	Streams streamer.ROMux
 
 	// Only valid to read after Wait()
-	Result def.JobResult
+	Result executor.JobResult
 
 	// This channel should never be sent to, and is instead closed when the job is complete.
 	WaitChan chan struct{}
 }
 
-func (j *BasicJob) Id() def.JobID {
+func (j *BasicJob) Id() executor.JobID {
 	return j.ID
 }
 
@@ -31,12 +31,12 @@ func (j *BasicJob) Outputs() streamer.ROMux {
 	return j.Streams
 }
 
-func (j *BasicJob) Wait() def.JobResult {
+func (j *BasicJob) Wait() executor.JobResult {
 	<-j.WaitChan
 	return j.Result
 }
 
-func New(id def.JobID) *BasicJob {
+func New(id executor.JobID) *BasicJob {
 	return &BasicJob{
 		ID:       id,
 		WaitChan: make(chan struct{}),

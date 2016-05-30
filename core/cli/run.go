@@ -10,9 +10,10 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
+	"polydawn.net/repeatr/api/def"
+	"polydawn.net/repeatr/api/hitch"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/scheduler"
-	"polydawn.net/repeatr/def"
 )
 
 func LoadFormulaFromFile(path string) (frm def.Formula) {
@@ -24,15 +25,15 @@ func LoadFormulaFromFile(path string) (frm def.Formula) {
 	}
 
 	try.Do(func() {
-		frm = *def.ParseYaml(content)
+		frm = *hitch.ParseYaml(content)
 	}).Catch(def.ConfigError, func(err *errors.Error) {
 		panic(Error.Wrap(err))
 	}).Done()
 	return
 }
 
-func RunFormula(s scheduler.Scheduler, e executor.Executor, formula def.Formula, journal io.Writer) def.JobResult {
-	jobLoggerFactory := func(_ def.JobID) io.Writer {
+func RunFormula(s scheduler.Scheduler, e executor.Executor, formula def.Formula, journal io.Writer) executor.JobResult {
+	jobLoggerFactory := func(_ executor.JobID) io.Writer {
 		// All job progress reporting, still copy to our shared journal stream.
 		// This func might now be outdated; but we haven't decided what any of this
 		//  should look like if take a lurch toward supporting cluster farming.

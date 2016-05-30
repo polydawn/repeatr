@@ -1,9 +1,9 @@
 package foreman
 
 import (
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/model/cassandra"
 	"polydawn.net/repeatr/core/model/formula"
-	"polydawn.net/repeatr/def"
 )
 
 /*

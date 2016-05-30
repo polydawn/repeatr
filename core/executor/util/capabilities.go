@@ -10,7 +10,7 @@ import (
 
 	"github.com/polydawn/gosh"
 
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/core/jank"
 	"polydawn.net/repeatr/rio"
 	"polydawn.net/repeatr/rio/placer"
 	"polydawn.net/repeatr/rio/transmat/impl/cachedir"
@@ -30,7 +30,7 @@ import (
 	use one interface to get any kind of data you want.
 */
 func DefaultTransmat() rio.Transmat {
-	workDir := filepath.Join(def.Base(), "io")
+	workDir := filepath.Join(jank.Base(), "io")
 	dirCacher := cachedir.New(filepath.Join(workDir, "dircacher"), map[rio.TransmatKind]rio.TransmatFactory{
 		rio.TransmatKind("dir"): dir.New,
 		rio.TransmatKind("tar"): tar.New,
@@ -71,7 +71,7 @@ func determineBestAssembler() rio.Assembler {
 	// If we *can* mount...
 	if isAUFSAvailable() {
 		// if AUFS is installed, AUFS+Bind is The Winner.
-		return placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(def.Base(), "aufs")))
+		return placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(jank.Base(), "aufs")))
 	}
 	// last fallback... :( copy it is
 	fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: install AUFS to use faster systems.\n")

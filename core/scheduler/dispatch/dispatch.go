@@ -1,10 +1,10 @@
 package schedulerdispatch
 
 import (
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/scheduler"
 	"polydawn.net/repeatr/core/scheduler/group"
 	"polydawn.net/repeatr/core/scheduler/linear"
-	"polydawn.net/repeatr/def"
 )
 
 func Get(desire string) scheduler.Scheduler {

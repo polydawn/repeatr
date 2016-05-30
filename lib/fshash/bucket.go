@@ -5,7 +5,6 @@ import (
 	"path"
 
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/treewalk"
 )
@@ -124,8 +123,8 @@ func DefaultDirRecord() Record {
 		Metadata: fs.Metadata{
 			Typeflag:   tar.TypeDir,
 			Mode:       0755,
-			ModTime:    def.Epochwhen,
-			AccessTime: def.Epochwhen,
+			ModTime:    fs.Epochwhen,
+			AccessTime: fs.Epochwhen,
 			// other fields (uid, gid) have acceptable "zero" values.
 		},
 		ContentHash: nil,

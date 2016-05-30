@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fspatch"
 )
 
@@ -188,8 +187,8 @@ func ScanFile(basePath, path string, optional ...os.FileInfo) (hdr Metadata, fil
 func MkdirAll(path string) error {
 	return MkdirAllWithAttribs(path, Metadata{
 		Mode:       0755,
-		ModTime:    def.Epochwhen,
-		AccessTime: def.Epochwhen,
+		ModTime:    Epochwhen,
+		AccessTime: Epochwhen,
 		Uid:        0,
 		Gid:        0,
 	})
@@ -223,7 +222,7 @@ func MkdirAllWithAttribs(path string, hdr Metadata) error {
 	}
 	top := filepath.Dir(stack[0])
 	if top != "." {
-		if err := fspatch.LUtimesNano(top, def.Epochwhen, topMTime); err != nil {
+		if err := fspatch.LUtimesNano(top, Epochwhen, topMTime); err != nil {
 			// gave up and reset atime to epoch.  sue me.  atimes are ridiculous.
 			return err
 		}

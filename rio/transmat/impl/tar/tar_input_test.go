@@ -7,7 +7,7 @@ import (
 
 	"github.com/polydawn/gosh"
 	. "github.com/smartystreets/goconvey/convey"
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
 	"polydawn.net/repeatr/lib/testutil"
 	"polydawn.net/repeatr/lib/testutil/filefixture"
@@ -48,7 +48,7 @@ func TestTarInputCompat(t *testing.T) {
 				// native untar may or may not have an opinion about the base dir, depending on how it was formed.
 				// but our scans do, so, if the `paveBase` flag was set to warn us that the tar was missing an "./" entry, flatten that here.
 				if paveBase {
-					So(fspatch.LUtimesNano("./untar", def.Epochwhen, def.Epochwhen), ShouldBeNil)
+					So(fspatch.LUtimesNano("./untar", fs.Epochwhen, fs.Epochwhen), ShouldBeNil)
 				}
 
 				// scan and compare

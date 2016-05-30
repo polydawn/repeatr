@@ -8,10 +8,10 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/basicjob"
 	"polydawn.net/repeatr/core/model/formula"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/guid"
 )
 
@@ -33,9 +33,9 @@ type Executor struct {
 func (*Executor) Configure(workspacePath string) {
 }
 
-func (e *Executor) Start(f def.Formula, id def.JobID, stdin io.Reader, journal io.Writer) def.Job {
+func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, journal io.Writer) executor.Job {
 	job := basicjob.New(id)
-	job.Result = def.JobResult{
+	job.Result = executor.JobResult{
 		ID:       id,
 		ExitCode: -1,
 	}

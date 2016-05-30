@@ -3,11 +3,12 @@ package executordispatch
 import (
 	"path/filepath"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/impl/chroot"
 	"polydawn.net/repeatr/core/executor/impl/null"
 	"polydawn.net/repeatr/core/executor/impl/runc"
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/core/jank"
 )
 
 // TODO: This should not require a global string -> class map :|
@@ -29,7 +30,7 @@ func Get(desire string) executor.Executor {
 	}
 
 	// Set the base path to operate from
-	executor.Configure(filepath.Join(def.Base(), "executor", desire))
+	executor.Configure(filepath.Join(jank.Base(), "executor", desire))
 
 	return executor
 }

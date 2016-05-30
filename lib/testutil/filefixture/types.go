@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fshash"
 )
@@ -101,10 +100,10 @@ func defaults(f FixtureFile) FixtureFile {
 		f.Metadata.Gid = 10000
 	}
 	if f.Metadata.ModTime.IsZero() {
-		f.Metadata.ModTime = def.Epochwhen
+		f.Metadata.ModTime = fs.Epochwhen
 	}
 	if f.Metadata.AccessTime.IsZero() {
-		f.Metadata.AccessTime = def.Epochwhen
+		f.Metadata.AccessTime = fs.Epochwhen
 	}
 	return f
 }

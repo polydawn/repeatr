@@ -3,7 +3,7 @@ package executor
 import (
 	"io"
 
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
 )
 
 /*
@@ -29,17 +29,17 @@ type Executor interface {
 		It is assumed that any job-specific filesystem state will be cleaned up by the executor.
 
 	*/
-	Start(def.Formula, def.JobID, io.Reader, io.Writer) def.Job
+	Start(def.Formula, JobID, io.Reader, io.Writer) Job
 
 	/*
 		ADDITIONALLY, we have some patterns that are merely conventions:
 
 
 		// Executes a job, catching any panics.
-		func (e *Executor) Run(f def.Formula, j def.Job, d string) def.JobResult {
+		func (e *Executor) Run(f def.Formula, j executor.Job, d string) executor.JobResult {
 
 		// Execute a forumla in a specified directory. MAY PANIC.
-		func (e *Executor) Execute(f def.Formula, j def.Job, d string) def.JobResult {
+		func (e *Executor) Execute(f def.Formula, j executor.Job, d string) executor.JobResult {
 
 
 		An executor should absolutely not be tied down, so leaving these implicit for now.

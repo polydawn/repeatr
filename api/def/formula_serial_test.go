@@ -5,7 +5,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"polydawn.net/repeatr/def"
+	"polydawn.net/repeatr/api/def"
+	"polydawn.net/repeatr/api/hitch"
 	"polydawn.net/repeatr/lib/testutil"
 )
 
@@ -22,7 +23,7 @@ func TestStringParse(t *testing.T) {
 		`)
 
 		Convey("It should parse", func() {
-			formula := def.ParseYaml(content)
+			formula := hitch.ParseYaml(content)
 			So(len(formula.Inputs), ShouldEqual, 1)
 			So(formula.Inputs["/"].MountPath, ShouldEqual, "/")
 			So(formula.Inputs["/"].Hash, ShouldEqual, "asdf")
@@ -47,7 +48,7 @@ func TestStringParse(t *testing.T) {
 		`)
 
 		Convey("It should parse", func() {
-			formula := def.ParseYaml(content)
+			formula := hitch.ParseYaml(content)
 			mountsCfg := formula.Action.Escapes.Mounts
 			So(len(mountsCfg), ShouldEqual, 1)
 			So(mountsCfg[0].SourcePath, ShouldEqual, "/host/files")
@@ -61,7 +62,7 @@ func TestStringParse(t *testing.T) {
 			action:
 				cradle: false
 			`)
-			formula := def.ParseYaml(content)
+			formula := hitch.ParseYaml(content)
 			So(formula.Action.Cradle, ShouldNotBeNil)
 			So(*formula.Action.Cradle, ShouldEqual, false)
 		})
@@ -70,13 +71,13 @@ func TestStringParse(t *testing.T) {
 			action:
 				cradle: true
 			`)
-			formula := def.ParseYaml(content)
+			formula := hitch.ParseYaml(content)
 			So(formula.Action.Cradle, ShouldNotBeNil)
 			So(*formula.Action.Cradle, ShouldEqual, true)
 		})
 		Convey("Absense is nil", func() {
 			content := []byte(``)
-			formula := def.ParseYaml(content)
+			formula := hitch.ParseYaml(content)
 			So(formula.Action.Cradle, ShouldBeNil)
 		})
 	})
@@ -87,7 +88,7 @@ func TestStringParse(t *testing.T) {
 			action:
 				policy: governor
 			`)
-			formula := def.ParseYaml(content)
+			formula := hitch.ParseYaml(content)
 			So(formula.Action.Policy, ShouldEqual, def.PolicyGovernor)
 		})
 		Convey("Non-enum values should be rejected", func() {
@@ -95,7 +96,7 @@ func TestStringParse(t *testing.T) {
 			action:
 				policy: nonsense
 			`)
-			So(func() { def.ParseYaml(content) }, testutil.ShouldPanicWith, def.ConfigError)
+			So(func() { hitch.ParseYaml(content) }, testutil.ShouldPanicWith, def.ConfigError)
 		})
 	})
 }

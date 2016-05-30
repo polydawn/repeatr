@@ -3,8 +3,8 @@ package scheduler
 import (
 	"io"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/def"
 )
 
 /*
@@ -27,7 +27,7 @@ type Scheduler interface {
 		It is guaranteed that calling Use() before scheduling work will behave as expected.
 		Calling Use() after scheduling work is left for the Scheduler to decide - it might change, panic, ignore, etc.
 	*/
-	Configure(e executor.Executor, queueSize int, jobLoggerFactory func(def.JobID) io.Writer)
+	Configure(e executor.Executor, queueSize int, jobLoggerFactory func(executor.JobID) io.Writer)
 
 	/*
 		Start consuming Formulas.
@@ -38,7 +38,7 @@ type Scheduler interface {
 	/*
 		Schedules a Forumla to run; returns the job ID and a channel that will hand you a Job instance.
 	*/
-	Schedule(def.Formula) (def.JobID, <-chan def.Job)
+	Schedule(def.Formula) (executor.JobID, <-chan executor.Job)
 }
 
 /*

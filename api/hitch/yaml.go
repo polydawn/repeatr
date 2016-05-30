@@ -1,4 +1,4 @@
-package def
+package hitch
 
 import (
 	"bytes"
@@ -7,12 +7,13 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/lib/cereal"
 )
 
 var codecBounceHandler = &codec.CborHandle{}
 
-func ParseYaml(ser []byte) *Formula {
+func ParseYaml(ser []byte) *def.Formula {
 	// Turn tabs into spaces so that tabs are acceptable inputs.
 	ser = cereal.Tab2space(ser)
 	// Bounce the serial form into another temporary intermediate form.
@@ -21,16 +22,16 @@ func ParseYaml(ser []byte) *Formula {
 	//  because it doesn't have any mechanisms to accept in-memory structs.
 	var raw interface{}
 	if err := yaml.Unmarshal(ser, &raw); err != nil {
-		panic(ConfigError.New("Could not parse formula: %s", errors.GetMessage(err)))
+		panic(SyntaxError.New("Could not parse yaml: %s", errors.GetMessage(err)))
 	}
 	var buf bytes.Buffer
 	if err := codec.NewEncoder(&buf, codecBounceHandler).Encode(raw); err != nil {
-		panic(ConfigError.New("Could not parse formula: %s", errors.GetMessage(err)))
+		panic(errors.ProgrammerError.New("Transcription error: %s", errors.GetMessage(err)))
 	}
 	// Actually decode with the smart codecs.
-	var frm Formula
+	var frm def.Formula
 	if err := codec.NewDecoder(&buf, codecBounceHandler).Decode(&frm); err != nil {
-		panic(ConfigError.New("Could not parse formula: %s", errors.GetMessage(err)))
+		panic(def.ConfigError.New("Could not parse formula: %s", errors.GetMessage(err)))
 	}
 	return &frm
 }

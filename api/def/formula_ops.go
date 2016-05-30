@@ -24,3 +24,10 @@ func (f *Formula) ApplyPatch(f2 Formula) *Formula {
 	// future: `f.Action.Escapes.Mounts` would make sense as well.
 	return f
 }
+
+func (f Formula) Clone() *Formula {
+	f.Inputs = f.Inputs.Clone()
+	f.Action = f.Action.Clone()
+	f.Outputs = f.Outputs.Clone()
+	return &f
+}

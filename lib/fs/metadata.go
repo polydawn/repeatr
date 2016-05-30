@@ -10,7 +10,6 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/fspatch"
 )
 
@@ -88,8 +87,8 @@ func ReadMetadata(path string, optional ...os.FileInfo) Metadata {
 	// ctimes are uncontrollable, pave them (╯°□°）╯︵ ┻━┻
 	// atimes mutate on read, pave them
 	// we don't include these when hashing, but we wouldn't want uncontrolled bytes in a tar output either
-	hdr.ChangeTime = def.Epochwhen
-	hdr.AccessTime = def.Epochwhen
+	hdr.ChangeTime = Epochwhen
+	hdr.AccessTime = Epochwhen
 	return Metadata(*hdr)
 }
 

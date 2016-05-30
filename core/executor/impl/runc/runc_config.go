@@ -1,11 +1,12 @@
 package runc
 
 import (
+	"polydawn.net/repeatr/api/def"
+	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/cradle"
-	"polydawn.net/repeatr/def"
 )
 
-func EmitRuncConfigStruct(frm def.Formula, job def.Job, rootPath string, tty bool) interface{} {
+func EmitRuncConfigStruct(frm def.Formula, job executor.Job, rootPath string, tty bool) interface{} {
 	userinfo := cradle.UserinfoForPolicy(frm.Action.Policy)
 	return map[string]interface{}{
 		"version": "0.2.0",

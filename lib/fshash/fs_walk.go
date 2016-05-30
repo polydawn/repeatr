@@ -5,7 +5,6 @@ import (
 	"io"
 	"path/filepath"
 
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/flak"
 	"polydawn.net/repeatr/lib/fs"
 	"polydawn.net/repeatr/lib/fspatch"
@@ -51,7 +50,7 @@ func FillBucket(srcBasePath, destBasePath string, bucket Bucket, filterset filte
 		if filenode.Info.IsDir() && destBasePath != "" {
 			// XXX: this is looking back on the fileinfo instead of the header and punting on atime with a hack.
 			// this would be better if fs.FilewalkNode supported an attachment so we could stick the header on, but in practice, same values.
-			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), def.Epochwhen, filenode.Info.ModTime()); err != nil {
+			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), fs.Epochwhen, filenode.Info.ModTime()); err != nil {
 				return err
 			}
 		}

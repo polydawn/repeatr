@@ -4,9 +4,9 @@ import (
 	"io"
 	"runtime"
 
+	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/scheduler"
-	"polydawn.net/repeatr/def"
 	"polydawn.net/repeatr/lib/guid"
 )
 
@@ -15,19 +15,19 @@ var _ scheduler.Scheduler = &Scheduler{}
 
 // Dumb struct to send job references back
 type hold struct {
-	id       def.JobID
+	id       executor.JobID
 	forumla  def.Formula
-	response chan def.Job
+	response chan executor.Job
 }
 
 type Scheduler struct {
 	groupSize        int
 	executor         executor.Executor
 	queue            chan *hold
-	jobLoggerFactory func(def.JobID) io.Writer
+	jobLoggerFactory func(executor.JobID) io.Writer
 }
 
-func (s *Scheduler) Configure(e executor.Executor, queueSize int, jobLoggerFactory func(def.JobID) io.Writer) {
+func (s *Scheduler) Configure(e executor.Executor, queueSize int, jobLoggerFactory func(executor.JobID) io.Writer) {
 	s.groupSize = runtime.NumCPU()
 	s.executor = e
 	s.queue = make(chan *hold, queueSize)
@@ -40,13 +40,13 @@ func (s *Scheduler) Start() {
 	}
 }
 
-func (s *Scheduler) Schedule(f def.Formula) (def.JobID, <-chan def.Job) {
-	id := def.JobID(guid.New())
+func (s *Scheduler) Schedule(f def.Formula) (executor.JobID, <-chan executor.Job) {
+	id := executor.JobID(guid.New())
 
 	h := &hold{
 		id:       id,
 		forumla:  f,
-		response: make(chan def.Job),
+		response: make(chan executor.Job),
 	}
 
 	// Non-blocking send, will panic if scheduler queue is full
