@@ -33,6 +33,13 @@ type Catalog struct {
 	Tracks map[CatalogTrackName]CatalogTrack `json:"tracks"`
 }
 
+/*
+	Catalog IDs are claim-type structures.  You pick a secret, mix in
+	a chosen name, and derive the CID from that --
+	and that's what you publish under.
+*/
+type CatalogCID string
+
 type CatalogTrackName string
 
 type CatalogTrack struct {
