@@ -33,7 +33,7 @@ func WarehouseCoords() []rio.SiloURI {
 func WarehouseCoords2() def.WarehouseCoords {
 	wcs := make(def.WarehouseCoords, 0, 2)
 	for _, x := range WarehouseCoords() {
-		wcs = append(wcs, string(x))
+		wcs = append(wcs, def.WarehouseCoord(x))
 	}
 	return wcs
 }

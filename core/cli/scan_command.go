@@ -40,9 +40,11 @@ func ScanCommandPattern(output, stderr io.Writer) cli.Command {
 		},
 		Action: func(ctx *cli.Context) {
 			// args parse
-			var warehouses []string
+			var warehouses def.WarehouseCoords
 			if ctx.IsSet("where") {
-				warehouses = []string{ctx.String("where")}
+				warehouses = def.WarehouseCoords{
+					def.WarehouseCoord(ctx.String("where")),
+				}
 			}
 			filters := &def.Filters{}
 			try.Do(func() {

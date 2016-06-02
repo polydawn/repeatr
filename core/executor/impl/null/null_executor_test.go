@@ -20,7 +20,7 @@ func Test(t *testing.T) {
 				"part2": &def.Input{
 					Type:       "dir",
 					Hash:       "asegdrh",
-					Warehouses: []string{"file://./fixture/beta"},
+					Warehouses: def.WarehouseCoords{"file://./fixture/beta"},
 					MountPath:  "/data/test",
 				},
 			},

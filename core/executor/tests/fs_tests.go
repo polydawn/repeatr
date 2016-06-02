@@ -20,7 +20,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 			formula.Inputs["part2"] = &def.Input{
 				Type:       "dir",
 				Hash:       filefixture.Beta_Hash,
-				Warehouses: []string{"file://./fixture/beta"},
+				Warehouses: def.WarehouseCoords{"file://./fixture/beta"},
 				MountPath:  "/data/test",
 			}
 
