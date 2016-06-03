@@ -28,7 +28,7 @@ func makeReader(dataHash rio.CommitID, warehouseCoords rio.SiloURI) io.ReadClose
 			if os.IsNotExist(err) {
 				panic(rio.DataDNE.New("Unable to read %q: %s", u.String(), err))
 			} else {
-				panic(rio.WarehouseIOError.New("Unable to read %q: %s", u.String(), err))
+				panic(rio.WarehouseUnavailableError.New("Unable to read %q: %s", u.String(), err))
 			}
 		}
 		return file
@@ -39,7 +39,7 @@ func makeReader(dataHash rio.CommitID, warehouseCoords rio.SiloURI) io.ReadClose
 	case "http":
 		resp, err := http.Get(u.String())
 		if err != nil {
-			panic(rio.WarehouseIOError.New("Unable to fetch %q: %s", u.String(), err))
+			panic(rio.WarehouseUnavailableError.New("Unable to fetch %q: %s", u.String(), err))
 		}
 		return resp.Body
 	case "https+ca":
@@ -49,7 +49,7 @@ func makeReader(dataHash rio.CommitID, warehouseCoords rio.SiloURI) io.ReadClose
 	case "https":
 		resp, err := http.Get(u.String())
 		if err != nil {
-			panic(rio.WarehouseIOError.New("Unable to fetch %q: %s", u.String(), err))
+			panic(rio.WarehouseUnavailableError.New("Unable to fetch %q: %s", u.String(), err))
 		}
 		switch resp.StatusCode {
 		case 200:
