@@ -8,6 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"polydawn.net/repeatr/rio"
+	"polydawn.net/repeatr/rio/transmat/mux"
 )
 
 var _ rio.Transmat = &CachingTransmat{}
@@ -37,7 +38,7 @@ var _ rio.Transmat = &CachingTransmat{}
 	that preserves integrity of the cached filesystem.
 */
 type CachingTransmat struct {
-	rio.DispatchingTransmat
+	dispatch.Transmat
 	workPath string
 }
 
@@ -49,12 +50,12 @@ func New(workPath string, transmats map[rio.TransmatKind]rio.TransmatFactory) *C
 	if err != nil {
 		panic(rio.TransmatError.New("Unable to create cacher work dirs: %s", err))
 	}
-	dispatch := make(map[rio.TransmatKind]rio.Transmat, len(transmats))
+	dispatchMap := make(map[rio.TransmatKind]rio.Transmat, len(transmats))
 	for kind, factoryFn := range transmats {
-		dispatch[kind] = factoryFn(filepath.Join(workPath, "stg", string(kind)))
+		dispatchMap[kind] = factoryFn(filepath.Join(workPath, "stg", string(kind)))
 	}
 	ct := &CachingTransmat{
-		*rio.NewDispatchingTransmat(dispatch),
+		*dispatch.New(dispatchMap),
 		workPath,
 	}
 	return ct
@@ -70,13 +71,13 @@ func (ct *CachingTransmat) Materialize(
 	if dataHash == "" {
 		// if you can't give us a hash, we can't cache.
 		// also this is almost certainly doomed unless one of your options is `AcceptHashMismatch`, but that's not ours to check.
-		return ct.DispatchingTransmat.Materialize(kind, dataHash, siloURIs, log, options...)
+		return ct.Transmat.Materialize(kind, dataHash, siloURIs, log, options...)
 	}
 	permPath := filepath.Join(ct.workPath, "committed", string(dataHash))
 	_, statErr := os.Stat(permPath)
 	if os.IsNotExist(statErr) {
 		// TODO implement some terribly clever stateful parking mechanism, and do the real fetch in another routine.
-		arena := ct.DispatchingTransmat.Materialize(kind, dataHash, siloURIs, log, options...)
+		arena := ct.Transmat.Materialize(kind, dataHash, siloURIs, log, options...)
 		// keep it around.
 		// build more realistic syncs around this later, but posix mv atomicity might actually do enough.
 		err := os.Rename(arena.Path(), permPath)
