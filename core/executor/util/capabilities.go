@@ -18,6 +18,7 @@ import (
 	"polydawn.net/repeatr/rio/transmat/impl/git"
 	"polydawn.net/repeatr/rio/transmat/impl/s3"
 	"polydawn.net/repeatr/rio/transmat/impl/tar"
+	"polydawn.net/repeatr/rio/transmat/mux"
 )
 
 /*
@@ -39,7 +40,7 @@ func DefaultTransmat() rio.Transmat {
 	gitCacher := cachedir.New(filepath.Join(workDir, "dircacher-git"), map[rio.TransmatKind]rio.TransmatFactory{
 		rio.TransmatKind("git"): git.New,
 	})
-	universalTransmat := rio.NewDispatchingTransmat(map[rio.TransmatKind]rio.Transmat{
+	universalTransmat := dispatch.New(map[rio.TransmatKind]rio.Transmat{
 		rio.TransmatKind("dir"): dirCacher,
 		rio.TransmatKind("tar"): dirCacher,
 		rio.TransmatKind("s3"):  dirCacher,
