@@ -8,5 +8,6 @@ import (
 type Mirror func(
 	destTransKind rio.TransmatKind,
 	destWarehouseCoords def.WarehouseCoord,
-	interestSet def.Library,
+	library def.Library,
+	otherSrcs def.WarehouseCoords,
 )
