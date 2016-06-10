@@ -20,6 +20,13 @@ Thus: a repeatr formula should be a thing that you can pastebin to another human
 When you do this, it should be everything they need to get a working piece of software.
 And they should get exactly the same piece of software as you did.
 
+This is our objective for the future: formulas should give us the language
+to describe what a reproducible process is, in black and white.
+Having absolute terms for this, which should "just work", allows us to drive
+the culture of accountability further than ever before.
+With formulas, we can build a (Ulysses Compact)[https://en.wikipedia.org/wiki/Ulysses_pact]
+with ourselves to make the best behaviors into the defacto norm.
+
 ---
 
 - [x] pluggable executor should provide consistent, easy, sandboxed execution
