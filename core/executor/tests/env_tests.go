@@ -128,7 +128,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 }
 
 func CheckHostnameBehavior(execEng executor.Executor) {
-	Convey("SPEC: Hostname should be job ID", func(c C) {
+	Convey("SPEC: Hostname should be job ID by default", func(c C) {
 		// note: considered just saying "not the host", but figured we
 		//  might as well pick a stance and stick with it.
 		formula := getBaseFormula()
@@ -144,6 +144,23 @@ func CheckHostnameBehavior(execEng executor.Executor) {
 		msg, err := ioutil.ReadAll(job.OutputReader())
 		So(err, ShouldBeNil)
 		So(string(msg), ShouldEqual, string(jobID)+"\n")
+	})
+
+	Convey("SPEC: Hostname obey formula if set", func(c C) {
+		formula := getBaseFormula()
+		formula.Action = def.Action{
+			Entrypoint: []string{"hostname"},
+		}
+		formula.Action.Hostname = "a-custom-hostname"
+
+		jobID := executor.JobID(guid.New())
+		job := execEng.Start(formula, jobID, nil, testutil.Writer{c})
+		So(job, ShouldNotBeNil)
+		So(job.Wait().Error, ShouldBeNil)
+		So(job.Wait().ExitCode, ShouldEqual, 0)
+		msg, err := ioutil.ReadAll(job.OutputReader())
+		So(err, ShouldBeNil)
+		So(string(msg), ShouldEqual, formula.Action.Hostname+"\n")
 	})
 }
 
