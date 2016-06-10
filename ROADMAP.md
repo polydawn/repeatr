@@ -1,7 +1,7 @@
 Roadmap
 =======
 
-- [x] distributing a formula should be distributing a permanent, consistent, reproducible thing.
+- [x] a formula should give us the language to name and distribute a permanent, consistent, reproducible process.
 
 "Software that works should continue to work" is repeatr's raison d'être.
 
@@ -19,6 +19,28 @@ If Human 1 has a working system, they should be able to give Human 2 a working s
 Thus: a repeatr formula should be a thing that you can pastebin to another human.
 When you do this, it should be everything they need to get a working piece of software.
 And they should get exactly the same piece of software as you did.
+
+---
+
+- [x] pluggable executor should provide consistent, easy, sandboxed execution
+  - [x] runc (docker-style containers)
+  - [x] chroot (available-everywhere backcompat)
+  - [ ] virtual machines
+
+Execution engines that perform sandboxing are an essential part of providing the firepower
+to make formulas meaningful.
+It's one thing to describe a process; it's another to demonstrate it *doing* things.
+
+Sandboxing makes it possible to *show* reproducibility -- or, rapidly demonstrate
+where it isn't happening, and thus make it better -- by making clean environments
+a common and easy tool.
+Think if it like "Mandatory Sanity Control" instead of "Discretionary Sanity Control".
+
+Repeatr executors are pluggable.
+The core behaviors of running a process should behave the same across different executors,
+though some offer better isolation than others,
+and different executors also vary in how wide a variety of base systems the can support
+as well as their performance overheads.
 
 ---
 
@@ -42,7 +64,10 @@ Diversity is strength here.  As long as we can pin hashes, we can paper over the
 
 ---
 
-- [ ] make `repeatr save` (saves data from localhost to a CAS warehouse) and `repeatr load` (warehouse -> you) work anywhere
+- [x] make `repeatr save` (saves data from localhost to a CAS warehouse) work anywhere
+  - [x] uploading local files is easy
+  - [ ] cross-platform support and testing
+- [ ] make `repeatr load` (warehouse -> you) work anywhere (without requiring an execution formula)
 
 Saving and loading data from any of the storage systems repeatr supports should be a breeze.
 It should be as cross-platform as possible.
