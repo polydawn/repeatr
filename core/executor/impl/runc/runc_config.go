@@ -8,6 +8,10 @@ import (
 
 func EmitRuncConfigStruct(frm def.Formula, job executor.Job, rootPath string, tty bool) interface{} {
 	userinfo := cradle.UserinfoForPolicy(frm.Action.Policy)
+	hostname := frm.Action.Hostname
+	if hostname == "" {
+		hostname = string(job.Id())
+	}
 	return map[string]interface{}{
 		"version": "0.2.0",
 		"platform": map[string]interface{}{
@@ -34,7 +38,7 @@ func EmitRuncConfigStruct(frm def.Formula, job executor.Job, rootPath string, tt
 			"path":     rootPath,
 			"readonly": false,
 		},
-		"hostname": string(job.Id()),
+		"hostname": hostname,
 		"mounts": []interface{}{
 			map[string]interface{}{
 				"name": "proc",
