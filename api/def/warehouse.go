@@ -7,4 +7,6 @@ package def
 	FIXME this is really ambiguous vs `rio.SiloURI`, should probably try
 	to refactor to only be one.
 */
-type WarehouseCoords []string
+type WarehouseCoords []WarehouseCoord
+
+type WarehouseCoord string

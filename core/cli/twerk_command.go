@@ -22,7 +22,7 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 					Type:      "tar",
 					MountPath: "/",
 					Hash:      "aLMH4qK1EdlPDavdhErOs0BPxqO0i6lUaeRE4DuUmnNMxhHtF56gkoeSulvwWNqT",
-					Warehouses: []string{
+					Warehouses: def.WarehouseCoords{
 						"http+ca://repeatr.s3.amazonaws.com/assets/",
 					},
 				}},
