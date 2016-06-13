@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
@@ -14,13 +15,23 @@ import (
 
 // Run inputs
 func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15.Logger) map[string]rio.Arena {
+	// quick describe what we're going to do
+	nInputs := len(inputs)
+	journal.Info(fmt.Sprintf("Need %d inputs to be ready", nInputs))
+
 	// start having all filesystems
 	// input names are used as keys, so must be unique
 	fsGather := make(chan map[string]materializerReport)
 	for name, in := range inputs {
 		go func(name string, in *def.Input) {
+			journal := journal.New(
+				"input", name,
+				"type", in.Type,
+				"hash", in.Hash,
+			)
+			started := time.Now()
+			journal.Info("Starting materialize")
 			try.Do(func() {
-				journal.Info(fmt.Sprintf("Starting materialize for %s hash=%s", in.Type, in.Hash))
 				// todo: create validity checking api for URIs, check them all before launching anything
 				warehouses := make([]rio.SiloURI, len(in.Warehouses))
 				for i, wh := range in.Warehouses {
@@ -34,12 +45,17 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 					journal,
 				)
 				// submit report
-				journal.Info(fmt.Sprintf("Finished materialize for %s hash=%s", in.Type, in.Hash))
+				journal.Info("Finished materialize",
+					"elapsed", time.Now().Sub(started).Seconds(),
+				)
 				fsGather <- map[string]materializerReport{
 					name: {Arena: arena},
 				}
 			}).Catch(rio.Error, func(err *errors.Error) {
-				journal.Warn(fmt.Sprintf("Errored during materialize for %s hash=%s", in.Type, in.Hash), "error", err.Message())
+				journal.Warn("Error during materialize",
+					"error", err.Message(),
+					"elapsed", time.Now().Sub(started).Seconds(),
+				)
 				fsGather <- map[string]materializerReport{
 					name: {Err: err},
 				}
@@ -51,12 +67,13 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 
 	// gather materialized inputs
 	// any errors are re-raised immediately (TODO: this currently doesn't fan out smooth cancellations)
-	filesystems := make(map[string]rio.Arena, len(inputs))
+	filesystems := make(map[string]rio.Arena, nInputs)
 	for range inputs {
 		for name, report := range <-fsGather {
 			if report.Err != nil {
 				panic(report.Err)
 			}
+			journal.Info(fmt.Sprintf("Input %d/%d ready", len(filesystems)+1, nInputs))
 			filesystems[name] = report.Arena
 		}
 	}
@@ -72,6 +89,7 @@ func AssembleFilesystem(
 	hostMounts []def.Mount,
 	journal log15.Logger,
 ) rio.Assembly {
+	started := time.Now()
 	journal.Info("All inputs acquired... starting assembly")
 	// process inputs
 	assemblyParts := make([]rio.AssemblyPart, 0, len(inputArenas))
@@ -93,7 +111,9 @@ func AssembleFilesystem(
 	}
 	// assemmmmmmmmblllle
 	assembly := assemblerFn(rootPath, assemblyParts)
-	journal.Info("Assembly complete!")
+	journal.Info("Assembly complete!",
+		"elapsed", time.Now().Sub(started).Seconds(),
+	)
 	return assembly
 }
 
@@ -119,15 +139,25 @@ func ProvisionOutputs(outputs def.OutputGroup, rootfs string, journal log15.Logg
 
 // Run outputs
 func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs string, journal log15.Logger) def.OutputGroup {
+	// quick describe what we're going to do
+	nOutputs := len(outputs)
+	journal.Info(fmt.Sprintf("Have %d outputs to be scanned", nOutputs))
+
 	// run commit on the outputs
 	scanGather := make(chan map[string]scanReport)
 	for name, out := range outputs {
 		go func(name string, out *def.Output) {
+			journal := journal.New(
+				"output", name,
+				"type", out.Type,
+			)
+
 			out.Filters = &def.Filters{}
 			out.Filters.InitDefaultsOutput()
 			filterOptions := rio.ConvertFilterConfig(*out.Filters)
 			scanPath := filepath.Join(rootfs, out.MountPath)
-			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
+			started := time.Now()
+			journal.Info("Starting scan")
 			try.Do(func() {
 				// todo: create validity checking api for URIs, check them all before launching anything
 				warehouses := make([]rio.SiloURI, len(out.Warehouses))
@@ -144,12 +174,17 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 				)
 				out.Hash = string(commitID)
 				// submit report
-				journal.Info(fmt.Sprintf("Finished scan on %q", scanPath))
+				journal.Info("Finished scan",
+					"elapsed", time.Now().Sub(started).Seconds(),
+				)
 				scanGather <- map[string]scanReport{
 					name: {Output: out},
 				}
 			}).Catch(rio.Error, func(err *errors.Error) {
-				journal.Warn(fmt.Sprintf("Errored scan on %q", scanPath), "error", err.Message())
+				journal.Warn("Error during scan",
+					"error", err.Message(),
+					"elapsed", time.Now().Sub(started).Seconds(),
+				)
 				scanGather <- map[string]scanReport{
 					name: {Err: err},
 				}
@@ -164,6 +199,7 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 			if report.Err != nil {
 				panic(report.Err)
 			}
+			journal.Info(fmt.Sprintf("Output %d/%d saved", len(results)+1, nOutputs))
 			results[name] = report.Output
 		}
 	}
