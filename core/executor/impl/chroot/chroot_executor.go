@@ -147,6 +147,7 @@ func (e *Executor) Execute(f def.Formula, j executor.Job, d string, result *exec
 
 	// launch execution.
 	// transform gosh's typed errors to repeatr's hierarchical errors.
+	journal.Info("Beginning execution!")
 	var proc gosh.Proc
 	try.Do(func() {
 		proc = gosh.ExecProcCmd(cmd)

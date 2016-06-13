@@ -178,6 +178,7 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	// this is... not untroubled code: since we're invoking a helper that's then
 	//  proxying the exec even further, most errors are fatal (the mapping here is
 	//   very different than in e.g. chroot executor, and provides much less meaning).
+	journal.Info("Beginning execution!")
 	var proc gosh.Proc
 	try.Do(func() {
 		proc = gosh.ExecProcCmd(cmd)
