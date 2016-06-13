@@ -19,8 +19,13 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 	fsGather := make(chan map[string]materializerReport)
 	for name, in := range inputs {
 		go func(name string, in *def.Input) {
+			journal := journal.New(
+				"input", name,
+				"type", in.Type,
+				"hash", in.Hash,
+			)
 			try.Do(func() {
-				journal.Info(fmt.Sprintf("Starting materialize for %s hash=%s", in.Type, in.Hash))
+				journal.Info("Starting materialize")
 				// todo: create validity checking api for URIs, check them all before launching anything
 				warehouses := make([]rio.SiloURI, len(in.Warehouses))
 				for i, wh := range in.Warehouses {
@@ -34,12 +39,14 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 					journal,
 				)
 				// submit report
-				journal.Info(fmt.Sprintf("Finished materialize for %s hash=%s", in.Type, in.Hash))
+				journal.Info("Finished materialize")
 				fsGather <- map[string]materializerReport{
 					name: {Arena: arena},
 				}
 			}).Catch(rio.Error, func(err *errors.Error) {
-				journal.Warn(fmt.Sprintf("Errored during materialize for %s hash=%s", in.Type, in.Hash), "error", err.Message())
+				journal.Warn("Error during materialize",
+					"error", err.Message(),
+				)
 				fsGather <- map[string]materializerReport{
 					name: {Err: err},
 				}
