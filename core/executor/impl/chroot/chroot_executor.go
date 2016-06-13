@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/polydawn/gosh"
@@ -147,6 +148,7 @@ func (e *Executor) Execute(f def.Formula, j executor.Job, d string, result *exec
 
 	// launch execution.
 	// transform gosh's typed errors to repeatr's hierarchical errors.
+	startedExec := time.Now()
 	journal.Info("Beginning execution!")
 	var proc gosh.Proc
 	try.Do(func() {
@@ -169,6 +171,9 @@ func (e *Executor) Execute(f def.Formula, j executor.Job, d string, result *exec
 	// Wait for the job to complete
 	// REVIEW: consider exposing `gosh.Proc`'s interface as part of repeatr's job tracking api?
 	result.ExitCode = proc.GetExitCode()
+	journal.Info("Execution done!",
+		"elapsed", time.Now().Sub(startedExec).Seconds(),
+	)
 
 	// Save outputs
 	result.Outputs = util.PreserveOutputs(transmat, f.Outputs, rootfs, journal)

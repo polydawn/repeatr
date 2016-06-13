@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/polydawn/gosh"
@@ -178,6 +179,7 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	// this is... not untroubled code: since we're invoking a helper that's then
 	//  proxying the exec even further, most errors are fatal (the mapping here is
 	//   very different than in e.g. chroot executor, and provides much less meaning).
+	startedExec := time.Now()
 	journal.Info("Beginning execution!")
 	var proc gosh.Proc
 	try.Do(func() {
@@ -276,10 +278,12 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	}()
 
 	// Wait for the job to complete.
-	// Tell the log tailer to drain as soon as the proc exits.
 	result.ExitCode = proc.GetExitCode()
+	journal.Info("Execution done!",
+		"elapsed", time.Now().Sub(startedExec).Seconds(),
+	)
+	// Tell the log tailer to drain as soon as the proc exits.
 	runcLog.Close()
-
 	// Wait for the tailer routine to drain & exit (this sync guards the err vars).
 	tailerDone.Wait()
 
