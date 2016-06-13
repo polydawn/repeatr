@@ -11,7 +11,6 @@ import (
 
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor/dispatch"
-	"polydawn.net/repeatr/core/scheduler/dispatch"
 )
 
 func RunCommandPattern(output io.Writer) cli.Command {
@@ -40,7 +39,6 @@ func RunCommandPattern(output io.Writer) cli.Command {
 		Action: func(ctx *cli.Context) {
 			// Parse args
 			executor := executordispatch.Get(ctx.String("executor"))
-			scheduler := schedulerdispatch.Get("linear")
 			ignoreJobExit := ctx.Bool("ignore-job-exit")
 			patchPaths := ctx.StringSlice("patch")
 			envArgs := ctx.StringSlice("env")
@@ -82,11 +80,8 @@ func RunCommandPattern(output io.Writer) cli.Command {
 				}})
 			}
 
-			// TODO Don't reeeeally want the 'run once' command going through the schedulers.
-			//  Having a path that doesn't invoke that complexity unnecessarily, and also is more clearly allowed to use the current terminal, is want.
-
 			// Invoke!
-			result := RunFormula(scheduler, executor, formula, ctx.App.Writer)
+			result := RunFormula(executor, formula, ctx.App.Writer)
 			// Exit if the job failed collosally (if it just had a nonzero exit code, that's acceptable).
 			if result.Error != nil {
 				panic(Exit.NewWith(
