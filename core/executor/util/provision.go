@@ -135,11 +135,16 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 	scanGather := make(chan map[string]scanReport)
 	for name, out := range outputs {
 		go func(name string, out *def.Output) {
+			journal := journal.New(
+				"output", name,
+				"type", out.Type,
+			)
+
 			out.Filters = &def.Filters{}
 			out.Filters.InitDefaultsOutput()
 			filterOptions := rio.ConvertFilterConfig(*out.Filters)
 			scanPath := filepath.Join(rootfs, out.MountPath)
-			journal.Info(fmt.Sprintf("Starting scan on %q", scanPath))
+			journal.Info("Starting scan")
 			try.Do(func() {
 				// todo: create validity checking api for URIs, check them all before launching anything
 				warehouses := make([]rio.SiloURI, len(out.Warehouses))
@@ -156,12 +161,14 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 				)
 				out.Hash = string(commitID)
 				// submit report
-				journal.Info(fmt.Sprintf("Finished scan on %q", scanPath))
+				journal.Info("Finished scan")
 				scanGather <- map[string]scanReport{
 					name: {Output: out},
 				}
 			}).Catch(rio.Error, func(err *errors.Error) {
-				journal.Warn(fmt.Sprintf("Errored scan on %q", scanPath), "error", err.Message())
+				journal.Warn("Error during scan",
+					"error", err.Message(),
+				)
 				scanGather <- map[string]scanReport{
 					name: {Err: err},
 				}
