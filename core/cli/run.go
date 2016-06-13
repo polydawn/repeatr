@@ -13,7 +13,7 @@ import (
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/api/hitch"
 	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/core/scheduler"
+	"polydawn.net/repeatr/lib/guid"
 )
 
 func LoadFormulaFromFile(path string) (frm def.Formula) {
@@ -32,30 +32,16 @@ func LoadFormulaFromFile(path string) (frm def.Formula) {
 	return
 }
 
-func RunFormula(s scheduler.Scheduler, e executor.Executor, formula def.Formula, journal io.Writer) executor.JobResult {
-	jobLoggerFactory := func(_ executor.JobID) io.Writer {
-		// All job progress reporting, still copy to our shared journal stream.
-		// This func might now be outdated; but we haven't decided what any of this
-		//  should look like if take a lurch toward supporting cluster farming.
-		//  (It might make sense to have a structural comms layer?  Or, maybe plain
-		//  byte streams are best for sanity conservation.  Either way: not today.)
-		return journal
-	}
-
-	s.Configure(e, 1, jobLoggerFactory) // queue concept a bit misplaced here
-	s.Start()
-
+func RunFormula(e executor.Executor, formula def.Formula, journal io.Writer) executor.JobResult {
 	// Set up a logger.
 	log := log15.New()
 	log.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
 
-	id, jobChan := s.Schedule(formula)
-	log = log.New(log15.Ctx{"JobID": id})
+	jobID := executor.JobID(guid.New())
+	job := e.Start(formula, jobID, nil, journal)
+	log = log.New(log15.Ctx{"jobID": jobID})
 
 	log.Info("Job queued")
-	job := <-jobChan
-	// TODO need better lifecycle events here.  "starting" here means we might still be in provisioning stage.
-	log.Info("Job starting")
 
 	// Stream job output to terminal in real time
 	_, err := io.Copy(journal, job.OutputReader())
