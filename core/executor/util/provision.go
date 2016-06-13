@@ -139,6 +139,10 @@ func ProvisionOutputs(outputs def.OutputGroup, rootfs string, journal log15.Logg
 
 // Run outputs
 func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs string, journal log15.Logger) def.OutputGroup {
+	// quick describe what we're going to do
+	nOutputs := len(outputs)
+	journal.Info(fmt.Sprintf("Have %d outputs to be scanned", nOutputs))
+
 	// run commit on the outputs
 	scanGather := make(chan map[string]scanReport)
 	for name, out := range outputs {
@@ -195,6 +199,7 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 			if report.Err != nil {
 				panic(report.Err)
 			}
+			journal.Info(fmt.Sprintf("Output %d/%d saved", len(results)+1, nOutputs))
 			results[name] = report.Output
 		}
 	}
