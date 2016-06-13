@@ -51,12 +51,14 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 
 	// gather materialized inputs
 	// any errors are re-raised immediately (TODO: this currently doesn't fan out smooth cancellations)
-	filesystems := make(map[string]rio.Arena, len(inputs))
+	nInputs := len(inputs)
+	filesystems := make(map[string]rio.Arena, nInputs)
 	for range inputs {
 		for name, report := range <-fsGather {
 			if report.Err != nil {
 				panic(report.Err)
 			}
+			journal.Info(fmt.Sprintf("Input %d/%d ready", len(filesystems)+1, nInputs))
 			filesystems[name] = report.Arena
 		}
 	}
