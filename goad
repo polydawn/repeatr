@@ -73,6 +73,8 @@ else
 		# also make sure the self-symlink exists.  should be committed anyway (but then, this is also useful for project-first-steps.)
 		mkdir -p "$(dirname ".gopath/src/$pkg")"
 		ln -snf "$(echo "${pkg//[^\/]}/" | sed s#/#../#g)"../ ".gopath/src/$pkg"
+		# and now some repeatr-specific stuff: place some asset caches locally.
+		(cd meta/assets-cache && ./bootstrap)
 		;;
 	test)
 		go generate "$SUBSECTION"
