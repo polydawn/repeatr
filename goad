@@ -113,7 +113,6 @@ else
 		[ -x "$GOPATH/bin/repeatr" ] || { echo "run 'goad install' first" 2>&1 ; exit 19; }
 		# demo and basic acceptance scenarios should run just about anywhere
 		./demo.sh -t
-		./lib/integration/runAll.sh
 		# repeat-thyself should usually run, but it has to sit out in travis PR-mode because of the synthetic commit which isn't actually cloneable
 		TRAVIS="${TRAVIS:-}"
 		TRAVIS_PULL_REQUEST="${TRAVIS_PULL_REQUEST:-}"
