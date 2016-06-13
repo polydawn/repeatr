@@ -15,6 +15,35 @@ Some of Repeatr's key features and goals include:
 
 
 
+Why?
+----
+
+Building software should be like `1 + 2 = 3` -- start with the same numbers,
+add 'em, and you should always get the same thing.
+
+Repeatr is applying the same theology to complex systems -- write down all the
+inputs precisely, do the same operation, and always get the same thing.
+
+Aside from the sheer simplicity argument... Repeatability is the cornerstone of science and engineering.
+(No?  Okay, go read [doc/why-repeat](doc/why-repeat.md) and I'll see if I can convince you!)
+
+Getting the ability to repeat a process knocked out early makes everything else
+both easier and safer.
+
+
+
+Read more
+---------
+
+- [Why is Repeatability Important?](doc/why-repeat.md)
+- [Formulas](doc/formulas.md)
+- [Containers & Execution](doc/containers.md)
+- Developer docs:
+  - [Building Repeatr](doc/dev/building-repeatr.md)
+  - [Code Layout](doc/dev/code-layout.md)
+
+
+
 Project Status
 --------------
 
@@ -42,23 +71,6 @@ Future work:
 - More built-ins for easily dropping as many privileges as possible inside the container.
 - Better tooling around mirroring storage, and cleaning up old/dangling/uninteresting objects.
 - See also the [roadmap](ROADMAP.md).
-
-
-
-Why?
-----
-
-Building software should be like `1 + 2 = 3` -- start with the same numbers,
-add 'em, and you should always get the same thing.
-
-Repeatr is applying the same theology to complex systems -- write down all the
-inputs precisely, do the same operation, and always get the same thing.
-
-Aside from the sheer simplicity argument... Repeatability is the cornerstone of science and engineering.
-(No?  Okay, go read [doc/why-repeat](doc/why-repeat.md) and I'll see if I can convince you!)
-
-Getting the ability to repeat a process knocked out early makes everything else
-both easier and safer.
 
 
 
