@@ -1,0 +1,26 @@
+#!/bin/bash
+set -euo pipefail
+
+warehouseCoords="https://repeatr.s3.amazonaws.com/assets/"
+
+fetch() {(
+	set -euo pipefail
+
+	THING="$1"
+	HASH="$2"
+
+	if [ -f "${THING}" ]; then
+		echo "$THING already exists; assuming valid" 1>&2; return 0;
+	fi
+
+	tmpdl=".tmp.dl.${THING}"
+	wget -O "${tmpdl}" "${warehouseCoords}${THING}"
+	sha384sum "${tmpdl}" | tee /dev/fd/2 | grep ^"${HASH} " >/dev/null \
+		|| { echo "corrupt or hash mismatched ${THING} download" 1>&2; return 16; }	
+	mv "${tmpdl}" "${THING}"
+)}
+
+# runc
+fetch GWQ-0zuTIZDrY_noJMUb2zTSfxJJp9ldhfbQB7dRCQ-kzzaAoLVFFwWozoQJnHJf 52f0a200ef7509add02fe3e68e604163ead2671c42517205edfd56ccb51ccf1c6b852e1107cd48582498974e02ce7c40
+# defacto standard ubuntu base image
+fetch aLMH4qK1EdlPDavdhErOs0BPxqO0i6lUaeRE4DuUmnNMxhHtF56gkoeSulvwWNqT 236ec7666ffd8ca1dac217cd069cfa82608fe07dd1816a927b538ceaa9b60b409ac211f687e155949ad6e82f954207cc
