@@ -89,9 +89,6 @@ else
 		go generate "./..."
 		go install -ldflags "$LDFLAGS" "$cmd"
 		;;
-	exec)
-		"$GOPATH/bin/$name" "$@"
-		;;
 	bench)
 		profPath="$GOPATH/tmp/prof/"
 		mkdir -p "$profPath"
