@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
@@ -84,6 +85,7 @@ func AssembleFilesystem(
 	hostMounts []def.Mount,
 	journal log15.Logger,
 ) rio.Assembly {
+	started := time.Now()
 	journal.Info("All inputs acquired... starting assembly")
 	// process inputs
 	assemblyParts := make([]rio.AssemblyPart, 0, len(inputArenas))
@@ -105,7 +107,9 @@ func AssembleFilesystem(
 	}
 	// assemmmmmmmmblllle
 	assembly := assemblerFn(rootPath, assemblyParts)
-	journal.Info("Assembly complete!")
+	journal.Info("Assembly complete!",
+		"elapsed", time.Now().Sub(started).Seconds(),
+	)
 	return assembly
 }
 
