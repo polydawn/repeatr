@@ -29,8 +29,9 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 				"type", in.Type,
 				"hash", in.Hash,
 			)
+			started := time.Now()
+			journal.Info("Starting materialize")
 			try.Do(func() {
-				journal.Info("Starting materialize")
 				// todo: create validity checking api for URIs, check them all before launching anything
 				warehouses := make([]rio.SiloURI, len(in.Warehouses))
 				for i, wh := range in.Warehouses {
@@ -44,13 +45,16 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 					journal,
 				)
 				// submit report
-				journal.Info("Finished materialize")
+				journal.Info("Finished materialize",
+					"elapsed", time.Now().Sub(started).Seconds(),
+				)
 				fsGather <- map[string]materializerReport{
 					name: {Arena: arena},
 				}
 			}).Catch(rio.Error, func(err *errors.Error) {
 				journal.Warn("Error during materialize",
 					"error", err.Message(),
+					"elapsed", time.Now().Sub(started).Seconds(),
 				)
 				fsGather <- map[string]materializerReport{
 					name: {Err: err},
@@ -148,6 +152,7 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 			out.Filters.InitDefaultsOutput()
 			filterOptions := rio.ConvertFilterConfig(*out.Filters)
 			scanPath := filepath.Join(rootfs, out.MountPath)
+			started := time.Now()
 			journal.Info("Starting scan")
 			try.Do(func() {
 				// todo: create validity checking api for URIs, check them all before launching anything
@@ -165,13 +170,16 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 				)
 				out.Hash = string(commitID)
 				// submit report
-				journal.Info("Finished scan")
+				journal.Info("Finished scan",
+					"elapsed", time.Now().Sub(started).Seconds(),
+				)
 				scanGather <- map[string]scanReport{
 					name: {Output: out},
 				}
 			}).Catch(rio.Error, func(err *errors.Error) {
 				journal.Warn("Error during scan",
 					"error", err.Message(),
+					"elapsed", time.Now().Sub(started).Seconds(),
 				)
 				scanGather <- map[string]scanReport{
 					name: {Err: err},
