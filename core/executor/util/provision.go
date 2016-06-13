@@ -14,6 +14,10 @@ import (
 
 // Run inputs
 func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15.Logger) map[string]rio.Arena {
+	// quick describe what we're going to do
+	nInputs := len(inputs)
+	journal.Info(fmt.Sprintf("Need %d inputs to be ready", nInputs))
+
 	// start having all filesystems
 	// input names are used as keys, so must be unique
 	fsGather := make(chan map[string]materializerReport)
@@ -58,7 +62,6 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 
 	// gather materialized inputs
 	// any errors are re-raised immediately (TODO: this currently doesn't fan out smooth cancellations)
-	nInputs := len(inputs)
 	filesystems := make(map[string]rio.Arena, nInputs)
 	for range inputs {
 		for name, report := range <-fsGather {
