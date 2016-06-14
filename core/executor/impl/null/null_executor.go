@@ -6,6 +6,7 @@ import (
 	"io"
 	"sort"
 
+	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
 
 	"polydawn.net/repeatr/api/def"
@@ -33,7 +34,7 @@ type Executor struct {
 func (*Executor) Configure(workspacePath string) {
 }
 
-func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, journal io.Writer) executor.Job {
+func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, _ log15.Logger) executor.Job {
 	job := basicjob.New(id)
 	job.Result = executor.JobResult{
 		ID:       id,

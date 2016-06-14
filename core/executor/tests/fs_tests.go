@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/lib/guid"
@@ -27,7 +28,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 			formula.Action = def.Action{
 				Entrypoint: []string{"/bin/true"},
 			}
-			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -37,7 +38,7 @@ func CheckFilesystemContainment(execEng executor.Executor) {
 					Entrypoint: []string{"ls", "/data/test"},
 				}
 
-				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 				So(job, ShouldNotBeNil)
 				So(job.Wait().Error, ShouldBeNil)
 				So(job.Wait().ExitCode, ShouldEqual, 0)

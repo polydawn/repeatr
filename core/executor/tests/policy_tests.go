@@ -24,7 +24,7 @@ func CheckUidBehavior(execEng executor.Executor) {
 		}
 
 		Convey("The default policy should start with userland uid/gid", func() {
-			soExpectSuccessAndOutput(execEng, formula, testutil.Writer{c},
+			soExpectSuccessAndOutput(execEng, formula, testutil.TestLogger(c),
 				":1000:\n",
 			)
 		})
@@ -40,7 +40,7 @@ func CheckUidBehavior(execEng executor.Executor) {
 		} {
 			Convey(fmt.Sprintf("The %q policy should start with uid=%d", tr.policy, tr.uid), func() {
 				formula.Action.Policy = tr.policy
-				soExpectSuccessAndOutput(execEng, formula, testutil.Writer{c},
+				soExpectSuccessAndOutput(execEng, formula, testutil.TestLogger(c),
 					fmt.Sprintf(":%d:\n", tr.uid),
 				)
 			})

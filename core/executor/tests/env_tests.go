@@ -1,12 +1,13 @@
 package tests
 
 import (
-	"io"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	. "github.com/smartystreets/goconvey/convey"
+
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/lib/guid"
@@ -30,7 +31,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 				Entrypoint: []string{"pwd"},
 			}
 
-			soExpectSuccessAndOutput(execEng, formula, testutil.Writer{c},
+			soExpectSuccessAndOutput(execEng, formula, testutil.TestLogger(c),
 				"/task\n",
 			)
 		})
@@ -41,7 +42,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 				Entrypoint: []string{"pwd"},
 			}
 
-			soExpectSuccessAndOutput(execEng, formula, testutil.Writer{c},
+			soExpectSuccessAndOutput(execEng, formula, testutil.TestLogger(c),
 				"/usr\n",
 			)
 		})
@@ -53,7 +54,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 			}
 
 			Convey("should succeed (since by default cradle creates it)", FailureContinues, func() {
-				soExpectSuccessAndOutput(execEng, formula, testutil.Writer{c},
+				soExpectSuccessAndOutput(execEng, formula, testutil.TestLogger(c),
 					"/does/not/exist/by/any/means\n",
 				)
 			})
@@ -62,7 +63,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 				var _false bool
 				formula.Action.Cradle = &_false
 
-				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 				So(job, ShouldNotBeNil)
 				So(job.Wait().Error, ShouldNotBeNil)
 				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCwdError)
@@ -79,7 +80,7 @@ func CheckPwdBehavior(execEng executor.Executor) {
 				Entrypoint: []string{"pwd"},
 			}
 
-			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldNotBeNil)
 			So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCwdError)
@@ -102,7 +103,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 			os.Setenv("REPEATR_TEST_KEY_1", "test value")
 			defer os.Unsetenv("REPEATR_TEST_KEY_1") // using unique strings per test anyway, because this is too scary
 
-			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -115,7 +116,7 @@ func CheckEnvBehavior(execEng executor.Executor) {
 			formula.Action.Env = make(map[string]string)
 			formula.Action.Env["REPEATR_TEST_KEY_2"] = "test value"
 
-			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -137,7 +138,7 @@ func CheckHostnameBehavior(execEng executor.Executor) {
 		}
 
 		jobID := executor.JobID(guid.New())
-		job := execEng.Start(formula, jobID, nil, testutil.Writer{c})
+		job := execEng.Start(formula, jobID, nil, testutil.TestLogger(c))
 		So(job, ShouldNotBeNil)
 		So(job.Wait().Error, ShouldBeNil)
 		So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -154,7 +155,7 @@ func CheckHostnameBehavior(execEng executor.Executor) {
 		formula.Action.Hostname = "a-custom-hostname"
 
 		jobID := executor.JobID(guid.New())
-		job := execEng.Start(formula, jobID, nil, testutil.Writer{c})
+		job := execEng.Start(formula, jobID, nil, testutil.TestLogger(c))
 		So(job, ShouldNotBeNil)
 		So(job.Wait().Error, ShouldBeNil)
 		So(job.Wait().ExitCode, ShouldEqual, 0)
@@ -164,8 +165,8 @@ func CheckHostnameBehavior(execEng executor.Executor) {
 	})
 }
 
-func soExpectSuccessAndOutput(execEng executor.Executor, formula def.Formula, journal io.Writer, output string) {
-	job := execEng.Start(formula, executor.JobID(guid.New()), nil, journal)
+func soExpectSuccessAndOutput(execEng executor.Executor, formula def.Formula, log log15.Logger, output string) {
+	job := execEng.Start(formula, executor.JobID(guid.New()), nil, log)
 	So(job, ShouldNotBeNil)
 	So(job.Wait().Error, ShouldBeNil)
 	So(job.Wait().ExitCode, ShouldEqual, 0)
