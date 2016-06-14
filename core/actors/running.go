@@ -2,6 +2,7 @@ package actor
 
 import (
 	"io"
+	"sync"
 
 	"github.com/inconshreveable/log15"
 
@@ -11,53 +12,76 @@ import (
 	"polydawn.net/repeatr/lib/guid"
 )
 
-var _ act.FormulaRunner = (&FormulaRunnerConfig{}).Run
+var (
+	_ act.StartRun      = (&FormulaRunnerConfig{}).StartRun
+	_ act.FollowStreams = (&FormulaRunnerConfig{}).FollowStreams
+	_ act.FollowResults = (&FormulaRunnerConfig{}).FollowResults
+)
 
 type FormulaRunnerConfig struct {
+	// config
+
 	executor executor.Executor
 	log      log15.Logger
-	strmIn   io.Reader
-	strmOut  io.Writer
-	strmErr  io.Writer
+	strmIn   io.Reader // only for 'twerk'.
+
+	// state
+
+	wards map[def.RunID]executor.Job
 }
 
-/*
-	REVIEW: there's a certain nice purity to the "formula-[run]->runrecord" definition,
-	but for someone wanting to watch in near realtime, it's not exposing nearly enough.
-	And if you imagine this being used in a farm where drilldown happens after launch,
-	this idea of streams like this is... rong.  (Which is why the existing job
-	promise looks the way it does.)
-*/
+func NewFormulaRunner(
+	execr executor.Executor,
+	log log15.Logger,
+) *FormulaRunnerConfig {
+	return &FormulaRunnerConfig{
+		executor: execr,
+		log:      log,
+		wards:    make(map[def.RunID]executor.Job),
+	}
+}
 
-func (frCfg *FormulaRunnerConfig) Run(frm *def.Formula) *def.RunRecord {
-	// Assign arbitrary job id
-	jobID := executor.JobID(guid.New())
-	log := frCfg.log.New("jobID", jobID)
+func (frCfg *FormulaRunnerConfig) InjectStdin(r io.Reader) {
+	frCfg.strmIn = r
+}
+
+func (frCfg *FormulaRunnerConfig) StartRun(frm *def.Formula) def.RunID {
+	// Assign arbitrary run id
+	runID := def.RunID(guid.New())
+	log := frCfg.log.New("runID", runID)
 
 	// Give work the the executor.
 	//  Returns a promise; execution goes off in parallel.
 	log.Info("Formula evaluation Starting")
 	job := frCfg.executor.Start(
 		*frm,
-		jobID,
+		executor.JobID(runID),
 		frCfg.strmIn,
 		log,
 	)
+	frCfg.wards[runID] = job
 
-	// Stream input and outputs, if wired.
-	// TODO
+	return runID
+}
 
-	// Wait for completion.  Log results before return.
-	result := job.Wait()
-	if result.Error != nil {
-		log.Error("Formula evaluation errored",
-			"err", result.Error.Message(),
-		)
-	} else {
-		log.Info("Formula evaluation finished", log15.Ctx{
-			"exitcode": result.ExitCode,
-			"outputs":  result.Outputs,
-		})
-	}
+func (frCfg *FormulaRunnerConfig) FollowStreams(runID def.RunID, stdout io.Writer, stderr io.Writer) {
+	job := frCfg.wards[runID]
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		io.Copy(stdout, job.Outputs().Reader(1))
+		wg.Done()
+	}()
+	go func() {
+		io.Copy(stderr, job.Outputs().Reader(2))
+		wg.Done()
+	}()
+	wg.Wait()
+}
+
+func (frCfg *FormulaRunnerConfig) FollowResults(runID def.RunID) *def.RunRecord {
+	job := frCfg.wards[runID]
+	job.Wait()
+	// TODO fold over to new types
 	return nil
 }

@@ -4,6 +4,15 @@ import (
 	"time"
 )
 
+/*
+	A RunID is created at the start of an evaluation of a formula.
+	It can be used to follow the evaluation's progress.
+
+	A RunID is an arbitrary guid (there's nothing else unique to go on
+	at the time a formula evaluation begins).
+*/
+type RunID string
+
 type RunRecord struct {
 	// Hash ID (derived; actually includes the UID; always do lookups by this, not the UID).
 	HID string `json:"HID"`
