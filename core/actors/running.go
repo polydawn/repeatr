@@ -68,15 +68,23 @@ func (frCfg *FormulaRunnerConfig) StartRun(frm *def.Formula) def.RunID {
 func (frCfg *FormulaRunnerConfig) FollowStreams(runID def.RunID, stdout io.Writer, stderr io.Writer) {
 	job := frCfg.wards[runID]
 	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		io.Copy(stdout, job.Outputs().Reader(1))
-		wg.Done()
-	}()
-	go func() {
-		io.Copy(stderr, job.Outputs().Reader(2))
-		wg.Done()
-	}()
+	if stdout == stderr {
+		wg.Add(1)
+		go func() {
+			io.Copy(stdout, job.Outputs().Reader(1, 2))
+			wg.Done()
+		}()
+	} else {
+		wg.Add(2)
+		go func() {
+			io.Copy(stdout, job.Outputs().Reader(1))
+			wg.Done()
+		}()
+		go func() {
+			io.Copy(stderr, job.Outputs().Reader(2))
+			wg.Done()
+		}()
+	}
 	wg.Wait()
 }
 
