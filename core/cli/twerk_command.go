@@ -5,6 +5,8 @@ import (
 	"io"
 
 	"github.com/codegangsta/cli"
+	"github.com/inconshreveable/log15"
+
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/dispatch"
@@ -41,7 +43,12 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 
 			// TODO bonus points if you eventually can get the default mode to have no setuid binaries, in addition to making a spare user and dropping privs immediately.
 
-			job := execr.Start(formula, executor.JobID(guid.New()), stdin, ctx.App.Writer)
+			log := log15.New()
+			log.SetHandler(log15.StreamHandler(ctx.App.Writer, log15.TerminalFormat()))
+
+			jobID := executor.JobID(guid.New())
+			log = log.New(log15.Ctx{"runID": jobID})
+			job := execr.Start(formula, jobID, stdin, log)
 			go io.Copy(stdout, job.Outputs().Reader(1))
 			go io.Copy(stderr, job.Outputs().Reader(2))
 			result := job.Wait()

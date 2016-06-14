@@ -12,6 +12,7 @@ import (
 	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
+
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/executor/basicjob"
@@ -32,7 +33,7 @@ func (e *Executor) Configure(workspacePath string) {
 	e.workspacePath = workspacePath
 }
 
-func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, journal io.Writer) executor.Job {
+func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, log log15.Logger) executor.Job {
 	// Fill in default config for anything still blank.
 	f = *cradle.ApplyDefaults(&f)
 
@@ -58,11 +59,7 @@ func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, jour
 			// Job is ready to stream process output
 			close(jobReady)
 
-			// Set up a logger.  Tag all messages with this jobid.
-			logger := log15.New(log15.Ctx{"JobID": id})
-			logger.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
-
-			job.Result = e.Run(f, job, dir, stdin, outS, errS, logger)
+			job.Result = e.Run(f, job, dir, stdin, outS, errS, log)
 		}, e.workspacePath, "job", string(job.Id()))
 
 		// Directory is clean; job complete

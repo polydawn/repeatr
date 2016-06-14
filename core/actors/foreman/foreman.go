@@ -3,6 +3,8 @@ package foreman
 import (
 	"os"
 
+	"github.com/inconshreveable/log15"
+
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/core/model/cassandra"
@@ -126,8 +128,15 @@ func (man *Foreman) evoke() {
 	//  (If we signal success, unlease is no-op'd.)
 	defer man.currentPlans.Unlease(leaseToken)
 
+	// Pick an ID.
+	// And set up a logger for it.
+	jobID := executor.JobID(guid.New())
+	log := log15.New()
+	log.SetHandler(log15.StreamHandler(os.Stderr, log15.TerminalFormat()))
+	log = log.New(log15.Ctx{"runID": jobID})
+
 	// Launch
-	job := man.executor.Start(def.Formula(*p.formula), executor.JobID(guid.New()), nil, os.Stderr)
+	job := man.executor.Start(def.Formula(*p.formula), jobID, nil, log)
 	jobResult := job.Wait()
 	man.currentPlans.Finish(leaseToken)
 	// Assemble results // todo everything about jobresult is a mangle, plz refactor

@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/core/executor"
 	"polydawn.net/repeatr/lib/guid"
@@ -41,7 +42,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 		}
 
 		Convey("We should get an error from the warehouse", func() {
-			result := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c}).Wait()
+			result := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c)).Wait()
 			So(result.Error, testutil.ShouldBeErrorClass, rio.WarehouseError)
 		})
 
@@ -49,7 +50,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 			formula.Action = def.Action{
 				Entrypoint: []string{"echo", "echococo"},
 			}
-			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldNotBeNil)
 			// Even though one should clearly also check the error status,
@@ -66,7 +67,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 				Entrypoint: []string{"echo", "echococo"},
 			}
 
-			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 			So(job, ShouldNotBeNil)
 			// note that we can read output concurrently.
 			// no need to wait for job done.
@@ -82,7 +83,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 				Entrypoint: []string{"sh", "-c", "exit 14"},
 			}
 
-			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+			job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 			So(job, ShouldNotBeNil)
 			So(job.Wait().Error, ShouldBeNil)
 			So(job.Wait().ExitCode, ShouldEqual, 14)
@@ -94,7 +95,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 					Entrypoint: []string{"not a command"},
 				}
 
-				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
 				So(job.Wait().ExitCode, ShouldEqual, -1)
 				msg, err := ioutil.ReadAll(job.OutputReader())
@@ -107,7 +108,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 					Entrypoint: []string{"/not/a/command"},
 				}
 
-				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
 				So(job.Wait().ExitCode, ShouldEqual, -1)
 				msg, err := ioutil.ReadAll(job.OutputReader())
@@ -120,7 +121,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 					Entrypoint: []string{"/not a comm'\"\tand\b"},
 				}
 
-				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.Writer{c})
+				job := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c))
 				So(job.Wait().Error, testutil.ShouldBeErrorClass, executor.NoSuchCommandError)
 				So(job.Wait().ExitCode, ShouldEqual, -1)
 				msg, err := ioutil.ReadAll(job.OutputReader())

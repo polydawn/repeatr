@@ -38,9 +38,9 @@ func RunFormula(e executor.Executor, formula def.Formula, journal io.Writer) exe
 	log.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
 
 	jobID := executor.JobID(guid.New())
+	log = log.New(log15.Ctx{"runID": jobID})
 	log.Info("Job queued")
-	job := e.Start(formula, jobID, nil, journal)
-	log = log.New(log15.Ctx{"jobID": jobID})
+	job := e.Start(formula, jobID, nil, log)
 
 	// Stream job output to terminal in real time
 	_, err := io.Copy(journal, job.OutputReader())

@@ -3,6 +3,8 @@ package executor
 import (
 	"io"
 
+	"github.com/inconshreveable/log15"
+
 	"polydawn.net/repeatr/api/def"
 )
 
@@ -29,7 +31,7 @@ type Executor interface {
 		It is assumed that any job-specific filesystem state will be cleaned up by the executor.
 
 	*/
-	Start(def.Formula, JobID, io.Reader, io.Writer) Job
+	Start(def.Formula, JobID, io.Reader, log15.Logger) Job
 
 	/*
 		ADDITIONALLY, we have some patterns that are merely conventions:
