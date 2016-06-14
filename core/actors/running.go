@@ -3,6 +3,7 @@ package actor
 import (
 	"io"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
@@ -81,7 +82,15 @@ func (frCfg *FormulaRunnerConfig) FollowStreams(runID def.RunID, stdout io.Write
 
 func (frCfg *FormulaRunnerConfig) FollowResults(runID def.RunID) *def.RunRecord {
 	job := frCfg.wards[runID]
-	job.Wait()
-	// TODO fold over to new types
-	return nil
+	jr := job.Wait()
+	results := def.ResultGroup{}
+	for name, output := range jr.Outputs {
+		results[name] = &def.Result{name, def.Ware{output.Type, output.Hash}}
+	}
+	return &def.RunRecord{
+		UID:        def.RunID(job.Id()),
+		Date:       time.Now(), // FIXME elide this translation layer, this should be committed just once
+		FormulaHID: "todo",     // FIXME write formula HID
+		Results:    results,
+	}
 }

@@ -18,7 +18,7 @@ type RunRecord struct {
 	HID string `json:"HID"`
 
 	// Unique ID, arbitrarily selected.
-	UID string `json:"UID"`
+	UID RunID `json:"UID"`
 
 	// Date of formula execution.
 	Date time.Time `json:"when"`
