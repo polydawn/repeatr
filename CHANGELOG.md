@@ -1,6 +1,16 @@
 recent /// not yet released
 ---------------------------
 
+- Internal: Major refactor to package structure.  IO components now more clearly separated from sandbox/execution and other bits of repeatr core.
+- Internal: Types now gathered under `api/*` packages, so that these can be easily linked to help integrate other systems with repeatr.
+- Bugfix: Several error handling paths in the tar transmat are now considered `WarehouseUnavailableError` (instead of the more red-flaggy `WarehouseIOError`), allowing other sources to be tried.
+- Feature: Formulas now accept an `action.hostname` parameter, going along with other environmental specifiers there.  This will set the hostname (in execution engines that support this feature).
+- Internal: Scheduler package removed.
+- Improvement: Assets used for testing now have a more scripted process for priming your cache for offline work.
+- Improvement: More logging during filesystem setup before execution and the scanning afterward.  Now includes easy to see $n/$m progress reporting.
+- Internal: Executors now use take a structured logger as a parameter.  No more surprisingly deeply-reaching byte streams.
+- Internal: Formula execution implemented through the new `api` interfaces.
+- Change: The output of `repeatr run` is a new structure, and less verbose again (it only speaks of results, and doesn't repeat the entire formula).
 
 
 v0.12 -- 1d280923b7b1e8621375e545bbc206a1c30ddad0 -- 07 Mar 2016
