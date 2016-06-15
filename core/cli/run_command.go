@@ -91,6 +91,9 @@ func RunCommandPattern(output io.Writer) cli.Command {
 
 			// Output the results structure.
 			//  This goes on stdout (everything is stderr) and so should be parsable.
+			//  We strip some fields that aren't very useful to single-task manual runs.
+			result.HID = ""
+			result.FormulaHID = ""
 			err := codec.NewEncoder(output, &codec.JsonHandle{Indent: -1}).Encode(result)
 			if err != nil {
 				panic(err)

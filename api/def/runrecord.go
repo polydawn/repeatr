@@ -15,7 +15,8 @@ type RunID string
 
 type RunRecord struct {
 	// Hash ID (derived; actually includes the UID; always do lookups by this, not the UID).
-	HID string `json:"HID"`
+	// Can skip when serializing for `repeatr run` output.
+	HID string `json:"HID,omitempty"`
 
 	// Unique ID, arbitrarily selected.
 	UID RunID `json:"UID"`
@@ -24,7 +25,8 @@ type RunRecord struct {
 	Date time.Time `json:"when"`
 
 	// Which formula was executed.
-	FormulaHID string `json:"formulaHID"`
+	// Can skip when serializing for `repeatr run` output.
+	FormulaHID string `json:"formulaHID,omitempty"`
 
 	// Results!
 	Results ResultGroup `json:"results"`

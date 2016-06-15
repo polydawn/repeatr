@@ -112,8 +112,8 @@ func (frCfg *FormulaRunnerConfig) FollowResults(runID def.RunID) *def.RunRecord 
 
 	return &def.RunRecord{
 		UID:        def.RunID(job.Id()),
-		Date:       time.Now(), // FIXME elide this translation layer, this should be committed just once
-		FormulaHID: "todo",     // FIXME write formula HID
+		Date:       time.Now().Truncate(time.Second), // FIXME elide this translation layer, this should be committed just once
+		FormulaHID: "todo",                           // FIXME write formula HID
 		Results:    results,
 		Failure:    jr.Error,
 	}
