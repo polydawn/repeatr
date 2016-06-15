@@ -28,6 +28,9 @@ type RunRecord struct {
 
 	// Results!
 	Results ResultGroup `json:"results"`
+
+	// ... or Error, for major issues during the run.
+	Failure error `json:"failure,omitempty"`
 }
 
 type ResultGroup map[string]*Result

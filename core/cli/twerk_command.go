@@ -54,7 +54,7 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 			result := job.Wait()
 			if result.Error != nil {
 				panic(Exit.NewWith(
-					fmt.Sprintf("job execution errored: %s", result.Error.Message()),
+					fmt.Sprintf("job execution errored: %s", result.Error),
 					SetExitCode(EXIT_USER), // TODO review exit code
 				))
 			}

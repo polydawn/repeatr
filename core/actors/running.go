@@ -2,6 +2,7 @@ package actor
 
 import (
 	"io"
+	"strconv"
 	"sync"
 	"time"
 
@@ -91,14 +92,29 @@ func (frCfg *FormulaRunnerConfig) FollowStreams(runID def.RunID, stdout io.Write
 func (frCfg *FormulaRunnerConfig) FollowResults(runID def.RunID) *def.RunRecord {
 	job := frCfg.wards[runID]
 	jr := job.Wait()
+
+	// Temporary: flip results types.  (TODO: keep driving this version deeper.)
 	results := def.ResultGroup{}
 	for name, output := range jr.Outputs {
-		results[name] = &def.Result{name, def.Ware{output.Type, output.Hash}}
+		results[name] = &def.Result{name,
+			def.Ware{output.Type, output.Hash},
+		}
 	}
+
+	// Place the exit code among the results.
+	//  This is so a caller can unambiguously see the job's exit code;
+	//  while we do attempt to forward a pass-vs-fail signal through our
+	//  own exit code by default, we can only piggyback so much signal;
+	//  we also need space to report our own errors distinctly.
+	results["$exitcode"] = &def.Result{"$exitcode",
+		def.Ware{"exitcode", strconv.Itoa(jr.ExitCode)},
+	}
+
 	return &def.RunRecord{
 		UID:        def.RunID(job.Id()),
 		Date:       time.Now(), // FIXME elide this translation layer, this should be committed just once
 		FormulaHID: "todo",     // FIXME write formula HID
 		Results:    results,
+		Failure:    jr.Error,
 	}
 }
