@@ -8,9 +8,8 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/executor"
+	"polydawn.net/repeatr/core/actors"
 	"polydawn.net/repeatr/core/executor/dispatch"
-	"polydawn.net/repeatr/lib/guid"
 )
 
 func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command {
@@ -41,26 +40,31 @@ func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command 
 				},
 			}
 
-			// TODO bonus points if you eventually can get the default mode to have no setuid binaries, in addition to making a spare user and dropping privs immediately.
-
+			// Set up a logger.
 			log := log15.New()
-			log.SetHandler(log15.StreamHandler(ctx.App.Writer, log15.TerminalFormat()))
+			log.SetHandler(log15.StreamHandler(stderr, log15.TerminalFormat()))
 
-			jobID := executor.JobID(guid.New())
-			log = log.New(log15.Ctx{"runID": jobID})
-			job := execr.Start(formula, jobID, stdin, log)
-			go io.Copy(stdout, job.Outputs().Reader(1))
-			go io.Copy(stderr, job.Outputs().Reader(2))
-			result := job.Wait()
-			if result.Error != nil {
+			// Create a local formula runner, and fire.
+			runner := actor.NewFormulaRunner(execr, log)
+			runner.InjectStdin(stdin)
+			runID := runner.StartRun(&formula)
+
+			// Stream job output to terminal in real time
+			runner.FollowStreams(runID, stdout, stderr)
+
+			// Wait for results.
+			result := runner.FollowResults(runID)
+
+			if result.Failure != nil {
 				panic(Exit.NewWith(
-					fmt.Sprintf("job execution errored: %s", result.Error.Message()),
+					fmt.Sprintf("job execution errored: %s", result.Failure),
 					SetExitCode(EXIT_USER), // TODO review exit code
 				))
 			}
-			if result.ExitCode != 0 {
+			exitCode := result.Results["$exitcode"].Hash
+			if exitCode != "0" {
 				panic(Exit.NewWith(
-					fmt.Sprintf("done; action finished with exit status %d", result.ExitCode),
+					fmt.Sprintf("done; action finished with exit status %s", exitCode),
 					SetExitCode(EXIT_JOB),
 				))
 			}

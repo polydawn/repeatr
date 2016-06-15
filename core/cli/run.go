@@ -12,8 +12,8 @@ import (
 
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/api/hitch"
+	"polydawn.net/repeatr/core/actors"
 	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/lib/guid"
 )
 
 func LoadFormulaFromFile(path string) (frm def.Formula) {
@@ -32,31 +32,29 @@ func LoadFormulaFromFile(path string) (frm def.Formula) {
 	return
 }
 
-func RunFormula(e executor.Executor, formula def.Formula, journal io.Writer) executor.JobResult {
+func RunFormula(execr executor.Executor, formula def.Formula, journal io.Writer) *def.RunRecord {
 	// Set up a logger.
 	log := log15.New()
 	log.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
 
-	jobID := executor.JobID(guid.New())
-	log = log.New(log15.Ctx{"runID": jobID})
-	log.Info("Job queued")
-	job := e.Start(formula, jobID, nil, log)
+	// Create a local formula runner, and fire.
+	runner := actor.NewFormulaRunner(execr, log)
+	runID := runner.StartRun(&formula)
 
 	// Stream job output to terminal in real time
-	_, err := io.Copy(journal, job.OutputReader())
-	if err != nil {
-		log.Error("Error reading job stream", "error", err)
-		panic(err)
-	}
+	//  (stderr and stdout of the job both go to the same stream as our own logs).
+	runner.FollowStreams(runID, journal, journal)
 
-	result := job.Wait()
-	if result.Error != nil {
-		log.Error("Job execution errored", "error", result.Error.Message())
+	// Wait for results.
+	result := runner.FollowResults(runID)
+	if result.Failure == nil {
+		log.Info("Job finished",
+			"outputs", result.Results,
+		)
 	} else {
-		log.Info("Job finished", log15.Ctx{
-			"exit":    result.ExitCode,
-			"outputs": result.Outputs,
-		})
+		log.Error("Job execution errored",
+			"error", result.Failure,
+		)
 	}
 	return result
 }

@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/codegangsta/cli"
@@ -83,36 +82,25 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			// Invoke!
 			result := RunFormula(executor, formula, ctx.App.Writer)
 			// Exit if the job failed collosally (if it just had a nonzero exit code, that's acceptable).
-			if result.Error != nil {
+			if result.Failure != nil {
 				panic(Exit.NewWith(
-					fmt.Sprintf("job execution errored: %s", result.Error.Message()),
+					fmt.Sprintf("job execution errored: %s", result.Failure),
 					SetExitCode(EXIT_USER), // TODO review exit code
 				))
 			}
 
-			// Place the exit code among the results.
-			//  This is so a caller can unambiguously see the job's exit code;
-			//  while we do attempt to forward a pass-vs-fail signal through our
-			//  own exit code by default, we can only piggyback so much signal;
-			//  we also need space to report our own errors distinctly.
-			result.Outputs["$exitcode"] = &def.Output{
-				Type: "exitcode",
-				Hash: strconv.Itoa(result.ExitCode),
-			}
-
-			// Output.
-			// Join the results structure with the original formula, and emit the whole thing,
-			//  just to keep it traversals consistent.
-			// Note that all other logs, progress, terminals, etc are all routed to "journal" (typically, stderr),
-			//  while this output is routed to "output" (typically, stdout), so it can be piped and parsed mechanically.
-			formula.Outputs = result.Outputs
-			err := codec.NewEncoder(output, &codec.JsonHandle{Indent: -1}).Encode(formula)
+			// Output the results structure.
+			//  This goes on stdout (everything is stderr) and so should be parsable.
+			//  We strip some fields that aren't very useful to single-task manual runs.
+			result.HID = ""
+			result.FormulaHID = ""
+			err := codec.NewEncoder(output, &codec.JsonHandle{Indent: -1}).Encode(result)
 			if err != nil {
 				panic(err)
 			}
 			output.Write([]byte{'\n'})
 			// Exit nonzero with our own "your job did not report success" indicator code, if applicable.
-			if result.ExitCode != 0 && !ignoreJobExit {
+			if result.Results["$exitcode"].Hash != "0" && !ignoreJobExit {
 				panic(Exit.NewWith("job finished with non-zero exit status", SetExitCode(EXIT_JOB)))
 			}
 		},

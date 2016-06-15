@@ -10,8 +10,6 @@ package executor
 import (
 	"io"
 
-	"github.com/spacemonkeygo/errors"
-
 	"polydawn.net/repeatr/api/def"
 	"polydawn.net/repeatr/lib/streamer"
 )
@@ -62,7 +60,7 @@ type JobID string // type def just to make it hard to accidentally get ids cross
 type JobResult struct {
 	ID JobID
 
-	Error *errors.Error // if the executor experienced a problem running this job. REVIEW: type discussion? semantics?
+	Error error // if the executor experienced a problem running this job.
 
 	ExitCode int // The return code of this job
 
