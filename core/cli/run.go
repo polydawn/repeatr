@@ -37,7 +37,7 @@ func RunFormula(execr executor.Executor, formula def.Formula, journal io.Writer)
 	log := log15.New()
 	log.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
 
-	// Createa local formula runner, and fire.
+	// Create a local formula runner, and fire.
 	runner := actor.NewFormulaRunner(execr, log)
 	runID := runner.StartRun(&formula)
 
