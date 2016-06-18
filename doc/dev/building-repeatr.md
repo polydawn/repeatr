@@ -21,7 +21,7 @@ sudo apt-get install git
 wget https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz
 tar -xf go1.5.linux-amd64.tar.gz
 export GOROOT=$PWD/go
-export PATH=$PATH:$GOROOT/bin
+export PATH=$GOROOT/bin:$PATH
 ### clone and build repeatr
 git clone https://github.com/polydawn/repeatr.git --recursive
 cd repeatr
