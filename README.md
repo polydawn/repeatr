@@ -37,7 +37,9 @@ Read more
 
 - [Why is Repeatability Important?](doc/why-repeat.md)
 - [Formulas](doc/formulas.md)
+- [Continuity & Iteration](doc/continuity.md)
 - [Containers & Execution](doc/containers.md)
+- [Glossary](doc/glossary.md)
 - Developer docs:
   - [Building Repeatr](doc/dev/building-repeatr.md)
   - [Code Layout](doc/dev/code-layout.md)
