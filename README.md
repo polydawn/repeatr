@@ -24,11 +24,9 @@ add 'em, and you should always get the same thing.
 Repeatr is applying the same theology to complex systems -- write down all the
 inputs precisely, do the same operation, and always get the same thing.
 
-Aside from the sheer simplicity argument... Repeatability is the cornerstone of science and engineering.
-(No?  Okay, go read [doc/why-repeat](doc/why-repeat.md) and I'll see if I can convince you!)
-
-Getting the ability to repeat a process knocked out early makes everything else
-both easier and safer.
+Work faster by using reproducible processes to remove variables.
+Getting the ability to repeat a process locked down early makes working with it safer and easier,
+and moving forward *simpler*.
 
 
 
@@ -37,12 +35,25 @@ Read more
 
 - [Why is Repeatability Important?](doc/why-repeat.md)
 - [Formulas](doc/formulas.md)
-- [Continuity & Iteration](doc/continuity.md)
 - [Containers & Execution](doc/containers.md)
+- [Pipelines & Iteration](doc/continuity.md)
 - [Glossary](doc/glossary.md)
 - Developer docs:
   - [Building Repeatr](doc/dev/building-repeatr.md)
   - [Code Layout](doc/dev/code-layout.md)
+
+
+
+How does this fit into my {project|team|business|lifestyle|devops|flow}?
+------------------------------------------------------------------------
+
+Immutable deploys.
+
+If that isn't instantly compelling, this isn't for you.
+
+If you *do* demand immutable deploys, Repeatr's your tool --
+part of a robust, healthy deploy process.
+To talk about how to connect this with your flow, get in touch: contact@repeatr.io.
 
 
 
