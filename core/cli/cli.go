@@ -25,6 +25,7 @@ func Main(args []string, journal, output io.Writer) {
 		UnpackCommandPattern(journal),
 		ScanCommandPattern(output, journal),
 		ExploreCommandPattern(output, journal),
+		CfgCommandPattern(os.Stdin, output, journal),
 	}
 
 	// Slight touch to the phrasing on subcommands not found.
