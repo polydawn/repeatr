@@ -10,6 +10,8 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
+
+	"go.polydawn.net/repeatr/lib/cereal"
 )
 
 func CfgCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command {
@@ -53,6 +55,7 @@ func CfgCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command {
 					))
 				}
 				// bounce serialization
+				ser = cereal.Tab2space(ser)
 				var raw interface{}
 				if err := yaml.Unmarshal(ser, &raw); err != nil {
 					panic(Exit.NewWith(
