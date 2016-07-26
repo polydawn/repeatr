@@ -8,10 +8,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"polydawn.net/repeatr/api/act"
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/api/act"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/executor"
+	"go.polydawn.net/repeatr/lib/guid"
 )
 
 var (

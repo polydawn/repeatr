@@ -1,8 +1,8 @@
 package cassandra_mem
 
 import (
-	"polydawn.net/repeatr/core/model/catalog"
-	"polydawn.net/repeatr/core/model/formula"
+	"go.polydawn.net/repeatr/core/model/catalog"
+	"go.polydawn.net/repeatr/core/model/formula"
 )
 
 func (kb *Base) SelectCommissionsByInputCatalog(catIDs ...catalog.ID) []*formula.Commission {

@@ -10,9 +10,9 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/core/executor/util"
-	"polydawn.net/repeatr/rio"
-	"polydawn.net/repeatr/rio/placer"
+	"go.polydawn.net/repeatr/core/executor/util"
+	"go.polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio/placer"
 )
 
 func UnpackCommandPattern(stderr io.Writer) cli.Command {

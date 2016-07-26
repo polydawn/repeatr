@@ -7,8 +7,8 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/lib/cereal"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/lib/cereal"
 )
 
 var codecBounceHandler = &codec.CborHandle{}

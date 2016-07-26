@@ -3,9 +3,9 @@ package cassandra_mem
 import (
 	"sync"
 
-	"polydawn.net/repeatr/core/model/cassandra"
-	"polydawn.net/repeatr/core/model/catalog"
-	"polydawn.net/repeatr/core/model/formula"
+	"go.polydawn.net/repeatr/core/model/cassandra"
+	"go.polydawn.net/repeatr/core/model/catalog"
+	"go.polydawn.net/repeatr/core/model/formula"
 )
 
 type Base struct {

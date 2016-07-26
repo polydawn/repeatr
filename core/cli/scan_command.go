@@ -10,9 +10,9 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/executor/util"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/executor/util"
+	"go.polydawn.net/repeatr/rio"
 )
 
 func ScanCommandPattern(output, stderr io.Writer) cli.Command {

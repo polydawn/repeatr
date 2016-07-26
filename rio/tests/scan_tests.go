@@ -6,10 +6,10 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"polydawn.net/repeatr/lib/testutil"
-	"polydawn.net/repeatr/lib/testutil/filefixture"
-	"polydawn.net/repeatr/rio"
-	"polydawn.net/repeatr/rio/filter"
+	"go.polydawn.net/repeatr/lib/testutil"
+	"go.polydawn.net/repeatr/lib/testutil/filefixture"
+	"go.polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio/filter"
 )
 
 // TODO : surprisingly few of these tests cover actually saving content to a warehouse.

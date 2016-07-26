@@ -5,12 +5,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/core/model/cassandra"
-	"polydawn.net/repeatr/core/model/catalog"
-	"polydawn.net/repeatr/core/model/formula"
-	"polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/executor"
+	"go.polydawn.net/repeatr/core/model/cassandra"
+	"go.polydawn.net/repeatr/core/model/catalog"
+	"go.polydawn.net/repeatr/core/model/formula"
+	"go.polydawn.net/repeatr/lib/guid"
 )
 
 type Foreman struct {

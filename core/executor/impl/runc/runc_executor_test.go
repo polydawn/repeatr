@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"polydawn.net/repeatr/core/executor/tests"
-	"polydawn.net/repeatr/lib/testutil"
+	"go.polydawn.net/repeatr/core/executor/tests"
+	"go.polydawn.net/repeatr/lib/testutil"
 )
 
 func Test(t *testing.T) {

@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Project details
 name="repeatr"
-pkg="polydawn.net/$name" # everything under here will be tested
+pkg="go.polydawn.net/$name" # everything under here will be tested
 cmd="$pkg/cmd/$name"     # if you have a main.main not at the repo root, set this
 
 

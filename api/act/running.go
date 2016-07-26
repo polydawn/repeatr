@@ -3,7 +3,7 @@ package act
 import (
 	"io"
 
-	"polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/api/def"
 )
 
 /*

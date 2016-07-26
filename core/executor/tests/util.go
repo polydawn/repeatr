@@ -1,8 +1,8 @@
 package tests
 
 import (
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/assets"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/assets"
 )
 
 /*

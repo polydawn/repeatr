@@ -7,7 +7,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/api/def"
 )
 
 func TestInputGroupCodec(t *testing.T) {

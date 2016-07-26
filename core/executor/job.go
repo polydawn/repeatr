@@ -10,8 +10,8 @@ package executor
 import (
 	"io"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/lib/streamer"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/lib/streamer"
 )
 
 /*

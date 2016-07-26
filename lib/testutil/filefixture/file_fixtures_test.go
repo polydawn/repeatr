@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"polydawn.net/repeatr/lib/fs"
-	"polydawn.net/repeatr/lib/testutil"
+	"go.polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/testutil"
 )
 
 func Test(t *testing.T) {

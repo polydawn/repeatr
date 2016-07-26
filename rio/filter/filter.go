@@ -18,7 +18,7 @@
 package filter
 
 import (
-	"polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/fs"
 )
 
 type Filter interface {

@@ -6,7 +6,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"polydawn.net/repeatr/lib/testutil"
+	"go.polydawn.net/repeatr/lib/testutil"
 )
 
 func TestCradleFilesystem(t *testing.T) {

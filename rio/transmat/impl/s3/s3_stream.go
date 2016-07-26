@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/rlmcpherson/s3gof3r"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio"
 )
 
 var s3Conf = &s3gof3r.Config{

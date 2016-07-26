@@ -18,11 +18,11 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"polydawn.net/repeatr/lib/fs"
-	"polydawn.net/repeatr/lib/fshash"
-	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/rio"
-	tartrans "polydawn.net/repeatr/rio/transmat/impl/tar"
+	"go.polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/fshash"
+	"go.polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/rio"
+	tartrans "go.polydawn.net/repeatr/rio/transmat/impl/tar"
 )
 
 const Kind = rio.TransmatKind("gs")

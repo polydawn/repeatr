@@ -7,11 +7,11 @@ import (
 
 	"github.com/polydawn/gosh"
 	. "github.com/smartystreets/goconvey/convey"
-	"polydawn.net/repeatr/lib/fs"
-	"polydawn.net/repeatr/lib/fspatch"
-	"polydawn.net/repeatr/lib/testutil"
-	"polydawn.net/repeatr/lib/testutil/filefixture"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/fspatch"
+	"go.polydawn.net/repeatr/lib/testutil"
+	"go.polydawn.net/repeatr/lib/testutil/filefixture"
+	"go.polydawn.net/repeatr/rio"
 )
 
 func TestTarInputCompat(t *testing.T) {

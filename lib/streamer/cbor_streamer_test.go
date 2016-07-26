@@ -8,7 +8,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/ugorji/go/codec"
-	"polydawn.net/repeatr/lib/testutil"
+	"go.polydawn.net/repeatr/lib/testutil"
 )
 
 type resp struct {

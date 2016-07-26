@@ -6,7 +6,7 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
-	"polydawn.net/repeatr/lib/treewalk"
+	"go.polydawn.net/repeatr/lib/treewalk"
 )
 
 /*

@@ -8,8 +8,8 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/ugorji/go/codec"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/executor/dispatch"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/executor/dispatch"
 )
 
 func RunCommandPattern(output io.Writer) cli.Command {

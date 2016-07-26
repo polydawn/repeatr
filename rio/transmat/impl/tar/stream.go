@@ -8,8 +8,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/rio"
 )
 
 func makeReader(dataHash rio.CommitID, warehouseCoords rio.SiloURI) io.ReadCloser {

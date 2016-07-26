@@ -5,7 +5,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/api/def"
 )
 
 /*

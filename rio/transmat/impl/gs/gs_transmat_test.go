@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/lib/testutil"
-	"polydawn.net/repeatr/rio/tests"
+	"go.polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/lib/testutil"
+	"go.polydawn.net/repeatr/rio/tests"
 )
 
 func TestCoreCompliance(t *testing.T) {

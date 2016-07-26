@@ -12,9 +12,9 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/lib/fshash"
-	"polydawn.net/repeatr/rio"
-	"polydawn.net/repeatr/rio/filter"
+	"go.polydawn.net/repeatr/lib/fshash"
+	"go.polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio/filter"
 )
 
 const Kind = rio.TransmatKind("dir")

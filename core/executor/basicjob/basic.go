@@ -3,8 +3,8 @@ package basicjob
 import (
 	"io"
 
-	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/lib/streamer"
+	"go.polydawn.net/repeatr/core/executor"
+	"go.polydawn.net/repeatr/lib/streamer"
 )
 
 type BasicJob struct {
