@@ -9,11 +9,11 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/core/executor/basicjob"
-	"polydawn.net/repeatr/core/model/formula"
-	"polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/executor"
+	"go.polydawn.net/repeatr/core/executor/basicjob"
+	"go.polydawn.net/repeatr/core/model/formula"
+	"go.polydawn.net/repeatr/lib/guid"
 )
 
 var _ executor.Executor = &Executor{}

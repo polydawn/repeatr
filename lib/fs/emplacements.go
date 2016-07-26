@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/lib/fspatch"
+	"go.polydawn.net/repeatr/lib/fspatch"
 )
 
 /*

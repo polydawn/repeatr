@@ -6,9 +6,9 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"polydawn.net/repeatr/core/executor/impl/null"
-	"polydawn.net/repeatr/core/model/cassandra/impl/mem"
-	"polydawn.net/repeatr/core/model/catalog"
+	"go.polydawn.net/repeatr/core/executor/impl/null"
+	"go.polydawn.net/repeatr/core/model/cassandra/impl/mem"
+	"go.polydawn.net/repeatr/core/model/catalog"
 )
 
 func TestPipeline(t *testing.T) {

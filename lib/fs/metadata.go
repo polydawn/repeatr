@@ -10,7 +10,7 @@ import (
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
-	"polydawn.net/repeatr/lib/fspatch"
+	"go.polydawn.net/repeatr/lib/fspatch"
 )
 
 type Metadata tar.Header

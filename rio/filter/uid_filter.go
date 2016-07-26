@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/fs"
 )
 
 // TODO While the user is allowed to do whatever they want, somewhere up near

@@ -7,8 +7,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"polydawn.net/repeatr/rio"
-	"polydawn.net/repeatr/rio/transmat/mux"
+	"go.polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio/transmat/mux"
 )
 
 var _ rio.Transmat = &CachingTransmat{}

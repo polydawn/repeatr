@@ -1,7 +1,7 @@
 package cassandra_mem
 
 import (
-	"polydawn.net/repeatr/core/model/catalog"
+	"go.polydawn.net/repeatr/core/model/catalog"
 )
 
 func (kb *Base) Catalog(id catalog.ID) *catalog.Book {

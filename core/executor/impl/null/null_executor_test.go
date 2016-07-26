@@ -5,10 +5,10 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/lib/testutil"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/executor"
+	"go.polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/lib/testutil"
 )
 
 func Test(t *testing.T) {

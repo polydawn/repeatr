@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"polydawn.net/repeatr/lib/treewalk"
+	"go.polydawn.net/repeatr/lib/treewalk"
 )
 
 type WalkFunc func(filenode *FilewalkNode) error

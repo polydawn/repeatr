@@ -9,7 +9,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/storage/v1"
 
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio"
 )
 
 func httpClient(auth *oauth2.Token) *http.Client {

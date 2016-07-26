@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"polydawn.net/repeatr/lib/fs"
-	"polydawn.net/repeatr/lib/treewalk"
+	"go.polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/treewalk"
 )
 
 var _ Bucket = &MemoryBucket{}

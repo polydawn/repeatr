@@ -5,10 +5,10 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/model/cassandra/impl/mem"
-	"polydawn.net/repeatr/core/model/catalog"
-	"polydawn.net/repeatr/core/model/formula"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/model/cassandra/impl/mem"
+	"go.polydawn.net/repeatr/core/model/catalog"
+	"go.polydawn.net/repeatr/core/model/formula"
 )
 
 var (

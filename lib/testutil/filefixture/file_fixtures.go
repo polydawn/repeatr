@@ -8,7 +8,7 @@ package filefixture
 import (
 	"time"
 
-	"polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/fs"
 )
 
 // TODO -- we need to segment these fixtures even MORE by minimum features.

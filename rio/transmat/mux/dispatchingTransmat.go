@@ -3,7 +3,7 @@ package dispatch
 import (
 	"github.com/inconshreveable/log15"
 
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio"
 )
 
 var _ rio.Transmat = &Transmat{}

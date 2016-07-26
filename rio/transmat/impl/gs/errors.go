@@ -2,7 +2,7 @@ package gs
 
 import (
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio"
 )
 
 /*

@@ -4,8 +4,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/rio/filter"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/rio/filter"
 )
 
 /*

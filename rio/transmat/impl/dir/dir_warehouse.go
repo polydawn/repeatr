@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"polydawn.net/repeatr/lib/guid"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/rio"
 )
 
 /*

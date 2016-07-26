@@ -3,7 +3,7 @@ package filter
 import (
 	"time"
 
-	"polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/fs"
 )
 
 var _ Filter = MtimeFilter{}

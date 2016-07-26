@@ -1,9 +1,9 @@
 package foreman
 
 import (
-	"polydawn.net/repeatr/core/model/cassandra"
-	"polydawn.net/repeatr/core/model/catalog"
-	"polydawn.net/repeatr/core/model/formula"
+	"go.polydawn.net/repeatr/core/model/cassandra"
+	"go.polydawn.net/repeatr/core/model/catalog"
+	"go.polydawn.net/repeatr/core/model/formula"
 )
 
 func makeReleases(kb cassandra.Cassandra, p *plan, results *formula.Stage3) []*catalog.Book {

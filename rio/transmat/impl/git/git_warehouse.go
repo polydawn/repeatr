@@ -8,7 +8,7 @@ import (
 	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
 
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio"
 )
 
 /*

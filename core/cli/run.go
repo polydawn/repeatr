@@ -10,10 +10,10 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/api/hitch"
-	"polydawn.net/repeatr/core/actors"
-	"polydawn.net/repeatr/core/executor"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/api/hitch"
+	"go.polydawn.net/repeatr/core/actors"
+	"go.polydawn.net/repeatr/core/executor"
 )
 
 func LoadFormulaFromFile(path string) (frm def.Formula) {

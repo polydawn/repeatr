@@ -4,9 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/executor"
+	"go.polydawn.net/repeatr/lib/fs"
 )
 
 /*

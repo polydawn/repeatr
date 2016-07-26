@@ -1,7 +1,7 @@
 package cradle
 
 import (
-	"polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/api/def"
 )
 
 /*

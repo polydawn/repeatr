@@ -5,7 +5,7 @@ import (
 	"syscall"
 	"time"
 
-	"polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/api/def"
 )
 
 func LUtimesNano(path string, atime time.Time, mtime time.Time) error {

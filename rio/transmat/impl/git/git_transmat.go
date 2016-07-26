@@ -13,8 +13,8 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/lib/fs"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/rio"
 )
 
 const Kind = rio.TransmatKind("git")

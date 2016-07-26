@@ -9,8 +9,8 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/rio"
 )
 
 // Run inputs

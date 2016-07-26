@@ -9,9 +9,9 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/actors"
-	"polydawn.net/repeatr/core/executor/dispatch"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/actors"
+	"go.polydawn.net/repeatr/core/executor/dispatch"
 )
 
 func TwerkCommandPattern(stdin io.Reader, stdout, stderr io.Writer) cli.Command {

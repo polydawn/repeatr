@@ -16,12 +16,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
 
-	"polydawn.net/repeatr/lib/flak"
-	"polydawn.net/repeatr/lib/fs"
-	"polydawn.net/repeatr/lib/fshash"
-	"polydawn.net/repeatr/lib/treewalk"
-	"polydawn.net/repeatr/rio"
-	"polydawn.net/repeatr/rio/filter"
+	"go.polydawn.net/repeatr/lib/flak"
+	"go.polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/fshash"
+	"go.polydawn.net/repeatr/lib/treewalk"
+	"go.polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio/filter"
 )
 
 /*

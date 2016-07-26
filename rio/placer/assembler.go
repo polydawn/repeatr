@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"polydawn.net/repeatr/lib/fs"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/rio"
 )
 
 func NewAssembler(p rio.Placer) rio.Assembler {

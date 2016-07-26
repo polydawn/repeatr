@@ -13,14 +13,14 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/executor"
-	"polydawn.net/repeatr/core/executor/basicjob"
-	"polydawn.net/repeatr/core/executor/cradle"
-	"polydawn.net/repeatr/core/executor/util"
-	"polydawn.net/repeatr/lib/flak"
-	"polydawn.net/repeatr/lib/streamer"
-	"polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/executor"
+	"go.polydawn.net/repeatr/core/executor/basicjob"
+	"go.polydawn.net/repeatr/core/executor/cradle"
+	"go.polydawn.net/repeatr/core/executor/util"
+	"go.polydawn.net/repeatr/lib/flak"
+	"go.polydawn.net/repeatr/lib/streamer"
+	"go.polydawn.net/repeatr/rio"
 )
 
 var _ executor.Executor = &Executor{} // interface assertion

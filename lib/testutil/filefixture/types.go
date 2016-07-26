@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/spacemonkeygo/errors"
-	"polydawn.net/repeatr/lib/fs"
-	"polydawn.net/repeatr/lib/fshash"
+	"go.polydawn.net/repeatr/lib/fs"
+	"go.polydawn.net/repeatr/lib/fshash"
 )
 
 type FixtureFile struct {

@@ -11,11 +11,11 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors/try"
 
-	"polydawn.net/repeatr/api/def"
-	"polydawn.net/repeatr/core/jank"
-	"polydawn.net/repeatr/rio"
-	"polydawn.net/repeatr/rio/transmat/impl/cachedir"
-	"polydawn.net/repeatr/rio/transmat/impl/tar"
+	"go.polydawn.net/repeatr/api/def"
+	"go.polydawn.net/repeatr/core/jank"
+	"go.polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio/transmat/impl/cachedir"
+	"go.polydawn.net/repeatr/rio/transmat/impl/tar"
 )
 
 var assets = map[string]rio.CommitID{
