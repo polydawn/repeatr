@@ -2,7 +2,6 @@ package s3
 
 import (
 	"archive/tar"
-	"bytes"
 	"crypto/sha512"
 	"encoding/base64"
 	"io"
@@ -135,14 +134,11 @@ func (t *S3Transmat) Materialize(
 		fs.PlaceFile(arena.Path(), bucket.Root().Metadata, nil)
 
 		// hash whole tree
-		actualTreeHash := fshash.Hash(bucket, hasherFactory)
+		actualTreeHash := base64.URLEncoding.EncodeToString(fshash.Hash(bucket, hasherFactory))
 
 		// verify total integrity
-		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
-		if err != nil {
-			panic(rio.ConfigError.New("Could not parse hash: %s", err))
-		}
-		if bytes.Equal(actualTreeHash, expectedTreeHash) {
+		expectedTreeHash := string(dataHash)
+		if actualTreeHash == expectedTreeHash {
 			// excellent, got what we asked for.
 			arena.hash = dataHash
 		} else {
@@ -152,7 +148,7 @@ func (t *S3Transmat) Materialize(
 				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
 				arena.hash = rio.CommitID(actualTreeHash)
 			} else {
-				panic(rio.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
+				panic(rio.NewHashMismatchError(string(dataHash), actualTreeHash))
 			}
 		}
 	}).Catch(rio.Error, func(err *errors.Error) {
