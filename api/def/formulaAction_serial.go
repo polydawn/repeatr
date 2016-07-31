@@ -1,6 +1,7 @@
 package def
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/ugorji/go/codec"
@@ -58,7 +59,7 @@ func (p *Policy) CodecDecodeSelf(c *codec.Decoder) {
 			return
 		}
 	}
-	panic(ConfigError.New("policy value %q is not a known policy name", str))
+	panic(ErrConfig{Msg: fmt.Sprintf("policy value %q is not a known policy name", str)})
 }
 
 //

@@ -1,11 +1,26 @@
 package def
 
 import (
-	"github.com/spacemonkeygo/errors"
+	"fmt"
 )
 
-var ConfigError *errors.ErrorClass = errors.NewClass("ConfigError")
+type ErrConfig struct {
+	Key         string
+	Msg         string
+	MustBe      string
+	WasActually string
+}
 
-func newConfigValTypeError(expectedKey, mustBeA string, wasActually string) *errors.Error {
-	return ConfigError.New("config key %q must be a %s; was %s", expectedKey, mustBeA, wasActually).(*errors.Error)
+func (e ErrConfig) Error() string {
+	return e.Msg
+}
+
+func newConfigValTypeError(key, mustBe, wasActually string) error {
+	msg := fmt.Sprintf("config key %q must be a %s; was %s", key, mustBe, wasActually)
+	return ErrConfig{
+		Key:         key,
+		Msg:         msg,
+		MustBe:      mustBe,
+		WasActually: wasActually,
+	}
 }
