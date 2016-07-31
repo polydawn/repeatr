@@ -12,12 +12,6 @@ import (
 */
 var ValidationError *errors.ErrorClass = errors.NewClass("ValidationError")
 
-/*
-	UnsupportedPlatform is an error raised when an operation is unavailable on the
-	OS.  (Say, setting utime on a symlink on a mac.)
-*/
-var UnsupportedPlatform *errors.ErrorClass = errors.NewClass("UnsupportedPlatform")
-
 var ConfigError *errors.ErrorClass = errors.NewClass("ConfigError")
 
 func newConfigValTypeError(expectedKey, mustBeA string, wasActually string) *errors.Error {
