@@ -2,6 +2,7 @@ package hitch
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/go-yaml/yaml"
 	"github.com/spacemonkeygo/errors"
@@ -31,7 +32,7 @@ func ParseYaml(ser []byte) *def.Formula {
 	// Actually decode with the smart codecs.
 	var frm def.Formula
 	if err := codec.NewDecoder(&buf, codecBounceHandler).Decode(&frm); err != nil {
-		panic(def.ConfigError.New("Could not parse formula: %s", errors.GetMessage(err)))
+		panic(def.ErrConfig{Msg: fmt.Sprintf("Could not parse formula: %s", errors.GetMessage(err))})
 	}
 	return &frm
 }

@@ -7,7 +7,6 @@ import (
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/api/hitch"
-	"go.polydawn.net/repeatr/lib/testutil"
 )
 
 func TestStringParse(t *testing.T) {
@@ -96,7 +95,7 @@ func TestStringParse(t *testing.T) {
 			action:
 				policy: nonsense
 			`)
-			So(func() { hitch.ParseYaml(content) }, testutil.ShouldPanicWith, def.ConfigError)
+			So(func() { hitch.ParseYaml(content) }, ShouldPanic)
 		})
 	})
 }

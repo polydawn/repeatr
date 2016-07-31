@@ -3,7 +3,6 @@ package executordispatch
 import (
 	"path/filepath"
 
-	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/core/executor"
 	"go.polydawn.net/repeatr/core/executor/impl/chroot"
 	"go.polydawn.net/repeatr/core/executor/impl/null"
@@ -16,21 +15,21 @@ import (
 // Will make simpler to use extended transports, etc.
 
 func Get(desire string) executor.Executor {
-	var executor executor.Executor
+	var execr executor.Executor
 
 	switch desire {
 	case "null":
-		executor = &null.Executor{}
+		execr = &null.Executor{}
 	case "chroot":
-		executor = &chroot.Executor{}
+		execr = &chroot.Executor{}
 	case "runc":
-		executor = &runc.Executor{}
+		execr = &runc.Executor{}
 	default:
-		panic(def.ValidationError.New("No such executor %s", desire))
+		panic(executor.ConfigError.New("No such executor %s", desire))
 	}
 
 	// Set the base path to operate from
-	executor.Configure(filepath.Join(jank.Base(), "executor", desire))
+	execr.Configure(filepath.Join(jank.Base(), "executor", desire))
 
-	return executor
+	return execr
 }
