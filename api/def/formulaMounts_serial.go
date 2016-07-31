@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spacemonkeygo/errors"
 	"github.com/ugorji/go/codec"
 )
 
@@ -127,7 +126,7 @@ func (f Filters) AsStringSlice() []string {
 	case FilterHost:
 		panic(ErrConfig{Msg: "host modes not yet supported"})
 	default:
-		panic(errors.ProgrammerError.New("unrecognized filter case"))
+		panic(fmt.Errorf("unrecognized filter case"))
 	}
 	switch f.GidMode {
 	case FilterUninitialized:
@@ -139,7 +138,7 @@ func (f Filters) AsStringSlice() []string {
 	case FilterHost:
 		panic(ErrConfig{Msg: "host modes not yet supported"})
 	default:
-		panic(errors.ProgrammerError.New("unrecognized filter case"))
+		panic(fmt.Errorf("unrecognized filter case"))
 	}
 	switch f.MtimeMode {
 	case FilterUninitialized:
@@ -151,7 +150,7 @@ func (f Filters) AsStringSlice() []string {
 	case FilterHost:
 		panic(ErrConfig{Msg: "host mode doesn't make sense for time"})
 	default:
-		panic(errors.ProgrammerError.New("unrecognized filter case"))
+		panic(fmt.Errorf("unrecognized filter case"))
 	}
 	return strs
 }
