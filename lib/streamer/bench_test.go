@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 )
 
 type benchFn func(b *testing.B, strm Mux)
@@ -61,8 +62,31 @@ func _BenchmarkPlayingTagInterleaved(b *testing.B, strm Mux) {
 	a1.Close()
 }
 
-// PlayingTagBlocking : what happens when writes come in from a slower goroutine, and we have reads in the bench routine?
+// PlayingTagShuffled : what happens when writes come in from a goroutine, and we have reads in the bench routine?
 // Reads are aligned, fwiw.
+
+func BenchmarkCbormuxPlayingTagShuffled(b *testing.B) {
+	cbormuxLooper(b, _BenchmarkPlayingTagShuffled)
+}
+func _BenchmarkPlayingTagShuffled(b *testing.B, strm Mux) {
+	go func() {
+		a1 := strm.Appender(1)
+		for i := 0; i < 16; i++ {
+			a1.Write([]byte("asdf"))
+		}
+		a1.Close()
+	}()
+	r1 := strm.Reader(1)
+	for i := 0; i < 16; i++ {
+		r1.Read(make([]byte, 4))
+	}
+	// block until eof (to avoid filedescriptor close race -- could also waitgroup the writer routine)
+	r1.Read(make([]byte, 0))
+}
+
+// PlayingTagBlocking : what happens when writes come in from a *slower* goroutine, and we have reads in the bench routine?
+// Reads are aligned, fwiw.
+// The pause between writes is smallish: 10ms; but enough to check we're not going *totally* nuts polling for changes.
 
 func BenchmarkCbormuxPlayingTagBlocking(b *testing.B) {
 	cbormuxLooper(b, _BenchmarkPlayingTagBlocking)
@@ -71,6 +95,7 @@ func _BenchmarkPlayingTagBlocking(b *testing.B, strm Mux) {
 	go func() {
 		a1 := strm.Appender(1)
 		for i := 0; i < 16; i++ {
+			time.Sleep(10 * time.Millisecond)
 			a1.Write([]byte("asdf"))
 		}
 		a1.Close()
