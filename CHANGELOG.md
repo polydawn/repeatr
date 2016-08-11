@@ -1,5 +1,11 @@
-recent /// not yet released
+v0.13 -- tip -- 2016 Aug 10
 ---------------------------
+
+v0.13 is calm sailing: we have a variety of performance improvements,
+a few new config options, several logging improvements,
+and essentially no major shockers.
+
+If parsing the output struct of `repeatr run`, note the changes to format there.
 
 - Internal: Major refactor to package structure.  IO components now more clearly separated from sandbox/execution and other bits of repeatr core.
 - Internal: Types now gathered under `api/*` packages, so that these can be easily linked to help integrate other systems with repeatr.
