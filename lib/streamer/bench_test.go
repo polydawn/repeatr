@@ -1,8 +1,10 @@
 package streamer
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -92,7 +94,9 @@ func _BenchmarkPlayingTagShuffled(b *testing.B, strm Mux) {
 
 func BenchmarkCbormuxPlayingTagBlocking(b *testing.B) {
 	defer profile.Start().Stop()
+	fmt.Printf("goroutines at start: %d\n", runtime.NumGoroutine())
 	cbormuxLooper(b, _BenchmarkPlayingTagBlocking)
+	fmt.Printf("goroutines at end:   %d\n", runtime.NumGoroutine())
 }
 func _BenchmarkPlayingTagBlocking(b *testing.B, strm Mux) {
 	go func() {
