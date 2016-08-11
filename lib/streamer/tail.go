@@ -45,7 +45,7 @@ func (r *TailReader) Read(msg []byte) (n int, err error) {
 			// this is not a clueful wait; but it does prevent pegging a core.
 			// Quite dumb in this case is also quite fool-proof.
 			err = nil
-			<-time.After(1 * time.Millisecond)
+			<-time.After(20 * time.Millisecond)
 		}
 	}
 	// anything other than an eof, we have no behavioral changes to make; pass up.
