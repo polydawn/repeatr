@@ -13,6 +13,7 @@ import (
 // this doesn't map to git commits because the formulas do; we're intentionally
 // making the formulas standalone as usual (you should be able to pastebin them).
 var versions = []string{
+	"v0.13",
 	"v0.12",
 	"v0.11",
 	"v0.10",
@@ -53,7 +54,7 @@ func BuildRelease(version string) map[string]string {
 		panic(err)
 	}
 	artifacts := make(map[string]string)
-	for k, v := range frm["outputs"].(map[string]interface{}) {
+	for k, v := range frm["results"].(map[string]interface{}) {
 		if k[0] == '$' {
 			continue
 		}

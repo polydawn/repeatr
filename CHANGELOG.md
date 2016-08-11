@@ -1,5 +1,11 @@
-v0.13 -- tip -- 2016 Aug 10
+recent /// not yet released
 ---------------------------
+
+- *your changes here!*
+
+
+v0.13 -- 1428140ca3a1652a8bc07afda062c20b108eeca6 -- 2016 Aug 10
+----------------------------------------------------------------
 
 v0.13 is calm sailing: we have a variety of performance improvements,
 a few new config options, several logging improvements,
