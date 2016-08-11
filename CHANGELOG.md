@@ -1,6 +1,18 @@
 recent /// not yet released
 ---------------------------
 
+- *your changes here!*
+
+
+v0.13 -- 1428140ca3a1652a8bc07afda062c20b108eeca6 -- 2016 Aug 10
+----------------------------------------------------------------
+
+v0.13 is calm sailing: we have a variety of performance improvements,
+a few new config options, several logging improvements,
+and essentially no major shockers.
+
+If parsing the output struct of `repeatr run`, note the changes to format there.
+
 - Internal: Major refactor to package structure.  IO components now more clearly separated from sandbox/execution and other bits of repeatr core.
 - Internal: Types now gathered under `api/*` packages, so that these can be easily linked to help integrate other systems with repeatr.
 - Bugfix: Several error handling paths in the tar transmat are now considered `WarehouseUnavailableError` (instead of the more red-flaggy `WarehouseIOError`), allowing other sources to be tried.
