@@ -1,6 +1,7 @@
 package streamer
 
 import (
+	"bufio"
 	"io"
 	"math"
 	"os"
@@ -93,12 +94,15 @@ func (a *cborMuxAppender) Close() error {
 func (m *CborMux) Reader(labels ...int) io.Reader {
 	// asking for a reader for a label that was never used will never
 	// hit a close flag, so... don't do that?
-	r := io.NewSectionReader(m.file, 1, math.MaxInt64/2)
+	var r io.Reader
+	r = io.NewSectionReader(m.file, 1, math.MaxInt64/2)
 	// TODO offset of one because that's the array open!
 	// do something much more sane than skip it, please
+	r = NewTailReader(r)
+	r = bufio.NewReader(r)
 	return &cborMuxReader{
 		labels: &intset{labels},
-		codec:  codec.NewDecoder(NewTailReader(r), new(codec.CborHandle)),
+		codec:  codec.NewDecoder(r, new(codec.CborHandle)),
 	}
 }
 
