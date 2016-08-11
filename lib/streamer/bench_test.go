@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/pkg/profile"
 )
 
 type benchFn func(b *testing.B, strm Mux)
@@ -89,6 +91,7 @@ func _BenchmarkPlayingTagShuffled(b *testing.B, strm Mux) {
 // The pause between writes is smallish: 10ms; but enough to check we're not going *totally* nuts polling for changes.
 
 func BenchmarkCbormuxPlayingTagBlocking(b *testing.B) {
+	defer profile.Start().Stop()
 	cbormuxLooper(b, _BenchmarkPlayingTagBlocking)
 }
 func _BenchmarkPlayingTagBlocking(b *testing.B, strm Mux) {
