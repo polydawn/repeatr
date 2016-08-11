@@ -11,6 +11,12 @@ recent /// not yet released
 - Internal: Executors now use take a structured logger as a parameter.  No more surprisingly deeply-reaching byte streams.
 - Internal: Formula execution implemented through the new `api` interfaces.
 - Change: The output of `repeatr run` is a new structure, and less verbose again (it only speaks of results, and doesn't repeat the entire formula).
+- Feature: `repeatr twerk` can now accept several kinds of formula patches -- policy settings, env vars, etc.
+- Feature: `repeatr cfg` subcommand now exists to make your life easier: if you want yaml formulas transformed into easier-to-handle json, you got it.
+- Internal: The root package domain was changed.
+- Improvement: Several transmats compare hashes in a slightly more user-friendly way (specifically, they b64 things, then compare, rather than the other way around -- this results in a more helpful error message in case your formula contained a typo in the hash that doesn't parse as b64).
+- Internal: The `def/api` package no longer has an external dependency on an unusual error handling library.  This should make it much easier to import in other go projects.
+- Improvement: Reduced CPU spend on output streaming.  (Buffer jitter may have increased, but shouldn't be particularly perceptible in practical use.)
 
 
 v0.12 -- 1d280923b7b1e8621375e545bbc206a1c30ddad0 -- 07 Mar 2016
