@@ -40,7 +40,7 @@ func Main(args []string, journal, output io.Writer) {
 	// Global var.  Womp womp.
 	// Also, version goes to stdout.
 	cli.VersionPrinter = func(ctx *cli.Context) {
-		fmt.Fprintf(os.Stdout, "%v v%v\n", ctx.App.Name, ctx.App.Version)
+		fmt.Fprintf(os.Stdout, "%v %v\n", ctx.App.Name, ctx.App.Version)
 		fmt.Fprintf(os.Stdout, "git commit %v\n", GITCOMMIT)
 		fmt.Fprintf(os.Stdout, "build date %v\n", BUILDDATE)
 	}
