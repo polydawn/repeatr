@@ -58,7 +58,11 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 
 			try.Do(func() {
 				// Make the unpack location, if it doesn't exist.
-				os.MkdirAll(placePath, 0755)
+				// ... only if it's going to produce dirs though.
+				// FIXME this is absolutely absurd crosscutting.
+				if ctx.String("kind") != "file" {
+					os.MkdirAll(placePath, 0755)
+				}
 				// Materialize the things.
 				arena := util.DefaultTransmat().Materialize(
 					rio.TransmatKind(ctx.String("kind")),
