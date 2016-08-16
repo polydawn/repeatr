@@ -80,7 +80,7 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 			ioError(err)
 		}
 	case tar.TypeReg:
-		file, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, mode)
+		file, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY, mode)
 		if err != nil {
 			ioError(err)
 		}

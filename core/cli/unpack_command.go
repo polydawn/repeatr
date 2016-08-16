@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
@@ -57,8 +56,6 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 			log.SetHandler(log15.StreamHandler(stderr, log15.TerminalFormat()))
 
 			try.Do(func() {
-				// Make the unpack location, if it doesn't exist.
-				os.MkdirAll(placePath, 0755)
 				// Materialize the things.
 				arena := util.DefaultTransmat().Materialize(
 					rio.TransmatKind(ctx.String("kind")),
