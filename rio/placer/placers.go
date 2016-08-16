@@ -33,20 +33,22 @@ func CopyingPlacer(srcBasePath, destBasePath string, _ bool, bareMount bool) rio
 	typ := srcBaseStat.Mode() & os.ModeType
 	switch typ {
 	case os.ModeDir:
-		// can't take the easy route and just `os.RemoveAll(destBasePath)`
-		//  because that propagates times changes onto the parent.
-		d, err := os.Open(destBasePath)
-		if err != nil {
-			panic(Error.New("copyingplacer: io error: %s", err))
-		}
-		names, err := d.Readdirnames(-1)
-		if err != nil {
-			panic(Error.New("copyingplacer: io error: %s", err))
-		}
-		for _, name := range names {
-			err := os.RemoveAll(filepath.Join(destBasePath, name))
+		if !os.IsNotExist(err) {
+			// can't take the easy route and just `os.RemoveAll(destBasePath)`
+			//  because that propagates times changes onto the parent.
+			d, err := os.Open(destBasePath)
 			if err != nil {
 				panic(Error.New("copyingplacer: io error: %s", err))
+			}
+			names, err := d.Readdirnames(-1)
+			if err != nil {
+				panic(Error.New("copyingplacer: io error: %s", err))
+			}
+			for _, name := range names {
+				err := os.RemoveAll(filepath.Join(destBasePath, name))
+				if err != nil {
+					panic(Error.New("copyingplacer: io error: %s", err))
+				}
 			}
 		}
 	case 0:
