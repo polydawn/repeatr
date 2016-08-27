@@ -8,9 +8,9 @@ import (
 var _ rio.Placer = BindPlacer
 
 func BindPlacer(srcPath, destPath string, writable bool, _ bool) rio.Emplacement {
-	panic("BindPlacer unsupported on darwin")
+	panic("BindPlacer unsupported on this platform")
 }
 
 func NewAufsPlacer(workPath string) rio.Placer {
-	panic("AufsPlacer unsupported on darwin")
+	panic("AufsPlacer unsupported on this platform")
 }
