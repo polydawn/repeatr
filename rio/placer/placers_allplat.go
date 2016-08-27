@@ -1,4 +1,3 @@
-// +build linux
 package placer
 
 import (
@@ -95,30 +94,4 @@ func (e copyEmplacement) Teardown() {
 	if err := os.RemoveAll(e.path); err != nil {
 		panic(Error.New("copyingplacer: teardown failed: %s", err))
 	}
-}
-
-var _ rio.Placer = BindPlacer
-
-func BindPlacer(srcPath, destPath string, writable bool, _ bool) rio.Emplacement {
-	panic("BindPlacer unsupported on darwin")
-}
-
-type bindEmplacement struct {
-	path string
-}
-
-func (e bindEmplacement) Teardown() {
-
-}
-
-func NewAufsPlacer(workPath string) rio.Placer {
-	panic("AufsPlacer unsupported on darwin")
-}
-
-type aufsEmplacement struct {
-	layerPath   string
-	landingPath string
-}
-
-func (e aufsEmplacement) Teardown() {
 }

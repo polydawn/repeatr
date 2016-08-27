@@ -133,7 +133,7 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 	}
 
 	if hdr.Typeflag == tar.TypeSymlink {
-		// need to use LUtimesNano to traverse symlinks
+		// need to use LUtimesNano to avoid traverse symlinks
 		if err := fspatch.LUtimesNano(destPath, hdr.AccessTime, hdr.ModTime); err != nil {
 			ioError(err)
 		}
@@ -147,7 +147,6 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 		}
 
 	}
-
 }
 
 // Exposed only because you're probably doing your own trees somehow, and it's
