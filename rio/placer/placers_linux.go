@@ -8,9 +8,7 @@ import (
 	"syscall"
 
 	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
 	"go.polydawn.net/repeatr/lib/fs"
-	"go.polydawn.net/repeatr/lib/fspatch"
 	"go.polydawn.net/repeatr/rio"
 )
 
