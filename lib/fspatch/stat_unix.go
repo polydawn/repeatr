@@ -1,4 +1,4 @@
-// +build linux
+// +build linux darwin
 // can probably be built on most of the platforms listed in tar/archive/stat_unix.go, but not sure so preferring to whitelist cautiously
 
 package fspatch

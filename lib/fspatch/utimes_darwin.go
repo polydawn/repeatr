@@ -4,12 +4,10 @@ import (
 	"os"
 	"syscall"
 	"time"
-
-	"go.polydawn.net/repeatr/api/def"
 )
 
 func LUtimesNano(path string, atime time.Time, mtime time.Time) error {
-	return def.ErrNotSupportedPlatform
+	return ErrUnsupportedPlatform
 }
 
 func UtimesNano(path string, atime time.Time, mtime time.Time) error {

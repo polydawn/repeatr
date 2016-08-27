@@ -122,7 +122,6 @@ func (e *Executor) Execute(f def.Formula, j executor.Job, d string, result *exec
 			Uid: uint32(userinfo.Uid),
 			Gid: uint32(userinfo.Gid),
 		},
-		Pdeathsig: syscall.SIGKILL,
 	}
 
 	// except handling cwd is a little odd.

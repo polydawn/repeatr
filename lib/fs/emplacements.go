@@ -132,15 +132,20 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 		}
 	}
 
-	if hdr.Typeflag != tar.TypeSymlink {
+	if hdr.Typeflag == tar.TypeSymlink {
+		// need to use LUtimesNano to avoid traverse symlinks
+		if err := fspatch.LUtimesNano(destPath, hdr.AccessTime, hdr.ModTime); err != nil {
+			ioError(err)
+		}
+	} else {
 		// do this for everything not a symlink, since there's no such thing as `lchmod` on linux -.-
 		if err := os.Chmod(destPath, mode); err != nil {
 			ioError(err)
 		}
-	}
+		if err := fspatch.UtimesNano(destPath, hdr.AccessTime, hdr.ModTime); err != nil {
+			ioError(err)
+		}
 
-	if err := fspatch.LUtimesNano(destPath, hdr.AccessTime, hdr.ModTime); err != nil {
-		ioError(err)
 	}
 }
 
