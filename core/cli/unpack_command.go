@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
@@ -10,6 +12,7 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 
 	"go.polydawn.net/repeatr/core/executor/util"
+	"go.polydawn.net/repeatr/lib/guid"
 	"go.polydawn.net/repeatr/rio"
 	"go.polydawn.net/repeatr/rio/placer"
 )
@@ -35,6 +38,11 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 				Name:  "where",
 				Usage: "A URL giving coordinates to a warehouse where repeatr should find the object to explore.",
 			},
+			cli.BoolFlag{
+				Name: "skip-exists",
+				Usage: "If a file already exists at at '--place=%s', assume it's correct and exit immediately.  If this flag is not provided, the default behavior is to do the whole unpack, rolling over the existing files." +
+					"  BE WARY of using this: it's effectively caching with no cachebusting rule.  Caveat emptor.",
+			},
 		},
 		Action: func(ctx *cli.Context) {
 			if ctx.String("kind") == "" {
@@ -55,6 +63,12 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 			log := log15.New()
 			log.SetHandler(log15.StreamHandler(stderr, log15.TerminalFormat()))
 
+			if ctx.Bool("skip-exists") {
+				if _, err := os.Stat(placePath); err == nil {
+					return
+				}
+			}
+
 			try.Do(func() {
 				// Materialize the things.
 				arena := util.DefaultTransmat().Materialize(
@@ -64,13 +78,26 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 					log,
 				)
 				defer arena.Teardown()
-				// Copy the materialized data into its permanent new home.
+				// Pick a temp path we'll move things into first.
+				//  The materialize arena can't be jumped into the final resting
+				//  place atomically, so we get it close, then do an atomic op last.
+				placePathDir := filepath.Dir(placePath)
+				placePathName := filepath.Base(placePath)
+				tmpPlacePath := filepath.Join(
+					placePathDir,
+					".tmp."+placePathName+"."+guid.New(),
+				)
+				// Copy the materialized data into (within-one-step-of) its permanent new home.
 				//  This feels kind of redundant at first glance (e.g., "why couldn't
 				//  we just materialize it in the right place the first time?"), but
 				//  makes sense when you remember transmats might just be returning a
 				//  pointer into a shared cache that already existed (or other non-relocatable
 				//  excuse for a filesystem, e.g. fuse happened or something).
-				placer.CopyingPlacer(arena.Path(), placePath, true, false)
+				placer.CopyingPlacer(arena.Path(), tmpPlacePath, true, false)
+				// Atomic move into final place.
+				if err := os.Rename(tmpPlacePath, placePath); err != nil {
+					panic(err)
+				}
 			}).Catch(rio.ConfigError, func(err *errors.Error) {
 				panic(Error.NewWith(err.Message(), SetExitCode(EXIT_BADARGS)))
 			}).Catch(rio.WarehouseUnavailableError, func(err *errors.Error) {
