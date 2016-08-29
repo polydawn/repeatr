@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"path/filepath"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
@@ -38,6 +38,11 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 				Name:  "where",
 				Usage: "A URL giving coordinates to a warehouse where repeatr should find the object to explore.",
 			},
+			cli.BoolFlag{
+				Name: "skip-exists",
+				Usage: "If a file already exists at at '--place=%s', assume it's correct and exit immediately.  If this flag is not provided, the default behavior is to do the whole unpack, rolling over the existing files." +
+					"  BE WARY of using this: it's effectively caching with no cachebusting rule.  Caveat emptor.",
+			},
 		},
 		Action: func(ctx *cli.Context) {
 			if ctx.String("kind") == "" {
@@ -58,6 +63,12 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 			log := log15.New()
 			log.SetHandler(log15.StreamHandler(stderr, log15.TerminalFormat()))
 
+			if ctx.Bool("skip-exists") {
+				if _, err := os.Stat(placePath); err == nil {
+					return
+				}
+			}
+
 			try.Do(func() {
 				// Materialize the things.
 				arena := util.DefaultTransmat().Materialize(
@@ -74,7 +85,7 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 				placePathName := filepath.Base(placePath)
 				tmpPlacePath := filepath.Join(
 					placePathDir,
-					".tmp." + placePathName + "." + guid.New(),
+					".tmp."+placePathName+"."+guid.New(),
 				)
 				// Copy the materialized data into (within-one-step-of) its permanent new home.
 				//  This feels kind of redundant at first glance (e.g., "why couldn't
