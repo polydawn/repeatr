@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"path/filepath"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
@@ -10,6 +12,7 @@ import (
 	"github.com/spacemonkeygo/errors/try"
 
 	"go.polydawn.net/repeatr/core/executor/util"
+	"go.polydawn.net/repeatr/lib/guid"
 	"go.polydawn.net/repeatr/rio"
 	"go.polydawn.net/repeatr/rio/placer"
 )
@@ -64,13 +67,26 @@ func UnpackCommandPattern(stderr io.Writer) cli.Command {
 					log,
 				)
 				defer arena.Teardown()
-				// Copy the materialized data into its permanent new home.
+				// Pick a temp path we'll move things into first.
+				//  The materialize arena can't be jumped into the final resting
+				//  place atomically, so we get it close, then do an atomic op last.
+				placePathDir := filepath.Dir(placePath)
+				placePathName := filepath.Base(placePath)
+				tmpPlacePath := filepath.Join(
+					placePathDir,
+					".tmp." + placePathName + "." + guid.New(),
+				)
+				// Copy the materialized data into (within-one-step-of) its permanent new home.
 				//  This feels kind of redundant at first glance (e.g., "why couldn't
 				//  we just materialize it in the right place the first time?"), but
 				//  makes sense when you remember transmats might just be returning a
 				//  pointer into a shared cache that already existed (or other non-relocatable
 				//  excuse for a filesystem, e.g. fuse happened or something).
-				placer.CopyingPlacer(arena.Path(), placePath, true, false)
+				placer.CopyingPlacer(arena.Path(), tmpPlacePath, true, false)
+				// Atomic move into final place.
+				if err := os.Rename(tmpPlacePath, placePath); err != nil {
+					panic(err)
+				}
 			}).Catch(rio.ConfigError, func(err *errors.Error) {
 				panic(Error.NewWith(err.Message(), SetExitCode(EXIT_BADARGS)))
 			}).Catch(rio.WarehouseUnavailableError, func(err *errors.Error) {
