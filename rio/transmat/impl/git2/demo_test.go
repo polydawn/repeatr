@@ -17,7 +17,10 @@ func ExampleBasic_printCommits() {
 		panic(err)
 	}
 
-	iter := r.Commits()
+	iter, err := r.Commits()
+	if err != nil {
+		panic(err)
+	}
 	defer iter.Close()
 
 	for {
