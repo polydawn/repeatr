@@ -57,6 +57,7 @@ probably good
   - not much to say.  we've already seen it working.
   - only supports the http smart transport, not the legacy dumb transport.
     - the dumb http system isn't used much in the wild.  except i certainly do sometimes, tbh.  so easy to serve.
+	- if we do start hacking on this, worth noting that the dumb http transport means in-git-data-dir paths are not actually only an implementation detail of a local fs repo, surprisingly.
 
 - replacing lsremote is definitely easy
   - `NewAuthenticatedRemote(url, auth).Connect().Info().Refs` bam done
