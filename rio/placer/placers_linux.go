@@ -80,7 +80,9 @@ func NewAufsPlacer(workPath string) rio.Placer {
 		// set up COW
 		// if you were doing this in a shell, it'd be roughly `mount -t aufs -o br="$layer":"$base" none "$composite"`.
 		// yes, this may behave oddly in the event of paths containing ":" or "=".
-		syscall.Mount("none", destBasePath, "aufs", 0, fmt.Sprintf("br:%s=rw:%s=ro", layerPath, srcBasePath))
+		if err := syscall.Mount("none", destBasePath, "aufs", 0, fmt.Sprintf("br:%s=rw:%s=ro", layerPath, srcBasePath)); err != nil {
+			panic(Error.New("aufsplacer: mounting failed: %s", err))
+		}
 		// fix props on layerPath; otherwise they instantly leak through
 		hdr, _ := fs.ScanFile(srcBasePath, "./", srcBaseStat)
 		fs.PlaceFile(layerPath, hdr, nil)
