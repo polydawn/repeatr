@@ -77,6 +77,14 @@ func (og *OutputGroup) CodecDecodeSelf(c *codec.Decoder) {
 			v.MountPath = k
 		}
 	}
+	// And do fixups for filters.
+	// (Belongs on the Output struct itself but I don't feel like breaching
+	//  the seal on a whole nother custom serial func.)
+	for _, v := range *og {
+		if v.Filters == nil {
+			v.Filters = &Filters{}
+		}
+	}
 }
 
 func (mp OutputGroup) asMappySlice() codec.MapBySlice {
