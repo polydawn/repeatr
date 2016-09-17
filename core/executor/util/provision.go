@@ -151,8 +151,6 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 				"output", name,
 				"type", out.Type,
 			)
-
-			out.Filters = &def.Filters{}
 			out.Filters.InitDefaultsOutput()
 			filterOptions := rio.ConvertFilterConfig(*out.Filters)
 			scanPath := filepath.Join(rootfs, out.MountPath)
