@@ -2,6 +2,15 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+- Internal: Added "exercise" script, which takes a final repeatr binary through the full cycle of major commands; useful for full validation on host environments.
+- Bugfix: Respect output filter configuration properly again!  This was broken in v0.12 and v0.13.
+- Bugfix: Bubble up errors from the AUFS placer correctly when mount fails!
+- Feature: `repeatr unpack` now accepts a `--skip-exists` flag, which will skip unpacking if the target path already exists.  This does *not* check that the path matches the hash given to the unpack command; be careful when using this.
+- Feature: `repeatr unpack` now works atomically, using tempdirs (or tempfiles) in the target directory.
+- Bugfix: Repeatr OSX builds fixed.  You can now use `repeatr unpack` on OSX!  (As long as you don't ask for any data that can't be losslessly expressed on a mac -- namely, filesystems containing symlinks still error, because mtimes cannot be set with full precision.)
+- Feature: A single file transmat may now be used with the `repeatr unpack` command to get data that is a single file with no filesystem metadata.
+- Bugfix: Handle error codes the same for http and https tranports.
+- Bugfix: Version info string no longer includes double "v" typo.
 
 
 v0.13 -- 1428140ca3a1652a8bc07afda062c20b108eeca6 -- 2016 Aug 10
