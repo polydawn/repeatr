@@ -33,11 +33,7 @@ func LoadFormulaFromFile(path string) def.Formula {
 	return *hitch.ParseYaml(content)
 }
 
-func RunFormula(execr executor.Executor, formula def.Formula, journal io.Writer) *def.RunRecord {
-	// Set up a logger.
-	log := log15.New()
-	log.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
-
+func RunFormula(execr executor.Executor, formula def.Formula, journal io.Writer, log log15.Logger) *def.RunRecord {
 	// Create a local formula runner, and fire.
 	runner := actor.NewFormulaRunner(execr, log)
 	runID := runner.StartRun(&formula)

@@ -17,10 +17,8 @@ func Main(args []string, journal, output io.Writer) {
 	App.Usage = "Run it. Run it again."
 	App.Version = "v0.13+dev"
 
-	App.Writer = journal
-
 	App.Commands = []cli.Command{
-		RunCommandPattern(output),
+		RunCommandPattern(output, journal),
 		TwerkCommandPattern(os.Stdin, output, journal),
 		UnpackCommandPattern(journal),
 		ScanCommandPattern(output, journal),
