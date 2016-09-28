@@ -24,16 +24,11 @@ type logItem struct {
 	Time  time.Time `json:"time"`
 }
 
-type runRecordOutput struct {
-	Data  interface{} `json:"runRecord"`
-	RunID def.RunID   `json:"runID"`
-}
-type journalOutput struct {
-	Data  string    `json:"journal"`
-	RunID def.RunID `json:"runID"`
-}
-type logOutput struct {
-	Data logItem `json:"log"`
+type serializedOutput struct {
+	RunID     def.RunID      `json:"runID,omitempty"`
+	RunRecord *def.RunRecord `json:"runRecord,omitempty"`
+	Journal   string         `json:"journal,omitempty"`
+	Log       *logItem       `json:"log,omitempty"`
 }
 
 type journalSerializer struct {
@@ -42,7 +37,7 @@ type journalSerializer struct {
 }
 
 func (a *journalSerializer) Write(b []byte) (int, error) {
-	jo := journalOutput{Data: string(b), RunID: a.RunID}
+	jo := serializedOutput{Journal: string(b), RunID: a.RunID}
 	out, err := json.Marshal(jo)
 	if err != nil {
 		panic(err)
@@ -51,10 +46,10 @@ func (a *journalSerializer) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func serializeRunRecord(wr io.Writer, runID def.RunID, i interface{}) error {
-	err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(runRecordOutput{
-		Data:  i,
-		RunID: runID,
+func serializeRunRecord(wr io.Writer, runID def.RunID, rr *def.RunRecord) error {
+	err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(serializedOutput{
+		RunRecord: rr,
+		RunID:     runID,
 	})
 	wr.Write([]byte{'\n'})
 	return err
@@ -62,15 +57,13 @@ func serializeRunRecord(wr io.Writer, runID def.RunID, i interface{}) error {
 
 func logHandler(wr io.Writer) log15.Handler {
 	h := log15.FuncHandler(func(r *log15.Record) error {
-		li := logItem{
+		li := &logItem{
 			Level: int(r.Lvl),
 			Msg:   r.Msg,
 			Ctx:   r.Ctx,
 			Time:  r.Time,
 		}
-		err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(logOutput{
-			Data: li,
-		})
+		err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(serializedOutput{Log: li})
 		wr.Write([]byte{'\n'})
 		return err
 	})
