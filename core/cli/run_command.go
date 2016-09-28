@@ -12,7 +12,7 @@ import (
 	"go.polydawn.net/repeatr/core/executor/dispatch"
 )
 
-func RunCommandPattern(output io.Writer) cli.Command {
+func RunCommandPattern(output io.Writer, journal io.Writer) cli.Command {
 	return cli.Command{
 		Name:  "run",
 		Usage: "Run a formula",
@@ -34,6 +34,10 @@ func RunCommandPattern(output io.Writer) cli.Command {
 				Name:  "env, e",
 				Usage: "apply additional environment vars to formula before launch (overrides 'patch').  Format like '-e KEY=val'",
 			},
+			cli.BoolFlag{
+				Name:  "serialize, s",
+				Usage: "serialize output onto stdout",
+			},
 		},
 		Action: func(ctx *cli.Context) {
 			// Parse args
@@ -41,6 +45,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			ignoreJobExit := ctx.Bool("ignore-job-exit")
 			patchPaths := ctx.StringSlice("patch")
 			envArgs := ctx.StringSlice("env")
+			serialize := ctx.Bool("serialize")
 			// One (and only one) formula should follow;
 			//  we don't have a way to unambiguously output more than one result formula at the moment.
 			var formulaPath string
@@ -80,7 +85,7 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			}
 
 			// Invoke!
-			result := RunFormula(executor, formula, ctx.App.Writer)
+			result := RunFormula(executor, formula, output, journal, serialize)
 			// Exit if the job failed collosally (if it just had a nonzero exit code, that's acceptable).
 			if result.Failure != nil {
 				panic(Exit.NewWith(
@@ -94,7 +99,12 @@ func RunCommandPattern(output io.Writer) cli.Command {
 			//  We strip some fields that aren't very useful to single-task manual runs.
 			result.HID = ""
 			result.FormulaHID = ""
-			err := codec.NewEncoder(output, &codec.JsonHandle{Indent: -1}).Encode(result)
+			var err error
+			if serialize {
+				err = serializeRunRecord(output, result.UID, result)
+			} else {
+				err = codec.NewEncoder(output, &codec.JsonHandle{Indent: -1}).Encode(result)
+			}
 			if err != nil {
 				panic(err)
 			}

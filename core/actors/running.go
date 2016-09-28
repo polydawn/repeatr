@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"bufio"
 	"io"
 	"strconv"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/core/executor"
 	"go.polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/lib/iofilter"
 )
 
 var (
@@ -66,25 +68,28 @@ func (frCfg *FormulaRunnerConfig) StartRun(frm *def.Formula) def.RunID {
 	return runID
 }
 
+func (frCfg *FormulaRunnerConfig) StreamFollower(job executor.Job, wr io.Writer, fds []int, wg *sync.WaitGroup) {
+	r := iofilter.Reframer{
+		Delegate:  wr,
+		SplitFunc: bufio.ScanLines,
+		Prefix:    []byte{},
+		Suffix:    []byte{'\n'},
+	}
+
+	io.Copy(&r, job.Outputs().Reader(fds...))
+	wg.Done()
+}
+
 func (frCfg *FormulaRunnerConfig) FollowStreams(runID def.RunID, stdout io.Writer, stderr io.Writer) {
 	job := frCfg.wards[runID]
 	var wg sync.WaitGroup
 	if stdout == stderr {
 		wg.Add(1)
-		go func() {
-			io.Copy(stdout, job.Outputs().Reader(1, 2))
-			wg.Done()
-		}()
+		go frCfg.StreamFollower(job, stdout, []int{1, 2}, &wg)
 	} else {
 		wg.Add(2)
-		go func() {
-			io.Copy(stdout, job.Outputs().Reader(1))
-			wg.Done()
-		}()
-		go func() {
-			io.Copy(stderr, job.Outputs().Reader(2))
-			wg.Done()
-		}()
+		go frCfg.StreamFollower(job, stdout, []int{1}, &wg)
+		go frCfg.StreamFollower(job, stdout, []int{2}, &wg)
 	}
 	wg.Wait()
 }
