@@ -144,8 +144,12 @@ func (t *GitTransmat) Materialize(
 		submodules = applyGitmodulesUrls(string(dataHash), gitDirPath, submodules)
 		func() {
 			started := time.Now()
-			// TODO ideally this would be smart enough to skip if we have hash cached. -- general problem with yank now actually
 			for _, subm := range submodules {
+				// Skip yank if we have the full checkout cached already.
+				if _, err := os.Stat(t.workArea.getNosubchFinalPath(subm.hash)); err == nil {
+					continue
+				}
+				// Okay, we need more stuff.  Fetch away.
 				yank(
 					log.New("submhash", subm.hash),
 					t.workArea.gitDirPath(subm.url),
