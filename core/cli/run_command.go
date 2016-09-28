@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/inconshreveable/log15"
 	"github.com/ugorji/go/codec"
 
 	"go.polydawn.net/repeatr/api/def"
@@ -85,18 +84,8 @@ func RunCommandPattern(output io.Writer, journal io.Writer) cli.Command {
 				}})
 			}
 
-			// set up journal and logger based on flags
-			log := log15.New()
-			if serialize {
-				// use our custom logHandler to serialize results uniformly
-				log.SetHandler(logHandler(output))
-			} else {
-				// no serialization of output, write directly to journal
-				log.SetHandler(log15.StreamHandler(journal, log15.TerminalFormat()))
-			}
-
 			// Invoke!
-			result := RunFormula(executor, formula, output, journal, log, serialize)
+			result := RunFormula(executor, formula, output, journal, serialize)
 			// Exit if the job failed collosally (if it just had a nonzero exit code, that's acceptable).
 			if result.Failure != nil {
 				panic(Exit.NewWith(
