@@ -33,10 +33,19 @@ func LoadFormulaFromFile(path string) def.Formula {
 	return *hitch.ParseYaml(content)
 }
 
-func RunFormula(execr executor.Executor, formula def.Formula, journal io.Writer, log log15.Logger) *def.RunRecord {
+func RunFormula(execr executor.Executor, formula def.Formula, output io.Writer, journal io.Writer, log log15.Logger, serialize bool) *def.RunRecord {
 	// Create a local formula runner, and fire.
 	runner := actor.NewFormulaRunner(execr, log)
 	runID := runner.StartRun(&formula)
+
+	if serialize {
+		// set up serializer for journal stream
+		js := &journalSerializer{
+			Delegate: output,
+			RunID:    runID,
+		}
+		journal = js
+	}
 
 	// Stream job output to terminal in real time
 	//  (stderr and stdout of the job both go to the same stream as our own logs).

@@ -5,6 +5,8 @@ import (
 	"io"
 	"time"
 
+	"go.polydawn.net/repeatr/api/def"
+
 	"github.com/inconshreveable/log15"
 	"github.com/ugorji/go/codec"
 )
@@ -22,11 +24,13 @@ type logItem struct {
 	Time  time.Time `json:"time"`
 }
 
-type resultOutput struct {
-	Data interface{} `json:"result"`
+type runRecordOutput struct {
+	Data  interface{} `json:"runRecord"`
+	RunID def.RunID   `json:"runID"`
 }
 type journalOutput struct {
-	Data string `json:"journal"`
+	Data  string    `json:"journal"`
+	RunID def.RunID `json:"runID"`
 }
 type logOutput struct {
 	Data logItem `json:"log"`
@@ -34,10 +38,11 @@ type logOutput struct {
 
 type journalSerializer struct {
 	Delegate io.Writer
+	RunID    def.RunID
 }
 
 func (a *journalSerializer) Write(b []byte) (int, error) {
-	jo := journalOutput{Data: string(b)}
+	jo := journalOutput{Data: string(b), RunID: a.RunID}
 	out, err := json.Marshal(jo)
 	if err != nil {
 		panic(err)
@@ -46,9 +51,10 @@ func (a *journalSerializer) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func serializeResult(wr io.Writer, typeStr string, i interface{}) error {
-	err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(resultOutput{
-		Data: i,
+func serializeRunRecord(wr io.Writer, runID def.RunID, i interface{}) error {
+	err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(runRecordOutput{
+		Data:  i,
+		RunID: runID,
 	})
 	wr.Write([]byte{'\n'})
 	return err

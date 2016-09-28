@@ -87,13 +87,7 @@ func RunCommandPattern(output io.Writer, journal io.Writer) cli.Command {
 
 			// set up journal and logger based on flags
 			log := log15.New()
-
 			if serialize {
-				// set up serializer for journal stream
-				js := &journalSerializer{
-					Delegate: output,
-				}
-				journal = js
 				// use our custom logHandler to serialize results uniformly
 				log.SetHandler(logHandler(output))
 			} else {
@@ -102,7 +96,7 @@ func RunCommandPattern(output io.Writer, journal io.Writer) cli.Command {
 			}
 
 			// Invoke!
-			result := RunFormula(executor, formula, journal, log)
+			result := RunFormula(executor, formula, output, journal, log, serialize)
 			// Exit if the job failed collosally (if it just had a nonzero exit code, that's acceptable).
 			if result.Failure != nil {
 				panic(Exit.NewWith(
@@ -118,7 +112,7 @@ func RunCommandPattern(output io.Writer, journal io.Writer) cli.Command {
 			result.FormulaHID = ""
 			var err error
 			if serialize {
-				err = serializeResult(output, "result", result)
+				err = serializeRunRecord(output, result.UID, result)
 			} else {
 				err = codec.NewEncoder(output, &codec.JsonHandle{Indent: -1}).Encode(result)
 			}
