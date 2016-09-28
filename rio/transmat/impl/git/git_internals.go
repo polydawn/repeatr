@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/polydawn/gosh"
@@ -31,7 +32,8 @@ func yank(log log15.Logger, gitDir string, remoteURL string) {
 	// Init (is idempotent).
 	git.Bake("init", "--bare").RunAndReport()
 	// Fetch.
-	log.Info("git transmat: object fetch starting",
+	started := time.Now()
+	log.Info("git: object fetch starting",
 		"remote", remoteURL,
 	)
 	git.Bake(
@@ -41,6 +43,7 @@ func yank(log log15.Logger, gitDir string, remoteURL string) {
 	).RunAndReport()
 	log.Info("git: object fetch complete",
 		"remote", remoteURL,
+		"elapsed", time.Now().Sub(started).Seconds(),
 	)
 }
 
@@ -49,6 +52,8 @@ func checkout(log log15.Logger, destPath string, commitHash string, gitDir strin
 	git := bakeGitDir(git, gitDir)
 	git = bakeCheckoutDir(git, destPath)
 	// Checkout.
+	started := time.Now()
+	log.Info("git: tree checkout starting")
 	buf := &bytes.Buffer{}
 	p := git.Bake(
 		"checkout", "-f", commitHash,
@@ -67,6 +72,9 @@ func checkout(log log15.Logger, destPath string, commitHash string, gitDir strin
 		// (blowing past this without too much fuss because we're going to switch error libraries later and it's going to fix this better.)
 		panic(Error.New("git checkout failed.  git output:\n%s", buf.String()))
 	}
+	log.Info("git: tree checkout complete",
+		"elapsed", time.Now().Sub(started).Seconds(),
+	)
 }
 
 type submodule struct {

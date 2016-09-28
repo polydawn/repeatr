@@ -139,7 +139,7 @@ func (t *GitTransmat) Materialize(
 			// TODO ideally this would be smart enough to skip if we have hash cached. -- general problem with yank now actually
 			for _, subm := range submodules {
 				yank(
-					log,
+					log.New("submhash", subm.hash),
 					t.workArea.gitDirPath(subm.url),
 					subm.url,
 				)
@@ -177,7 +177,7 @@ func (t *GitTransmat) Materialize(
 				pth := t.workArea.makeNosubchTempPath(subm.hash)
 				defer os.RemoveAll(pth)
 				checkout(
-					log,
+					log.New("submhash", subm.hash),
 					pth,
 					subm.hash,
 					t.workArea.gitDirPath(subm.url),
