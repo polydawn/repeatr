@@ -1,15 +1,12 @@
 package git
 
 import (
-	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
+	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/polydawn/gosh"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/try"
 
@@ -22,57 +19,27 @@ const Kind = rio.TransmatKind("git")
 var _ rio.Transmat = &GitTransmat{}
 
 type GitTransmat struct {
-	workPath string
+	workArea workArea
 }
 
 var _ rio.TransmatFactory = New
 
 func New(workPath string) rio.Transmat {
-	err := os.MkdirAll(workPath, 0755)
+	mustDir(workPath)
+	workPath, err := filepath.Abs(workPath)
 	if err != nil {
 		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
 	}
-	workPath, err = filepath.Abs(workPath)
-	if err != nil {
-		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
+	wa := workArea{
+		fullCheckouts:  filepath.Join(workPath, "full"),
+		nosubCheckouts: filepath.Join(workPath, "nosub"),
+		gitDirs:        filepath.Join(workPath, "gits"),
 	}
-	return &GitTransmat{workPath}
+	mustDir(wa.fullCheckouts)
+	mustDir(wa.nosubCheckouts)
+	mustDir(wa.gitDirs)
+	return &GitTransmat{wa}
 }
-
-const (
-	git_uid = 1000
-	git_gid = 1000
-)
-
-var git gosh.Command = gosh.Gosh(
-	"git",
-	gosh.NullIO,
-	gosh.Opts{
-		Env: map[string]string{
-			"GIT_CONFIG_NOSYSTEM": "true",
-			"HOME":                "/dev/null",
-		},
-		// We would *LOVE* to uncomment this block and drop privs.
-		// However, it's currently practically un-supportable: git running
-		// on a host that doesn't contain a username mapped to this uid
-		// will error on launch -- yep, it's one of *those* programs
-		// (at least as of 1.9.1; more recent upstreams *may* have patched it;
-		// haven't tested exhaustively yet.)
-		// To address this, we'd either need containerized-git (which may
-		// limit portability in some other undesirable fashions; ideally
-		// transmats should work without such heavy weaponry), or distributing
-		// a reference a particular (and likely patched) version of git.
-		// ----------------------------------------------------------------
-		//	Launcher: gosh.ExecCustomizingLauncher(func(cmd *exec.Cmd) {
-		//		cmd.SysProcAttr = &syscall.SysProcAttr{
-		//			Credential: &syscall.Credential{
-		//				Uid: uint32(git_uid),
-		//				Gid: uint32(git_gid),
-		//			},
-		//		}
-		//	}),
-	},
-)
 
 /*
 	Git transmats plonk down the contents of one commit (or tree) as a filesystem.
@@ -133,7 +100,7 @@ func (t *GitTransmat) Materialize(
 			wh := NewWarehouse(uri)
 			pong := wh.Ping()
 			if pong == nil {
-				log.Info("git transmat: connected to remote warehouse", "remote", uri)
+				log.Info("git: connected to remote warehouse", "remote", uri)
 				warehouse = wh
 				break
 			} else {
@@ -146,64 +113,97 @@ func (t *GitTransmat) Materialize(
 		if warehouse == nil {
 			panic(rio.WarehouseUnavailableError.New("No warehouses were available!"))
 		}
+		gitDirPath := t.workArea.gitDirPath(warehouse.url)
 
-		// Create staging arena to produce data into.
-		var err error
-		arena.gitDirPath, err = ioutil.TempDir(t.workPath, "")
-		if err != nil {
-			panic(rio.TransmatError.New("Unable to create arena: %s", err))
-		}
-		arena.workDirPath, err = ioutil.TempDir(t.workPath, "")
-		if err != nil {
-			panic(rio.TransmatError.New("Unable to create arena: %s", err))
-		}
-		if err := os.Chmod(arena.workDirPath, 0755); err != nil {
-			panic(rio.TransmatError.New("Unable to create arena: %s", err))
-		}
+		// Fetch objects.
+		func() {
+			started := time.Now()
+			yank(
+				log,
+				gitDirPath,
+				warehouse.url,
+			)
+			log.Info("git: fetch complete",
+				"elapsed", time.Now().Sub(started).Seconds(),
+			)
+		}()
 
-		// From now on, all our git commands will have these overriden paths:
-		// This gives us a working tree without ".git".
-		git := git.Bake(
-			gosh.Opts{Env: map[string]string{
-				"GIT_DIR":       arena.gitDirPath,
-				"GIT_WORK_TREE": arena.workDirPath,
-			}},
+		// Enumerate and fetch submodule objects.
+		submodules := listSubmodules(string(dataHash), gitDirPath)
+		log.Info("git: submodules found",
+			"count", len(submodules),
 		)
+		submodules = applyGitmodulesUrls(string(dataHash), gitDirPath, submodules)
+		func() {
+			started := time.Now()
+			// TODO ideally this would be smart enough to skip if we have hash cached. -- general problem with yank now actually
+			for _, subm := range submodules {
+				yank(
+					log,
+					t.workArea.gitDirPath(subm.url),
+					subm.url,
+				)
+			}
+			log.Info("git: fetch submodules complete",
+				"elapsed", time.Now().Sub(started).Seconds(),
+			)
+		}()
 
-		// Clone!
-		// TODO make sure all the check hard modes are enabled
-		git.Bake(
-			"clone",
-			"--bare", // we want to make the checkout somewhere else, so we do it ourselves in a separate step.
-			//"--local", // beg for use of hardlink optimizations.  supposedly self-disables on non-local urls, but also doesn't detect and thus collapses on cross-device, so no-go.
-			"--", warehouse.url, arena.gitDirPath,
-		).RunAndReport()
-		log.Info("git transmat: clone complete")
+		// Checkout.
+		// Pick tempdir under full checkouts area.
+		// We'll move from this tmpdir to the final one after both of:
+		//  - this checkout
+		//  - AND getting all submodules in place
+		arena.workDirPath = t.workArea.makeFullchTempPath(string(dataHash))
+		defer os.RemoveAll(arena.workDirPath)
+		func() {
+			started := time.Now()
+			checkout(
+				log,
+				arena.workDirPath,
+				string(dataHash),
+				gitDirPath,
+			)
+			log.Info("git: checkout main repo complete",
+				"elapsed", time.Now().Sub(started).Seconds(),
+			)
+		}()
 
-		// Checkout the interesting commit.
-		buf := &bytes.Buffer{}
-		p := git.Bake(
-			"checkout", string(dataHash), // FIXME dear god, whitelist this to make sure it looks like a hash.
-			gosh.Opts{Cwd: arena.workDirPath},
-			gosh.Opts{OkExit: gosh.AnyExit},
-			gosh.Opts{Err: buf, Out: buf},
-		).Run()
-		if bytes.HasPrefix(buf.Bytes(), []byte("fatal: reference is not a tree: ")) {
-			panic(rio.DataDNE.New("hash %q not found in this repo", dataHash))
-		}
-		if p.GetExitCode() != 0 {
-			// catchall.
-			// this formatting is *terrible*, but we don't have a good formatter for using datakeys, either, so.
-			// (blowing past this without too much fuss because we're going to switch error libraries later and it's going to fix this better.)
-			panic(Error.New("git checkout failed.  git output:\n%s", buf.String()))
-		}
-		log.Info("git transmat: checkout complete")
-		// And, do submodules.
-		git.Bake(
-			"submodule", "update", "--init",
-			gosh.Opts{Cwd: arena.workDirPath},
-		).RunAndReport()
-		log.Info("git transmat: submodules complete")
+		// Checkout submodules.
+		// Pick tempdirs under the no-sub checkouts area (because we won't be recursing on these!)
+		func() {
+			started := time.Now()
+			for _, subm := range submodules {
+				pth := t.workArea.makeNosubchTempPath(subm.hash)
+				defer os.RemoveAll(pth)
+				checkout(
+					log,
+					pth,
+					subm.hash,
+					t.workArea.gitDirPath(subm.url),
+				)
+				moveOrShrug(pth, t.workArea.getNosubchFinalPath(subm.hash))
+			}
+			log.Info("git: checkout submodules complete",
+				"elapsed", time.Now().Sub(started).Seconds(),
+			)
+		}()
+
+		// Copy in submodules.
+		func() {
+			started := time.Now()
+			for _, subm := range submodules {
+				if err := fs.CopyR(
+					t.workArea.getNosubchFinalPath(subm.hash),
+					filepath.Join(arena.workDirPath, subm.path),
+				); err != nil {
+					panic(Error.New("Unexpected issues copying between local cache layers: %s", err))
+				}
+			}
+			log.Info("git: full work tree assembled",
+				"elapsed", time.Now().Sub(started).Seconds(),
+			)
+		}()
 
 		// Since git doesn't convey permission bits, the default value
 		// should be 1000 (consistent with being accessible under the "routine" policy).
@@ -213,8 +213,14 @@ func (t *GitTransmat) Materialize(
 		}
 
 		// verify total integrity
-		// actually this is a nil step; there's no such thing as "acceptHashMismatch", clone would have simply failed
+		// actually this is a nil step; there's no such thing as "acceptHashMismatch", checkout would have simply failed
 		arena.hash = dataHash
+
+		// Move the thing into final place!
+		pth := t.workArea.getFullchFinalPath(string(dataHash))
+		moveOrShrug(arena.workDirPath, pth)
+		arena.workDirPath = pth
+		log.Info("git: repo materialize complete")
 	}).Catch(rio.Error, func(err *errors.Error) {
 		panic(err)
 	}).CatchAll(func(err error) {
@@ -249,7 +255,6 @@ func (t GitTransmat) Scan(
 }
 
 type gitArena struct {
-	gitDirPath  string
 	workDirPath string
 	hash        rio.CommitID
 }
@@ -262,17 +267,8 @@ func (a gitArena) Hash() rio.CommitID {
 	return a.hash
 }
 
-// rm's.
-// does not consider it an error if path already does not exist.
+// The git transmat teardown method is a stub.
+// Unlike most other transmats, this one does its own caching and does not expect
+// to have another dircacher layer wrapped around it.
 func (a gitArena) Teardown() {
-	if err := os.RemoveAll(a.workDirPath); err != nil {
-		if e2, ok := err.(*os.PathError); !ok || e2.Err != syscall.ENOENT || e2.Path != a.workDirPath {
-			panic(err)
-		}
-	}
-	if err := os.RemoveAll(a.gitDirPath); err != nil {
-		if e2, ok := err.(*os.PathError); !ok || e2.Err != syscall.ENOENT || e2.Path != a.gitDirPath {
-			panic(err)
-		}
-	}
 }
