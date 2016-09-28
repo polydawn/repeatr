@@ -141,6 +141,26 @@ func (t *GitTransmat) Materialize(
 			)
 		}()
 
+		// Checkout.
+		// Pick tempdir under full checkouts area.
+		// We'll move from this tmpdir to the final one after both of:
+		//  - this checkout
+		//  - AND getting all submodules in place
+		arena.workDirPath = t.workArea.makeFullchTempPath(string(dataHash))
+		defer os.RemoveAll(arena.workDirPath)
+		func() {
+			started := time.Now()
+			checkout(
+				log,
+				arena.workDirPath,
+				string(dataHash),
+				gitDirPath,
+			)
+			log.Info("git: checkout main repo complete",
+				"elapsed", time.Now().Sub(started).Seconds(),
+			)
+		}()
+
 		// Enumerate and fetch submodule objects.
 		submodules := listSubmodules(string(dataHash), gitDirPath)
 		log.Info("git: submodules found",
@@ -167,26 +187,6 @@ func (t *GitTransmat) Materialize(
 				)
 			}
 			log.Info("git: fetch submodules complete",
-				"elapsed", time.Now().Sub(started).Seconds(),
-			)
-		}()
-
-		// Checkout.
-		// Pick tempdir under full checkouts area.
-		// We'll move from this tmpdir to the final one after both of:
-		//  - this checkout
-		//  - AND getting all submodules in place
-		arena.workDirPath = t.workArea.makeFullchTempPath(string(dataHash))
-		defer os.RemoveAll(arena.workDirPath)
-		func() {
-			started := time.Now()
-			checkout(
-				log,
-				arena.workDirPath,
-				string(dataHash),
-				gitDirPath,
-			)
-			log.Info("git: checkout main repo complete",
 				"elapsed", time.Now().Sub(started).Seconds(),
 			)
 		}()
