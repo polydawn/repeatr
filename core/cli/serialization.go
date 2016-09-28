@@ -18,10 +18,10 @@ type ctxPairs []interface{}
 func (ctxPairs) MapBySlice() {}
 
 type logItem struct {
-	Level int       `json:"level"`
-	Msg   string    `json:"message"`
+	Level int       `json:"lvl"`
+	Msg   string    `json:"msg"`
 	Ctx   ctxPairs  `json:"ctx"`
-	Time  time.Time `json:"time"`
+	Time  time.Time `json:"t"`
 }
 
 type serializedOutput struct {

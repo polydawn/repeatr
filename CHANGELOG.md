@@ -2,6 +2,7 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+- Feature: `repeatr run` now has a `--serialize` (or `-s`) flag that serializes all output and writes it to stdout. 
 - Internal: Added "exercise" script, which takes a final repeatr binary through the full cycle of major commands; useful for full validation on host environments.
 - Bugfix: Respect output filter configuration properly again!  This was broken in v0.12 and v0.13.
 - Bugfix: Bubble up errors from the AUFS placer correctly when mount fails!
