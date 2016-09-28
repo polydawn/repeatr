@@ -81,6 +81,14 @@ func (t *GitTransmat) Materialize(
 			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
 		}
 
+		// Short circut out if we have the whole hash cached.
+		finalPath := t.workArea.getFullchFinalPath(string(dataHash))
+		if _, err := os.Stat(finalPath); err == nil {
+			arena.workDirPath = finalPath
+			arena.hash = dataHash
+			return
+		}
+
 		// Emit git version.
 		// Until we get a reasonably static version linked&contained, this is going to be an ongoing source of potential trouble.
 		gitv := git.Bake("version").CombinedOutput()
