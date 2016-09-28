@@ -1,8 +1,12 @@
 recent /// not yet released
 ---------------------------
 
-- *your changes here!*
-- Feature: `repeatr run` now has a `--serialize` (or `-s`) flag that serializes all output and writes it to stdout. 
+- *your changes here!* 
+- Feature: Massive overhaul to the git transmat, which should massively increase efficiency and successful caching.
+  - Submodules are now cached: if you have a parent project move to a new commit, but keep all the same submodule versions, previously repeatr was oblivious; now, it's a fast 100% cache hit.
+  - Git data objects are now cached: fetches are incremental when using the same remote repos.
+  - Slight change: ".git" files in submodule paths no longer leak into the container's sight.  This shouldn't affect you unless you had output configurations exporting filesystems including such files.
+- Feature: `repeatr run` now has a `--serialize` (or `-s`) flag that serializes all output and writes it to stdout.
 - Internal: Added "exercise" script, which takes a final repeatr binary through the full cycle of major commands; useful for full validation on host environments.
 - Bugfix: Respect output filter configuration properly again!  This was broken in v0.12 and v0.13.
 - Bugfix: Bubble up errors from the AUFS placer correctly when mount fails!
