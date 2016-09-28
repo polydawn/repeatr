@@ -149,6 +149,31 @@ func PlaceFile(destBasePath string, hdr Metadata, body io.Reader) {
 	}
 }
 
+func CopyR(srcBasePath, destBasePath string) error {
+	if err := os.MkdirAll(destBasePath, 0755); err != nil {
+		return err
+	}
+	preVisit := func(filenode *FilewalkNode) error {
+		if filenode.Err != nil {
+			return filenode.Err
+		}
+
+		// scan source attributes
+		hdr, file := ScanFile(srcBasePath, filenode.Path, filenode.Info)
+		// if file handle, close after done
+		if file != nil {
+			defer file.Close()
+		}
+		// place file back again, with attribs.
+		PlaceFile(destBasePath, hdr, file)
+		return nil
+	}
+	postVisit := func(filenode *FilewalkNode) error {
+		return nil
+	}
+	return Walk(srcBasePath, preVisit, postVisit)
+}
+
 // Exposed only because you're probably doing your own trees somehow, and it's
 // necessary to cover your tracks by forcing times on dirs after all children are done.
 // Symmetric params and error handling to `PlaceFile` for your convenience.

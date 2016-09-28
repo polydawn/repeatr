@@ -41,15 +41,12 @@ func DefaultTransmat() rio.Transmat {
 	fileCacher := cachedir.New(filepath.Join(workDir, "filecacher"), map[rio.TransmatKind]rio.TransmatFactory{
 		rio.TransmatKind("file"): file.New,
 	})
-	gitCacher := cachedir.New(filepath.Join(workDir, "dircacher-git"), map[rio.TransmatKind]rio.TransmatFactory{
-		rio.TransmatKind("git"): git.New,
-	})
 	universalTransmat := dispatch.New(map[rio.TransmatKind]rio.Transmat{
 		rio.TransmatKind("dir"):  dirCacher,
 		rio.TransmatKind("tar"):  dirCacher,
 		rio.TransmatKind("s3"):   dirCacher,
 		rio.TransmatKind("file"): fileCacher,
-		rio.TransmatKind("git"):  gitCacher,
+		rio.TransmatKind("git"):  git.New(filepath.Join(workDir, "git")),
 	})
 	return universalTransmat
 }
