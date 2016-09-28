@@ -196,6 +196,12 @@ func (t *GitTransmat) Materialize(
 		func() {
 			started := time.Now()
 			for _, subm := range submodules {
+				// Skip if the cache dir already exists.
+				if _, err := os.Stat(t.workArea.getNosubchFinalPath(subm.hash)); err == nil {
+					continue
+				}
+				// Checkout into tmpdir, move it into place when done,
+				//  and remove the tempdir afterwards (if the move failed).
 				pth := t.workArea.makeNosubchTempPath(subm.hash)
 				defer os.RemoveAll(pth)
 				checkout(
