@@ -125,6 +125,11 @@ func (t *GitTransmat) Materialize(
 
 		// Fetch objects.
 		func() {
+			// Skip yank if the gitDir should have the objects already.
+			if hasCommit(string(dataHash), gitDirPath) {
+				return
+			}
+			// Okay, we need more stuff.  Fetch away.
 			started := time.Now()
 			yank(
 				log,
@@ -149,10 +154,15 @@ func (t *GitTransmat) Materialize(
 				if _, err := os.Stat(t.workArea.getNosubchFinalPath(subm.hash)); err == nil {
 					continue
 				}
+				// Skip yank if the gitDir should have the objects already.
+				gitDir := t.workArea.gitDirPath(subm.url)
+				if hasCommit(subm.hash, gitDir) {
+					continue
+				}
 				// Okay, we need more stuff.  Fetch away.
 				yank(
 					log.New("submhash", subm.hash),
-					t.workArea.gitDirPath(subm.url),
+					gitDir,
 					subm.url,
 				)
 			}

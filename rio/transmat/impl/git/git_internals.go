@@ -47,6 +47,28 @@ func yank(log log15.Logger, gitDir string, remoteURL string) {
 	)
 }
 
+func hasCommit(commitHash string, gitDir string) bool {
+	git := bakeGitDir(git, gitDir)
+	buf := &bytes.Buffer{}
+	p := git.Bake("rev-list", "--no-walk", commitHash,
+		gosh.Opts{
+			OkExit: gosh.AnyExit,
+			Out:    buf,
+		},
+	).Run()
+	// if nonzero, no such commit.
+	if p.GetExitCode() != 0 {
+		return false
+	}
+	// if zero, but not echoed the same string,
+	//  - was either a ref that was resolved (which shouldn't be used here)
+	//  - or was a tree or some other object hash (not a commit object)
+	if buf.String() != commitHash+"\n" {
+		return false
+	}
+	return true
+}
+
 func checkout(log log15.Logger, destPath string, commitHash string, gitDir string) {
 	// Template out command with the right paths set.
 	git := bakeGitDir(git, gitDir)
