@@ -104,11 +104,11 @@ func RunCommandPattern(output io.Writer, journal io.Writer) cli.Command {
 				err = serializeRunRecord(output, result.UID, result)
 			} else {
 				err = codec.NewEncoder(output, &codec.JsonHandle{Indent: -1}).Encode(result)
+				output.Write([]byte{'\n'})
 			}
 			if err != nil {
 				panic(err)
 			}
-			output.Write([]byte{'\n'})
 			// Exit nonzero with our own "your job did not report success" indicator code, if applicable.
 			if result.Results["$exitcode"].Hash != "0" && !ignoreJobExit {
 				panic(Exit.NewWith("job finished with non-zero exit status", SetExitCode(EXIT_JOB)))
