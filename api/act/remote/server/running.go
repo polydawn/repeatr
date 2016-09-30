@@ -4,6 +4,6 @@ import (
 	"go.polydawn.net/repeatr/api/act"
 )
 
-type FormulaRunnerServer struct {
-	proxy act.FormulaRunner
+type RunObserverServer struct {
+	proxy act.RunObserver
 }

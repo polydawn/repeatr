@@ -2,6 +2,6 @@ package remote
 
 import "io"
 
-type FormulaRunnerClient struct {
+type RunObserverClient struct {
 	remote io.Reader
 }
