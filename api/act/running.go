@@ -27,7 +27,7 @@ type RunObserver interface {
 	*/
 	FollowEvents(
 		which def.RunID,
-		stream chan<- def.Event,
+		stream chan<- *def.Event,
 		startingFrom def.EventSeqID,
 		// type filter?  may not want journal lines, for example.
 	)
