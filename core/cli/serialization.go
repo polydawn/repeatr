@@ -18,7 +18,7 @@ type journalSerializer struct {
 }
 
 func (a *journalSerializer) Write(b []byte) (int, error) {
-	jo := def.SerializedOutput{Journal: string(b), RunID: a.RunID}
+	jo := def.Event{Journal: string(b), RunID: a.RunID}
 	out, err := json.Marshal(jo)
 	if err != nil {
 		panic(err)
@@ -28,7 +28,7 @@ func (a *journalSerializer) Write(b []byte) (int, error) {
 }
 
 func serializeRunRecord(wr io.Writer, runID def.RunID, rr *def.RunRecord) error {
-	err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(def.SerializedOutput{
+	err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(def.Event{
 		RunRecord: rr,
 		RunID:     runID,
 	})
@@ -44,7 +44,7 @@ func logHandler(wr io.Writer) log15.Handler {
 			Ctx:   r.Ctx,
 			Time:  r.Time,
 		}
-		err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(def.SerializedOutput{Log: li})
+		err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(def.Event{Log: li})
 		wr.Write([]byte{'\n'})
 		return err
 	})
