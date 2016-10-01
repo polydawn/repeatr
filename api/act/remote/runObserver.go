@@ -40,6 +40,9 @@ func (roc *RunObserverClient) FollowEvents(
 
 func (roc *RunObserverClient) AwaitRunRecord(def.RunID) *def.RunRecord {
 	return nil // TODO
+	// REVIEW: question whether this should be on this interface at all.
+	// It's something you can generate by watching the stream;
+	// it makes no sense to have every stream implementation watch for it itself.
 }
 
 func (roc *RunObserverClient) readOne() def.Event {
@@ -51,7 +54,7 @@ func (roc *RunObserverClient) readOne() def.Event {
 			Handler: meep.TryHandlerDiscard},
 		{CatchAny: true,
 			Handler: func(error) {
-				panic(&act.ErrRemotePanic{Dump: "todo"})
+				panic(meep.Meep(&act.ErrRemotePanic{Dump: "todo"}))
 			}},
 	}.MustHandle(err)
 

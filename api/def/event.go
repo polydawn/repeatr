@@ -30,10 +30,10 @@ type EventSeqID int
 	Type translating log15 events for serialization in `Event`s.
 */
 type LogItem struct {
+	Time  time.Time `json:"t"`
 	Level int       `json:"lvl"`
 	Msg   string    `json:"msg"`
 	Ctx   ctxPairs  `json:"ctx"`
-	Time  time.Time `json:"t"`
 }
 
 type ctxPairs []interface{}
