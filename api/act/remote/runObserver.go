@@ -55,7 +55,8 @@ func (roc *RunObserverClient) readOne() (evt def.Event, eof bool) {
 		{CatchAny: true,
 			Handler: func(error) {
 				// Read out the rest.
-				io.Copy(&roc.replay, roc.Remote)
+				// Up until some fairly high limit,anyway.
+				io.CopyN(&roc.replay, roc.Remote, 1024*1024)
 				// Trim.
 				// This is a lossy conversion, but we're already
 				// subscribing to a belief that this is gonna be a
