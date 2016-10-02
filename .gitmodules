@@ -76,3 +76,6 @@
 [submodule ".gopath/src/github.com/vaughan0/go-ini"]
 	path = .gopath/src/github.com/vaughan0/go-ini
 	url = https://github.com/vaughan0/go-ini.git
+[submodule ".gopath/src/go.polydawn.net/meep"]
+	path = .gopath/src/go.polydawn.net/meep
+	url = https://github.com/polydawn/meep.git
