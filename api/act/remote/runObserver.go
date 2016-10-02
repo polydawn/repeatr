@@ -1,7 +1,9 @@
 package remote
 
 import (
+	"bytes"
 	"io"
+	"strings"
 
 	"github.com/ugorji/go/codec"
 	"go.polydawn.net/meep"
@@ -19,6 +21,9 @@ var _ act.RunObserver = &RunObserverClient{}
 type RunObserverClient struct {
 	Remote io.Reader
 	Codec  codec.Handle
+
+	// Keep the last partial message decode here, for dumping in error cases.
+	replay bytes.Buffer
 }
 
 func (roc *RunObserverClient) FollowEvents(
@@ -39,7 +44,9 @@ func (roc *RunObserverClient) FollowEvents(
 }
 
 func (roc *RunObserverClient) readOne() (evt def.Event, eof bool) {
-	err := codec.NewDecoder(roc.Remote, roc.Codec).Decode(&evt)
+	roc.replay.Reset()
+	r := io.TeeReader(roc.Remote, &roc.replay)
+	err := codec.NewDecoder(r, roc.Codec).Decode(&evt)
 	meep.TryPlan{
 		{ByVal: io.EOF,
 			Handler: func(error) {
@@ -47,7 +54,14 @@ func (roc *RunObserverClient) readOne() (evt def.Event, eof bool) {
 			}},
 		{CatchAny: true,
 			Handler: func(error) {
-				panic(meep.Meep(&act.ErrRemotePanic{Dump: "todo"}))
+				// Read out the rest.
+				io.Copy(&roc.replay, roc.Remote)
+				// Trim.
+				// This is a lossy conversion, but we're already
+				// subscribing to a belief that this is gonna be a
+				// human-readable string, so cleanup is fair game.
+				dump := strings.TrimSpace(roc.replay.String())
+				panic(meep.Meep(&act.ErrRemotePanic{Dump: dump}))
 			}},
 	}.MustHandle(err)
 	return

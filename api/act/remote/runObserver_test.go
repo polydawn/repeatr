@@ -72,9 +72,16 @@ func Test(t *testing.T) {
 				err := meep.RecoverPanics(func() {
 					client.FollowEvents("aa", ch, 0)
 				})
+				So(len(ch), ShouldEqual, 1)
 				So((<-ch).Seq, ShouldEqual, 1)
 				So(err, ShouldNotBeNil)
 				So(err, ShouldHaveSameTypeAs, &act.ErrRemotePanic{})
+
+				Convey("The panic should have the remaining trash bytes attached", func() {
+					So(err.(*act.ErrRemotePanic).Dump, ShouldEqual,
+						"panic: of some kind!",
+					)
+				})
 			})
 		})
 
