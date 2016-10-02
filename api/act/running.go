@@ -22,7 +22,7 @@ type RunObserver interface {
 
 		May panic with:
 
-		  - `*act.ErrNotMyProblem` if this observer doesn't have that RunID.
+		  - `*act.ErrRunIDNotFound` if this observer doesn't have that RunID.
 		  - `*act.ErrRemotePanic` in the case of invalid values in the stream.
 	*/
 	FollowEvents(
@@ -43,7 +43,7 @@ type ErrRemotePanic struct {
 	Dump string
 }
 
-type ErrNotMyProblem struct {
+type ErrRunIDNotFound struct {
 	meep.TraitAutodescribing
 	RunID def.RunID
 }
