@@ -37,9 +37,18 @@ func Test(t *testing.T) {
 			}()
 
 			Convey("individual steps should work", func() {
-				So(client.readOne().Seq, ShouldEqual, 1)
-				So(client.readOne().Seq, ShouldEqual, 2)
-				So(client.readOne().Seq, ShouldEqual, 0)
+				evt, eof := client.readOne()
+				So(evt.Seq, ShouldEqual, 1)
+				So(eof, ShouldBeFalse)
+
+				evt, eof = client.readOne()
+				So(evt.Seq, ShouldEqual, 2)
+				So(eof, ShouldBeFalse)
+
+				evt, eof = client.readOne()
+				So(evt.Seq, ShouldEqual, 0)
+				So(eof, ShouldBeTrue)
+
 			})
 
 			Convey("FollowEvents should yield those events", func() {

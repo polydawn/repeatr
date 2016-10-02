@@ -30,8 +30,8 @@ func (roc *RunObserverClient) FollowEvents(
 	// TODO we're totally disregarding `startingFrom` right now.
 
 	for {
-		evt := roc.readOne()
-		if evt == (def.Event{}) {
+		evt, eof := roc.readOne()
+		if eof {
 			break
 		}
 		stream <- &evt
@@ -45,18 +45,17 @@ func (roc *RunObserverClient) AwaitRunRecord(def.RunID) *def.RunRecord {
 	// it makes no sense to have every stream implementation watch for it itself.
 }
 
-func (roc *RunObserverClient) readOne() def.Event {
-	out := def.Event{}
-
-	err := codec.NewDecoder(roc.Remote, roc.Codec).Decode(&out)
+func (roc *RunObserverClient) readOne() (evt def.Event, eof bool) {
+	err := codec.NewDecoder(roc.Remote, roc.Codec).Decode(&evt)
 	meep.TryPlan{
 		{ByVal: io.EOF,
-			Handler: meep.TryHandlerDiscard},
+			Handler: func(error) {
+				eof = true
+			}},
 		{CatchAny: true,
 			Handler: func(error) {
 				panic(meep.Meep(&act.ErrRemotePanic{Dump: "todo"}))
 			}},
 	}.MustHandle(err)
-
-	return out
+	return
 }
