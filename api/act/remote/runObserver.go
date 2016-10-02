@@ -38,13 +38,6 @@ func (roc *RunObserverClient) FollowEvents(
 	}
 }
 
-func (roc *RunObserverClient) AwaitRunRecord(def.RunID) *def.RunRecord {
-	return nil // TODO
-	// REVIEW: question whether this should be on this interface at all.
-	// It's something you can generate by watching the stream;
-	// it makes no sense to have every stream implementation watch for it itself.
-}
-
 func (roc *RunObserverClient) readOne() (evt def.Event, eof bool) {
 	err := codec.NewDecoder(roc.Remote, roc.Codec).Decode(&evt)
 	meep.TryPlan{

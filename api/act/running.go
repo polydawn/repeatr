@@ -31,11 +31,6 @@ type RunObserver interface {
 		startingFrom def.EventSeqID,
 		// type filter?  may not want journal lines, for example.
 	)
-
-	/*
-		Waits for the run to finish completely, and returns the RunRecord.
-	*/
-	AwaitRunRecord(def.RunID) *def.RunRecord
 }
 
 type ErrRemotePanic struct {
