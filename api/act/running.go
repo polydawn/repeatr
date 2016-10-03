@@ -35,6 +35,7 @@ type RunObserver interface {
 
 type ErrRemotePanic struct {
 	meep.TraitAutodescribing
+	meep.TraitCausable
 	Dump string
 }
 

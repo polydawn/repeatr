@@ -53,7 +53,7 @@ func (roc *RunObserverClient) readOne() (evt def.Event, eof bool) {
 				eof = true
 			}},
 		{CatchAny: true,
-			Handler: func(error) {
+			Handler: func(e error) {
 				// Read out the rest.
 				// Up until some fairly high limit,anyway.
 				io.CopyN(&roc.replay, roc.Remote, 1024*1024)
@@ -62,7 +62,10 @@ func (roc *RunObserverClient) readOne() (evt def.Event, eof bool) {
 				// subscribing to a belief that this is gonna be a
 				// human-readable string, so cleanup is fair game.
 				dump := strings.TrimSpace(roc.replay.String())
-				panic(meep.Meep(&act.ErrRemotePanic{Dump: dump}))
+				panic(meep.Meep(
+					&act.ErrRemotePanic{Dump: dump},
+					meep.Cause(e),
+				))
 			}},
 	}.MustHandle(err)
 	return
