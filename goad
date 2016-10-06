@@ -157,6 +157,7 @@ else
 		validators=()
 		validators+=("./meta/validators/validate-dco")
 		validators+=("./meta/validators/validate-gofmt")
+		validators+=("./meta/validators/validate-import-trees")
 		invalid=""
 		for validator in ${validators[@]}; do
 			echo -e "\E[1;34m==== checking $validator ... ====\E[0;m"

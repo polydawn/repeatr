@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+
+function listDepsR {(
+	set -euo pipefail
+	package="$1"
+	go list -f '{{join .Deps "\n"}}' "$1" | \
+	xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}'
+
+)}
+
+## The def package isn't allowed to import *anything*, with the exception
+## of serializer library stuff.
+diff \
+	<(listDepsR ./api/def/...) \
+	<(cat <<-EOF
+		github.com/ugorji/go/codec
+	EOF)
+
+## The act packages are allowed to import themselves,
+## and all of def, and meep because they have standardized errors.
+diff \
+	<(listDepsR ./api/act/...) \
+	<(cat <<-EOF
+		github.com/ugorji/go/codec
+		go.polydawn.net/meep
+		go.polydawn.net/repeatr/api/def
+		go.polydawn.net/repeatr/api/act
+	EOF)
