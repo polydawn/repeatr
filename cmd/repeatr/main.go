@@ -12,6 +12,7 @@ import (
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
 	"go.polydawn.net/repeatr/cmd/repeatr/cfg"
 	"go.polydawn.net/repeatr/cmd/repeatr/examine"
+	"go.polydawn.net/repeatr/cmd/repeatr/scan"
 	rcli "go.polydawn.net/repeatr/core/cli"
 )
 
@@ -43,7 +44,30 @@ func Main(
 			rcli.RunCommandPattern(stdout, stderr),
 			rcli.TwerkCommandPattern(stdin, stdout, stderr),
 			rcli.UnpackCommandPattern(stderr),
-			rcli.ScanCommandPattern(stdout, stderr),
+			{
+				Name:  "scan",
+				Usage: "Scan a local filesystem, optionally packing the data into a warehouse",
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "place",
+						Value: ".",
+						Usage: "Optional.  The local filesystem path to scan.  Defaults to your current directory.",
+					},
+					cli.StringFlag{
+						Name:  "kind",
+						Usage: "What kind of data storage format to work with.",
+					},
+					cli.StringFlag{
+						Name:  "where",
+						Usage: "Optional.  A URL giving coordinates to a warehouse where repeatr should store the scanned data.",
+					},
+					cli.StringSliceFlag{
+						Name:  "filter",
+						Usage: "Optional.  Filters to apply when scanning.  If not provided, reasonable defaults (flattening uid, gid, and mtime) will be used.",
+					},
+				},
+				Action: scanCmd.Scan(stdout, stderr),
+			},
 			{
 				Name:  "examine",
 				Usage: "examine a ware and the metadata of its contents, or a filesystem",
