@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
 )
 
 func callMain(args []string, stdin io.Reader) (string, string, int) {
@@ -29,7 +31,7 @@ func TestCLI(t *testing.T) {
 				So(stdout, ShouldEqual, "")
 			})
 			Convey("We expect an exit code = 0", func() {
-				So(code, ShouldEqual, EXIT_SUCCESS)
+				So(code, ShouldEqual, cmdbhv.EXIT_SUCCESS)
 			})
 		})
 		Convey("Given an invalid subcommand", func() {
@@ -41,7 +43,7 @@ func TestCLI(t *testing.T) {
 				So(stdout, ShouldEqual, "")
 			})
 			Convey("We expect an exit code = 1", func() {
-				So(code, ShouldEqual, EXIT_BADARGS)
+				So(code, ShouldEqual, cmdbhv.EXIT_BADARGS)
 			})
 		})
 	})

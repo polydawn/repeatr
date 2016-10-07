@@ -4,25 +4,19 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/codegangsta/cli"
 
+	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
 	"go.polydawn.net/repeatr/cmd/repeatr/cfg"
+	"go.polydawn.net/repeatr/cmd/repeatr/examine"
 	rcli "go.polydawn.net/repeatr/core/cli"
 )
 
 func main() {
 	os.Exit(Main(os.Args, os.Stdin, os.Stdout, os.Stderr))
 }
-
-const (
-	EXIT_SUCCESS      = 0
-	EXIT_BADARGS      = 1
-	EXIT_UNKNOWNPANIC = 2  // same code as golang uses when the process dies naturally on an unhandled panic.
-	EXIT_JOB          = 10 // used to indicate a job reported a nonzero exit code (from cli commands that execute a single job).
-	EXIT_USER         = 3  // grab bag for general user input errors (try to make a more specific code if possible/useful)
-)
-
 func Main(
 	args []string,
 	stdin io.Reader,
@@ -30,7 +24,7 @@ func Main(
 	stderr io.Writer,
 ) (exitcode int) {
 	subcommandHelpThunk := func(ctx *cli.Context) error {
-		exitcode = EXIT_BADARGS
+		exitcode = cmdbhv.EXIT_BADARGS
 		if ctx.Args().Present() {
 			cli.ShowCommandHelp(ctx, ctx.Args().First())
 		} else {
@@ -49,7 +43,43 @@ func Main(
 			rcli.TwerkCommandPattern(stdin, stdout, stderr),
 			rcli.UnpackCommandPattern(stderr),
 			rcli.ScanCommandPattern(stdout, stderr),
-			rcli.ExploreCommandPattern(stdout, stderr),
+			{
+				Name:  "examine",
+				Usage: "examine a ware and the metadata of its contents, or a filesystem",
+				Description: strings.Join([]string{
+					"`repeatr examine` produces a human-readable manifest of every file in the named item",
+					"(either wares or local filesystems may be examined), their properties, and their hashes.",
+					"\n\n  ",
+					"Output is structed as tab-delimited values -- you may feed it to an external `diff` program",
+					"to compare one item with another; or, for easier reading, try piping it to `column -t`",
+				}, " "),
+				Subcommands: []cli.Command{
+					{
+						Name:  "ware",
+						Usage: "examine a ware from a warehouse",
+						Flags: []cli.Flag{
+							cli.StringFlag{
+								Name:  "kind",
+								Usage: "What kind of data storage format to work with.",
+							},
+							cli.StringFlag{
+								Name:  "hash",
+								Usage: "The ID of the object to examine.",
+							},
+							cli.StringFlag{
+								Name:  "where",
+								Usage: "A URL giving coordinates to a warehouse where repeatr should find the object to examine.",
+							},
+						},
+						Action: examineCmd.ExamineWare(stdin, stdout, stderr),
+					},
+					{
+						Name:   "file",
+						Usage:  "examine a local filesystem",
+						Action: examineCmd.ExamineFile(stdin, stdout, stderr),
+					},
+				},
+			},
 			{
 				Name:   "cfg",
 				Usage:  "Manipulate config and formulas programmatically (parse, validate, etc).",
@@ -69,7 +99,7 @@ func Main(
 			},
 		},
 		CommandNotFound: func(ctx *cli.Context, command string) {
-			exitcode = EXIT_BADARGS
+			exitcode = cmdbhv.EXIT_BADARGS
 			fmt.Fprintf(stderr, "Incorrect usage: '%s' is not a %s subcommand\n", command, ctx.App.Name)
 		},
 		Action: func(ctx *cli.Context) error {
@@ -89,7 +119,7 @@ func Main(
 		fmt.Fprintf(os.Stdout, "build date %v\n", rcli.BUILDDATE)
 	}
 	if err := app.Run(args); err != nil {
-		exitcode = EXIT_BADARGS
+		exitcode = cmdbhv.EXIT_BADARGS
 		fmt.Fprintf(stderr, "Incorrect usage: %s", err)
 	}
 	return
