@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
+	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
 	"go.polydawn.net/repeatr/cmd/repeatr/cfg"
@@ -118,9 +119,22 @@ func Main(
 		fmt.Fprintf(os.Stdout, "git commit %v\n", rcli.GITCOMMIT)
 		fmt.Fprintf(os.Stdout, "build date %v\n", rcli.BUILDDATE)
 	}
-	if err := app.Run(args); err != nil {
-		exitcode = cmdbhv.EXIT_BADARGS
-		fmt.Fprintf(stderr, "Incorrect usage: %s", err)
-	}
+	meep.Try(func() {
+		if err := app.Run(args); err != nil {
+			exitcode = cmdbhv.EXIT_BADARGS
+			fmt.Fprintf(stderr, "Incorrect usage: %s", err)
+		}
+	}, meep.TryPlan{
+		{ByType: &cmdbhv.ErrExit{},
+			Handler: func(e error) {
+				exitcode = e.(*cmdbhv.ErrExit).Code
+				fmt.Fprintf(stderr, "%s\n", e)
+			}},
+		{ByType: &cmdbhv.ErrBadArgs{},
+			Handler: func(e error) {
+				exitcode = cmdbhv.EXIT_BADARGS
+				fmt.Fprintf(stderr, "%s\n", e)
+			}},
+	})
 	return
 }
