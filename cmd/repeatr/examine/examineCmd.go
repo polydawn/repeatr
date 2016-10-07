@@ -15,7 +15,7 @@ import (
 	"go.polydawn.net/repeatr/rio"
 )
 
-func ExamineWare(stdin io.Reader, stdout, stderr io.Writer) cli.ActionFunc {
+func ExamineWare(stdout, stderr io.Writer) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		if ctx.String("kind") == "" {
 			panic(cmdbhv.ErrMissingParameter("kind"))
@@ -54,7 +54,7 @@ func ExamineWare(stdin io.Reader, stdout, stderr io.Writer) cli.ActionFunc {
 	}
 }
 
-func ExamineFile(stdin io.Reader, stdout, stderr io.Writer) cli.ActionFunc {
+func ExamineFile(stdout, stderr io.Writer) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		trailing := ctx.Args()
 		switch len(trailing) {
