@@ -27,15 +27,6 @@ func (a *journalSerializer) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func serializeRunRecord(wr io.Writer, runID def.RunID, rr *def.RunRecord) error {
-	err := codec.NewEncoder(wr, &codec.JsonHandle{}).Encode(def.Event{
-		RunRecord: rr,
-		RunID:     runID,
-	})
-	wr.Write([]byte{'\n'})
-	return err
-}
-
 func logHandler(wr io.Writer) log15.Handler {
 	h := log15.FuncHandler(func(r *log15.Record) error {
 		li := &def.LogItem{

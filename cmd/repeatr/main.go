@@ -9,13 +9,15 @@ import (
 	"github.com/codegangsta/cli"
 	"go.polydawn.net/meep"
 
+	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
 	"go.polydawn.net/repeatr/cmd/repeatr/cfg"
 	"go.polydawn.net/repeatr/cmd/repeatr/examine"
+	"go.polydawn.net/repeatr/cmd/repeatr/run"
 	"go.polydawn.net/repeatr/cmd/repeatr/scan"
+	"go.polydawn.net/repeatr/cmd/repeatr/twerk"
 	"go.polydawn.net/repeatr/cmd/repeatr/unpack"
 	"go.polydawn.net/repeatr/cmd/repeatr/version"
-	rcli "go.polydawn.net/repeatr/core/cli"
 )
 
 func main() {
@@ -43,8 +45,59 @@ func Main(
 		Version:   "v0.13+dev",
 		Writer:    stderr,
 		Commands: []cli.Command{
-			rcli.RunCommandPattern(stdout, stderr),
-			rcli.TwerkCommandPattern(stdin, stdout, stderr),
+			{
+				Name:  "run",
+				Usage: "Run a formula",
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "executor",
+						Value: "runc",
+						Usage: "Which executor to use",
+					},
+					cli.BoolFlag{
+						Name:  "ignore-job-exit",
+						Usage: "If true, repeatr will exit with 0/success even if the job exited nonzero.",
+					},
+					cli.StringSliceFlag{
+						Name:  "patch, p",
+						Usage: "files with additional pieces of formula to apply before launch",
+					},
+					cli.StringSliceFlag{
+						Name:  "env, e",
+						Usage: "apply additional environment vars to formula before launch (overrides 'patch').  Format like '-e KEY=val'",
+					},
+					cli.BoolFlag{
+						Name:  "serialize, s",
+						Usage: "serialize output onto stdout",
+					},
+				},
+				Action: runCmd.Run(stdout, stderr),
+			},
+			{
+				Name:  "twerk",
+				Usage: "Run one-time-use interactive (thus nonrepeatable!) command.  All the defaults are filled in for you.  Great for experimentation.",
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "executor",
+						Value: "runc",
+						Usage: "Which executor to use. Using anything other than runc at this time is not particularly useful or functional.",
+					},
+					cli.StringSliceFlag{
+						Name:  "patch, p",
+						Usage: "files with additional pieces of formula to apply before launch",
+					},
+					cli.StringSliceFlag{
+						Name:  "env, e",
+						Usage: "apply additional environment vars to formula before launch (overrides 'patch').  Format like '-e KEY=val'",
+					},
+					cli.StringFlag{
+						Name:  "policy, P",
+						Value: string(def.PolicyRoutine),
+						Usage: "Which capabilities policy to use",
+					},
+				},
+				Action: twerkCmd.Twerk(stdin, stdout, stderr),
+			},
 			{
 				Name:  "unpack",
 				Usage: "fetch a ware and unpack it to a local filesystem",
