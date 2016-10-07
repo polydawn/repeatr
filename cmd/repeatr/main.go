@@ -7,6 +7,7 @@ import (
 
 	"github.com/codegangsta/cli"
 
+	"go.polydawn.net/repeatr/cmd/repeatr/cfg"
 	rcli "go.polydawn.net/repeatr/core/cli"
 )
 
@@ -28,6 +29,15 @@ func Main(
 	stdout io.Writer,
 	stderr io.Writer,
 ) (exitcode int) {
+	subcommandHelpThunk := func(ctx *cli.Context) error {
+		exitcode = EXIT_BADARGS
+		if ctx.Args().Present() {
+			cli.ShowCommandHelp(ctx, ctx.Args().First())
+		} else {
+			cli.ShowCommandHelp(ctx, "")
+		}
+		return nil
+	}
 	app := &cli.App{
 		Name:      "repeatr",
 		Usage:     "Run it. Run it again.",
@@ -40,7 +50,16 @@ func Main(
 			rcli.UnpackCommandPattern(stderr),
 			rcli.ScanCommandPattern(stdout, stderr),
 			rcli.ExploreCommandPattern(stdout, stderr),
-			rcli.CfgCommandPattern(stdin, stdout, stderr),
+			{
+				Name:   "cfg",
+				Usage:  "Manipulate config and formulas programmatically (parse, validate, etc).",
+				Action: subcommandHelpThunk,
+				Subcommands: []cli.Command{{
+					Name:   "parse",
+					Usage:  "Parse config and re-emit as json; error if any gross syntatic failures.",
+					Action: cfgCmd.Parse(stdin, stdout, stderr),
+				}},
+			},
 			{
 				Name:  "version",
 				Usage: "Shows the version of repeatr",
