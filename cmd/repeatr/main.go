@@ -14,6 +14,7 @@ import (
 	"go.polydawn.net/repeatr/cmd/repeatr/examine"
 	"go.polydawn.net/repeatr/cmd/repeatr/scan"
 	"go.polydawn.net/repeatr/cmd/repeatr/unpack"
+	"go.polydawn.net/repeatr/cmd/repeatr/version"
 	rcli "go.polydawn.net/repeatr/core/cli"
 )
 
@@ -168,8 +169,8 @@ func Main(
 		// Put some more info in our version printer.
 		// Also, version goes to stdout.
 		fmt.Fprintf(os.Stdout, "%v %v\n", ctx.App.Name, ctx.App.Version)
-		fmt.Fprintf(os.Stdout, "git commit %v\n", rcli.GITCOMMIT)
-		fmt.Fprintf(os.Stdout, "build date %v\n", rcli.BUILDDATE)
+		fmt.Fprintf(os.Stdout, "git commit %v\n", version.GitCommit)
+		fmt.Fprintf(os.Stdout, "build date %v\n", version.BuildDate)
 	}
 	meep.Try(func() {
 		if err := app.Run(args); err != nil {
