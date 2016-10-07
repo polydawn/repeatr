@@ -13,6 +13,7 @@ import (
 	"go.polydawn.net/repeatr/cmd/repeatr/cfg"
 	"go.polydawn.net/repeatr/cmd/repeatr/examine"
 	"go.polydawn.net/repeatr/cmd/repeatr/scan"
+	"go.polydawn.net/repeatr/cmd/repeatr/unpack"
 	rcli "go.polydawn.net/repeatr/core/cli"
 )
 
@@ -43,7 +44,34 @@ func Main(
 		Commands: []cli.Command{
 			rcli.RunCommandPattern(stdout, stderr),
 			rcli.TwerkCommandPattern(stdin, stdout, stderr),
-			rcli.UnpackCommandPattern(stderr),
+			{
+				Name:  "unpack",
+				Usage: "fetch a ware and unpack it to a local filesystem",
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "place",
+						Usage: "Optional.  Where to place the filesystem.  Defaults to \"./unpack-[hash]\"",
+					},
+					cli.StringFlag{
+						Name:  "kind",
+						Usage: "What kind of data storage format to work with.",
+					},
+					cli.StringFlag{
+						Name:  "hash",
+						Usage: "The ID of the object to explore.",
+					},
+					cli.StringFlag{
+						Name:  "where",
+						Usage: "A URL giving coordinates to a warehouse where repeatr should find the object to explore.",
+					},
+					cli.BoolFlag{
+						Name: "skip-exists",
+						Usage: "If a file already exists at at '--place=%s', assume it's correct and exit immediately.  If this flag is not provided, the default behavior is to do the whole unpack, rolling over the existing files." +
+							"  BE WARY of using this: it's effectively caching with no cachebusting rule.  Caveat emptor.",
+					},
+				},
+				Action: unpackCmd.Unpack(stderr),
+			},
 			{
 				Name:  "scan",
 				Usage: "Scan a local filesystem, optionally packing the data into a warehouse",
