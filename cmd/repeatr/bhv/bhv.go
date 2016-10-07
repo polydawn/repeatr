@@ -16,7 +16,7 @@ const (
 
 type ErrExit struct {
 	Message string
-	Code int
+	Code    int
 }
 
 func (e ErrExit) Error() string {
