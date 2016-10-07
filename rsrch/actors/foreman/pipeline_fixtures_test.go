@@ -2,8 +2,8 @@ package foreman
 
 import (
 	"go.polydawn.net/repeatr/api/def"
-	"go.polydawn.net/repeatr/core/model/cassandra"
-	"go.polydawn.net/repeatr/core/model/formula"
+	"go.polydawn.net/repeatr/rsrch/model/cassandra"
+	"go.polydawn.net/repeatr/rsrch/model/formula"
 )
 
 /*

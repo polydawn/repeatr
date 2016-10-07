@@ -1,8 +1,8 @@
 package foreman
 
 import (
-	"go.polydawn.net/repeatr/core/model/formula"
 	"go.polydawn.net/repeatr/lib/guid"
+	"go.polydawn.net/repeatr/rsrch/model/formula"
 )
 
 type plan struct {
