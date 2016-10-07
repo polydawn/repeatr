@@ -32,6 +32,7 @@ type RunRecord struct {
 	Results ResultGroup `json:"results"`
 
 	// ... or Error, for major issues during the run.
+	// REIVEW: whether this belongs here; we're not particularly interested keeping these.
 	Failure error `json:"failure,omitempty"`
 }
 
