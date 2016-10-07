@@ -8,11 +8,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
+	"github.com/ugorji/go/codec"
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/core/executor"
 	"go.polydawn.net/repeatr/core/executor/basicjob"
-	"go.polydawn.net/repeatr/core/model/formula"
 	"go.polydawn.net/repeatr/lib/guid"
 )
 
@@ -50,7 +50,7 @@ func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, _ lo
 			// which arguably makes it kind of a dangerously cyclic for some tests.  but there's
 			// not much to be done about that aside from using real executors in your tests then.
 			hasher := sha512.New384()
-			hasher.Write([]byte(formula.Stage2(f).ID()))
+			hasher.Write([]byte(formulaHash(f)))
 
 			// aside: fuck you golang for making me write this goddamned sort AGAIN.
 			// my kingdom for a goddamn sorted map.
@@ -88,4 +88,34 @@ func (e *Executor) Start(f def.Formula, id executor.JobID, stdin io.Reader, _ lo
 	}()
 
 	return job
+}
+
+/*
+	Computes something like the CA hash of the formula.
+	Not exported because format not final, etc.
+*/
+func formulaHash(f def.Formula) string {
+	// San check empty values.  programmer error if set.
+	for _, spec := range f.Outputs {
+		if spec.Hash != "" {
+			panic("stage2 formula with output hash set")
+		}
+	}
+	// Copy and zero other things that we don't want to include in canonical IDs.
+	// This is working around lack of useful ways to pass encoding style hints down
+	//  with out current libraries.
+	f2 := def.Formula(f).Clone()
+	for _, spec := range f2.Inputs {
+		spec.Warehouses = nil
+	}
+	for name, spec := range f2.Outputs {
+		if spec.Conjecture == false {
+			delete(f2.Outputs, name)
+		}
+		spec.Warehouses = nil
+	}
+	// hash the rest, and thar we be
+	hasher := sha512.New384()
+	codec.NewEncoder(hasher, &codec.CborHandle{}).MustEncode(f2)
+	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }

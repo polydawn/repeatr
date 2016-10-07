@@ -6,9 +6,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.polydawn.net/repeatr/api/def"
-	"go.polydawn.net/repeatr/core/model/cassandra/impl/mem"
-	"go.polydawn.net/repeatr/core/model/catalog"
-	"go.polydawn.net/repeatr/core/model/formula"
+	"go.polydawn.net/repeatr/rsrch/model/cassandra/impl/mem"
+	"go.polydawn.net/repeatr/rsrch/model/catalog"
+	"go.polydawn.net/repeatr/rsrch/model/formula"
 )
 
 var (
