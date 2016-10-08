@@ -55,7 +55,9 @@ action:
 			#!/bin/bash
 			export GOROOT=/app/go/go
 			export PATH=\$PATH:/app/go/go/bin
+			>&2 echo building...
 			./goad install
+			>&2 echo build complete!
 	cwd: "/task/repeatr/"
 	env:
 		"GITCOMMIT": "${GITCOMMIT}"
