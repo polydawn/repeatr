@@ -16,7 +16,7 @@ var _ act.RunObserver = &RunObserverClient{}
 
 /*
 	A read-only client that can be wrapped around an event stream pushed
-	by e.g. `repeatr//api/act/remote/server.RunObserverServer`.
+	by e.g. `repeatr//api/act/remote/server.RunObserverPublisher`.
 */
 type RunObserverClient struct {
 	Remote io.Reader

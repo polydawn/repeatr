@@ -7,13 +7,14 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/inconshreveable/log15"
+	"go.polydawn.net/go-sup"
 	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/api/hitch"
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
-	"go.polydawn.net/repeatr/core/actors"
+	"go.polydawn.net/repeatr/core/actors/runner"
+	"go.polydawn.net/repeatr/core/actors/terminal"
 	executordispatch "go.polydawn.net/repeatr/core/executor/dispatch"
 )
 
@@ -86,20 +87,18 @@ func Twerk(stdin io.Reader, stdout, stderr io.Writer) cli.ActionFunc {
 			}})
 		}
 
-		// Set up a logger.
-		log := log15.New()
-		log.SetHandler(log15.StreamHandler(stderr, log15.TerminalFormat()))
+		// Create a local formula runner, and power it with a supervisor.
+		runner := runner.New(runner.Config{
+			Executor: executor,
+			Stdin:    stdin,
+		})
+		go sup.NewTask().Run(runner.Run)
 
-		// Create a local formula runner, and fire.
-		runner := actor.NewFormulaRunner(executor, log)
-		runner.InjectStdin(stdin)
+		// Request run.
 		runID := runner.StartRun(&formula)
 
-		// Stream job output to terminal in real time
-		runner.FollowStreams(runID, stdout, stderr)
-
-		// Wait for results.
-		result := runner.FollowResults(runID)
+		// Park our routine, following events and proxying them to terminal.
+		runRecord := terminal.Consume(runner, runID, stdout, stderr)
 
 		// Raise any errors that got in the way of execution.
 		meep.TryPlan{
@@ -108,9 +107,9 @@ func Twerk(stdin io.Reader, stdout, stderr io.Writer) cli.ActionFunc {
 			// come back to this after more meep integration.
 			{CatchAny: true,
 				Handler: meep.TryHandlerMapto(&cmdbhv.ErrRunFailed{})},
-		}.MustHandle(result.Failure)
+		}.MustHandle(runRecord.Failure)
 
-		exitCode := result.Results["$exitcode"].Hash
+		exitCode := runRecord.Results["$exitcode"].Hash
 		if exitCode != "0" {
 			panic(&cmdbhv.ErrExit{
 				Message: fmt.Sprintf("done; action finished with exit status %s", exitCode),

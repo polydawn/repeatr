@@ -6,7 +6,10 @@ package runner
 
 import (
 	"fmt"
+	"io"
+	"sync"
 
+	"go.polydawn.net/go-sup"
 	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/api/act"
@@ -21,32 +24,91 @@ var (
 )
 
 func New(cfg Config) *Runner {
-	return &Runner{cfg: cfg}
+	return &Runner{
+		cfg: cfg,
+		state: state{
+			rigging: make(chan chan<- *def.Event),
+		},
+	}
 }
 
 type Runner struct {
-	cfg Config
+	cfg   Config
+	mutex sync.Mutex
 	state
 }
 
 type Config struct {
 	Executor executor.Executor
+	Stdin    io.Reader // hack for interactive mode.
 }
 
 type state struct {
-	runID def.RunID // picked when `StartRun` called.
+	runID   def.RunID    // picked when `StartRun` called.
+	frm     *def.Formula // set when `StartRun` called.
+	rigging chan chan<- *def.Event
 }
 
-// TODO both of the following methods are supposed to return immediately.
-// We need another goroutine to be provided for actual power.
+/*
+	Main method for this actor; park a goroutine here to power
+	execution.
+*/
+func (a *Runner) Run(supvr sup.Supervisor) {
+	// Awaiting-launch phase.
+	var stream chan<- *def.Event
+	select {
+	case stream = <-a.state.rigging:
+	case <-supvr.QuitCh():
+		return
+	}
 
-func (r *Runner) StartRun(*def.Formula) def.RunID {
+	// Set up logs, and launch executor.
+	// (Executor doesn't know about go-sup yet; this may look different
+	//  and have more obvious error flow paths when it's updated for that.)
+	logSetup := evtStreamLogHandler{a.runID, stream}
+	job := a.cfg.Executor.Start(
+		*a.frm,
+		executor.JobID(a.runID),
+		a.cfg.Stdin,
+		logSetup.NewLogger(),
+	)
+
+	// Service IO.
+	// (Interruptability is poor around here; should drive supervisors farther.)
+	// (Future work might involve removing the executor's buffer behavior
+	//  entirely, which would also remove these goroutines for re-reading it.)
+	jobOutputReader := job.Outputs().Reader(1, 2)
+	journalWriter := &evtStreamJournalWriter{a.runID, stream}
+	_, err := io.Copy(journalWriter, jobOutputReader)
+	if err != nil {
+		// This error path shouldn't be possible after we de-kink buffers.
+		panic(err)
+	}
+
+	// Process final report.
+	// Push log level events in addition to the runRecord
+	rr := jobToRunRecord(job)
+	stream <- &def.Event{
+		RunID:     a.runID,
+		RunRecord: rr,
+	}
+}
+
+/*
+	Request execution of a formula.
+	Returns immediately with a RunID that will identify this run.
+*/
+func (r *Runner) StartRun(frm *def.Formula) def.RunID {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	if r.runID != "" {
 		panic(meep.Meep(
 			&meep.ErrProgrammer{},
 			meep.Cause(fmt.Errorf("invalid use of Runner; can only start once")),
 		))
 	}
+	// Save formula.
+	r.frm = frm.Clone() // paranoia clone.
 	// Assign an ID.
 	r.runID = def.RunID(guid.New())
 	// Return immediately.  We don't actually start until output is connected.
@@ -79,10 +141,15 @@ func (r *Runner) FollowEvents(
 	stream chan<- *def.Event,
 	_ def.EventSeqID,
 ) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	// Verify arg validity.
 	if which != r.runID {
 		panic(meep.Meep(&act.ErrRunIDNotFound{RunID: which}))
 	}
-	// TODO submit channel into actor control loop
+	// Submit channel into actor control loop.
+	// Should be effectively nonblocking, as long as the actor is started.
+	// TODO explicitly panic about invalid state on reuse (currently hangs).
+	r.rigging <- stream
 	// Return immediately.
 }
