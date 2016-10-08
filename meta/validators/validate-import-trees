@@ -17,8 +17,12 @@ diff \
 		github.com/ugorji/go/codec
 	EOF)
 
-## The act packages are allowed to import themselves,
-## and all of def, and meep because they have standardized errors.
+## The act packages are allowed to import
+##  - themselves;
+##  - all of def;
+##  - meep, because they have standardized errors.
+##  - and go-sup, because we let it start accumulating behaviors.
+##    (this last bit may be questionable, but... flow control.)
 diff \
 	<(listDepsR ./api/act/...) \
 	<(cat <<-EOF
@@ -26,4 +30,7 @@ diff \
 		go.polydawn.net/meep
 		go.polydawn.net/repeatr/api/def
 		go.polydawn.net/repeatr/api/act
+		go.polydawn.net/go-sup
+		go.polydawn.net/go-sup/latch
+		go.polydawn.net/go-sup/sluice
 	EOF)

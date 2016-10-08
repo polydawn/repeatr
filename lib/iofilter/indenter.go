@@ -7,9 +7,15 @@ import (
 )
 
 var (
+	non = []byte{}
 	tab = []byte{'\t'}
 	br  = []byte{'\n'}
 )
+
+// Proxies content by line, calling the proxied writer exactly once per line.
+func LineBufferingWriter(w io.Writer) io.Writer {
+	return LinePrefixingWriter(w, non)
+}
 
 func LineIndentingWriter(w io.Writer) io.Writer {
 	return LinePrefixingWriter(w, tab)

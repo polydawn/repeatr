@@ -73,6 +73,9 @@
 [submodule ".gopath/src/github.com/pkg/profile"]
 	path = .gopath/src/github.com/pkg/profile
 	url = https://github.com/pkg/profile
+[submodule ".gopath/src/go.polydawn.net/go-sup"]
+	path = .gopath/src/go.polydawn.net/go-sup
+	url = https://github.com/polydawn/go-sup
 [submodule ".gopath/src/github.com/vaughan0/go-ini"]
 	path = .gopath/src/github.com/vaughan0/go-ini
 	url = https://github.com/vaughan0/go-ini.git

@@ -7,12 +7,15 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/ugorji/go/codec"
+	"go.polydawn.net/go-sup"
 	"go.polydawn.net/meep"
 
+	"go.polydawn.net/repeatr/api/act/remote/server"
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/api/hitch"
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
-	legacy "go.polydawn.net/repeatr/core/cli"
+	"go.polydawn.net/repeatr/core/actors/runner"
+	"go.polydawn.net/repeatr/core/actors/terminal"
 	"go.polydawn.net/repeatr/core/executor/dispatch"
 )
 
@@ -59,8 +62,37 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 			}})
 		}
 
-		// Invoke!
-		runRecord := legacy.RunFormula(executor, *formula, stdout, stderr, serialize)
+		// Create a local formula runner, and power it with a supervisor.
+		runner := runner.New(runner.Config{
+			Executor: executor,
+		})
+		go sup.NewTask().Run(runner.Run)
+
+		// Request run.
+		runID := runner.StartRun(formula)
+
+		// Park our routine... in one of two radically different ways:
+		//  - either following events and proxying them to terminal,
+		//  - or following events, serializing them, and
+		//    shunting them out API-like!
+		if serialize {
+			// Rig a publisher and set it to fly straight on til sunrise.
+			publisher := &server.RunObserverPublisher{
+				Proxy:           runner,
+				RunID:           runID,
+				Output:          stdout,
+				RecordSeparator: []byte{'\n'},
+				Codec:           &codec.JsonHandle{},
+			}
+			sup.NewTask().Run(publisher.Run)
+			// We always exitcode as success in API mode!
+			//  We don't care whether there was a huge error in the
+			//  `runRecord.Failure` field -- if so, it was reported
+			//  through the serial API stream like everything else.
+			return nil
+		}
+		// Else: Okay, human/terminal mode it is!
+		runRecord := terminal.Consume(runner, runID, stdout, stderr)
 
 		// Raise any errors that got in the way of execution.
 		meep.TryPlan{
@@ -76,20 +108,10 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 		//  We strip some fields that aren't very useful to single-task manual runs.
 		runRecord.HID = ""
 		runRecord.FormulaHID = ""
-		var err error
-		if serialize {
-			err = codec.NewEncoder(stdout, &codec.JsonHandle{}).Encode(def.Event{
-				RunID:     runRecord.UID,
-				RunRecord: runRecord,
-			})
-			stdout.Write([]byte{'\n'})
-		} else {
-			err = codec.NewEncoder(stdout, &codec.JsonHandle{Indent: -1}).Encode(runRecord)
-			stdout.Write([]byte{'\n'})
-		}
-		if err != nil {
+		if err := codec.NewEncoder(stdout, &codec.JsonHandle{Indent: -1}).Encode(runRecord); err != nil {
 			panic(err)
 		}
+		stdout.Write([]byte{'\n'})
 		// Exit nonzero with our own "your job did not report success" indicator code, if applicable.
 		exitCode := runRecord.Results["$exitcode"].Hash
 		if exitCode != "0" && !ignoreJobExit {
