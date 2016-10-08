@@ -5,27 +5,17 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"go.polydawn.net/repeatr/api/act"
 	"go.polydawn.net/repeatr/api/def"
 )
 
-var _ act.RunObserver = &flipper{}
-
 /*
-	Implements act.RunObserver and manufactures the sinks (the logger,
-	journal, etc) to hand to the executor.
+	Implements^W ALMOST implements act.RunObserver
+	and manufactures the sinks (the logger, journal, etc)
+	to hand to the executor.
 */
 type flipper struct {
 	runID  def.RunID
 	stream chan<- *def.Event
-}
-
-func (x *flipper) FollowEvents(
-	which def.RunID,
-	stream chan<- *def.Event,
-	_ def.EventSeqID,
-) {
-
 }
 
 func (x *flipper) GetLogger() log15.Logger {
