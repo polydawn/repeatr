@@ -25,6 +25,10 @@ type RunObserverPublisher struct {
 	//  to do any resume/seek if our io stream fails.
 	Output io.Writer
 
+	// This byte slice will be written to Output after every event, if set.
+	//  (This is useful for inserting "\n" betwen json, for example.)
+	RecordSeparator []byte
+
 	// Set this codec to control how the publisher serializes events.
 	Codec codec.Handle
 
@@ -47,6 +51,7 @@ func (a *RunObserverPublisher) step(supvr sup.Supervisor) (more bool) {
 	select {
 	case evt := <-a.evtStream:
 		a.encoder.Encode(evt)
+		a.Output.Write(a.RecordSeparator)
 		return evt.RunRecord == nil
 	case <-supvr.QuitCh():
 		return false

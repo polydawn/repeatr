@@ -78,10 +78,11 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 		if serialize {
 			// Rig a publisher and set it to fly straight on til sunrise.
 			publisher := &server.RunObserverPublisher{
-				Proxy:  runner,
-				RunID:  runID,
-				Output: stdout,
-				Codec:  &codec.JsonHandle{},
+				Proxy:           runner,
+				RunID:           runID,
+				Output:          stdout,
+				RecordSeparator: []byte{'\n'},
+				Codec:           &codec.JsonHandle{},
 			}
 			sup.NewTask().Run(publisher.Run)
 			// We always exitcode as success in API mode!
