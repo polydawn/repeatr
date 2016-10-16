@@ -61,6 +61,6 @@ func DecodeYaml(input io.Reader, val interface{}) {
 
 	// Actually decode with the smart codecs.
 	if err := codec.NewDecoder(&buf, codecBounceHandler).Decode(&val); err != nil {
-		panic(def.ErrConfig{Msg: fmt.Sprintf("Could not parse formula: %s", err)})
+		panic(def.ErrConfigParsing{Msg: fmt.Sprintf("Could not parse formula: %s", err)})
 	}
 }

@@ -39,7 +39,7 @@ func (wc *WarehouseCoords) CodecDecodeSelf(c *codec.Decoder) {
 			(*wc)[i] = WarehouseCoord(v)
 		}
 	default:
-		panic(ErrConfig{Msg: "silo must be a string or list of strings"})
+		panic(ErrConfigParsing{Msg: "silo must be a string or list of strings"})
 	}
 }
 

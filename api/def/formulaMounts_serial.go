@@ -27,7 +27,7 @@ func (ig *InputGroup) CodecDecodeSelf(c *codec.Decoder) {
 	// Now go back over the struct and fill in MountPath as needed from the map keys.
 	for k, v := range *ig {
 		if v == nil {
-			panic(ErrConfig{Msg: fmt.Sprintf("input %q configuration is empty", k)})
+			panic(ErrConfigParsing{Msg: fmt.Sprintf("input %q configuration is empty", k)})
 		}
 		if v.MountPath == "" {
 			v.MountPath = k
@@ -71,7 +71,7 @@ func (og *OutputGroup) CodecDecodeSelf(c *codec.Decoder) {
 	// Now go back over the struct and fill in MountPath as needed from the map keys.
 	for k, v := range *og {
 		if v == nil {
-			panic(ErrConfig{Msg: fmt.Sprintf("output %q configuration is empty", k)})
+			panic(ErrConfigParsing{Msg: fmt.Sprintf("output %q configuration is empty", k)})
 		}
 		if v.MountPath == "" {
 			v.MountPath = k
@@ -132,7 +132,7 @@ func (f Filters) AsStringSlice() []string {
 	case FilterKeep:
 		strs = append(strs, "uid keep")
 	case FilterHost:
-		panic(ErrConfig{Msg: "host modes not yet supported"})
+		panic(ErrConfigValidation{Msg: "host modes not yet supported"})
 	default:
 		panic(fmt.Errorf("unrecognized filter case"))
 	}
@@ -144,7 +144,7 @@ func (f Filters) AsStringSlice() []string {
 	case FilterKeep:
 		strs = append(strs, "gid keep")
 	case FilterHost:
-		panic(ErrConfig{Msg: "host modes not yet supported"})
+		panic(ErrConfigValidation{Msg: "host modes not yet supported"})
 	default:
 		panic(fmt.Errorf("unrecognized filter case"))
 	}
@@ -156,7 +156,7 @@ func (f Filters) AsStringSlice() []string {
 	case FilterKeep:
 		strs = append(strs, "mtime keep")
 	case FilterHost:
-		panic(ErrConfig{Msg: "host mode doesn't make sense for time"})
+		panic(ErrConfigValidation{Msg: "host mode doesn't make sense for time"})
 	default:
 		panic(fmt.Errorf("unrecognized filter case"))
 	}
@@ -172,7 +172,7 @@ func (f *Filters) FromStringSlice(strs []string) {
 		switch words[0] {
 		case "uid":
 			if len(words) != 2 {
-				panic(ErrConfig{Msg: "uid filter requires one parameter"})
+				panic(ErrConfigValidation{Msg: "uid filter requires one parameter"})
 			}
 			if words[1] == "keep" {
 				f.UidMode = FilterKeep
@@ -180,13 +180,13 @@ func (f *Filters) FromStringSlice(strs []string) {
 			}
 			n, err := strconv.Atoi(words[1])
 			if err != nil || n < 0 {
-				panic(ErrConfig{Msg: "uid filter parameter must be non-negative integer"})
+				panic(ErrConfigValidation{Msg: "uid filter parameter must be non-negative integer"})
 			}
 			f.UidMode = FilterUse
 			f.Uid = n
 		case "gid":
 			if len(words) != 2 {
-				panic(ErrConfig{Msg: "gid filter requires one parameter"})
+				panic(ErrConfigValidation{Msg: "gid filter requires one parameter"})
 			}
 			if words[1] == "keep" {
 				f.GidMode = FilterKeep
@@ -194,7 +194,7 @@ func (f *Filters) FromStringSlice(strs []string) {
 			}
 			n, err := strconv.Atoi(words[1])
 			if err != nil || n < 0 {
-				panic(ErrConfig{Msg: "gid filter parameter must be non-negative integer"})
+				panic(ErrConfigValidation{Msg: "gid filter parameter must be non-negative integer"})
 			}
 			f.GidMode = FilterUse
 			f.Gid = n
@@ -208,7 +208,7 @@ func (f *Filters) FromStringSlice(strs []string) {
 			if len(words) == 2 && words[1][0] == '@' {
 				n, err := strconv.Atoi(words[1][1:])
 				if err != nil {
-					panic(ErrConfig{Msg: "mtime filter parameter starting with '@' should be timestamp integer"})
+					panic(ErrConfigValidation{Msg: "mtime filter parameter starting with '@' should be timestamp integer"})
 				}
 				f.MtimeMode = FilterUse
 				f.Mtime = time.Unix(int64(n), 0).UTC()
@@ -216,16 +216,16 @@ func (f *Filters) FromStringSlice(strs []string) {
 			}
 			// okay, no special rules matched: try to parse full thing as human date string.
 			if len(words) < 2 {
-				panic(ErrConfig{Msg: "mtime filter requires either RFC3339 date or unix timestamp denoted by prefix with '@'"})
+				panic(ErrConfigValidation{Msg: "mtime filter requires either RFC3339 date or unix timestamp denoted by prefix with '@'"})
 			}
 			date, err := time.Parse(time.RFC3339, strings.Join(words[1:], " "))
 			if err != nil {
-				panic(ErrConfig{Msg: "mtime filter requires either RFC3339 date or unix timestamp denoted by prefix with '@'"})
+				panic(ErrConfigValidation{Msg: "mtime filter requires either RFC3339 date or unix timestamp denoted by prefix with '@'"})
 			}
 			f.MtimeMode = FilterUse
 			f.Mtime = date.UTC()
 		default:
-			panic(ErrConfig{Msg: fmt.Sprintf("unknown filter name %q", words[0])})
+			panic(ErrConfigValidation{Msg: fmt.Sprintf("unknown filter name %q", words[0])})
 		}
 	}
 }
