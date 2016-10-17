@@ -2,12 +2,14 @@ package git
 
 import (
 	"bytes"
+	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/polydawn/gosh"
-	"github.com/spacemonkeygo/errors"
+	"go.polydawn.net/meep"
 
+	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/rio"
 )
 
@@ -18,7 +20,8 @@ import (
 	to another git repo.
 */
 type Warehouse struct {
-	url string
+	coord def.WarehouseCoord // user's string retained for messages
+	url   string
 }
 
 /*
@@ -35,8 +38,10 @@ type Warehouse struct {
 	  - Config Error: if the URI is unparsable or has an unsupported scheme.
 */
 func NewWarehouse(coords rio.SiloURI) *Warehouse {
-	wh := &Warehouse{}
-	wh.url = hammerRelativePaths(string(coords))
+	wh := &Warehouse{
+		coord: def.WarehouseCoord(coords),
+		url:   hammerRelativePaths(string(coords)),
+	}
 	return wh
 }
 
@@ -84,7 +89,7 @@ func hammerRelativePaths(coords string) string {
 	// If things start with a "-", just... no.  Git lacks consistent ability
 	//  to handle this unambiguously, so we're not even going to try.
 	if coords[0] == '-' {
-		panic(rio.ConfigError.New("invalid git remote: cannot start with '-'"))
+		panic(&def.ErrConfigValidation{Msg: "invalid git remote: cannot start with '-'"})
 	}
 	// If something looks like a relative path, absolutize it.
 	//  There's a *litany* of issues this works around.
@@ -94,7 +99,10 @@ func hammerRelativePaths(coords string) string {
 	if coords[0] == '.' {
 		abs, err := filepath.Abs(coords)
 		if err != nil {
-			panic(rio.TransmatError.Wrap(err))
+			panic(meep.Meep(
+				&rio.ErrInternal{Msg: "Failed handling local path"},
+				meep.Cause(err),
+			))
 		}
 		return abs
 	}
@@ -110,7 +118,7 @@ func hammerRelativePaths(coords string) string {
 	Returns nil if contactable; if an error, the message will be
 	an end-user-meaningful description of why the warehouse is out of reach.
 */
-func (wh *Warehouse) Ping() *errors.Error {
+func (wh *Warehouse) Ping() error {
 	// Shell out to git and ask it if it thinks there's a repo here.
 	//  `git ls-remote` is our best option here for checking out that location and making sure it's advertising refs,
 	//    while refraining from any alarmingly heavyweight operations or data transfers.
@@ -134,9 +142,16 @@ func (wh *Warehouse) Ping() *errors.Error {
 		// Known values include:
 		//  - "'%s' does not appear to be a git repository"
 		//  - "attempt to fetch/clone from a shallow repository"
-		return rio.WarehouseUnavailableError.New("git remote unavailable: %s", msg).(*errors.Error)
+		panic(&def.ErrWarehouseUnavailable{
+			Msg:    fmt.Sprintf("git remote unavailable: %s", msg),
+			During: "fetch",
+			From:   wh.coord,
+		})
 	default:
 		// We don't recognize this.
-		panic(rio.UnknownError.New("git exit code %d (stderr: %s)", code, errBuf.String()))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "Unknown git ls-remote error"},
+			meep.Cause(fmt.Errorf("git exit code %d (stderr: %s)", code, errBuf.String())),
+		))
 	}
 }

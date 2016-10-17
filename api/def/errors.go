@@ -85,7 +85,7 @@ type ErrWarehouseProblem struct {
 	Msg    string         `json:"msg"`
 	During string         `json:"during"` // 'fetch' or 'save'
 	Ware   Ware           `json:"ware,omitEmpty"`
-	From   WarehouseCoord `json:"from"`
+	From   WarehouseCoord `json:"from,omitEmpty"`
 }
 
 func (e ErrWarehouseProblem) Error() string {
@@ -93,7 +93,11 @@ func (e ErrWarehouseProblem) Error() string {
 	if e.Ware.Hash != "" {
 		regarding = fmt.Sprintf(" of %q", e.Ware.Hash)
 	}
-	return fmt.Sprintf("Warehouse errored during %s%s: %s, from %s", e.During, regarding, e.Msg, e.From)
+	from := ""
+	if e.From != "" {
+		from = " from " + string(e.From)
+	}
+	return fmt.Sprintf("Warehouse errored during %s%s: %s%s", e.During, regarding, e.Msg, from)
 }
 
 /*
