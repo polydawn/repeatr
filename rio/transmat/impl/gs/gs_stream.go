@@ -8,8 +8,6 @@ import (
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/storage/v1"
-
-	"go.polydawn.net/repeatr/rio"
 )
 
 func httpClient(auth *oauth2.Token) *http.Client {
@@ -20,50 +18,46 @@ func httpClient(auth *oauth2.Token) *http.Client {
 	}
 }
 
-func makeGsObjectService(token *oauth2.Token) *storage.ObjectsService {
+func makeGsObjectService(token *oauth2.Token) (*storage.ObjectsService, error) {
 	httpClient := httpClient(token)
 	service, err := storage.New(httpClient)
 	if err != nil {
-		panic(GsCredentialsInvalidError.Wrap(err))
+		return nil, err
 	}
 	objService := storage.NewObjectsService(service)
-	return objService
+	return objService, nil
 }
 
-func makeGsReader(bucketName string, path string, token *oauth2.Token) io.ReadCloser {
-	service := makeGsObjectService(token)
-	response, err := service.Get(bucketName, path).Download()
-	if err != nil {
-		panic(rio.WarehouseIOError.Wrap(err))
-	}
-	return response.Body
-}
-
-func makeGsWriter(bucketName string, path string, token *oauth2.Token) (io.WriteCloser, <-chan error) {
+func makeGsWriter(bucketName string, path string, token *oauth2.Token) (io.WriteCloser, <-chan error, error) {
 	reader, writer := io.Pipe()
-	service := makeGsObjectService(token)
+	service, err := makeGsObjectService(token)
+	if err != nil {
+		return nil, nil, err
+	}
 	object := &storage.Object{Name: path}
 	errCh := make(chan error, 1)
 	go func() {
 		// TODO: multipart or resumable upload using `ResumableMedia`
 		_, err := service.Insert(bucketName, object).Media(reader).Do()
 		if err != nil {
-			errCh <- rio.WarehouseIOError.Wrap(err)
+			errCh <- err
 		}
 		close(errCh)
 	}()
-	return writer, errCh
+	return writer, errCh, nil
 }
 
-func reloc(bucketName, oldPath, newPath string, token *oauth2.Token) {
-	var response *storage.RewriteResponse
-	var err error
-	service := makeGsObjectService(token)
+func reloc(bucketName, oldPath, newPath string, token *oauth2.Token) error {
+	service, err := makeGsObjectService(token)
+	if err != nil {
+		return err
+	}
 	obj := &storage.Object{}
 	rewrite := service.Rewrite(bucketName, oldPath, bucketName, newPath, obj)
 	// Arbitrary limits, backoff required due to eventual consistency
 	limit := 100
 	backoff := 10 * time.Nanosecond
+	var response *storage.RewriteResponse
 	for i := 0; i < limit; i++ {
 		response, err = rewrite.Do()
 		if response.ServerResponse.HTTPStatusCode == http.StatusNotFound && backoff < time.Minute {
@@ -72,7 +66,7 @@ func reloc(bucketName, oldPath, newPath string, token *oauth2.Token) {
 			continue
 		}
 		if err != nil {
-			panic(rio.WarehouseIOError.Wrap(err))
+			return err
 		}
 		if response.Done {
 			break
@@ -80,10 +74,11 @@ func reloc(bucketName, oldPath, newPath string, token *oauth2.Token) {
 		rewrite = rewrite.RewriteToken(response.RewriteToken)
 	}
 	if !response.Done {
-		panic(rio.WarehouseIOError.Wrap(fmt.Errorf("RewriteGsDidNotComplete")))
+		return fmt.Errorf("RewriteGsDidNotComplete")
 	}
 	err = service.Delete(bucketName, oldPath).Do()
 	if err != nil {
-		panic(rio.WarehouseIOError.Wrap(err))
+		return err
 	}
+	return nil
 }

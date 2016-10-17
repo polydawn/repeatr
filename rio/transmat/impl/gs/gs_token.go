@@ -8,6 +8,8 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/storage/v1"
+
+	"go.polydawn.net/repeatr/api/def"
 )
 
 /*
@@ -34,6 +36,16 @@ func GetAccessToken() (*oauth2.Token, error) {
 		token, err = createAccessTokenFromSecrets(secrets, []string{storage.DevstorageReadWriteScope})
 	}
 	return token, err
+}
+
+func mustLoadToken() *oauth2.Token {
+	token, err := GetAccessToken()
+	if err == nil {
+		return token
+	}
+	panic(&def.ErrConfigValidation{
+		Msg: "gs credentials missing.  set GS_ACCESS_TOKEN or GS_SERVICE_ACCOUNT_FILE.",
+	})
 }
 
 func getAccessTokenFromEnv() *oauth2.Token {
