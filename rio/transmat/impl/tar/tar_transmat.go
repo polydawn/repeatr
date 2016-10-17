@@ -80,7 +80,7 @@ func (t *TarTransmat) Materialize(
 			}, meep.TryPlan{
 				{ByType: &def.ErrWarehouseUnavailable{}, Handler: func(_ error) {
 					// fine, we'll just try the next one
-					log.Info("Warehouse does not exist, skipping", "warehouse", uri)
+					log.Info("Warehouse not available, skipping", "warehouse", uri)
 				}},
 				{ByType: &def.ErrWareDNE{}, Handler: func(_ error) {
 					// fine, we'll just try the next one
