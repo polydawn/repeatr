@@ -1,12 +1,14 @@
 package dir
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"syscall"
 
+	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/lib/guid"
 	"go.polydawn.net/repeatr/rio"
 )
@@ -20,6 +22,7 @@ import (
 	There are no daemons involved.
 */
 type Warehouse struct {
+	coord     def.WarehouseCoord // user's string retained for messages
 	localPath string
 	ctntAddr  bool
 }
@@ -28,13 +31,18 @@ type Warehouse struct {
 	Initialize a warehouse controller.
 
 	May panic with:
-	  - Config Error: if the URI is unparsable or has an unsupported scheme.
+
+	  - `*def.ErrConfigValidation` -- if the URI is unparsable or has an unsupported scheme.
 */
 func NewWarehouse(coords rio.SiloURI) *Warehouse {
-	wh := &Warehouse{}
+	wh := &Warehouse{
+		coord: def.WarehouseCoord(coords),
+	}
 	u, err := url.Parse(string(coords))
 	if err != nil {
-		panic(rio.ConfigError.New("failed to parse URI: %s", err))
+		panic(&def.ErrConfigValidation{
+			Msg: fmt.Sprintf("failed to parse URI: %s", err),
+		})
 	}
 	switch u.Scheme {
 	case "file+ca":
@@ -43,9 +51,13 @@ func NewWarehouse(coords rio.SiloURI) *Warehouse {
 	case "file":
 		wh.localPath = filepath.Join(u.Host, u.Path) // file uris don't have hosts
 	case "":
-		panic(rio.ConfigError.New("missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\""))
+		panic(&def.ErrConfigValidation{
+			Msg: "missing scheme in warehouse URI; need a prefix, e.g. \"file://\" or \"http://\"",
+		})
 	default:
-		panic(rio.ConfigError.New("unsupported scheme in warehouse URI: %q", u.Scheme))
+		panic(&def.ErrConfigValidation{
+			Msg: fmt.Sprintf("unsupported scheme in warehouse URI: %q", u.Scheme),
+		})
 	}
 	return wh
 }
@@ -90,7 +102,7 @@ func (wh *Warehouse) openWriter() *writeController {
 	Returns a local file path to a tempdir for writing pre-commit data to.
 
 	May panic with:
-	  - WarehouseConnectionError: if we can't write; since tempdir is
+	  - `*def.ErrWarehouseProblem`: if we can't write; since tempdir is
 	      created using the appropriate atomic mechanisms, we do touch
 	      the disk before returning the path string.
 */
@@ -109,7 +121,11 @@ func (wc *writeController) claimPrecommitPath() string {
 		)
 	}
 	if err != nil {
-		panic(rio.WarehouseIOError.New("failed to reserve temp space in warehouse: %s", err))
+		panic(&def.ErrWarehouseProblem{
+			Msg:    fmt.Sprintf("failed to reserve temp space in warehouse: %s", err),
+			During: "save",
+			From:   wc.warehouse.coord,
+		})
 	}
 	return precommitPath
 }
@@ -146,14 +162,24 @@ func (wc *writeController) commit(saveAs rio.CommitID) {
 			return
 		}
 		// any other errors are quite alarming
-		panic(rio.WarehouseIOError.New("failed to commit %s: %s", saveAs, err))
+		panic(&def.ErrWarehouseProblem{
+			Msg:    err.Error(),
+			During: "save",
+			Ware:   def.Ware{Type: string(Kind), Hash: string(saveAs)},
+			From:   wc.warehouse.coord,
+		})
 	} else {
-		pushedAside := pushAside(destPath)
+		pushedAside := wc.warehouse.pushAside(destPath)
 		err := os.Rename(wc.tmpPath, destPath)
 		if err != nil {
 			// In non-CA mode, this should only happen in case of misconfig or problems from
 			// racey use (in which case as usual, you're already Doing It Wrong and we're just being frank about it).
-			panic(rio.WarehouseIOError.New("failed moving data to committed location: %s", err))
+			panic(&def.ErrWarehouseProblem{
+				Msg:    fmt.Sprintf("failed moving data to committed location: %s", err),
+				During: "save",
+				Ware:   def.Ware{Type: string(Kind), Hash: string(saveAs)},
+				From:   wc.warehouse.coord,
+			})
 		}
 		// Clean up.
 		//  When not using a CA mode, this involves destroying the
@@ -166,7 +192,7 @@ func (wc *writeController) commit(saveAs rio.CommitID) {
 }
 
 // kick the thing to a sibling path of itself.
-func pushAside(obstructionPath string) string {
+func (wh *Warehouse) pushAside(obstructionPath string) string {
 	base := filepath.Base(obstructionPath)
 	dir := filepath.Dir(obstructionPath)
 	var err error
@@ -192,5 +218,9 @@ func pushAside(obstructionPath string) string {
 		// can't be arsed to normalize errors and I'm too mad to do it.
 		// This is the same thing ioutil.TempDir does.  And that makes me sad.
 	}
-	panic(rio.WarehouseIOError.New("failed evicting old data from commit location: %s", err))
+	panic(&def.ErrWarehouseProblem{
+		Msg:    fmt.Sprintf("failed evicting old data from commit location: %s", err),
+		During: "save",
+		From:   wh.coord,
+	})
 }

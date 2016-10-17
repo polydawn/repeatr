@@ -8,14 +8,14 @@ import (
 	"syscall"
 
 	"github.com/inconshreveable/log15"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
+	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/lib/flak"
 	"go.polydawn.net/repeatr/lib/fs"
 	"go.polydawn.net/repeatr/rio"
 	"go.polydawn.net/repeatr/rio/filter"
+	"go.polydawn.net/repeatr/rio/transmat/mixins"
 )
 
 const Kind = rio.TransmatKind("file")
@@ -31,7 +31,10 @@ var _ rio.TransmatFactory = New
 func New(workPath string) rio.Transmat {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
-		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "Unable to set up workspace"},
+			meep.Cause(err),
+		))
 	}
 	return &Transmat{workPath}
 }
@@ -49,11 +52,9 @@ func (t *Transmat) Materialize(
 	options ...rio.MaterializerConfigurer,
 ) rio.Arena {
 	var arena fileArena
-	try.Do(func() {
-		if kind != Kind {
-			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
-		}
-
+	meep.Try(func() {
+		// Basic validation and config
+		mixins.MustBeType(Kind, kind)
 		// Before we eval all config, prepend some default filter setup.
 		//  We need these defaults here because "keep" isn't a
 		//   semantically valid concept (there's no metadata to keep!).
@@ -62,15 +63,17 @@ func (t *Transmat) Materialize(
 			rio.UseFilter(filter.UidFilter{def.FilterDefaultUid}),
 			rio.UseFilter(filter.GidFilter{def.FilterDefaultGid}),
 		}, options...)
-
 		// Compile config
 		config := rio.EvaluateConfig(options...)
 
 		// Ping silos
 		if len(siloURIs) < 1 {
-			panic(rio.ConfigError.New("Materialization requires at least one data source!"))
 			// Note that it's possible a caching layer will satisfy things even without data sources...
 			//  but if that was going to happen, it already would have by now.
+			panic(&def.ErrWarehouseUnavailable{
+				Msg:    "No warehouse coords configured!",
+				During: "fetch",
+			})
 		}
 		// Our policy is to take the first path that exists.
 		//  This lets you specify a series of potential locations,
@@ -78,7 +81,7 @@ func (t *Transmat) Materialize(
 		var warehouse *Warehouse
 		for _, uri := range siloURIs {
 			wh := NewWarehouse(uri)
-			if err := wh.Ping(); err == nil {
+			if err := wh.Ping(false); err == nil {
 				warehouse = wh
 				break
 			} else {
@@ -89,13 +92,19 @@ func (t *Transmat) Materialize(
 			}
 		}
 		if warehouse == nil {
-			panic(rio.WarehouseUnavailableError.New("No warehouses were available!"))
+			panic(&def.ErrWarehouseUnavailable{
+				Msg:    "No warehouses responded!",
+				During: "fetch",
+			})
 		}
 
 		// Create staging arena to produce data into.
 		f, err := ioutil.TempFile(t.workPath, "")
 		if err != nil {
-			panic(rio.TransmatError.New("Unable to create arena: %s", err))
+			panic(meep.Meep(
+				&rio.ErrInternal{Msg: "Unable to create arena"},
+				meep.Cause(err),
+			))
 		}
 		f.Close() // none of the rest of our apis expect the file to already be open, so.
 		// Dance filenames.  (fs.PlaceFile uses O_EXCL.  maybe we should patch it with more params.)
@@ -122,24 +131,23 @@ func (t *Transmat) Materialize(
 
 		// verify total integrity
 		expectedTreeHash := string(dataHash)
+		// If we got what we asked for: excellent, return.
 		if actualTreeHash == expectedTreeHash {
-			// excellent, got what we asked for.
 			arena.hash = dataHash
-		} else {
-			// this may or may not be grounds for panic, depending on configuration.
-			if config.AcceptHashMismatch {
-				// if we're tolerating mismatches, report the actual hash through different mechanisms.
-				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
-				arena.hash = rio.CommitID(actualTreeHash)
-			} else {
-				panic(rio.NewHashMismatchError(string(dataHash), actualTreeHash))
-			}
+			return
 		}
-	}).Catch(rio.Error, func(err *errors.Error) {
-		panic(err)
-	}).CatchAll(func(err error) {
-		panic(rio.UnknownError.Wrap(err))
-	}).Done()
+		// If not... this may or may not be grounds for panic, depending on configuration.
+		if config.AcceptHashMismatch {
+			// if we're tolerating mismatches, report the actual hash through different mechanisms.
+			// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
+			arena.hash = rio.CommitID(actualTreeHash)
+		}
+		// If tolerance mode not configured, this is a panic.
+		panic(&def.ErrHashMismatch{
+			Expected: def.Ware{Type: string(Kind), Hash: string(dataHash)},
+			Actual:   def.Ware{Type: string(Kind), Hash: string(actualTreeHash)},
+		})
+	}, rio.TryPlanWhitelist)
 	return arena
 }
 
@@ -151,7 +159,9 @@ func (t Transmat) Scan(
 	options ...rio.MaterializerConfigurer,
 ) rio.CommitID {
 	// NYI because I'm blowing a fuse on "this needs refactor" for the IO components of all the transmats.
-	panic(errors.NotImplementedError.New("saving not yet implemented for this transmat"))
+	panic(&def.ErrConfigValidation{
+		Msg: "saving with the file transmat is not supported",
+	})
 }
 
 type fileArena struct {

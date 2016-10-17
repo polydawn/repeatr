@@ -16,11 +16,11 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/spacemonkeygo/errors"
 
+	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/lib/flak"
 	"go.polydawn.net/repeatr/lib/fs"
 	"go.polydawn.net/repeatr/lib/fshash"
 	"go.polydawn.net/repeatr/lib/treewalk"
-	"go.polydawn.net/repeatr/rio"
 	"go.polydawn.net/repeatr/rio/filter"
 )
 
@@ -89,7 +89,11 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 			break // end of archive
 		}
 		if err != nil {
-			panic(rio.WarehouseCorruptionError.New("corrupt tar: %s", err))
+			panic(&def.ErrWareCorrupt{
+				Msg: fmt.Sprintf("corrupt tar: %s", err),
+				// Ware // TODO we should be able to get, this abstraction is just silly
+				// From // TODO plz
+			})
 		}
 		hdr := fs.Metadata(*thdr)
 		// filter/sanify values:
@@ -98,7 +102,11 @@ func Extract(tr *tar.Reader, destBasePath string, bucket fshash.Bucket, hasherFa
 		// Note that names at this point should be handled by `path` (not `filepath`; these are canonical form for feed to hashing)
 		hdr.Name = path.Clean(hdr.Name)
 		if strings.HasPrefix(hdr.Name, "../") {
-			panic(rio.WarehouseCorruptionError.New("corrupt tar: paths that use '../' to leave the base dir are invalid"))
+			panic(&def.ErrWareCorrupt{
+				Msg: "corrupt tar: paths that use '../' to leave the base dir are invalid",
+				// Ware // TODO we should be able to get, this abstraction is just silly
+				// From // TODO plz
+			})
 		}
 		if hdr.Name != "." {
 			hdr.Name = "./" + hdr.Name

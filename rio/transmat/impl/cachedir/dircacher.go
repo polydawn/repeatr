@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/inconshreveable/log15"
+	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/rio"
 	"go.polydawn.net/repeatr/rio/transmat/mux"
@@ -48,7 +49,10 @@ func New(workPath string, transmats map[rio.TransmatKind]rio.TransmatFactory) *C
 	//  you'd want to put a caching factory into a TransmatFactory registry as if it was a plugin.
 	err := os.MkdirAll(filepath.Join(workPath, "committed"), 0755)
 	if err != nil {
-		panic(rio.TransmatError.New("Unable to create cacher work dirs: %s", err))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "Unable to set up workspace"},
+			meep.Cause(err),
+		))
 	}
 	dispatchMap := make(map[rio.TransmatKind]rio.Transmat, len(transmats))
 	for kind, factoryFn := range transmats {
@@ -86,11 +90,18 @@ func (ct *CachingTransmat) Materialize(
 				err2.Err == syscall.EBUSY || err2.Err == syscall.ENOTEMPTY {
 				// oh, fine.  somebody raced us to it.
 				if err := os.RemoveAll(arena.Path()); err != nil {
-					panic(rio.TransmatError.New("Error cleaning up cancelled cache: %s", err)) // not systemically fatal, but like, wtf mate.
+					// not systemically fatal, but like, wtf mate.
+					panic(meep.Meep(
+						&rio.ErrInternal{Msg: "Error cleaning up cancelled cache"},
+						meep.Cause(err),
+					))
 				}
 				return catchingTransmatArena{permPath}
 			}
-			panic(rio.TransmatError.New("Error commiting %q into cache: %s", err))
+			panic(meep.Meep(
+				&rio.ErrInternal{Msg: "Error commiting %q into cache"},
+				meep.Cause(err),
+			))
 		}
 	}
 	return catchingTransmatArena{permPath}

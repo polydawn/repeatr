@@ -3,6 +3,22 @@ rio & transmat design: next gen
 
 Todos for the next big refactor wave, whenever that comes.
 
+re-split
+--------
+
+Some original abstraction choices could use review entirely, and naming around
+whether an object/interface is for local management or remote tracking could be clearer.
+
+- remote warehouses: give them their own full interface.
+  - this has arisen consistently in every transmat to date; enshrine it.
+- local shelving: give them their own interface and names.
+  - current generation of code makes it too easy to confuse local/remote and makes error handling require too many neurons as a result.
+
+Other generalizations worth following:
+
+- Always retain the user-specified warehouseCoords.  Pass them down the whole way, even if not technically necessary.
+  - e.g. don't just keep the internally parsed coord info; echoing the user is better for consistency in logging and error messages.
+
 transmats
 ---------
 
