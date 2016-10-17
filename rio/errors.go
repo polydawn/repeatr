@@ -13,9 +13,9 @@ import (
 	the repeatr daemon hitting permissions problems in the main work area,
 	or running out of disk space, or something equally severe.
 
-	Errors relating to the either the warehouse, the data integrity checks,
-	or the operational theater on the local filesystem are all different
-	categories of error.
+	Errors relating to communicating with a warehouse, data integrity checks,
+	absense of data, etc, are all recoverable errors, and are expressed with
+	error types exported in the `api/def` package.
 */
 type ErrInternal struct {
 	Msg string
@@ -25,14 +25,23 @@ type ErrInternal struct {
 }
 
 /*
-	Raised to indicate problems working on the operational theater on
-	the local filesystem (e.g. permission denied to read during a `Scan`
-	or permission denied or out-of-space during a write during `Materialize`).
+	Raised to indicat a serious error while assembling filesystems together.
+
+	Typically these indicate a need for the whole program to stop; examples are
+	the repeatr daemon hitting permissions problems in the main work area,
+	or running out of disk space, or something equally severe.
+
+	(This is not significantly different than `ErrInternal`,
+	but indicates which phase of work the error came from.
+	Placer and assembler functions will raise this error; transmats won't.)
 */
 type ErrAssembly struct {
 	meep.TraitAutodescribing
 	meep.TraitCausable
 	meep.TraitTraceable
+	System string // e.g. "copyingplacer" or etc.
+	Path   string // often just "srcPath" or "destPath"
+	// "op" is usually covered in the io error string, if that's a cause
 }
 
 /*

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	"go.polydawn.net/repeatr/lib/fs"
 	"go.polydawn.net/repeatr/lib/testutil"
 	"go.polydawn.net/repeatr/lib/testutil/filefixture"
