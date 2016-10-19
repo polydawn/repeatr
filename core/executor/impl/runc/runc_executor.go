@@ -13,8 +13,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/polydawn/gosh"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
+	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/core/assets"
@@ -24,7 +23,6 @@ import (
 	"go.polydawn.net/repeatr/core/executor/util"
 	"go.polydawn.net/repeatr/lib/flak"
 	"go.polydawn.net/repeatr/lib/streamer"
-	"go.polydawn.net/repeatr/rio"
 )
 
 // interface assertion
@@ -96,16 +94,9 @@ func (e *Executor) Run(f def.Formula, j executor.Job, d string, stdin io.Reader,
 		ExitCode: -1,
 	}
 
-	try.Do(func() {
+	r.Error = meep.RecoverPanics(func() {
 		e.Execute(f, j, d, &r, stdin, outS, errS, journal)
-	}).Catch(executor.Error, func(err *errors.Error) {
-		r.Error = err
-	}).Catch(rio.Error, func(err *errors.Error) {
-		r.Error = err
-	}).CatchAll(func(err error) {
-		r.Error = executor.UnknownError.Wrap(err).(*errors.Error)
-	}).Done()
-
+	})
 	return r
 }
 
@@ -178,22 +169,25 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	startedExec := time.Now()
 	journal.Info("Beginning execution!")
 	var proc gosh.Proc
-	try.Do(func() {
+	meep.Try(func() {
 		proc = gosh.ExecProcCmd(cmd)
-	}).CatchAll(func(err error) {
-		switch err.(type) {
-		case gosh.NoSuchCommandError:
+	}, meep.TryPlan{
+		{ByType: gosh.NoSuchCommandError{}, Handler: func(err error) {
 			panic(executor.ConfigError.New("runc binary is missing"))
-		case gosh.NoArgumentsError:
+		}},
+		{ByType: gosh.NoArgumentsError{}, Handler: func(err error) {
 			panic(executor.UnknownError.Wrap(err))
-		case gosh.NoSuchCwdError:
+		}},
+		{ByType: gosh.NoSuchCwdError{}, Handler: func(err error) {
 			panic(executor.UnknownError.Wrap(err))
-		case gosh.ProcMonitorError:
+		}},
+		{ByType: gosh.ProcMonitorError{}, Handler: func(err error) {
 			panic(executor.TaskExecError.Wrap(err))
-		default:
+		}},
+		{CatchAny: true, Handler: func(err error) {
 			panic(executor.UnknownError.Wrap(err))
-		}
-	}).Done()
+		}},
+	})
 
 	var runcLog io.ReadCloser
 	runcLog, err = os.OpenFile(logPath, os.O_CREATE|os.O_RDONLY, 0644)

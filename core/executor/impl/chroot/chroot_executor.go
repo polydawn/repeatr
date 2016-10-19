@@ -10,8 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/polydawn/gosh"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
+	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/core/executor"
@@ -20,7 +19,6 @@ import (
 	"go.polydawn.net/repeatr/core/executor/util"
 	"go.polydawn.net/repeatr/lib/flak"
 	"go.polydawn.net/repeatr/lib/streamer"
-	"go.polydawn.net/repeatr/rio"
 )
 
 var _ executor.Executor = &Executor{} // interface assertion
@@ -77,16 +75,9 @@ func (e *Executor) Run(f def.Formula, j executor.Job, d string, stdin io.Reader,
 		ExitCode: -1,
 	}
 
-	try.Do(func() {
+	r.Error = meep.RecoverPanics(func() {
 		e.Execute(f, j, d, &r, stdin, outS, errS, journal)
-	}).Catch(executor.Error, func(err *errors.Error) {
-		r.Error = err
-	}).Catch(rio.Error, func(err *errors.Error) {
-		r.Error = err
-	}).CatchAll(func(err error) {
-		r.Error = executor.UnknownError.Wrap(err).(*errors.Error)
-	}).Done()
-
+	})
 	return r
 }
 
@@ -147,22 +138,26 @@ func (e *Executor) Execute(f def.Formula, j executor.Job, d string, result *exec
 	startedExec := time.Now()
 	journal.Info("Beginning execution!")
 	var proc gosh.Proc
-	try.Do(func() {
+	meep.Try(func() {
 		proc = gosh.ExecProcCmd(cmd)
-	}).CatchAll(func(err error) {
-		switch err.(type) {
-		case gosh.NoSuchCommandError:
+	}, meep.TryPlan{
+		{ByType: gosh.NoSuchCommandError{}, Handler: func(err error) {
 			panic(executor.NoSuchCommandError.Wrap(err))
-		case gosh.NoArgumentsError:
+		}},
+		{ByType: gosh.NoArgumentsError{}, Handler: func(err error) {
 			panic(executor.NoSuchCommandError.Wrap(err))
-		case gosh.NoSuchCwdError: // included for clarity and completeness, but we'll never actually see this; see comments in gosh about the interaction of chroot and cwd error handling.
+		}},
+		{ByType: gosh.NoSuchCwdError{}, Handler: func(err error) {
+			// included for clarity and completeness, but we'll never actually see this; see comments in gosh about the interaction of chroot and cwd error handling.
 			panic(executor.TaskExecError.Wrap(err))
-		case gosh.ProcMonitorError:
+		}},
+		{ByType: gosh.ProcMonitorError{}, Handler: func(err error) {
 			panic(executor.TaskExecError.Wrap(err))
-		default:
+		}},
+		{CatchAny: true, Handler: func(err error) {
 			panic(executor.UnknownError.Wrap(err))
-		}
-	}).Done()
+		}},
+	})
 
 	// Wait for the job to complete
 	// REVIEW: consider exposing `gosh.Proc`'s interface as part of repeatr's job tracking api?

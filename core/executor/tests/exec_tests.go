@@ -9,7 +9,6 @@ import (
 	"go.polydawn.net/repeatr/core/executor"
 	"go.polydawn.net/repeatr/lib/guid"
 	"go.polydawn.net/repeatr/lib/testutil"
-	"go.polydawn.net/repeatr/rio"
 )
 
 /*
@@ -43,7 +42,7 @@ func CheckBasicExecution(execEng executor.Executor) {
 
 		Convey("We should get an error from the warehouse", func() {
 			result := execEng.Start(formula, executor.JobID(guid.New()), nil, testutil.TestLogger(c)).Wait()
-			So(result.Error, testutil.ShouldBeErrorClass, rio.WarehouseError)
+			So(result.Error, ShouldHaveSameTypeAs, &def.ErrWareDNE{})
 		})
 
 		Convey("The job exit code should clearly indicate failure", FailureContinues, func() {
