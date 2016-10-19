@@ -142,11 +142,11 @@ func (wh *Warehouse) Ping() error {
 		// Known values include:
 		//  - "'%s' does not appear to be a git repository"
 		//  - "attempt to fetch/clone from a shallow repository"
-		panic(&def.ErrWarehouseUnavailable{
+		return &def.ErrWarehouseUnavailable{
 			Msg:    fmt.Sprintf("git remote unavailable: %s", msg),
 			During: "fetch",
 			From:   wh.coord,
-		})
+		}
 	default:
 		// We don't recognize this.
 		panic(meep.Meep(
