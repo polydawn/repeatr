@@ -6,8 +6,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
 	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
@@ -30,7 +28,7 @@ func ExamineWare(stdout, stderr io.Writer) cli.ActionFunc {
 		log := log15.New()
 		log.SetHandler(log15.StreamHandler(stderr, log15.TerminalFormat()))
 
-		try.Do(func() {
+		meep.Try(func() {
 			// Materialize the things.
 			arena := util.DefaultTransmat().Materialize(
 				rio.TransmatKind(ctx.String("kind")),
@@ -41,15 +39,7 @@ func ExamineWare(stdout, stderr io.Writer) cli.ActionFunc {
 			defer arena.Teardown()
 			// Examine 'em.
 			examinePath(arena.Path(), stdout)
-		}).Catch(rio.ConfigError, func(err *errors.Error) {
-			panic(&cmdbhv.ErrExit{err.Message(), cmdbhv.EXIT_BADARGS})
-		}).Catch(rio.WarehouseUnavailableError, func(err *errors.Error) {
-			panic(&cmdbhv.ErrExit{err.Message(), cmdbhv.EXIT_USER})
-		}).Catch(rio.DataDNE, func(err *errors.Error) {
-			panic(&cmdbhv.ErrExit{err.Message(), cmdbhv.EXIT_USER})
-		}).Catch(rio.HashMismatchError, func(err *errors.Error) {
-			panic(&cmdbhv.ErrExit{err.Message(), cmdbhv.EXIT_USER})
-		}).Done()
+		}, cmdbhv.TryPlanToExit)
 		return nil
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"go.polydawn.net/meep"
+
+	"go.polydawn.net/repeatr/api/def"
 )
 
 const (
@@ -21,6 +23,27 @@ type ErrExit struct {
 
 func (e ErrExit) Error() string {
 	return e.Message
+}
+
+var TryPlanToExit = meep.TryPlan{
+	{ByType: &def.ErrConfigParsing{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_BADARGS})
+	}},
+	{ByType: &def.ErrConfigValidation{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_BADARGS})
+	}},
+	{ByType: &def.ErrWarehouseUnavailable{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_USER})
+	}},
+	{ByType: &def.ErrWarehouseProblem{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_USER})
+	}},
+	{ByType: &def.ErrWareDNE{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_USER})
+	}},
+	{ByType: &def.ErrWareCorrupt{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_USER})
+	}},
 }
 
 type ErrBadArgs struct {

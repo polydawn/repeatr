@@ -109,7 +109,10 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 		runRecord.HID = ""
 		runRecord.FormulaHID = ""
 		if err := codec.NewEncoder(stdout, &codec.JsonHandle{Indent: -1}).Encode(runRecord); err != nil {
-			panic(err)
+			panic(meep.Meep(
+				&meep.ErrProgrammer{},
+				meep.Cause(fmt.Errorf("Transcription error: %s", err)),
+			))
 		}
 		stdout.Write([]byte{'\n'})
 		// Exit nonzero with our own "your job did not report success" indicator code, if applicable.

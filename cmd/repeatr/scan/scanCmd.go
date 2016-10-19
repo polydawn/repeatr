@@ -1,22 +1,19 @@
 package scanCmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
+	"github.com/ugorji/go/codec"
 	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
-	"go.polydawn.net/repeatr/rio"
 )
 
-func Scan(output, stderr io.Writer) cli.ActionFunc {
+func Scan(stdout, stderr io.Writer) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		// args parse
 		var warehouses def.WarehouseCoords
@@ -26,12 +23,13 @@ func Scan(output, stderr io.Writer) cli.ActionFunc {
 			}
 		}
 		filters := &def.Filters{}
-		try.Do(func() {
+		meep.Try(func() {
 			filters.FromStringSlice(ctx.StringSlice("filter"))
-		}).Catch(rio.ConfigError, func(err *errors.Error) {
-			panic(meep.Meep(&cmdbhv.ErrBadArgs{
-				Message: "malformed filter argument: could not parse: " + err.Message()}))
-		}).Done()
+		}, meep.TryPlan{
+			{ByType: &def.ErrConfigValidation{}, Handler: func(e error) {
+				panic(meep.Meep(&cmdbhv.ErrBadArgs{Message: "malformed filter argument: could not parse: " + e.Error()}))
+			}},
+		})
 		filters.InitDefaultsOutput()
 		outputSpec := def.Output{
 			Type:       ctx.String("kind"),
@@ -45,22 +43,22 @@ func Scan(output, stderr io.Writer) cli.ActionFunc {
 		if outputSpec.MountPath == "" {
 			outputSpec.MountPath = "."
 		}
-		// invoke
+		// set up logging.
 		log := log15.New()
 		log.SetHandler(log15.StreamHandler(stderr, log15.TerminalFormat()))
-		outputResult := scan(outputSpec, log)
+		// invoke
+		var output def.Output
+		meep.Try(func() {
+			output = scan(outputSpec, log)
+		}, cmdbhv.TryPlanToExit)
 		// output
-		// FIXME serialization format.
-		//  should be especially pretty and human-friendly; deserves custom code.
-		//    really, you want that anyway for things like hassle-free syntax in practice for single URIs without an array, etc.
-		msg, err := json.Marshal(outputResult)
-		if err != nil {
+		if err := codec.NewEncoder(stdout, &codec.JsonHandle{Indent: -1}).Encode(output); err != nil {
 			panic(meep.Meep(
 				&meep.ErrProgrammer{},
 				meep.Cause(fmt.Errorf("Transcription error: %s", err)),
 			))
 		}
-		fmt.Fprintf(output, "%s\n", string(msg))
+		stdout.Write([]byte{'\n'})
 		return nil
 	}
 }

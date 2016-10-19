@@ -8,8 +8,7 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
+	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
 	"go.polydawn.net/repeatr/core/executor/util"
@@ -44,7 +43,7 @@ func Unpack(stderr io.Writer) cli.ActionFunc {
 			}
 		}
 
-		try.Do(func() {
+		meep.Try(func() {
 			// Materialize the things.
 			arena := util.DefaultTransmat().Materialize(
 				rio.TransmatKind(ctx.String("kind")),
@@ -73,13 +72,7 @@ func Unpack(stderr io.Writer) cli.ActionFunc {
 			if err := os.Rename(tmpPlacePath, placePath); err != nil {
 				panic(err)
 			}
-		}).Catch(rio.ConfigError, func(err *errors.Error) {
-			panic(&cmdbhv.ErrExit{err.Message(), cmdbhv.EXIT_BADARGS})
-		}).Catch(rio.WarehouseUnavailableError, func(err *errors.Error) {
-			panic(&cmdbhv.ErrExit{err.Message(), cmdbhv.EXIT_USER})
-		}).Catch(rio.DataDNE, func(err *errors.Error) {
-			panic(&cmdbhv.ErrExit{err.Message(), cmdbhv.EXIT_USER})
-		}).Done()
+		}, cmdbhv.TryPlanToExit)
 		return nil
 	}
 }
