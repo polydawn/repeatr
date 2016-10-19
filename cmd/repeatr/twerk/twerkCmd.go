@@ -100,14 +100,8 @@ func Twerk(stdin io.Reader, stdout, stderr io.Writer) cli.ActionFunc {
 		// Park our routine, following events and proxying them to terminal.
 		runRecord := terminal.Consume(runner, runID, stdout, stderr)
 
-		// Raise any errors that got in the way of execution.
-		meep.TryPlan{
-			// TODO this should filter out DataDNE, HashMismatch, etc.
-			// examineCmd does a better job of this.
-			// come back to this after more meep integration.
-			{CatchAny: true,
-				Handler: meep.TryHandlerMapto(&cmdbhv.ErrRunFailed{})},
-		}.MustHandle(runRecord.Failure)
+		// Raise the error that got in the way of execution, if any.
+		cmdbhv.TryPlanToExit.MustHandle(runRecord.Failure)
 
 		exitCode := runRecord.Results["$exitcode"].Hash
 		if exitCode != "0" {

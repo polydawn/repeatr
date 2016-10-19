@@ -56,13 +56,3 @@ func ErrMissingParameter(paramName string) error {
 		Message: fmt.Sprintf("%q is a required parameter", paramName),
 	})
 }
-
-/*
-	Raised when there was some major failure during running a formula.
-	(User exit codes aren't a "run failed"; a container system crashing
-	*is*.)
-*/
-type ErrRunFailed struct {
-	meep.TraitAutodescribing
-	meep.TraitCausable
-}
