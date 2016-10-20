@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
+	"go.polydawn.net/meep"
 
+	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/lib/fs"
 	"go.polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio/transmat/mixins"
 )
 
 const Kind = rio.TransmatKind("git")
@@ -28,7 +29,10 @@ func New(workPath string) rio.Transmat {
 	mustDir(workPath)
 	workPath, err := filepath.Abs(workPath)
 	if err != nil {
-		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "Unable to set up workspace"},
+			meep.Cause(err),
+		))
 	}
 	wa := workArea{
 		fullCheckouts:  filepath.Join(workPath, "full"),
@@ -74,12 +78,10 @@ func (t *GitTransmat) Materialize(
 	options ...rio.MaterializerConfigurer,
 ) rio.Arena {
 	var arena gitArena
-	try.Do(func() {
+	meep.Try(func() {
 		// Basic validation and config
+		mixins.MustBeType(Kind, kind)
 		//config := rio.EvaluateConfig(options...)
-		if kind != Kind {
-			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
-		}
 
 		// Short circut out if we have the whole hash cached.
 		finalPath := t.workArea.getFullchFinalPath(string(dataHash))
@@ -96,13 +98,18 @@ func (t *GitTransmat) Materialize(
 
 		// Ping silos
 		if len(siloURIs) < 1 {
-			panic(rio.ConfigError.New("Materialization requires at least one data source!"))
 			// Note that it's possible a caching layer will satisfy things even without data sources...
 			//  but if that was going to happen, it already would have by now.
+			panic(&def.ErrWarehouseUnavailable{
+				Msg:    "No warehouse coords configured!",
+				During: "fetch",
+			})
 		}
 		// Our policy is to take the first path that exists.
 		//  This lets you specify a series of potential locations,
 		//  and if one is unavailable we'll just take the next.
+		// Future work: cycle through later potential locations if one returns DNE!
+		//  (Unfortunately this is tricky to implement efficiently with git commands.)
 		var warehouse *Warehouse
 		for _, uri := range siloURIs {
 			wh := NewWarehouse(uri)
@@ -114,12 +121,15 @@ func (t *GitTransmat) Materialize(
 			} else {
 				log.Info("Warehouse unavailable, skipping",
 					"remote", uri,
-					"reason", pong.Message(),
+					"reason", pong,
 				)
 			}
 		}
 		if warehouse == nil {
-			panic(rio.WarehouseUnavailableError.New("No warehouses were available!"))
+			panic(&def.ErrWarehouseUnavailable{
+				Msg:    "No warehouses responded!",
+				During: "fetch",
+			})
 		}
 		gitDirPath := t.workArea.gitDirPath(warehouse.url)
 
@@ -225,7 +235,10 @@ func (t *GitTransmat) Materialize(
 					t.workArea.getNosubchFinalPath(subm.hash),
 					filepath.Join(arena.workDirPath, subm.path),
 				); err != nil {
-					panic(Error.New("Unexpected issues copying between local cache layers: %s", err))
+					panic(meep.Meep(
+						&rio.ErrInternal{Msg: "Unexpected issues copying between local cache layers"},
+						meep.Cause(err),
+					))
 				}
 			}
 			log.Info("git: full work tree assembled",
@@ -237,7 +250,10 @@ func (t *GitTransmat) Materialize(
 		// should be 1000 (consistent with being accessible under the "routine" policy).
 		// Chown/chmod everything as such.
 		if err := fs.Chownr(arena.workDirPath, git_uid, git_gid); err != nil {
-			panic(rio.TransmatError.New("Unable to coerce perms: %s", err))
+			panic(meep.Meep(
+				&rio.ErrInternal{Msg: "Unable to coerce perms"},
+				meep.Cause(err),
+			))
 		}
 
 		// verify total integrity
@@ -249,11 +265,7 @@ func (t *GitTransmat) Materialize(
 		moveOrShrug(arena.workDirPath, pth)
 		arena.workDirPath = pth
 		log.Info("git: repo materialize complete")
-	}).Catch(rio.Error, func(err *errors.Error) {
-		panic(err)
-	}).CatchAll(func(err error) {
-		panic(rio.UnknownError.Wrap(err))
-	}).Done()
+	}, rio.TryPlanWhitelist)
 	return arena
 }
 
@@ -264,22 +276,13 @@ func (t GitTransmat) Scan(
 	log log15.Logger,
 	options ...rio.MaterializerConfigurer,
 ) rio.CommitID {
-	var commitID rio.CommitID
-	try.Do(func() {
-		// Basic validation and config
-		//config := rio.EvaluateConfig(options...)
-		if kind != Kind {
-			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
-		}
-
-		// Get off my lawn.
-		panic(errors.NotImplementedError.New("The git transmat does not support scan."))
-	}).Catch(rio.Error, func(err *errors.Error) {
-		panic(err)
-	}).CatchAll(func(err error) {
-		panic(rio.UnknownError.Wrap(err))
-	}).Done()
-	return commitID
+	// Git commits would be an oddity to generate.
+	//  Git trees?  Sure: a consistent result can be generated given a file tree.
+	//  Git *commits*?  Not so: the "parents" info is required, and that doesn't
+	//  match how we think of the world very much at all.
+	panic(&def.ErrConfigValidation{
+		Msg: "saving with the git transmat is not supported",
+	})
 }
 
 type gitArena struct {

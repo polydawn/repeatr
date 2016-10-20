@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"go.polydawn.net/meep"
+
+	"go.polydawn.net/repeatr/api/def"
 )
 
 const (
@@ -23,6 +25,27 @@ func (e ErrExit) Error() string {
 	return e.Message
 }
 
+var TryPlanToExit = meep.TryPlan{
+	{ByType: &def.ErrConfigParsing{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_BADARGS})
+	}},
+	{ByType: &def.ErrConfigValidation{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_BADARGS})
+	}},
+	{ByType: &def.ErrWarehouseUnavailable{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_USER})
+	}},
+	{ByType: &def.ErrWarehouseProblem{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_USER})
+	}},
+	{ByType: &def.ErrWareDNE{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_USER})
+	}},
+	{ByType: &def.ErrWareCorrupt{}, Handler: func(e error) {
+		panic(&ErrExit{e.Error(), EXIT_USER})
+	}},
+}
+
 type ErrBadArgs struct {
 	meep.TraitAutodescribing
 	Message string
@@ -32,14 +55,4 @@ func ErrMissingParameter(paramName string) error {
 	return meep.Meep(&ErrBadArgs{
 		Message: fmt.Sprintf("%q is a required parameter", paramName),
 	})
-}
-
-/*
-	Raised when there was some major failure during running a formula.
-	(User exit codes aren't a "run failed"; a container system crashing
-	*is*.)
-*/
-type ErrRunFailed struct {
-	meep.TraitAutodescribing
-	meep.TraitCausable
 }

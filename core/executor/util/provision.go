@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
+	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/rio"
@@ -31,7 +30,7 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 			)
 			started := time.Now()
 			journal.Info("Starting materialize")
-			try.Do(func() {
+			meep.Try(func() {
 				// todo: create validity checking api for URIs, check them all before launching anything
 				warehouses := make([]rio.SiloURI, len(in.Warehouses))
 				for i, wh := range in.Warehouses {
@@ -51,15 +50,17 @@ func ProvisionInputs(transmat rio.Transmat, inputs def.InputGroup, journal log15
 				fsGather <- map[string]materializerReport{
 					name: {Arena: arena},
 				}
-			}).Catch(rio.Error, func(err *errors.Error) {
-				journal.Warn("Error during materialize",
-					"error", err.Message(),
-					"elapsed", time.Now().Sub(started).Seconds(),
-				)
-				fsGather <- map[string]materializerReport{
-					name: {Err: err},
-				}
-			}).Done()
+			}, meep.TryPlan{
+				{CatchAny: true, Handler: func(err error) {
+					journal.Warn("Error during materialize",
+						"error", err,
+						"elapsed", time.Now().Sub(started).Seconds(),
+					)
+					fsGather <- map[string]materializerReport{
+						name: {Err: err},
+					}
+				}},
+			})
 		}(name, in)
 	}
 
@@ -118,8 +119,8 @@ func AssembleFilesystem(
 }
 
 type materializerReport struct {
-	Arena rio.Arena     // if success
-	Err   *errors.Error // subtype of input.Error.  (others are forbidden by contract and treated as fatal.)
+	Arena rio.Arena // if success
+	Err   error
 }
 
 func ProvisionOutputs(outputs def.OutputGroup, rootfs string, journal log15.Logger) {
@@ -156,7 +157,7 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 			scanPath := filepath.Join(rootfs, out.MountPath)
 			started := time.Now()
 			journal.Info("Starting scan")
-			try.Do(func() {
+			meep.Try(func() {
 				// todo: create validity checking api for URIs, check them all before launching anything
 				warehouses := make([]rio.SiloURI, len(out.Warehouses))
 				for i, wh := range out.Warehouses {
@@ -178,15 +179,17 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 				scanGather <- map[string]scanReport{
 					name: {Output: out},
 				}
-			}).Catch(rio.Error, func(err *errors.Error) {
-				journal.Warn("Error during scan",
-					"error", err.Message(),
-					"elapsed", time.Now().Sub(started).Seconds(),
-				)
-				scanGather <- map[string]scanReport{
-					name: {Err: err},
-				}
-			}).Done()
+			}, meep.TryPlan{
+				{CatchAny: true, Handler: func(err error) {
+					journal.Warn("Error during scan",
+						"error", err,
+						"elapsed", time.Now().Sub(started).Seconds(),
+					)
+					scanGather <- map[string]scanReport{
+						name: {Err: err},
+					}
+				}},
+			})
 		}(name, out)
 	}
 
@@ -206,6 +209,6 @@ func PreserveOutputs(transmat rio.Transmat, outputs def.OutputGroup, rootfs stri
 }
 
 type scanReport struct {
-	Output *def.Output   // now including the hash
-	Err    *errors.Error // subtype of output.Error.  (others are forbidden by contract and treated as fatal.)
+	Output *def.Output // now including the hash
+	Err    error
 }

@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"go.polydawn.net/meep"
+
 	"go.polydawn.net/repeatr/lib/fs"
 	"go.polydawn.net/repeatr/rio"
 )
@@ -24,7 +26,10 @@ func (a defaultAssembler) Assemble(basePath string, parts []rio.AssemblyPart) ri
 	for _, part := range parts {
 		destBasePath := filepath.Join(basePath, part.TargetPath)
 		if err := fs.MkdirAll(destBasePath); err != nil {
-			panic(Error.Wrap(err)) // REVIEW: not clear if placers and assemblers should get separate error hierarchies.  have yet to think of a useful scenario for it.
+			panic(meep.Meep(
+				&rio.ErrAssembly{System: "assembler"},
+				meep.Cause(err),
+			))
 		}
 		housekeeping.record(a.Placer(part.SourcePath, destBasePath, part.Writable, part.BareMount))
 	}

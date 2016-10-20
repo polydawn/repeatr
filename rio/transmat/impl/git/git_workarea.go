@@ -1,17 +1,23 @@
 package git
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"syscall"
+
+	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/rio"
 )
 
 func mustDir(pth string) {
 	if err := os.MkdirAll(pth, 0755); err != nil {
-		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "Unable to set up workspace"},
+			meep.Cause(err),
+		))
 	}
 }
 
@@ -28,7 +34,10 @@ func (wa workArea) gitDirPath(repoURL string) string {
 func (wa workArea) makeFullchTempPath(commitHash string) string {
 	pth, err := ioutil.TempDir(wa.fullCheckouts, commitHash+"-")
 	if err != nil {
-		panic(rio.TransmatError.New("Unable to set up tempdir: %s", err))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "Unable to set up tempdir"},
+			meep.Cause(err),
+		))
 	}
 	return pth
 }
@@ -40,7 +49,10 @@ func (wa workArea) getFullchFinalPath(commitHash string) string {
 func (wa workArea) makeNosubchTempPath(commitHash string) string {
 	pth, err := ioutil.TempDir(wa.nosubCheckouts, commitHash+"-")
 	if err != nil {
-		panic(rio.TransmatError.New("Unable to set up tempdir: %s", err))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "Unable to set up tempdir"},
+			meep.Cause(err),
+		))
 	}
 	return pth
 }
@@ -57,6 +69,9 @@ func moveOrShrug(from string, to string) {
 			// oh, fine.  somebody raced us to it.  we believe in them: just return.
 			return
 		}
-		panic(rio.TransmatError.New("Error commiting %q into cache: %s", from, err))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: fmt.Sprintf("Error commiting %q into cache", from)},
+			meep.Cause(err),
+		))
 	}
 }

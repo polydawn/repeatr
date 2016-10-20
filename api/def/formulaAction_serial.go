@@ -59,7 +59,7 @@ func (p *Policy) CodecDecodeSelf(c *codec.Decoder) {
 			return
 		}
 	}
-	panic(ErrConfig{Msg: fmt.Sprintf("policy value %q is not a known policy name", str)})
+	panic(ErrConfigValidation{Msg: fmt.Sprintf("policy value %q is not a known policy name", str)})
 }
 
 //

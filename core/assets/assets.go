@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/inconshreveable/log15"
-	"github.com/spacemonkeygo/errors/try"
+	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/core/jank"
@@ -65,20 +65,17 @@ func PreferredWarehouseCoords() []rio.SiloURI {
 */
 func Get(assetName string) string {
 	var arena rio.Arena
-	try.Do(func() {
+	meep.Try(func() {
 		arena = transmat().Materialize(
 			rio.TransmatKind("tar"),
 			assets[assetName],
 			WarehouseCoords(),
 			log15.New(log15.DiscardHandler), // this is foolish, but i just feel Wrong requiring a logger as an arg to `asset.Get`.
 		)
-	}).CatchAll(func(err error) {
-		// Mainly, we just don't want to emit a transmat error directly;
-		//  that could be unpleasantly ambiguous given that assets are often used
-		//   in executors right to transmats, or in transmats themselves.
-		panic(ErrLoadingAsset.Wrap(err))
-	}).Done()
-
+	}, meep.TryPlan{
+		{CatchAny: true,
+			Handler: meep.TryHandlerMapto(&ErrLoadingAsset{})},
+	})
 	return arena.Path()
 }
 
@@ -97,4 +94,9 @@ func transmat() rio.Transmat {
 		rio.TransmatKind("tar"): tar.New,
 	})
 	return dirCacher
+}
+
+type ErrLoadingAsset struct {
+	meep.TraitAutodescribing
+	meep.TraitCausable
 }

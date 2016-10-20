@@ -1,8 +1,11 @@
 package dispatch
 
 import (
+	"fmt"
+
 	"github.com/inconshreveable/log15"
 
+	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/rio"
 )
 
@@ -24,18 +27,38 @@ func New(transmats map[rio.TransmatKind]rio.Transmat) *Transmat {
 	return dt
 }
 
+/*
+	Dispatches the materialize call to one of this dispatcher's configured transmats.
+
+	May panic with:
+
+	  - `*def.ErrConfigValidation` -- if there's no transmat set up to handle the requested kind.
+	  - whatever else the dispatched transmat may panic with.
+*/
 func (dt *Transmat) Materialize(kind rio.TransmatKind, dataHash rio.CommitID, siloURIs []rio.SiloURI, log log15.Logger, options ...rio.MaterializerConfigurer) rio.Arena {
 	transmat := dt.dispatch[kind]
 	if transmat == nil {
-		panic(rio.ConfigError.New("no transmat of kind %q available to satisfy request", kind))
+		panic(&def.ErrConfigValidation{
+			Msg: fmt.Sprintf("no transmat of kind %q available to satisfy request", kind),
+		})
 	}
 	return transmat.Materialize(kind, dataHash, siloURIs, log, options...)
 }
 
+/*
+	Dispatches the scan call to one of this dispatcher's configured transmats.
+
+	May panic with:
+
+	  - `*def.ErrConfigValidation` -- if there's no transmat set up to handle the requested kind.
+	  - whatever else the dispatched transmat may panic with.
+*/
 func (dt *Transmat) Scan(kind rio.TransmatKind, subjectPath string, siloURIs []rio.SiloURI, log log15.Logger, options ...rio.MaterializerConfigurer) rio.CommitID {
 	transmat := dt.dispatch[kind]
 	if transmat == nil {
-		panic(rio.ConfigError.New("no transmat of kind %q available to satisfy request", kind))
+		panic(&def.ErrConfigValidation{
+			Msg: fmt.Sprintf("no transmat of kind %q available to satisfy request", kind),
+		})
 	}
 	return transmat.Scan(kind, subjectPath, siloURIs, log, options...)
 }

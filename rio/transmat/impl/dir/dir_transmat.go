@@ -1,7 +1,6 @@
 package dir
 
 import (
-	"bytes"
 	"crypto/sha512"
 	"encoding/base64"
 	"io/ioutil"
@@ -9,12 +8,13 @@ import (
 	"syscall"
 
 	"github.com/inconshreveable/log15"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/try"
+	"go.polydawn.net/meep"
 
+	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/lib/fshash"
 	"go.polydawn.net/repeatr/rio"
 	"go.polydawn.net/repeatr/rio/filter"
+	"go.polydawn.net/repeatr/rio/transmat/mixins"
 )
 
 const Kind = rio.TransmatKind("dir")
@@ -27,10 +27,21 @@ type DirTransmat struct {
 
 var _ rio.TransmatFactory = New
 
+/*
+	Returns a new transmat initialized to use the given working dir.
+	The working dir will be created if it does not exist.
+
+	May panic with:
+
+	  - `*rio.ErrInternal` -- if the working dir could not be created.
+*/
 func New(workPath string) rio.Transmat {
 	err := os.MkdirAll(workPath, 0755)
 	if err != nil {
-		panic(rio.TransmatError.New("Unable to set up workspace: %s", err))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "Unable to set up workspace"},
+			meep.Cause(err),
+		))
 	}
 	return &DirTransmat{workPath}
 }
@@ -48,18 +59,19 @@ func (t *DirTransmat) Materialize(
 	options ...rio.MaterializerConfigurer,
 ) rio.Arena {
 	var arena dirArena
-	try.Do(func() {
+	meep.Try(func() {
 		// Basic validation and config
+		mixins.MustBeType(Kind, kind)
 		config := rio.EvaluateConfig(options...)
-		if kind != Kind {
-			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
-		}
 
 		// Ping silos
 		if len(siloURIs) < 1 {
-			panic(rio.ConfigError.New("Materialization requires at least one data source!"))
 			// Note that it's possible a caching layer will satisfy things even without data sources...
 			//  but if that was going to happen, it already would have by now.
+			panic(&def.ErrWarehouseUnavailable{
+				Msg:    "No warehouse coords configured!",
+				During: "fetch",
+			})
 		}
 		// Our policy is to take the first path that exists.
 		//  This lets you specify a series of potential locations,
@@ -71,18 +83,26 @@ func (t *DirTransmat) Materialize(
 				warehouse = wh
 				break
 			} else {
-				log.Info("Warehouse does not exist, skipping", "warehouse", uri)
+				log.Info("Warehouse not responding, skipping",
+					"warehouse", uri,
+				)
 			}
 		}
 		if warehouse == nil {
-			panic(rio.WarehouseUnavailableError.New("No warehouses were available!"))
+			panic(&def.ErrWarehouseUnavailable{
+				Msg:    "No warehouses responded!",
+				During: "fetch",
+			})
 		}
 
 		// Create staging arena to produce data into.
 		var err error
 		arena.path, err = ioutil.TempDir(t.workPath, "")
 		if err != nil {
-			panic(rio.TransmatError.New("Unable to create arena: %s", err))
+			panic(meep.Meep(
+				&rio.ErrInternal{Msg: "Unable to create arena"},
+				meep.Cause(err),
+			))
 		}
 
 		// walk filesystem, copying and accumulating data for integrity check
@@ -93,31 +113,27 @@ func (t *DirTransmat) Materialize(
 		}
 
 		// hash whole tree
-		actualTreeHash := fshash.Hash(bucket, hasherFactory)
+		actualTreeHash := base64.URLEncoding.EncodeToString(fshash.Hash(bucket, hasherFactory))
 
 		// verify total integrity
-		expectedTreeHash, err := base64.URLEncoding.DecodeString(string(dataHash))
-		if err != nil {
-			panic(rio.ConfigError.New("Could not parse hash: %s", err))
-		}
-		if bytes.Equal(actualTreeHash, expectedTreeHash) {
-			// excellent, got what we asked for.
+		expectedTreeHash := string(dataHash)
+		// If we got what we asked for: excellent, return.
+		if actualTreeHash == expectedTreeHash {
 			arena.hash = dataHash
-		} else {
-			// this may or may not be grounds for panic, depending on configuration.
-			if config.AcceptHashMismatch {
-				// if we're tolerating mismatches, report the actual hash through different mechanisms.
-				// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
-				arena.hash = rio.CommitID(actualTreeHash)
-			} else {
-				panic(rio.NewHashMismatchError(string(dataHash), base64.URLEncoding.EncodeToString(actualTreeHash)))
-			}
+			return
 		}
-	}).Catch(rio.Error, func(err *errors.Error) {
-		panic(err)
-	}).CatchAll(func(err error) {
-		panic(rio.UnknownError.Wrap(err))
-	}).Done()
+		// If not... this may or may not be grounds for panic, depending on configuration.
+		if config.AcceptHashMismatch {
+			// if we're tolerating mismatches, report the actual hash through different mechanisms.
+			// you probably only ever want to use this in tests or debugging; in prod it's just asking for insanity.
+			arena.hash = rio.CommitID(actualTreeHash)
+		}
+		// If tolerance mode not configured, this is a panic.
+		panic(&def.ErrHashMismatch{
+			Expected: def.Ware{Type: string(Kind), Hash: string(dataHash)},
+			Actual:   def.Ware{Type: string(Kind), Hash: string(actualTreeHash)},
+		})
+	}, rio.TryPlanWhitelist)
 	return arena
 }
 
@@ -129,12 +145,10 @@ func (t DirTransmat) Scan(
 	options ...rio.MaterializerConfigurer,
 ) rio.CommitID {
 	var commitID rio.CommitID
-	try.Do(func() {
+	meep.Try(func() {
 		// Basic validation and config
+		mixins.MustBeType(Kind, kind)
 		config := rio.EvaluateConfig(options...)
-		if kind != Kind {
-			panic(errors.ProgrammerError.New("This transmat supports definitions of type %q, not %q", Kind, kind))
-		}
 
 		// If scan area doesn't exist, bail immediately.
 		// No need to even start dialing warehouses if we've got nothing for em.
@@ -185,7 +199,10 @@ func (t DirTransmat) Scan(
 			//  there's such a thing as partial progress, and we've got it.
 			//   Perhaps in the future we should refactor scan results to include errors
 			//    values... per stage, since that gets several birds with one stone.
-			panic(rio.WarehouseUnavailableError.New("NO warehouses available -- data not saved!"))
+			panic(&def.ErrWarehouseUnavailable{
+				Msg:    "No warehouses responded!",
+				During: "save",
+			})
 		}
 
 		// Open writers to save locations, and commit to each one.
@@ -197,11 +214,7 @@ func (t DirTransmat) Scan(
 			wc.commit(commitID)
 			log.Info("Commited to warehouse", "warehouse", warehouse.localPath, "hash", commitID)
 		}
-	}).Catch(rio.Error, func(err *errors.Error) {
-		panic(err)
-	}).CatchAll(func(err error) {
-		panic(rio.UnknownError.Wrap(err))
-	}).Done()
+	}, rio.TryPlanWhitelist)
 	return commitID
 }
 

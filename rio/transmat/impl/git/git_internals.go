@@ -3,6 +3,7 @@ package git
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -11,7 +12,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/polydawn/gosh"
 	"github.com/vaughan0/go-ini"
+	"go.polydawn.net/meep"
 
+	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/rio"
 )
 
@@ -86,13 +89,16 @@ func checkout(log log15.Logger, destPath string, commitHash string, gitDir strin
 		},
 	).Run()
 	if bytes.HasPrefix(buf.Bytes(), []byte("fatal: reference is not a tree: ")) {
-		panic(rio.DataDNE.New("hash %q not found in this repo", commitHash))
+		panic(&def.ErrWareDNE{
+			Ware: def.Ware{Type: string(Kind), Hash: string(commitHash)},
+		})
 	}
 	if p.GetExitCode() != 0 {
 		// catchall.
-		// this formatting is *terrible*, but we don't have a good formatter for using datakeys, either, so.
-		// (blowing past this without too much fuss because we're going to switch error libraries later and it's going to fix this better.)
-		panic(Error.New("git checkout failed.  git output:\n%s", buf.String()))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "git checkout failed"},
+			meep.Cause(fmt.Errorf("git output:\n%s", buf.String())),
+		))
 	}
 	log.Info("git: tree checkout complete",
 		"elapsed", time.Now().Sub(started).Seconds(),
@@ -148,11 +154,17 @@ func listSubmodules(commitHash string, gitDir string) []submodule {
 		}
 		itab := strings.Index(row, "\t")
 		if itab < 0 {
-			panic(Error.New("git ls-tree IO failed: row must have tab"))
+			panic(meep.Meep(
+				&rio.ErrInternal{Msg: "git ls-tree IO failed"},
+				meep.Cause(fmt.Errorf("row must have tab")),
+			))
 		}
 		hunks := strings.Split(row[0:itab], " ")
 		if len(hunks) != 3 {
-			panic(Error.New("git ls-tree IO failed: row must have four hunks"))
+			panic(meep.Meep(
+				&rio.ErrInternal{Msg: "git ls-tree IO failed"},
+				meep.Cause(fmt.Errorf("row must have four hunks")),
+			))
 		}
 		submods = append(submods, submodule{
 			hash: hunks[2],
@@ -160,7 +172,10 @@ func listSubmodules(commitHash string, gitDir string) []submodule {
 		})
 	}
 	if err := trees.Err(); err != nil {
-		panic(Error.New("git ls-tree IO failed: %s", err))
+		panic(meep.Meep(
+			&rio.ErrInternal{Msg: "git ls-tree IO failed"},
+			meep.Cause(err),
+		))
 	}
 	return submods
 }
@@ -169,7 +184,15 @@ func applyGitmodulesUrls(commitHash string, gitDir string, submodules []submodul
 	// git config -f .gitmodules --get-regexp '^submodule\..*\.path$'
 	submconf, err := ini.Load(grabFile(commitHash, ".gitmodules", gitDir))
 	if err != nil {
-		panic(Error.New(".gitmodules file does not parse: %s", err))
+		// REIVEW: what should we do with this?  Error hard like this?
+		//  Or perhaps log a warn and carry on?
+		//  It's an exposed error rather than an internal one, at least,
+		//  because it is triggerable by user input.
+		panic(&def.ErrWarehouseProblem{
+			Msg:    fmt.Sprintf(".gitmodules file does not parse: %s", err),
+			During: "fetch",
+			Ware:   def.Ware{Type: string(Kind), Hash: string(commitHash)},
+		})
 	}
 	for secName, section := range submconf {
 		// So this is fun to parse.

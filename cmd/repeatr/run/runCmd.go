@@ -94,14 +94,8 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 		// Else: Okay, human/terminal mode it is!
 		runRecord := terminal.Consume(runner, runID, stdout, stderr)
 
-		// Raise any errors that got in the way of execution.
-		meep.TryPlan{
-			// TODO this should filter out DataDNE, HashMismatch, etc.
-			// examineCmd does a better job of this.
-			// come back to this after more meep integration.
-			{CatchAny: true,
-				Handler: meep.TryHandlerMapto(&cmdbhv.ErrRunFailed{})},
-		}.MustHandle(runRecord.Failure)
+		// Raise the error that got in the way of execution, if any.
+		cmdbhv.TryPlanToExit.MustHandle(runRecord.Failure)
 
 		// Output the results structure.
 		//  This goes on stdout (everything is stderr) and so should be parsable.
@@ -109,7 +103,10 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 		runRecord.HID = ""
 		runRecord.FormulaHID = ""
 		if err := codec.NewEncoder(stdout, &codec.JsonHandle{Indent: -1}).Encode(runRecord); err != nil {
-			panic(err)
+			panic(meep.Meep(
+				&meep.ErrProgrammer{},
+				meep.Cause(fmt.Errorf("Transcription error: %s", err)),
+			))
 		}
 		stdout.Write([]byte{'\n'})
 		// Exit nonzero with our own "your job did not report success" indicator code, if applicable.
