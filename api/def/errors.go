@@ -47,6 +47,25 @@ func (e ErrConfigValidation) Error() string {
 }
 
 /*
+	Error raised when parsing and unmarshalling objects exchanged by APIs.
+
+	The distinction between this an `ErrConfigParsing` is small:
+	this one is raised by serialization code that only expects to be
+	talking to other mechanical APIs, as opposed to human-written inputs.
+	In other words, `ErrConfigParsing` is reasonable to see as a human
+	operator under fairly regular (if mistaken) circumstances;
+	`ErrUnmarshalling` is a sign of a more major issue, probably
+	version mismatches between communicating services, or corrupted files, etc.
+*/
+type ErrUnmarshalling struct {
+	Msg string
+}
+
+func (e ErrUnmarshalling) Error() string {
+	return e.Msg
+}
+
+/*
 	Raised when a warehouse is not available.
 
 	The warehouse may not exist, or may be offline, or there may be a network
