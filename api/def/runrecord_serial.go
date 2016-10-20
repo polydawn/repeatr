@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"go.polydawn.net/meep"
-
 	"github.com/ugorji/go/codec"
 )
 
@@ -105,10 +103,7 @@ func failureTypeToString(e error) string {
 	case *ErrWareCorrupt:
 		return "ErrWareCorrupt"
 	default:
-		panic(meep.Meep(
-			&meep.ErrProgrammer{Msg: "Internal Error not suitable for API"},
-			meep.Cause(e),
-		))
+		panic(fmt.Errorf("Internal Error type %T not suitable for API.\n\tFull error: %s", e, e))
 	}
 }
 
