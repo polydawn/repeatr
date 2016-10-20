@@ -47,7 +47,7 @@ func (rr RunRecord) CodecEncodeSelf(c *codec.Encoder) {
 }
 
 func (rr *RunRecord) CodecDecodeSelf(c *codec.Decoder) {
-	failureEnvelope := runRecordFailureEnvelope{
+	failureEnvelope := &runRecordFailureEnvelope{
 		Detail: json.RawMessage{},
 	}
 	rusrs := struct {
@@ -68,9 +68,17 @@ func (rr *RunRecord) CodecDecodeSelf(c *codec.Decoder) {
 	rr.Results = rusrs.Results
 	if failureEnvelope.Type != "" {
 		realFailure := stringToBlankFailure(failureEnvelope.Type)
-		c.MustDecode(&realFailure) // which bytes?  oh right: this entire api is streaming in a way that's profoundly unhelpful right now.
-		// AYLMAO if you try to put a decode method on this, this fucking lib doesn't understand the asym, so i have to manually encode it too?!
-		// this couldn't be more of a shitshow of spaghetti code if someone started out with the intention of making goddamn pasta
+		// I give up.  The following is broken:
+		//  we use a json serializer here.  This will break for CBOR.
+		//  I tried many other things.
+		//  See the commit history immediately preceeding this area.
+		//  The fix for this is *changing codec libraries entirely*.
+		err := json.Unmarshal(failureEnvelope.Detail.(json.RawMessage), realFailure)
+		if err != nil {
+			panic(&ErrUnmarshalling{
+				Msg: fmt.Sprintf("cannot unmarshal error type: %s", err),
+			})
+		}
 		rr.Failure = realFailure
 	}
 }
@@ -78,43 +86,6 @@ func (rr *RunRecord) CodecDecodeSelf(c *codec.Decoder) {
 type runRecordFailureEnvelope struct {
 	Type   string      `json:"type"`
 	Detail interface{} `json:"detail"`
-}
-
-// don't care, use defaults... by having another anon struct.
-func (fe runRecordFailureEnvelope) CodecEncodeSelf(c *codec.Encoder) {
-	// Seriously, my kingdom for a less ridiculous dance here to say "DTRT".
-	// We couldn't even do the inline during the already-silly custom encode
-	//  func on runrecord, because we need a struct to implement `error` -.-
-	// Nor could we simply *leave this method off*, because you can't do
-	//  one direction only to implement the ugorji `Selfer` interface.
-	// Oh, one more travesty: we ended up having to build a *custom decode*
-	//  entirely, and in order to not make it spirallingly complex, I only
-	//  made it support parsing where the type comes first (because otherwise
-	//  I have to buffer the detail part again... in a way that I can't
-	//  feed back into the codec, nor again can we spawn a new codec to handle
-	//  a fresh byte stream while using the same handle and config.  Wow).
-	//  WHICH MEANS.  We can't even use the anon struct; we need to go
-	//  full on order override to make sure this can round-trip.
-	c.MustEncode(mappySlice{
-		"type", fe.Type,
-		"detail", fe.Detail,
-	})
-}
-
-// this method had to get WAY too fancy in order to do some basic polymorphism.
-func (fe *runRecordFailureEnvelope) CodecDecodeSelf(c *codec.Decoder) {
-	_, dec := codec.GenHelperDecoder(c)
-	dec.ReadMapStart()                // consume '{'
-	if dec.DecodeString() != "type" { // panics with `[pos 32]: json: expect char '"' but got char ':'` ?!  the string very clearly ends a char before that!
-		// ... suddenly i can't help but notice uses of "DecodeString" inside the library are *commented out*
-		//  and it's actually doing `stringView(dd.DecodeBytes(f.d.b[:], true, true))`
-		//   which is WAY farther down the rabbithole of unexported values than I can chase.  So... I quit?
-		panic(&ErrUnmarshalling{
-			Msg: "cannot unmarshal error: first key must be 'type",
-		})
-	}
-	// i need the type info before i can decode the value, but it wasn't exported in that order
-	// is there an exported ability to consume the end-of-map token?! i can't see one.
 }
 
 func (runRecordFailureEnvelope) Error() string { return "" }

@@ -21,7 +21,7 @@ func TestRunRecordCodec(t *testing.T) {
 		Convey("The json should match fixtures", func() {
 			ser := encodeToJson(rr).String()
 			So(ser, ShouldEqual,
-				`{"UID":"whee","failure":{"type":"ErrWareDNE","detail":{"from":"url","ware":{"hash":"asdf","type":"fmt"}}},"results":null,"when":"0001-01-01T00:00:00Z"}`)
+				`{"UID":"whee","failure":{"detail":{"from":"url","ware":{"hash":"asdf","type":"fmt"}},"type":"ErrWareDNE"},"results":null,"when":"0001-01-01T00:00:00Z"}`)
 		})
 
 		Convey("The bounce should be equal", func() {
