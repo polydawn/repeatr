@@ -104,7 +104,15 @@ func (fe runRecordFailureEnvelope) CodecEncodeSelf(c *codec.Encoder) {
 // this method had to get WAY too fancy in order to do some basic polymorphism.
 func (fe *runRecordFailureEnvelope) CodecDecodeSelf(c *codec.Decoder) {
 	_, dec := codec.GenHelperDecoder(c)
-	dec.ReadMapStart()
+	dec.ReadMapStart()                // consume '{'
+	if dec.DecodeString() != "type" { // panics with `[pos 32]: json: expect char '"' but got char ':'` ?!  the string very clearly ends a char before that!
+		// ... suddenly i can't help but notice uses of "DecodeString" inside the library are *commented out*
+		//  and it's actually doing `stringView(dd.DecodeBytes(f.d.b[:], true, true))`
+		//   which is WAY farther down the rabbithole of unexported values than I can chase.  So... I quit?
+		panic(&ErrUnmarshalling{
+			Msg: "cannot unmarshal error: first key must be 'type",
+		})
+	}
 	// i need the type info before i can decode the value, but it wasn't exported in that order
 	// is there an exported ability to consume the end-of-map token?! i can't see one.
 }
