@@ -1,7 +1,15 @@
 recent /// not yet released
 ---------------------------
 
-- *your changes here!* 
+- *your changes here!*
+- Feature: Errors got a facelift and consistency rework.  Many errors are now reported more tersely and helpfully at the command line.  And errors in the API are properly serializable.
+  - All of these new error types are exported in the `def` package and are easily serializable, with strongly-typed fields.
+  - If you're using the API client packages in `repeatr//api/act/remote`, yes -- you *will* get `ErrHashMismatch` and friends to use programmatically, complete with all of their detail fields.
+- Internal: Package dependencies for the `api/*` packages are now validated in CI.  This helps us make sure we don't bloat the dependencies of the API packages accidentally.
+- Feature: API-ready machine-parsable event and log streams!
+  - Use the new `--serialize` flag to `repeatr run` to enable this feature.
+  - All output will be formatted as json messages, one per line, easy to parse.  (CBOR support will be coming in the future for more efficient but less human readable operation.)
+  - Check out the new `repeatr//api/act/remote` package for a client implementation that can be easily imported into any other golang programs!  Like the rest of the `api` package, this has no direct dependencies on the rest of repeatr (e.g. you won't get container engines in your dependency tree; just API, as it should be).
 - Feature: Massive overhaul to the git transmat, which should massively increase efficiency and successful caching.
   - Submodules are now cached: if you have a parent project move to a new commit, but keep all the same submodule versions, previously repeatr was oblivious; now, it's a fast 100% cache hit.
   - Git data objects are now cached: fetches are incremental when using the same remote repos.
