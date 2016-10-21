@@ -3,10 +3,15 @@ package def
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/ugorji/go/codec"
 )
+
+//
+// RunRecord
+//
 
 var _ codec.Selfer = &_assertHelper
 
@@ -126,4 +131,39 @@ func stringToBlankFailure(typ string) error {
 			Msg: fmt.Sprintf("cannot unmarshal error type: %q is not a known type", typ),
 		})
 	}
+}
+
+//
+// ResultGroup
+//
+
+var _ codec.Selfer = &ResultGroup{}
+
+func (rg ResultGroup) CodecEncodeSelf(c *codec.Encoder) {
+	c.Encode(rg.asMappySlice())
+}
+
+func (rg *ResultGroup) CodecDecodeSelf(c *codec.Decoder) {
+	// I'd love to just punt to the defaults, but the `Selfer` interface doesn't come in half.
+	// SO here's a ridiculous indirection to prance around infinite recursion.
+	c.MustDecode((*map[string]*Result)(rg))
+}
+
+func (mp ResultGroup) asMappySlice() codec.MapBySlice {
+	keys := make([]string, len(mp))
+	var i int
+	for k := range mp {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	val := make(mappySlice, len(mp)*2)
+	i = 0
+	for _, k := range keys {
+		val[i] = k
+		i++
+		val[i] = mp[k]
+		i++
+	}
+	return val
 }
