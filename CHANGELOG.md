@@ -2,6 +2,7 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+- Bugfix: Results in a RunRecord are serialized in a consistent order again as they should be.  This was a regression introduced when we moved from "outputs" to the slightly terser "results" structs.
 - Feature: Errors got a facelift and consistency rework.  Many errors are now reported more tersely and helpfully at the command line.  And errors in the API are properly serializable.
   - All of these new error types are exported in the `def` package and are easily serializable, with strongly-typed fields.
   - If you're using the API client packages in `repeatr//api/act/remote`, yes -- you *will* get `ErrHashMismatch` and friends to use programmatically, complete with all of their detail fields.
