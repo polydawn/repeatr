@@ -50,7 +50,7 @@ func (a *RunObserverPublisher) Run(supvr sup.Supervisor) {
 func (a *RunObserverPublisher) step(supvr sup.Supervisor) (more bool) {
 	select {
 	case evt := <-a.evtStream:
-		a.encoder.Encode(evt)
+		a.encoder.MustEncode(evt)
 		a.Output.Write(a.RecordSeparator)
 		return evt.RunRecord == nil
 	case <-supvr.QuitCh():
