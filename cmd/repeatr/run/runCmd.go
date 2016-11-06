@@ -84,7 +84,17 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 				RecordSeparator: []byte{'\n'},
 				Codec:           &codec.JsonHandle{},
 			}
-			sup.NewTask().Run(publisher.Run)
+			writ := sup.NewTask()
+			writ.Run(publisher.Run)
+			if err := writ.Err(); err != nil {
+				// This should almost never be hit, because we push
+				// most interesting errors out in the `runRecord.Failure` field.
+				// But some really dire things do leave through the window:
+				// for example if our serializer config was bunkum, we
+				// really have no choice but to crash hard here and
+				// simply try to make it visible.
+				panic(err)
+			}
 			// We always exitcode as success in API mode!
 			//  We don't care whether there was a huge error in the
 			//  `runRecord.Failure` field -- if so, it was reported
