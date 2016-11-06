@@ -105,6 +105,8 @@ func failureTypeToString(e error) string {
 		return "ErrWarehouseProblem"
 	case *ErrWareDNE:
 		return "ErrWareDNE"
+	case *ErrHashMismatch:
+		return "ErrHashMismatch"
 	case *ErrWareCorrupt:
 		return "ErrWareCorrupt"
 	default:
@@ -124,6 +126,8 @@ func stringToBlankFailure(typ string) error {
 		return &ErrWarehouseProblem{}
 	case "ErrWareDNE":
 		return &ErrWareDNE{}
+	case "ErrHashMismatch":
+		return &ErrHashMismatch{}
 	case "ErrWareCorrupt":
 		return &ErrWareCorrupt{}
 	default:
