@@ -13,8 +13,8 @@ import (
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
 	"go.polydawn.net/repeatr/cmd/repeatr/cfg"
 	"go.polydawn.net/repeatr/cmd/repeatr/examine"
+	"go.polydawn.net/repeatr/cmd/repeatr/pack"
 	"go.polydawn.net/repeatr/cmd/repeatr/run"
-	"go.polydawn.net/repeatr/cmd/repeatr/scan"
 	"go.polydawn.net/repeatr/cmd/repeatr/twerk"
 	"go.polydawn.net/repeatr/cmd/repeatr/unpack"
 	"go.polydawn.net/repeatr/cmd/repeatr/version"
@@ -127,8 +127,8 @@ func Main(
 				Action: unpackCmd.Unpack(stderr),
 			},
 			{
-				Name:  "scan",
-				Usage: "Scan a local filesystem, optionally packing the data into a warehouse",
+				Name:  "pack",
+				Usage: "Scan a local filesystem reporting the hash, and (optionally) packing the data into snapshot form to save in a warehouse",
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "place",
@@ -148,7 +148,7 @@ func Main(
 						Usage: "Optional.  Filters to apply when scanning.  If not provided, reasonable defaults (flattening uid, gid, and mtime) will be used.",
 					},
 				},
-				Action: scanCmd.Scan(stdout, stderr),
+				Action: packCmd.Pack(stdout, stderr),
 			},
 			{
 				Name:  "examine",

@@ -1,4 +1,4 @@
-package scanCmd
+package packCmd
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
 )
 
-func Scan(stdout, stderr io.Writer) cli.ActionFunc {
+func Pack(stdout, stderr io.Writer) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		// args parse
 		var warehouses def.WarehouseCoords
@@ -49,7 +49,7 @@ func Scan(stdout, stderr io.Writer) cli.ActionFunc {
 		// invoke
 		var output def.Output
 		meep.Try(func() {
-			output = scan(outputSpec, log)
+			output = pack(outputSpec, log)
 		}, cmdbhv.TryPlanToExit)
 		// output
 		if err := codec.NewEncoder(stdout, &codec.JsonHandle{Indent: -1}).Encode(output); err != nil {

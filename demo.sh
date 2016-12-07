@@ -39,13 +39,13 @@ echo -e "${clblue} ----------------------------${cnone}\n\n"
 awaitack
 
 
-echo -e "${clblue}# To suck in data, use the scan command:${cnone}"
+echo -e "${clblue}# To suck in data, use the pack command:${cnone}"
 echo
 (
-	tellRunning "repeatr scan --help"
-	time repeatr scan --help
-	tellRunning "repeatr scan --kind=tar"
-	time repeatr scan --kind=tar
+	tellRunning "repeatr pack --help"
+	time repeatr pack --help
+	tellRunning "repeatr pack --kind=tar"
+	time repeatr pack --kind=tar
 )
 echo
 echo -e "${clblue}#  This determines the data identity,${cnone}"
