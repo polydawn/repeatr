@@ -2,6 +2,7 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+- Change: `repeatr scan` is now known as `repeatr pack`, because that's a much more accurate description of what it does.
 - Bugfix: Results in a RunRecord are serialized in a consistent order again as they should be.  This was a regression introduced when we moved from "outputs" to the slightly terser "results" structs.
 - Feature: Errors got a facelift and consistency rework.  Many errors are now reported more tersely and helpfully at the command line.  And errors in the API are properly serializable.
   - All of these new error types are exported in the `def` package and are easily serializable, with strongly-typed fields.
