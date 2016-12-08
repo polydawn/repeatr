@@ -40,6 +40,7 @@ type Input struct {
 	Hash       string          `json:"hash"`           // identifying hash of input data.  included in the conjecture.
 	Warehouses WarehouseCoords `json:"silo,omitempty"` // secondary content lookup descriptor.  not considered part of the conjecture.
 	MountPath  string          `json:"mount"`          // filepath where this input should be mounted in the execution context.  included in the conjecture.
+	Tag        string          `json:"tag"`            // human readable name tag for this input
 }
 
 /*
@@ -100,6 +101,7 @@ type Output struct {
 	MountPath  string          `json:"mount,omitempty"` // filepath where this output will be yanked from the job when it reaches completion.  included in the conjecture (iff the whole output is).
 	Filters    *Filters        `json:"filters,omitempty"`
 	Conjecture bool            `json:"cnj,omitempty"` // whether or not this output is expected to contain the same result, every time, when given the same set of `Input` items.
+	Tag        string          `json:"tag"`           // human readable name tag for this ouput
 }
 
 /*
