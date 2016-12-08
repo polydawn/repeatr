@@ -102,7 +102,7 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 			return nil
 		}
 		// Else: Okay, human/terminal mode it is!
-		runRecord := terminal.Consume(runner, runID, stdout, stderr)
+		runRecord := terminal.Consume(runner, runID, stderr)
 
 		// Raise the error that got in the way of execution, if any.
 		cmdbhv.TryPlanToExit.MustHandle(runRecord.Failure)

@@ -13,17 +13,17 @@ import (
 	"go.polydawn.net/repeatr/api/def"
 )
 
-func Consume(observationPost act.RunObserver, runID def.RunID, stdout, stderr io.Writer) *def.RunRecord {
+func Consume(observationPost act.RunObserver, runID def.RunID, stderr io.Writer) *def.RunRecord {
 	evtStream := make(chan *def.Event)
 	go observationPost.FollowEvents(runID, evtStream, 0)
 	for {
-		if rr := step(evtStream, stdout, stderr); rr != nil {
+		if rr := step(evtStream, stderr); rr != nil {
 			return rr
 		}
 	}
 }
 
-func step(evtStream chan *def.Event, stdout, stderr io.Writer) *def.RunRecord {
+func step(evtStream chan *def.Event, stderr io.Writer) *def.RunRecord {
 	select {
 	case evt := <-evtStream:
 		if evt.Log != nil {
@@ -38,7 +38,7 @@ func step(evtStream chan *def.Event, stdout, stderr io.Writer) *def.RunRecord {
 		}
 		if evt.Journal != "" {
 			// FIXME journal entries should just be byte slices
-			stdout.Write([]byte(evt.Journal))
+			stderr.Write([]byte(evt.Journal))
 			return nil
 		}
 		if evt.RunRecord != nil {

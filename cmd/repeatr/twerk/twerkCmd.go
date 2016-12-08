@@ -98,7 +98,7 @@ func Twerk(stdin io.Reader, stdout, stderr io.Writer) cli.ActionFunc {
 		runID := runner.StartRun(&formula)
 
 		// Park our routine, following events and proxying them to terminal.
-		runRecord := terminal.Consume(runner, runID, stdout, stderr)
+		runRecord := terminal.Consume(runner, runID, stderr)
 
 		// Raise the error that got in the way of execution, if any.
 		cmdbhv.TryPlanToExit.MustHandle(runRecord.Failure)
