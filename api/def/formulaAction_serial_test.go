@@ -58,4 +58,22 @@ func TestMountGroupCodec(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("Given serial MountGroup fixtures", t, func() {
+		Convey("Decoding present but blank mounts into full formula should work", func() {
+			fixture := `{"action":{"escapes":{"mounts":{}}}}`
+			var reheat *def.Formula
+			decodeFromJson([]byte(fixture), &reheat)
+			So(len(reheat.Action.Escapes.Mounts), ShouldEqual, 0)
+		})
+		Convey("Decoding mounts into full formula should work", func() {
+			fixture := `{"action":{"escapes":{"mounts":{"target":"source"}}}}`
+			var reheat *def.Formula
+			decodeFromJson([]byte(fixture), &reheat)
+			mounts := reheat.Action.Escapes.Mounts
+			So(mounts, ShouldHaveLength, 1)
+			So(mounts[0].TargetPath, ShouldEqual, "target")
+			So(mounts[0].SourcePath, ShouldEqual, "source")
+		})
+	})
 }
