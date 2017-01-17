@@ -2,6 +2,15 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+
+
+v0.14 -- 72b19be26bbac56c9d1dc418a01bfe0b09a9363c -- 2017 Jan 17
+----------------------------------------------------------------
+
+v0.14 brings a whole new suite of integration opportunities: a JSON API to `repeatr run` now allows you to handle logs, results, and job output clearly using external tools.
+
+The git transmat has been massively upgraded, and now handles deduplication and submodules much, *much* better.
+
 - Change: `repeatr scan` is now known as `repeatr pack`, because that's a much more accurate description of what it does.
 - Bugfix: Results in a RunRecord are serialized in a consistent order again as they should be.  This was a regression introduced when we moved from "outputs" to the slightly terser "results" structs.
 - Feature: Errors got a facelift and consistency rework.  Many errors are now reported more tersely and helpfully at the command line.  And errors in the API are properly serializable.

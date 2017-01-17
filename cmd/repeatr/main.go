@@ -42,7 +42,7 @@ func Main(
 		Name:      "repeatr",
 		Usage:     "Run it. Run it again.",
 		UsageText: "Repeatr runs processes in containers, provisioning their inputs and saving their outputs using reliable, immutable, content-addressable goodness.",
-		Version:   "v0.13+dev",
+		Version:   "v0.14+dev",
 		Writer:    stderr,
 		Commands: []cli.Command{
 			{
