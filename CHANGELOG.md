@@ -1,5 +1,11 @@
-v0.14 -- tip -- 2017 Jan 17
+recent /// not yet released
 ---------------------------
+
+- *your changes here!*
+
+
+v0.14 -- 72b19be26bbac56c9d1dc418a01bfe0b09a9363c -- 2017 Jan 17
+----------------------------------------------------------------
 
 v0.14 brings a whole new suite of integration opportunities: a JSON API to `repeatr run` now allows you to handle logs, results, and job output clearly using external tools.
 
