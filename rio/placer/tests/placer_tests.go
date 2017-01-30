@@ -1,9 +1,8 @@
-package placer
+package tests
 
 import (
 	"os"
 	"syscall"
-	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -14,74 +13,6 @@ import (
 	"go.polydawn.net/repeatr/rio"
 )
 
-func TestCopyingPlacerCompliance(t *testing.T) {
-	Convey("Copying placers make data appear into place", t, func() {
-		CheckAssemblerGetsDataIntoPlace(defaultAssembler{Placer: CopyingPlacer}.Assemble)
-	})
-	// Not Supported: CheckAssemblerRespectsReadonly
-	Convey("Copying placers support source isolation", t, func() {
-		CheckAssemblerIsolatesSource(defaultAssembler{Placer: CopyingPlacer}.Assemble)
-	})
-	// Not Supported: CheckAssemblerBareMount // (can't do live changes with cp)
-}
-
-func TestBindPlacerCompliance(t *testing.T) {
-	Convey("Bind placers make data appear into place", t,
-		testutil.Requires(
-			testutil.RequiresMounts,
-			func() {
-				CheckAssemblerGetsDataIntoPlace(defaultAssembler{Placer: BindPlacer}.Assemble)
-			},
-		),
-	)
-	Convey("Bind placers support readonly placement", t,
-		testutil.Requires(
-			testutil.RequiresMounts,
-			func() {
-				CheckAssemblerRespectsReadonly(defaultAssembler{Placer: BindPlacer}.Assemble)
-			},
-		),
-	)
-	// Not Supported: CheckAssemblerIsolatesSource // (use AufsPlacer for that)
-	// Not Supported: CheckAssemblerBareMount // (pointless, that's the only thing this one does)
-}
-
-func TestAufsPlacerCompliance(t *testing.T) {
-	Convey("Aufs placers make data appear into place", t,
-		testutil.Requires(
-			testutil.RequiresMounts,
-			testutil.WithTmpdir(func() {
-				CheckAssemblerGetsDataIntoPlace(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
-			}),
-		),
-	)
-	Convey("Aufs placers support readonly placement", t,
-		testutil.Requires(
-			testutil.RequiresMounts,
-			testutil.WithTmpdir(func() {
-				CheckAssemblerRespectsReadonly(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
-			}),
-		),
-	)
-	Convey("Aufs placers support source isolation", t,
-		testutil.Requires(
-			testutil.RequiresMounts,
-			testutil.WithTmpdir(func() {
-				CheckAssemblerIsolatesSource(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
-			}),
-		),
-	)
-	Convey("Aufs placers support bare mounts (non-isolation)", t,
-		testutil.Requires(
-			testutil.RequiresMounts,
-			testutil.WithTmpdir(func() {
-				CheckAssemblerBareMount(defaultAssembler{Placer: NewAufsPlacer("./aufs-layers")}.Assemble)
-			}),
-		),
-	)
-}
-
-// you probs want to create that assembler with a variety of placers
 func CheckAssemblerGetsDataIntoPlace(assemblerFn rio.Assembler) {
 	Convey("Assembly with just a root fs works",
 		testutil.Requires(

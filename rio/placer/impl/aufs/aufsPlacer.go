@@ -1,4 +1,6 @@
-package placer
+// +build linux
+
+package aufs
 
 import (
 	"fmt"
@@ -11,57 +13,8 @@ import (
 
 	"go.polydawn.net/repeatr/lib/fs"
 	"go.polydawn.net/repeatr/rio"
+	"go.polydawn.net/repeatr/rio/placer/impl/bind"
 )
-
-var _ rio.Placer = BindPlacer
-
-/*
-	Gets material from srcPath to destPath by use of a bind mount.
-
-	Requesting a read-only result will be honored.
-
-	Direct mounts are cannot be supported by this placer, and requesting one will error.
-
-	May panic with:
-
-	  - `*rio.ErrAssembly` -- for any show-stopping IO errors.
-	  - `*rio.ErrAssembly` -- if given paths that are not plain dirs.
-*/
-func BindPlacer(srcPath, destPath string, writable bool, _ bool) rio.Emplacement {
-	sys := "bindplacer" // label in logs and errors.
-	mustBeDir(sys, srcPath, "srcPath")
-	mustBeDir(sys, destPath, "destPath")
-	flags := syscall.MS_BIND | syscall.MS_REC
-	if err := syscall.Mount(srcPath, destPath, "bind", uintptr(flags), ""); err != nil {
-		panic(meep.Meep(
-			&rio.ErrAssembly{System: sys},
-			meep.Cause(err),
-		))
-	}
-	if !writable {
-		flags |= syscall.MS_RDONLY | syscall.MS_REMOUNT
-		if err := syscall.Mount(srcPath, destPath, "bind", uintptr(flags), ""); err != nil {
-			panic(meep.Meep(
-				&rio.ErrAssembly{System: sys},
-				meep.Cause(err),
-			))
-		}
-	}
-	return bindEmplacement{path: destPath}
-}
-
-type bindEmplacement struct {
-	path string
-}
-
-func (e bindEmplacement) Teardown() {
-	if err := syscall.Unmount(e.path, 0); err != nil {
-		panic(meep.Meep(
-			&rio.ErrAssembly{System: "bindplacer", Path: "teardown"},
-			meep.Cause(err),
-		))
-	}
-}
 
 func NewAufsPlacer(workPath string) rio.Placer {
 	sys := "aufsplacer" // label in logs and errors.
@@ -82,11 +35,11 @@ func NewAufsPlacer(workPath string) rio.Placer {
 	return func(srcBasePath, destBasePath string, writable bool, bareMount bool) rio.Emplacement {
 		// if a RO mount is requested, no need to set up COW; just hand off to bind.
 		if !writable {
-			return BindPlacer(srcBasePath, destBasePath, writable, bareMount)
+			return bind.BindPlacer(srcBasePath, destBasePath, writable, bareMount)
 		}
 		// similarly, if the caller intentionally wants a bare mount, no need for COW; just hand off.
 		if bareMount {
-			return BindPlacer(srcBasePath, destBasePath, writable, bareMount)
+			return bind.BindPlacer(srcBasePath, destBasePath, writable, bareMount)
 		}
 		// ok, we really have to work.  validate params.
 		mustBeDir(sys, srcBasePath, "srcPath")
