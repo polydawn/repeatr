@@ -14,7 +14,7 @@ import (
 	"go.polydawn.net/repeatr/core/executor/util"
 	"go.polydawn.net/repeatr/lib/guid"
 	"go.polydawn.net/repeatr/rio"
-	"go.polydawn.net/repeatr/rio/placer"
+	"go.polydawn.net/repeatr/rio/placer/impl/copy"
 )
 
 func Unpack(stderr io.Writer) cli.ActionFunc {
@@ -67,7 +67,7 @@ func Unpack(stderr io.Writer) cli.ActionFunc {
 			//  makes sense when you remember transmats might just be returning a
 			//  pointer into a shared cache that already existed (or other non-relocatable
 			//  excuse for a filesystem, e.g. fuse happened or something).
-			placer.CopyingPlacer(arena.Path(), tmpPlacePath, true, false)
+			copy.CopyingPlacer(arena.Path(), tmpPlacePath, true, false)
 			// Atomic move into final place.
 			if err := os.Rename(tmpPlacePath, placePath); err != nil {
 				panic(err)

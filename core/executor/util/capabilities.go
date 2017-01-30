@@ -13,6 +13,8 @@ import (
 	"go.polydawn.net/repeatr/core/jank"
 	"go.polydawn.net/repeatr/rio"
 	"go.polydawn.net/repeatr/rio/placer"
+	"go.polydawn.net/repeatr/rio/placer/impl/aufs"
+	"go.polydawn.net/repeatr/rio/placer/impl/copy"
 	"go.polydawn.net/repeatr/rio/transmat/impl/cachedir"
 	"go.polydawn.net/repeatr/rio/transmat/impl/dir"
 	"go.polydawn.net/repeatr/rio/transmat/impl/file"
@@ -64,21 +66,21 @@ func determineBestAssembler() rio.Assembler {
 	if os.Getuid() != 0 {
 		// Can't mount without root.
 		fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: need root privs to use faster systems.\n")
-		return placer.NewAssembler(placer.CopyingPlacer)
+		return placer.NewAssembler(copy.CopyingPlacer)
 	}
 	if os.Getenv("TRAVIS") != "" {
 		// Travis's own virtualization denies mounting.  whee.
 		fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: travis' environment blocks faster systems.\n")
-		return placer.NewAssembler(placer.CopyingPlacer)
+		return placer.NewAssembler(copy.CopyingPlacer)
 	}
 	// If we *can* mount...
 	if isAUFSAvailable() {
 		// if AUFS is installed, AUFS+Bind is The Winner.
-		return placer.NewAssembler(placer.NewAufsPlacer(filepath.Join(jank.Base(), "aufs")))
+		return placer.NewAssembler(aufs.NewAufsPlacer(filepath.Join(jank.Base(), "aufs")))
 	}
 	// last fallback... :( copy it is
 	fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: install AUFS to use faster systems.\n")
-	return placer.NewAssembler(placer.CopyingPlacer)
+	return placer.NewAssembler(copy.CopyingPlacer)
 	// TODO we should be able to use copy for fallback RW isolator but still bind for RO.  write a new placer for that.  or really, maybe bind should chain.
 }
 
