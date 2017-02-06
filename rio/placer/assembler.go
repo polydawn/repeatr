@@ -25,7 +25,7 @@ func (a defaultAssembler) Assemble(basePath string, parts []rio.AssemblyPart) ri
 	housekeeping := &defaultAssembly{}
 	for _, part := range parts {
 		destBasePath := filepath.Join(basePath, part.TargetPath)
-		if err := fs.MkdirAll(destBasePath); err != nil {
+		if err := fs.MkdirAll(filepath.Dir(destBasePath)); err != nil {
 			panic(meep.Meep(
 				&rio.ErrAssembly{System: "assembler"},
 				meep.Cause(err),

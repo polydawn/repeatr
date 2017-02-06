@@ -150,6 +150,30 @@ func CheckAssemblerGetsDataIntoPlace(assemblerFn rio.Assembler) {
 		),
 	)
 
+	Convey("Assembly using a file works",
+		testutil.Requires(
+			testutil.RequiresRoot,
+			testutil.WithTmpdir(func() {
+				filefixture.Alpha.Create("./material/alpha")
+				assembleAndScan(
+					assemblerFn,
+					[]rio.AssemblyPart{
+						{TargetPath: "/", SourcePath: "./material/alpha", Writable: true},
+						{TargetPath: "/d/f", SourcePath: "./material/alpha/b/c", Writable: true},
+					},
+					filefixture.Fixture{Files: []filefixture.FixtureFile{
+						{fs.Metadata{Name: ".", Mode: 0755, ModTime: time.Unix(1000, 2000)}, nil},
+						{fs.Metadata{Name: "./a", Mode: 01777, ModTime: time.Unix(3000, 2000)}, nil},
+						{fs.Metadata{Name: "./b", Mode: 0750, ModTime: time.Unix(5000, 2000)}, nil},
+						{fs.Metadata{Name: "./b/c", Mode: 0664, ModTime: time.Unix(7000, 2000)}, []byte("zyx")},
+						{fs.Metadata{Name: "./d", Uid: -1, Gid: -1}, nil}, // this should have been manifested by the assembler
+						{fs.Metadata{Name: "./d/f", Mode: 0664, ModTime: time.Unix(7000, 2000)}, []byte("zyx")},
+					}}.Defaults(),
+				)
+			}),
+		),
+	)
+
 	// additional coverage todos:
 	// - failure path: placement that overlaps a file somewhere
 	// - everything about changes and ensuring they're isolated... deserves a whole battery
