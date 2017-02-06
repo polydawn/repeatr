@@ -90,8 +90,8 @@ func CopyingPlacer(srcBasePath, destBasePath string, _ bool, bareMount bool) rio
 		fs.PlaceFile(destBasePath, hdr, body)
 	default:
 		panic(meep.Meep(
-			&rio.ErrAssembly{System: sys, Path: "destPath"},
-			meep.Cause(fmt.Errorf("destination may only be dir or plain file")),
+			&rio.ErrAssembly{System: sys, Path: "srcPath"},
+			meep.Cause(fmt.Errorf("source may only be dir or plain file")),
 		))
 	}
 	// walk and copy
