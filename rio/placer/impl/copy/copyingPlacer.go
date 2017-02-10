@@ -52,9 +52,8 @@ func CopyingPlacer(srcBasePath, destBasePath string, _ bool, bareMount bool) rio
 		)
 	}
 	// remove any files already here (to emulate behavior like an overlapping mount)
-	// also, reject any destinations of the wrong type
-	typ := srcBaseStat.Mode() & os.ModeType
-	switch typ {
+	srcType := srcBaseStat.Mode() & os.ModeType
+	switch srcType {
 	case os.ModeDir:
 		if !os.IsNotExist(err) {
 			// can't take the easy route and just `os.RemoveAll(destBasePath)`
@@ -84,45 +83,50 @@ func CopyingPlacer(srcBasePath, destBasePath string, _ bool, bareMount bool) rio
 			}
 		}
 	case 0:
-		// Files: easier.
+		// Files: much easier path, because we can simply overwrite in place.
 		hdr, body := fs.ScanFile(srcBasePath, "", srcBaseStat)
 		defer body.Close()
-		fs.PlaceFile(destBasePath, hdr, body)
+		fs.WithMtimeRepair(filepath.Dir(destBasePath), func() {
+			fs.PlaceFile(destBasePath, hdr, body)
+		})
+		return copyEmplacement{path: destBasePath}
 	default:
 		panic(meep.Meep(
-			&rio.ErrAssembly{System: sys, Path: "destPath"},
-			meep.Cause(fmt.Errorf("destination may only be dir or plain file")),
+			&rio.ErrAssembly{System: sys, Path: "srcPath"},
+			meep.Cause(fmt.Errorf("source may only be dir or plain file")),
 		))
 	}
 	// walk and copy
-	preVisit := func(filenode *fs.FilewalkNode) error {
-		if filenode.Err != nil {
-			return filenode.Err
-		}
-		hdr, file := fs.ScanFile(srcBasePath, filenode.Path, filenode.Info)
-		if file != nil {
-			defer file.Close()
-		}
-		fs.PlaceFile(destBasePath, hdr, file)
-		return nil
-	}
-	postVisit := func(filenode *fs.FilewalkNode) error {
-		if filenode.Info.IsDir() {
-			if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), fs.Epochwhen, filenode.Info.ModTime()); err != nil {
-				return err
+	fs.WithMtimeRepair(filepath.Dir(destBasePath), func() {
+		preVisit := func(filenode *fs.FilewalkNode) error {
+			if filenode.Err != nil {
+				return filenode.Err
 			}
+			hdr, file := fs.ScanFile(srcBasePath, filenode.Path, filenode.Info)
+			if file != nil {
+				defer file.Close()
+			}
+			fs.PlaceFile(destBasePath, hdr, file)
+			return nil
 		}
-		return nil
-	}
-	err = fs.Walk(srcBasePath, preVisit, postVisit)
-	meep.TryPlan{
-		{CatchAny: true, Handler: func(e error) {
-			panic(meep.Meep(
-				&rio.ErrAssembly{System: sys},
-				meep.Cause(err),
-			))
-		}},
-	}.MustHandle(err)
+		postVisit := func(filenode *fs.FilewalkNode) error {
+			if filenode.Info.IsDir() {
+				if err := fspatch.UtimesNano(filepath.Join(destBasePath, filenode.Path), fs.Epochwhen, filenode.Info.ModTime()); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+		err = fs.Walk(srcBasePath, preVisit, postVisit)
+		meep.TryPlan{
+			{CatchAny: true, Handler: func(e error) {
+				panic(meep.Meep(
+					&rio.ErrAssembly{System: sys},
+					meep.Cause(err),
+				))
+			}},
+		}.MustHandle(err)
+	})
 
 	return copyEmplacement{path: destBasePath}
 }

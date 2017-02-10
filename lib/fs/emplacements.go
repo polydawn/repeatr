@@ -260,6 +260,28 @@ func MkdirAllWithAttribs(path string, hdr Metadata) error {
 	return nil
 }
 
+/*
+	Observes the current mtime attribute of the given path,
+	defers resetting the mtime on that path,
+	and calls the thunk.
+
+	Use this do mutations within a directory, while leaving that directory
+	with the same mtime after return.
+*/
+func WithMtimeRepair(pth string, thunk func()) {
+	stat, err := os.Stat(pth)
+	// If stat on the path can't be obtained, we'll no-op.
+	// (In most practical cases, this probably means your thunk is about to error too,
+	// but your application is already handling that so we'll remain silent here.)
+	if err != nil {
+		thunk()
+		return
+	}
+	// Similarly, disregard errors here.
+	defer fspatch.LUtimesNano(pth, Epochwhen, stat.ModTime())
+	thunk()
+}
+
 func mkdirAll(path string, hdr Metadata) (stack []string, topMTime time.Time, err error) {
 	// Following code derives from the golang standard library, so you can consider it BSDish if you like.
 	// Our changes are licensed under Apache for the sake of overall license simplicity of the project.

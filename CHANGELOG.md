@@ -2,6 +2,7 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+- Feature: the filesystem assembly now supports files as well as directories -- meaning the "file" transmat can be used in formulas, as can bind mounts of individual files from the host.
 
 
 v0.14 -- 72b19be26bbac56c9d1dc418a01bfe0b09a9363c -- 2017 Jan 17
