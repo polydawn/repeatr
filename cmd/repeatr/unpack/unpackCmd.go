@@ -70,7 +70,28 @@ func Unpack(stderr io.Writer) cli.ActionFunc {
 			copy.CopyingPlacer(arena.Path(), tmpPlacePath, true, false)
 			// Atomic move into final place.
 			if err := os.Rename(tmpPlacePath, placePath); err != nil {
-				panic(err)
+				// Of course, if someone's already there...
+				// Well, we'll work with that.  But panic any other error.
+				if !os.IsExist(err) {
+					panic(err)
+				}
+
+				// We have to displace them.
+				// We'll move them out of the way first,
+				// then move ourselves into place ASAP
+				// (there's still a race here, but we're trying our best),
+				// then finally remove all the old stuff.
+				displacePath := filepath.Join(
+					placePathDir,
+					".tmp."+placePathName+".rm."+guid.New(),
+				)
+				if err := os.Rename(placePath, displacePath); err != nil {
+					panic(err)
+				}
+				if err := os.Rename(tmpPlacePath, placePath); err != nil {
+					panic(err)
+				}
+				os.RemoveAll(displacePath)
 			}
 		}, cmdbhv.TryPlanToExit)
 		return nil
