@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -90,7 +91,7 @@ func isAUFSAvailable() bool {
 	// of next-best-things instead.
 
 	// If we it's in /proc/filesystems, we should be good to go.
-	// (If it's not, the libs might be installed, but not loaded, so we'll try that.)
+	// (If it's not, the libs might be installed, but not loaded, so we'll try that next.)
 	if fs, err := ioutil.ReadFile("/proc/filesystems"); err == nil {
 		fsLines := strings.Split(string(fs), "\n")
 		for _, line := range fsLines {
@@ -104,13 +105,20 @@ func isAUFSAvailable() bool {
 		}
 	}
 
+	// If modprobe exists, we can attempt to use it to load the AUFS module.
+	// If it doesn't, bail here; AUFS is not available and we can't get it.
+	modprobePath, err := exec.LookPath("modprobe")
+	if err != nil {
+		return false
+	}
+
 	// Blindly attempt to modprobe the AUFS module into the kernel.
 	// If it works, great.  If it doesn't, okay, we'll move on.
 	// Repeatedly installing it if it already exists no-op's correctly.
 	// Timeout is 100ms... maybe a little aggressive, but this takes 36ms on
 	//  my machine with a cold disk cache, 11ms hot, and is remarkably consistent.
 	modprobeCode := gosh.Sh(
-		"modprobe", "aufs",
+		modprobePath, "aufs",
 		gosh.NullIO,
 		gosh.Opts{OkExit: gosh.AnyExit},
 	).GetExitCodeSoon(100 * time.Millisecond)
