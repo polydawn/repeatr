@@ -2,6 +2,7 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+- Bugfix: additional fatal errors from runc are now correctly raised.
 - Bugfix: `repeatr unpack` now overwrites destination locations if they already exist, rather than erroring -- as documented.
 - Feature: the filesystem assembly now supports files as well as directories -- meaning the "file" transmat can be used in formulas, as can bind mounts of individual files from the host.
 
