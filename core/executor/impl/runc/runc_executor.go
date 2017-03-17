@@ -248,7 +248,9 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 			case "Container start failed: [8] System error: not a directory":
 				realError = executor.NoSuchCwdError.New("cannot set cwd to %q: not a directory", formula.Action.Cwd)
 			case "Container start failed: [8] System error: fork/exec /proc/self/exe: invalid argument":
-				realError = executor.TaskExecError.New("runc cannot operate in this environment!  %s", "fork/exec /proc/self/exe: invalid argument")
+				realError = executor.TaskExecError.New("runc cannot operate in this environment!  When attempting to fork itself, error: invalid argument")
+			case "Container start failed: [8] System error: fork/exec /proc/self/exe: operation not permitted":
+				realError = executor.TaskExecError.New("runc cannot operate in this environment!  When attempting to fork itself, error: operation not permitted.  (Are you attempting to nest this in unprivileged containers?  Unfortunately this isn't currently possible.)")
 			default:
 				// broader patterns required for some of these so we can ignore the vagaries of how the command name was quoted
 				if strings.HasPrefix(logMsg["msg"], "Container start failed: [8] System error: exec: ") {
