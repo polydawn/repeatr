@@ -2,7 +2,6 @@ package def
 
 import (
 	"crypto/sha512"
-	"encoding/base64"
 
 	"github.com/ugorji/go/codec"
 )
@@ -45,5 +44,5 @@ func (f Formula) Hash() string {
 	// Hash the rest, and thar we be.
 	hasher := sha512.New384()
 	codec.NewEncoder(hasher, &codec.CborHandle{}).MustEncode(f2)
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+	return b58encode(hasher.Sum(nil))
 }
