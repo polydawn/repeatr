@@ -29,6 +29,8 @@ type Formula struct {
 	Results *Results // Review: possible to write this as part of same document, but usually makes sense to keep them separate.
 
 	Warehousing *Warehousing // Review: possible to write this as part of same document, but usually makes sense to keep them separate.
+
+	Conjecture *Conjecture // Review: not part of execution nor results at all: metadata on what we expect (e.g., should test, and report on) about reproducibility.
 }
 
 type Inputs map[string]Input
@@ -101,4 +103,20 @@ type Warehousing struct {
 	Names    map[string]WarehouseCoord
 	InputUse map[string][]string // map[inputName][]warehouseAlias  // DUBIOUS, see comment block in example
 	SaveUse  map[string]string   // map[saveslotName]warehouseAlias // DUBIOUS, see comment block in example
+}
+
+// n.b. name in keeping with the earlier thought in current def.Output, but could probably be improved
+type Conjecture struct {
+	// Keys are the set of saveSlot names we expect should be reproducible.
+	//
+	// For a single execution of `repeatr run` with no records of previous runs,
+	// there is nothing useful we can do with this field, and it is ignored.
+	//
+	// `repeatr run` with result hashes inline in the formula,
+	// or `repeatr run --check-against=runrecords.db`,
+	// will check that any output slots listed here have the same results
+	// between the current and any known previous runs.
+	// (For result hashes inline, what to compare to is obvious;
+	// for the historical db, `Formula.CurriedHash` is used for lookups.)
+	ExpectedReproducible map[string]struct{}
 }
