@@ -17,20 +17,19 @@ type WalkFunc func(filenode *FilewalkNode) error
 	it's based on `treewalk`, which means it supports both pre- and post-order
 	traversals.
 
-	All paths begin in `./`, and directory names are slash-suffixed.
+	All paths begin in `.`, and directory names are slash-suffixed.
 	E.g. you'll see a series like `{"./", "./a/", "./a/b"}`, etc.
 	This matches the behaviors described by `Normalize` in the `lib/fshash`.
 
 	If walking directories, implicitly the first path will always be `./`;
-	if the basePath is a file however, the first (and only) path with be
-	`./thefile` (where 'thefile' is effectively `filepath.Base` of the basePath).
-	Note the subtle difference in the amount of information shown to visit funcs:
-	when basePath is a directory, no information about the path names leading up
-	to *and including* basePath's name are sent to the visit funcs;
-	when basePath is a file, part of basePath *is* sent to the visit funcs.
-	Typically this does what you mean (after all, what can we do with a file
-	with no name?), but the distinction may be important to note if the caller's
-	intention is to have no effects from basePath's location.
+	if the basePath is a file however, the first (and only) path with be `.`.
+	This retains the same invarients from the perspective of the visit funcs
+	(namely, that `filepath.Join(basePath, node.Path)` must be a correct path),
+	but may also require additional understanding from the calling code to handle
+	single files correctly.
+
+	In order to get a name for the file in special case that basePath is a single
+	file, use `node.Info.Name()`.
 
 	Symlinks are not followed.
 
@@ -94,7 +93,7 @@ func newFileWalkNode(basePath, path string) (filenode *FilewalkNode) {
 	}
 	// Handle boundary condition for a basepath that is a file.
 	if path == "./" && !filenode.Info.IsDir() {
-		filenode.Path = "./" + filenode.Info.Name()
+		filenode.Path = "."
 	}
 	// don't expand the children until the previsit function
 	// we don't want them all crashing into memory at once

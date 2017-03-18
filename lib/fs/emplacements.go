@@ -188,6 +188,12 @@ func PlaceDirTime(destBasePath string, hdr Metadata) {
 	Scan file attributes into a repeatr Metadata struct, and return an
 	`io.Reader` for the file content.
 
+	The returned metadata will set its 'Name' to 'path' as given by the caller,
+	EXCEPT when the path is ".", in which case the normalized form of the
+	name from the os.FileInfo for the path will be used (a la './thefile').
+	(This exception may make more sense when considered in conjunction with
+	the behavior of `fs.Walk` regarding walks that start on a file node.)
+
 	FileInfo may be provided if it is already available (this will save a stat call).
 	The path is expected to exist (nonexistence is a panicable offense, along
 	with all other IO errors).
@@ -199,7 +205,11 @@ func ScanFile(basePath, path string, optional ...os.FileInfo) (hdr Metadata, fil
 	fullPath := filepath.Join(basePath, path)
 	// most of the heavy work is in ReadMetadata; this method just adds the file content
 	hdr = ReadMetadata(fullPath, optional...)
-	hdr.Name = path
+	if path == "." {
+		hdr.Name = "./" + hdr.Name
+	} else {
+		hdr.Name = path
+	}
 	switch hdr.Typeflag {
 	case tar.TypeReg:
 		var err error
