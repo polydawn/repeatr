@@ -40,6 +40,28 @@ func TestFormulaHashFixtures(t *testing.T) {
 				}
 				So(frm.Hash(), ShouldEqual, "8h8bRDwDAS39QtyQ7SNn9BYKZkXCxkxWMpCcHAMKdbvYe2qQ3r7TduVccHeCe8dk4y")
 			})
+			Convey("Given non-conjectured outputs with hashes, it should match the same fixture", func() {
+				frm.Outputs = rdef.OutputGroup{
+					"product": &rdef.Output{
+						Type:       "tar",
+						MountPath:  "/output",
+						Conjecture: false,
+						Hash:       "baby's first hash",
+					},
+				}
+				So(frm.Hash(), ShouldEqual, "8h8bRDwDAS39QtyQ7SNn9BYKZkXCxkxWMpCcHAMKdbvYe2qQ3r7TduVccHeCe8dk4y")
+			})
+			Convey("Given conjectured outputs with hashes, it should have a different fixture", func() {
+				frm.Outputs = rdef.OutputGroup{
+					"product": &rdef.Output{
+						Type:       "tar",
+						MountPath:  "/output",
+						Conjecture: true,
+						Hash:       "baby's first hash",
+					},
+				}
+				So(frm.Hash(), ShouldEqual, "7rViXY4NfCiveRz3D5scyTJnJd9YegRgvwtiLFGXGyn6bzqM8H2wGxhmQw3bgvcnsp")
+			})
 		})
 	})
 }

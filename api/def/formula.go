@@ -41,8 +41,10 @@ func (f Formula) Hash() string {
 		spec.Warehouses = nil
 	}
 	for _, spec := range f2.Outputs {
-		spec.Hash = ""
 		spec.Warehouses = nil
+		if !spec.Conjecture {
+			spec.Hash = ""
+		}
 	}
 	// Hash the rest, and thar we be.
 	hasher := sha512.New384()
