@@ -16,9 +16,12 @@ type Formula struct {
 }
 
 /*
-	Hash the formula -- including the inputs, actions, and output slot specs;
-	excluding any actual output ware hashes, and excluding any non-conjecture-worthy
-	bits like warehouse coordinates from both the input and output sides.
+	Returns a hash covering parts of the formula such that the hash may be
+	expected to converge for formulae that describe identical setups.
+
+	Specifically, this hash includes the inputs, actions, and output slot specs;
+	it excludes any actual output ware hashes, and excludes any fields which
+	are incidental to correctly reproducing the task, such as warehouse URLs.
 
 	Caveat Emptor: this definition is should be treated as a proposal, not blessed.
 	Future versions may change the exact serialization used, and thus may not
