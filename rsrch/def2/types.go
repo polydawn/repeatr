@@ -89,6 +89,12 @@ type Action struct {
 	// Also, should probably include its own versioning, so we can grow the
 	// utilities included on their own schedule without causing breakage.
 	Reshuffle interface{}
+
+	// An action can explicitly be a no-op!
+	// This can be used like a degenerate form of Reshuffle, where all the
+	// files you want are already brought together and split apart by the input
+	// and output slot paths.
+	Null bool
 }
 
 type Results struct {
