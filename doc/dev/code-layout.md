@@ -11,7 +11,8 @@ If you're using Repeatr, but not interested in modifying it, you can skip this d
       - Formulas, Actions, MountOpts, Filters
       - RunRecords, Catalogs, Commissions
 	- no external imports -- easy to link if another program wants to speak our API.
-  - `api/act`: all the verbs for taking one state `def` and arriving at another.
+  - `api/act`: API proxying functions and other code-in-motion.
+    - compared to `api/def`, functions under this package do work; `def` is purely API types.
 	- no external imports -- easy to link if another program wants to speak our API.
   - `api/hitch`: leftover bits (e.g. yaml parsing).  Has messier imports.
 - `core`
@@ -19,11 +20,9 @@ If you're using Repeatr, but not interested in modifying it, you can skip this d
     - `core/executors/cradle`: Features for minimum-viable environment setup.
     - `core/executors/impl/*`: Plugins (chroot, runc, etc) are clustered under this tree.
 	- `core/executor/tests`: Specs for behaviors all executors should match.
-  - `core/model`: organization for coordinated groups of commissions with update systems.
-  - `core/actors`: logic that runs on `core/model` to produce auto-updating systems.
-  - `core/cli`: todo -- bit of a mess.  Pieces will move under `cmd` or `api/act`.
-  - `core/scheduler`: todo -- bit of a mess.  Will disappear entirely.
-  - `core/jank`: todo -- lost code and overly global references that need refactor.
+  - `core/actors`: shared code components which require their own threads/goroutines to run, performing nontrivial bits of orchestration between concurrent components.
+  - `core/assets`: helper package for managing internal references to assets not compiled into the Repeatr binary itself.
+  - `core/jank`: the inevitable junk drawer -- lost code and overly global references that need refactor.
 - `rio`
   - The heavy-lifting parts of data transport and Repeatable Input/Output.
     - `rio/assets`: Mechanisms for bootstrapping other plugins that have their own file bundles.
@@ -42,9 +41,9 @@ If you're using Repeatr, but not interested in modifying it, you can skip this d
   - Some IO stuff (and even hashing of it) falls into `lib` on the theory it might be reusable for a large-data-diffing tool, or similar.
 - `doc`
   - You're lookin' at it.
-- `examples`
-  - Shell scripts drive around the other Repeatr commands.
 - `meta`
   - Build utilities, Release scripts, and other meta-project leftovers.
 - `cmd`
   - The comand-line interface and start of the program are here.
+- `rsrch`
+  - Code here is not ready for prime-time and not referenced by any other packages, but contains draft structures that may become part of future iterations of Repeatr.
