@@ -1,5 +1,30 @@
 package def
 
+/* Roughly, as yaml-ish:
+
+```
+inputs:
+	"rootfs":      {type:"filesystem", path:"/",         ware:"tar:589tu49yu984u5y"}
+	"go-compiler": {type:"filesystem", path:"/app/go",   ware:"tar:349345345345345"}
+	"wizbang-src": {type:"filesystem", path:"/task/src", ware:"git:afafafafafaffaf"}
+	"env-arch":    {type:"env", key:"GOARCH", value:"amd64"}
+action:
+	script:
+		- oi
+		- oioioi
+		- mkdir /build/output
+		- echo wow > /build/output
+save:
+	"build": {type:"filesystem", path:"/build/output", fmt:"tar"}
+warehousing:
+	default: "directory.repeatr.io"
+	saveto: "./wares" ## this is actually a default anyway
+	for:
+		go-compiler: "github.com/wizbang/wow.git"
+```
+
+*/
+
 var frm = &Formula{
 	Inputs: Inputs{
 		"hostname":   {Hostname: "custom-host-name"},
