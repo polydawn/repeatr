@@ -20,6 +20,7 @@ import (
 	"go.polydawn.net/repeatr/rio/transmat/impl/dir"
 	"go.polydawn.net/repeatr/rio/transmat/impl/file"
 	"go.polydawn.net/repeatr/rio/transmat/impl/git"
+	"go.polydawn.net/repeatr/rio/transmat/impl/gs"
 	"go.polydawn.net/repeatr/rio/transmat/impl/s3"
 	"go.polydawn.net/repeatr/rio/transmat/impl/tar"
 	"go.polydawn.net/repeatr/rio/transmat/mux"
@@ -40,6 +41,7 @@ func DefaultTransmat() rio.Transmat {
 		rio.TransmatKind("dir"): dir.New,
 		rio.TransmatKind("tar"): tar.New,
 		rio.TransmatKind("s3"):  s3.New,
+		rio.TransmatKind("gs"):  gs.New,
 	})
 	fileCacher := cachedir.New(filepath.Join(workDir, "filecacher"), map[rio.TransmatKind]rio.TransmatFactory{
 		rio.TransmatKind("file"): file.New,
@@ -48,6 +50,7 @@ func DefaultTransmat() rio.Transmat {
 		rio.TransmatKind("dir"):  dirCacher,
 		rio.TransmatKind("tar"):  dirCacher,
 		rio.TransmatKind("s3"):   dirCacher,
+		rio.TransmatKind("gs"):   dirCacher,
 		rio.TransmatKind("file"): fileCacher,
 		rio.TransmatKind("git"):  git.New(filepath.Join(workDir, "git")),
 	})

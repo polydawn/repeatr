@@ -156,7 +156,15 @@ func (wh *Warehouse) openWriter() *writeController {
 	//  We end up getting an error chan back as well, because the api underneath
 	//   actually takes a reader, and we bounce things through a pipe with a goroutine
 	//   so that we can get the same directionality of interface as everyone else.
-	makeGsWriter(wh.bucketName, pth, wh.token)
+	var err error
+	wc.writer, wc.writerErr, err = makeGsWriter(wh.bucketName, pth, wh.token)
+	if err != nil {
+		panic(&def.ErrWarehouseUnavailable{
+			Msg:    err.Error(),
+			During: "save",
+			From:   wh.coord,
+		})
+	}
 	return wc
 }
 
