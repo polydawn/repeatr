@@ -2,6 +2,8 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+- Feature: `overlay` is now supported as a COW filesystem!  If your host has overlayfs, it will be used in preference to AUFS; then AUFS, then so on down the fallback tree as before.
+  - Note that there is no "migration" necessary, because why would there be?
 - Bugfix: now emit well-formed tar when an output is a single file.  Previously the tar emitted would always mark the first entry as a dir, and thus not be valid if the following content was a single file.
   - Note that I'd recommend against intentionally creating tars of single files without an enclosing directory anyway, because they're simply odd to work with (given a filesystem with dir `/a/` and file `/a/b`, packing `/a/` and unpacking it at `/z/` leaves you with `/z/b` as you'd expect; packing `/a/b` and unpacking it at `/z/y` leaves you with `/z/y/b`!  Though surprising, this is consistent as if repeatr's tar implementation was exec'ing `tar -c $path1 | tar -x -C $path2`).
 - Bugfix: if your system lacks a modprobe command, handle this gracefully.
