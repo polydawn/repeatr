@@ -28,6 +28,7 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 	//  - because we're doing custom content anyway so we have multiple commits
 	//  both of these could be addressed with upgrades to filefixtures in the future.
 	Convey("Given a local git repo", t, testutil.Requires(
+		testutil.RequiresRoot,
 		testutil.WithTmpdir(func(c C) {
 			git := git.Bake(gosh.Opts{Env: map[string]string{
 				"GIT_AUTHOR_NAME":     "repeatr",
