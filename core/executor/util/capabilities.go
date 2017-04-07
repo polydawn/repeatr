@@ -16,6 +16,7 @@ import (
 	"go.polydawn.net/repeatr/rio/placer"
 	"go.polydawn.net/repeatr/rio/placer/impl/aufs"
 	"go.polydawn.net/repeatr/rio/placer/impl/copy"
+	"go.polydawn.net/repeatr/rio/placer/impl/overlay"
 	"go.polydawn.net/repeatr/rio/transmat/impl/cachedir"
 	"go.polydawn.net/repeatr/rio/transmat/impl/dir"
 	"go.polydawn.net/repeatr/rio/transmat/impl/file"
@@ -77,8 +78,12 @@ func determineBestAssembler() rio.Assembler {
 		fmt.Fprintf(os.Stderr, "WARN: using slow fs assembly system: travis' environment blocks faster systems.\n")
 		return placer.NewAssembler(copy.CopyingPlacer)
 	}
-	// If we *can* mount...
-	if isAUFSAvailable() {
+	// If we *can* mount... (use overlay)
+	if isFSAvailable("overlay") {
+		return placer.NewAssembler(overlay.NewOverlayPlacer(filepath.Join(jank.Base(), "overlay")))
+	}
+	// If we're old and lame but can still mount... (use aufs)
+	if isFSAvailable("aufs") {
 		// if AUFS is installed, AUFS+Bind is The Winner.
 		return placer.NewAssembler(aufs.NewAufsPlacer(filepath.Join(jank.Base(), "aufs")))
 	}
@@ -88,40 +93,40 @@ func determineBestAssembler() rio.Assembler {
 	// TODO we should be able to use copy for fallback RW isolator but still bind for RO.  write a new placer for that.  or really, maybe bind should chain.
 }
 
-func isAUFSAvailable() bool {
+func isFSAvailable(fs string) bool {
 	// the greatest thing to do would of course just be to issue the syscall once and see if it flies
 	// but that's a distrubingly stateful and messy operation so we're gonna check a bunch
 	// of next-best-things instead.
 
 	// If we it's in /proc/filesystems, we should be good to go.
 	// (If it's not, the libs might be installed, but not loaded, so we'll try that next.)
-	if fs, err := ioutil.ReadFile("/proc/filesystems"); err == nil {
-		fsLines := strings.Split(string(fs), "\n")
-		for _, line := range fsLines {
+	if fss, err := ioutil.ReadFile("/proc/filesystems"); err == nil {
+		fssLines := strings.Split(string(fss), "\n")
+		for _, line := range fssLines {
 			parts := strings.Split(line, "\t")
 			if len(parts) < 2 {
 				continue
 			}
-			if parts[1] == "aufs" {
+			if parts[1] == fs {
 				return true
 			}
 		}
 	}
 
-	// If modprobe exists, we can attempt to use it to load the AUFS module.
-	// If it doesn't, bail here; AUFS is not available and we can't get it.
+	// If modprobe exists, we can attempt to use it to load the FS module.
+	// If it doesn't, bail here; FS is not available and we can't get it.
 	modprobePath, err := exec.LookPath("modprobe")
 	if err != nil {
 		return false
 	}
 
-	// Blindly attempt to modprobe the AUFS module into the kernel.
+	// Blindly attempt to modprobe the FS module into the kernel.
 	// If it works, great.  If it doesn't, okay, we'll move on.
 	// Repeatedly installing it if it already exists no-op's correctly.
 	// Timeout is 100ms... maybe a little aggressive, but this takes 36ms on
 	//  my machine with a cold disk cache, 11ms hot, and is remarkably consistent.
 	modprobeCode := gosh.Sh(
-		modprobePath, "aufs",
+		modprobePath, fs,
 		gosh.NullIO,
 		gosh.Opts{OkExit: gosh.AnyExit},
 	).GetExitCodeSoon(100 * time.Millisecond)
