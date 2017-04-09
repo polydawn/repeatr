@@ -36,13 +36,17 @@ func MakeCradle(rootfsPath string, frm def.Formula) {
 func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 	pth := filepath.Join(rootfsPath, frm.Action.Cwd)
 	uinfo := UserinfoForPolicy(frm.Action.Policy)
-	fs.MkdirAllWithAttribs(pth, fs.Metadata{
+	attribs := fs.Metadata{
+		Typeflag:   '5',
+		Name:       "./",
 		Mode:       0755,
 		ModTime:    fs.Epochwhen,
 		AccessTime: fs.Epochwhen,
 		Uid:        uinfo.Uid,
 		Gid:        uinfo.Gid,
-	})
+	}
+	fs.MkdirAllWithAttribs(pth, attribs)
+	fs.PlaceFile(pth, attribs, nil)
 }
 
 /*
