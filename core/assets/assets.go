@@ -19,7 +19,7 @@ import (
 )
 
 var assets = map[string]rio.CommitID{
-	"runc": rio.CommitID("GWQ-0zuTIZDrY_noJMUb2zTSfxJJp9ldhfbQB7dRCQ-kzzaAoLVFFwWozoQJnHJf"),
+	"runc": rio.CommitID("xKFg25CWzvNLqmAGkAKY_TG5dYqeJGxP7XnVYBJOQl5ZmwY1JiJc2Fl9pobqS5fW"),
 }
 
 func WarehouseCoords() []rio.SiloURI {

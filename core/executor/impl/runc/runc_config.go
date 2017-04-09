@@ -13,7 +13,7 @@ func EmitRuncConfigStruct(frm def.Formula, job executor.Job, rootPath string, tt
 		hostname = string(job.Id())
 	}
 	return map[string]interface{}{
-		"version": "0.2.0",
+		"ociVersion": "1.0.0-rc5",
 		"platform": map[string]interface{}{
 			"os":   "linux",
 			"arch": "amd64",
@@ -33,35 +33,44 @@ func EmitRuncConfigStruct(frm def.Formula, job executor.Job, rootPath string, tt
 				return
 			}(),
 			"cwd": frm.Action.Cwd,
+
+			"capabilities": map[string]interface{}{
+				"bounding":    cradle.CapsForPolicy(frm.Action.Policy),
+				"effective":   cradle.CapsForPolicy(frm.Action.Policy),
+				"inheritable": cradle.CapsForPolicy(frm.Action.Policy),
+				"permitted":   cradle.CapsForPolicy(frm.Action.Policy),
+				"ambient":     cradle.CapsForPolicy(frm.Action.Policy),
+			},
+			"rlimits": []interface{}{
+				map[string]interface{}{
+					"type": "RLIMIT_NOFILE",
+					"hard": 1024,
+					"soft": 1024,
+				},
+			},
+			"noNewPrivileges": true,
 		},
 		"root": map[string]interface{}{
-			"path":     rootPath,
+			"path":     "rootfs",
 			"readonly": false,
 		},
 		"hostname": hostname,
 		"mounts": []interface{}{
 			map[string]interface{}{
-				"name": "proc",
-				"path": "/proc",
+				"destination": "/proc",
+				"type":        "proc",
+				"source":      "proc",
 			},
 		},
 		"linux": map[string]interface{}{
-			"capabilities": cradle.CapsForPolicy(frm.Action.Policy),
-		},
-	}
-}
-
-func EmitRuncRuntimeStruct(_ def.Formula) interface{} {
-	return map[string]interface{}{
-		"mounts": map[string]interface{}{
-			"proc": map[string]interface{}{
-				"type":    "proc",
-				"source":  "proc",
-				"options": nil,
+			"resources": map[string]interface{}{
+				"devices": []interface{}{
+					map[string]interface{}{
+						"allow":  false,
+						"access": "rwm",
+					},
+				},
 			},
-		},
-		"linux": map[string]interface{}{
-			"resources": map[string]interface{}{},
 			"namespaces": []interface{}{
 				map[string]interface{}{
 					"type": "pid",
@@ -80,6 +89,29 @@ func EmitRuncRuntimeStruct(_ def.Formula) interface{} {
 					"path": "",
 				},
 			},
+			"maskedPaths": []string{
+				"/proc/kcore",
+				"/proc/latency_stats",
+				"/proc/timer_list",
+				"/proc/timer_stats",
+				"/proc/sched_debug",
+				"/sys/firmware",
+			},
+			"readonlyPaths": []string{
+				"/proc/asound",
+				"/proc/bus",
+				"/proc/fs",
+				"/proc/irq",
+				"/proc/sys",
+				"/proc/sysrq-trigger",
+			},
+		},
+	}
+}
+
+func EmitRuncRuntimeStruct(_ def.Formula) interface{} {
+	return map[string]interface{}{
+		"linux": map[string]interface{}{
 			"devices": []interface{}{
 				map[string]interface{}{
 					"path":        "/dev/null",

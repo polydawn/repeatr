@@ -123,7 +123,7 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 		cradle.MakeCradle(rootfsPath, formula)
 	}
 
-	// Emit configs for runc.
+	// Emit config for runc.
 	runcConfigJsonPath := filepath.Join(jobPath, "config.json")
 	cfg := EmitRuncConfigStruct(formula, job, rootfsPath, stdin != nil)
 	buf, err := json.Marshal(cfg)
@@ -131,30 +131,22 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 		panic(executor.UnknownError.Wrap(err))
 	}
 	ioutil.WriteFile(runcConfigJsonPath, buf, 0600)
-	runcRuntimeJsonPath := filepath.Join(jobPath, "runtime.json")
-	cfg = EmitRuncRuntimeStruct(formula)
-	buf, err = json.Marshal(cfg)
-	if err != nil {
-		panic(executor.UnknownError.Wrap(err))
-	}
-	ioutil.WriteFile(runcRuntimeJsonPath, buf, 0600)
 
 	// Routing logs through a fifo appears to work, but we're going to use a file as a buffer anyway:
 	//  in the event of nasty breakdowns, it's preferable that the runc log remain readable even if repeatr was the process to end first.
 	logPath := filepath.Join(jobPath, "runc-debug.log")
 
 	// Get handle to invokable runc plugin.
-	runcPath := filepath.Join(assets.Get("runc"), "bin/runc")
+	runcPath := filepath.Join(assets.Get("runc"), "runc")
 
 	// Prepare command to exec
 	args := []string{
-		"--id", string(job.Id()),
 		"--root", filepath.Join(e.workspacePath, "shared"), // a tmpfs would be appropriate
 		"--log", logPath,
 		"--log-format", "json",
-		"start",
-		"--config-file", runcConfigJsonPath,
-		"--runtime-file", runcRuntimeJsonPath,
+		"run",
+		"--bundle", jobPath,
+		string(job.Id()),
 	}
 	cmd := exec.Command(runcPath, args...)
 	cmd.Stdin = stdin
