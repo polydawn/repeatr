@@ -322,14 +322,12 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	tailerDone.Wait()
 
 	// If we had a CnC error (rather than the real subprocess exit code):
+	//  - unblock the child's stderr stream, but devnull it (the real error is
+	//     in the logs, and we're handling it already; we don't want to
+	//     confuse the user by letting the message be repeated in stderr
+	//     as if it came from their contained process).
 	//  - reset code to -1 because the runc exit code wasn't really from the job command
 	//  - raise the error
-	// FIXME we WISH we could zero the output buffers because runc pushes duplicate error messages
-	//  down a channel that's indistinguishable from the application stderr... but that's tricky for several reasons:
-	//  - we support streaming them out, right?
-	//  - that means we'd have to have been blocking them already; we can't zero retroactively.
-	//  - there's no "all clear" signal available from runc that would let us know we're clear to start flushing the stream if we blocked it.
-	//  - So, we're unable to pass the executor compat tests until patches to runc clean up this behavior.
 	if realError != nil {
 		if !stderrReleased {
 			stderrStaller.Discard()
