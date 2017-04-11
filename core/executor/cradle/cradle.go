@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"go.polydawn.net/meep"
+
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/core/executor"
 	"go.polydawn.net/repeatr/lib/fs"
@@ -30,6 +32,12 @@ func MakeCradle(rootfsPath string, frm def.Formula) {
 
 	This is a basic sanity provision: many rootfs tarballs start with all
 	perms being 0:0, and most processes need *some* working directories.
+
+	In the event the targetted filesystem can't easily be manuvered into
+	this position (for example, if there's a *file* at the target CWD),
+	no errors are raised.  (In the CWD-is-a-file example, this will
+	manifest as execution failing because the CWD can't be set to a file,
+	which will hopefully make sense.)
 */
 func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 	pth := filepath.Join(rootfsPath, frm.Action.Cwd)
@@ -43,8 +51,12 @@ func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 		Uid:        uinfo.Uid,
 		Gid:        uinfo.Gid,
 	}
+	// Mkdir all parents.
+	//  Ignore if errors (from alreadyexists, etc).
 	fs.MkdirAllWithAttribs(pth, attribs)
-	fs.PlaceFile(pth, attribs, nil)
+	// Force owner and mode attributes on tip.
+	//  Again, swallow errors.
+	meep.RecoverPanics(func() { fs.PlaceFile(pth, attribs, nil) })
 }
 
 /*
