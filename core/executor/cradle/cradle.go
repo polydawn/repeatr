@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"go.polydawn.net/meep"
+
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/core/executor"
 	"go.polydawn.net/repeatr/lib/fs"
@@ -22,27 +24,39 @@ func MakeCradle(rootfsPath string, frm def.Formula) {
 }
 
 /*
-	Ensure that the working directory specified in the formula exists, and
-	if it had to be created, make it owned and writable by the user that
-	the contained process will be launched as.  (If it already existed, do
-	nothing; presumably you know what you're doing and intended whatever
-	content is already there and whatever permissions are already in effect.)
+	Ensure that the working directory specified in the formula exists,
+	ensure it has reasonable permissions, and ensure that it is
+	owned and writable by the user that the contained process will be
+	launched as.
+	(If the dir already exists, the permissions will be overwritten.)
 
-	TODO: review this policy of "if it exists, leave it".  This has super
-	confusing and frustrated results if you, say, have an input or mount
-	aimed at "/task/whatever".  Though that... could also be better addressed
-	by giving cradle more of a roll in filesystem assembly.
+	This is a basic sanity provision: many rootfs tarballs start with all
+	perms being 0:0, and most processes need *some* working directories.
+
+	In the event the targetted filesystem can't easily be manuvered into
+	this position (for example, if there's a *file* at the target CWD),
+	no errors are raised.  (In the CWD-is-a-file example, this will
+	manifest as execution failing because the CWD can't be set to a file,
+	which will hopefully make sense.)
 */
 func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 	pth := filepath.Join(rootfsPath, frm.Action.Cwd)
 	uinfo := UserinfoForPolicy(frm.Action.Policy)
-	fs.MkdirAllWithAttribs(pth, fs.Metadata{
+	attribs := fs.Metadata{
+		Typeflag:   '5',
+		Name:       "./",
 		Mode:       0755,
 		ModTime:    fs.Epochwhen,
 		AccessTime: fs.Epochwhen,
 		Uid:        uinfo.Uid,
 		Gid:        uinfo.Gid,
-	})
+	}
+	// Mkdir all parents.
+	//  Ignore if errors (from alreadyexists, etc).
+	fs.MkdirAllWithAttribs(pth, attribs)
+	// Force owner and mode attributes on tip.
+	//  Again, swallow errors.
+	meep.RecoverPanics(func() { fs.PlaceFile(pth, attribs, nil) })
 }
 
 /*
