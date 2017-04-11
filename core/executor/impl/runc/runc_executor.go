@@ -200,7 +200,6 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 
 	// Proxy runc's logs out in realtime; also, detect errors and exit statuses from the stream.
 	var realError error
-	var someError bool // see the "NOTE WELL" section below -.-
 	var stderrReleased bool
 	var tailerDone sync.WaitGroup
 	tailerDone.Add(1)
@@ -296,7 +295,7 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 			case "error":
 				if realError == nil {
 					journal.Error(logMsg["msg"].(string), ctx)
-					someError = true
+					realError = executor.UnknownError.New("runc errored in an unrecognized fashion")
 					break
 				}
 				if !stderrReleased {
@@ -324,16 +323,13 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 
 	// If we had a CnC error (rather than the real subprocess exit code):
 	//  - reset code to -1 because the runc exit code wasn't really from the job command
-	//  - finally, raise the error
+	//  - raise the error
 	// FIXME we WISH we could zero the output buffers because runc pushes duplicate error messages
 	//  down a channel that's indistinguishable from the application stderr... but that's tricky for several reasons:
 	//  - we support streaming them out, right?
 	//  - that means we'd have to have been blocking them already; we can't zero retroactively.
 	//  - there's no "all clear" signal available from runc that would let us know we're clear to start flushing the stream if we blocked it.
 	//  - So, we're unable to pass the executor compat tests until patches to runc clean up this behavior.
-	if someError && realError == nil {
-		realError = executor.UnknownError.New("runc errored in an unrecognized fashion")
-	}
 	if realError != nil {
 		if !stderrReleased {
 			stderrStaller.Discard()
