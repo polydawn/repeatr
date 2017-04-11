@@ -22,6 +22,7 @@ import (
 	"go.polydawn.net/repeatr/core/executor/cradle"
 	"go.polydawn.net/repeatr/core/executor/util"
 	"go.polydawn.net/repeatr/lib/flak"
+	"go.polydawn.net/repeatr/lib/iofilter"
 	"go.polydawn.net/repeatr/lib/streamer"
 )
 
@@ -123,7 +124,7 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 		cradle.MakeCradle(rootfsPath, formula)
 	}
 
-	// Emit configs for runc.
+	// Emit config for runc.
 	runcConfigJsonPath := filepath.Join(jobPath, "config.json")
 	cfg := EmitRuncConfigStruct(formula, job, rootfsPath, stdin != nil)
 	buf, err := json.Marshal(cfg)
@@ -131,35 +132,33 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 		panic(executor.UnknownError.Wrap(err))
 	}
 	ioutil.WriteFile(runcConfigJsonPath, buf, 0600)
-	runcRuntimeJsonPath := filepath.Join(jobPath, "runtime.json")
-	cfg = EmitRuncRuntimeStruct(formula)
-	buf, err = json.Marshal(cfg)
-	if err != nil {
-		panic(executor.UnknownError.Wrap(err))
-	}
-	ioutil.WriteFile(runcRuntimeJsonPath, buf, 0600)
 
 	// Routing logs through a fifo appears to work, but we're going to use a file as a buffer anyway:
 	//  in the event of nasty breakdowns, it's preferable that the runc log remain readable even if repeatr was the process to end first.
 	logPath := filepath.Join(jobPath, "runc-debug.log")
 
 	// Get handle to invokable runc plugin.
-	runcPath := filepath.Join(assets.Get("runc"), "bin/runc")
+	runcPath := filepath.Join(assets.Get("runc"), "runc")
+
+	// Make a stalling writer so we can make sure things are working correctly before
+	//  allowing stderr to be flushed through to the user.
+	//  This is a workaround to some really nasty missing features in runc.
+	stderrStaller := iofilter.NewStallingWriter(stderr)
 
 	// Prepare command to exec
 	args := []string{
-		"--id", string(job.Id()),
 		"--root", filepath.Join(e.workspacePath, "shared"), // a tmpfs would be appropriate
+		"--debug",
 		"--log", logPath,
 		"--log-format", "json",
-		"start",
-		"--config-file", runcConfigJsonPath,
-		"--runtime-file", runcRuntimeJsonPath,
+		"run",
+		"--bundle", jobPath,
+		string(job.Id()),
 	}
 	cmd := exec.Command(runcPath, args...)
 	cmd.Stdin = stdin
 	cmd.Stdout = stdout
-	cmd.Stderr = stderr
+	cmd.Stderr = stderrStaller
 
 	// launch execution.
 	// transform gosh's typed errors to repeatr's hierarchical errors.
@@ -201,14 +200,15 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 
 	// Proxy runc's logs out in realtime; also, detect errors and exit statuses from the stream.
 	var realError error
-	var someError bool // see the "NOTE WELL" section below -.-
+	var stderrReleased bool
 	var tailerDone sync.WaitGroup
 	tailerDone.Add(1)
 	go func() {
 		defer tailerDone.Done()
 		dec := json.NewDecoder(runcLog)
 		for {
-			var logMsg map[string]string
+			// Parse log lines.
+			var logMsg map[string]interface{}
 			err := dec.Decode(&logMsg)
 			if err != nil {
 				if err == io.EOF {
@@ -227,44 +227,86 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 				}
 				ctx["runc-"+k] = v
 			}
-			// with runc, everything we hear is at least a warning.
-			journal.Warn(logMsg["msg"], ctx)
-			// actually filtering the interesting structures and raising issues
-			// note that we don't need to capture the "exit status" message, because that
-			//  code *does* come out correctly... but we do need to sometimes override it again.
+
+			//fmt.Printf("\n\n---\n%s\n---\n\n", logMsg["msg"])
+
+			// Attempt to filter and normalize errors.
+			// We want to be clear in representing which category of errors are coming up:
+			//
+			//  - Type 1.a: Exit codes of the contained user process.
+			//    - These aren't errors that we raise as such: they're just an int code to report.
+			//  - Type 1.b: Errors from invalid user configuration (e.g. no such executable, which prevents the process from ever starting) (we expect these to be reproducible!).
+			//    - These kinds of errors should be mapped onto clear types themselves: we want a "NoSuchCwdError", not just a string vomit.
+			//  - Type 2: Errors from runc being unable to function (e.g. maybe your kernel doesn't support cgroups, or other bizarre and serious issue?), where hopefully we can advise the user of this in a clear fashion.
+			//  - Type 3: Runc crashing in an unrecognized way (which should result in either patches to our recognizers, or bugs filed upstream to runc).
+			//
+			// This is HARD.
+			//
 			// NOTE WELL: we cannot guarantee to capture all semantic runc failure modes.
 			//  Errors may slip through with exit status 1: there are still many fail states
 			//  which runc does not log with sufficient consistency or a sufficiently separate
 			//  control channel for us to be able to reliably disambiguate them from stderr
 			//  output of a successfully executing job!
-			// We have whitelisted what we can; the following oddities remain:
-			//   - runc will log an "exit status ${n}" message for other failures of its internal forking
-			//     - this one is at least on a clear control channel, so we raise it as a panic, even if we don't know what it is
-			//   - lots of system initialization paths in runc will error directly stderr with no clear sigils or separation from usermode stderr.
-			//     - and these mean we're just screwed, and require additional upstream patches to address.
-			switch logMsg["msg"] {
-			case "Container start failed: [8] System error: no such file or directory":
-				realError = executor.NoSuchCwdError.New("cannot set cwd to %q: no such file or directory", formula.Action.Cwd)
-			case "Container start failed: [8] System error: not a directory":
-				realError = executor.NoSuchCwdError.New("cannot set cwd to %q: not a directory", formula.Action.Cwd)
-			case "Container start failed: [8] System error: fork/exec /proc/self/exe: invalid argument":
-				realError = executor.TaskExecError.New("runc cannot operate in this environment!  When attempting to fork itself, error: invalid argument")
-			case "Container start failed: [8] System error: fork/exec /proc/self/exe: operation not permitted":
-				realError = executor.TaskExecError.New("runc cannot operate in this environment!  When attempting to fork itself, error: operation not permitted.  (Are you attempting to nest this in unprivileged containers?  Unfortunately this isn't currently possible.)")
-			default:
-				// broader patterns required for some of these so we can ignore the vagaries of how the command name was quoted
-				if strings.HasPrefix(logMsg["msg"], "Container start failed: [8] System error: exec: ") {
-					if strings.HasSuffix(logMsg["msg"], ": executable file not found in $PATH") {
-						realError = executor.NoSuchCommandError.New("command %q not found", formula.Action.Entrypoint[0])
-					} else if strings.HasSuffix(logMsg["msg"], ": no such file or directory") {
-						realError = executor.NoSuchCommandError.New("command %q not found", formula.Action.Entrypoint[0])
-					}
-				} else if strings.HasPrefix(logMsg["msg"], "exit status ") {
-					// by itself this doesn't mean much, but if we can't figure out
-					//  what happened in particular by the proc exit, be quite alarmed.
-					// and no, this does *not* mean the real job process exit code, as you might expect.
-					someError = true
+			//
+			// We have whitelisted recognizers for what we can, but oddities may remain.
+			for _, tr := range []struct {
+				prefix, suffix string
+				err            error
+			}{
+				{"container_linux.go:262: starting container process caused \"exec: \\\"", ": executable file not found in $PATH\"\n",
+					executor.NoSuchCommandError.New("command %q not found", formula.Action.Entrypoint[0])},
+				{"container_linux.go:262: starting container process caused \"exec: \\\"", ": no such file or directory\"\n",
+					executor.NoSuchCommandError.New("command %q not found", formula.Action.Entrypoint[0])},
+				{"container_linux.go:262: starting container process caused \"chdir to cwd (\\\"", "\\\") set in config.json failed: not a directory\"\n",
+					executor.NoSuchCwdError.New("cannot set cwd to %q: no such file or directory", formula.Action.Cwd)},
+				{"container_linux.go:262: starting container process caused \"chdir to cwd (\\\"", "\\\") set in config.json failed: no such file or directory\"\n",
+					executor.NoSuchCwdError.New("cannot set cwd to %q: no such file or directory", formula.Action.Cwd)},
+				// Note: Some other errors were previously raised in the pattern of `executor.TaskExecError.New("runc cannot operate in this environment!")`,
+				// but none of these are currently here because we cachebusted our known error strings when upgrading runc.
+			} {
+				if !strings.HasPrefix(logMsg["msg"].(string), tr.prefix) {
+					continue
 				}
+				if !strings.HasSuffix(logMsg["msg"].(string), tr.suffix) {
+					continue
+				}
+				realError = tr.err
+				break
+			}
+
+			// Log again.
+			// The level of alarm we raise depends:
+			//  - If it's clearly flagged debug level, accept that;
+			//  - If we recognized it above, it's no more than a warning;
+			//  - If we *didn't* recognize and handle it explicitly, and
+			//    we can see a clear indication it's fatal, then log big and red.
+			// There's one additional truly alarming responsibility of this code:
+			//  Releasing the stderr buffer to the user after the first 'debug' log.
+			//  Yes, really.  Control flow here is controlled by these logs.
+			switch ctx["runc-level"] {
+			case "debug":
+				journal.Debug(logMsg["msg"].(string), ctx)
+				if !stderrReleased {
+					stderrStaller.Release()
+					stderrReleased = true
+				}
+			default:
+				fallthrough
+			case "error":
+				if realError == nil {
+					journal.Error(logMsg["msg"].(string), ctx)
+					realError = executor.UnknownError.New("runc errored in an unrecognized fashion")
+					break
+				}
+				if !stderrReleased {
+					stderrStaller.Discard()
+					stderrReleased = true
+				}
+				fallthrough
+			case "warning":
+				journal.Warn(logMsg["msg"].(string), ctx)
+				// If stderr isn't released yet, we can't release it on warnings:
+				//  it's likely that we're going to get something fatal momentarily.
 			}
 		}
 	}()
@@ -281,17 +323,17 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 
 	// If we had a CnC error (rather than the real subprocess exit code):
 	//  - reset code to -1 because the runc exit code wasn't really from the job command
-	//  - finally, raise the error
+	//  - raise the error
 	// FIXME we WISH we could zero the output buffers because runc pushes duplicate error messages
 	//  down a channel that's indistinguishable from the application stderr... but that's tricky for several reasons:
 	//  - we support streaming them out, right?
 	//  - that means we'd have to have been blocking them already; we can't zero retroactively.
 	//  - there's no "all clear" signal available from runc that would let us know we're clear to start flushing the stream if we blocked it.
 	//  - So, we're unable to pass the executor compat tests until patches to runc clean up this behavior.
-	if someError && realError == nil {
-		realError = executor.UnknownError.New("runc errored in an unrecognized fashion")
-	}
 	if realError != nil {
+		if !stderrReleased {
+			stderrStaller.Discard()
+		}
 		result.ExitCode = -1
 		panic(realError)
 	}

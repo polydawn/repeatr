@@ -75,11 +75,6 @@ func ShouldBeNotFile(actual interface{}, expected ...interface{}) string {
 	we'll check that the error is under the umbrella of the error class.
 */
 func ShouldBeErrorClass(actual interface{}, expected ...interface{}) string {
-	err, ok := actual.(error)
-	if !ok {
-		return fmt.Sprintf("You must provide an `error` as the first argument to this assertion; got `%T`", actual)
-	}
-
 	var class *errors.ErrorClass
 	switch len(expected) {
 	case 0:
@@ -94,9 +89,17 @@ func ShouldBeErrorClass(actual interface{}, expected ...interface{}) string {
 		return "You must provide one parameter as an expectation to this assertion."
 	}
 
-	// checking if this is nil is surprisingly complicated due to https://golang.org/doc/faq#nil_error
-	if reflect.ValueOf(err).IsNil() {
+	// checking if this is nil is surprisingly complicated due to https://golang.org/doc/faq#nil_error ...
+	// first check if reflect.ValueOf gives zero value (because IsNil rudely panics on that case).
+	if !reflect.ValueOf(actual).IsValid() || reflect.ValueOf(actual).IsNil() {
 		return fmt.Sprintf("Expected error to be of class %q but it was nil!", class.String())
+	}
+
+	// Cast value to error.  This is required so we can use the spacemonkey methods on it.
+	// (Note it's important to do this *after* the nil check, to avoid confusing error messages on nil.)
+	err, ok := actual.(error)
+	if !ok {
+		return fmt.Sprintf("You must provide an `error` as the first argument to this assertion; got `%T`", actual)
 	}
 
 	spaceClass := errors.GetClass(err)
