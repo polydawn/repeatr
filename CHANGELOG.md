@@ -3,6 +3,8 @@ recent /// not yet released
 
 - *your changes here!*
 - Change: `runc` executor updated!  Repeatr now references a runc release from the 1.0rc3+ region (build specified in a formula, and reproducible).
+- Change: the working directory will now always be ensured to be owned and writable by the container process UID.  (This is followup to the "cradle" system introduced back in v0.11, and if necessary can be disabled the same way as before.)
+  - This makes it much easier to have inputs that are placed inside the working directory!  Previously that would cause directories to be implicitly created as necessary, potentially resulting in a CWD that was unwritable to UID>0.  Now, such input configuration may still result in such implicit directory creation, but the CWD itself will consistently be writable, which is usually what the user expects.
 - Feature: `overlay` is now supported as a COW filesystem!  If your host has overlayfs, it will be used in preference to AUFS; then AUFS, then so on down the fallback tree as before.
   - Note that there is no "migration" necessary, because why would there be?
 - Bugfix: now emit well-formed tar when an output is a single file.  Previously the tar emitted would always mark the first entry as a dir, and thus not be valid if the following content was a single file.
