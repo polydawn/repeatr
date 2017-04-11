@@ -22,16 +22,14 @@ func MakeCradle(rootfsPath string, frm def.Formula) {
 }
 
 /*
-	Ensure that the working directory specified in the formula exists, and
-	if it had to be created, make it owned and writable by the user that
-	the contained process will be launched as.  (If it already existed, do
-	nothing; presumably you know what you're doing and intended whatever
-	content is already there and whatever permissions are already in effect.)
+	Ensure that the working directory specified in the formula exists,
+	ensure it has reasonable permissions, and ensure that it is
+	owned and writable by the user that the contained process will be
+	launched as.
+	(If the dir already exists, the permissions will be overwritten.)
 
-	TODO: review this policy of "if it exists, leave it".  This has super
-	confusing and frustrated results if you, say, have an input or mount
-	aimed at "/task/whatever".  Though that... could also be better addressed
-	by giving cradle more of a roll in filesystem assembly.
+	This is a basic sanity provision: many rootfs tarballs start with all
+	perms being 0:0, and most processes need *some* working directories.
 */
 func ensureWorkingDir(rootfsPath string, frm def.Formula) {
 	pth := filepath.Join(rootfsPath, frm.Action.Cwd)
