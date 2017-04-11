@@ -22,6 +22,7 @@ import (
 	"go.polydawn.net/repeatr/core/executor/cradle"
 	"go.polydawn.net/repeatr/core/executor/util"
 	"go.polydawn.net/repeatr/lib/flak"
+	"go.polydawn.net/repeatr/lib/iofilter"
 	"go.polydawn.net/repeatr/lib/streamer"
 )
 
@@ -139,6 +140,11 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	// Get handle to invokable runc plugin.
 	runcPath := filepath.Join(assets.Get("runc"), "runc")
 
+	// Make a stalling writer so we can make sure things are working correctly before
+	//  allowing stderr to be flushed through to the user.
+	//  This is a workaround to some really nasty missing features in runc.
+	stderrStaller := iofilter.NewStallingWriter(stderr)
+
 	// Prepare command to exec
 	args := []string{
 		"--root", filepath.Join(e.workspacePath, "shared"), // a tmpfs would be appropriate
@@ -152,7 +158,7 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	cmd := exec.Command(runcPath, args...)
 	cmd.Stdin = stdin
 	cmd.Stdout = stdout
-	cmd.Stderr = stderr
+	cmd.Stderr = stderrStaller
 
 	// launch execution.
 	// transform gosh's typed errors to repeatr's hierarchical errors.
@@ -195,6 +201,7 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	// Proxy runc's logs out in realtime; also, detect errors and exit statuses from the stream.
 	var realError error
 	var someError bool // see the "NOTE WELL" section below -.-
+	var stderrReleased bool
 	var tailerDone sync.WaitGroup
 	tailerDone.Add(1)
 	go func() {
@@ -274,9 +281,16 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 			//  - If we recognized it above, it's no more than a warning;
 			//  - If we *didn't* recognize and handle it explicitly, and
 			//    we can see a clear indication it's fatal, then log big and red.
+			// There's one additional truly alarming responsibility of this code:
+			//  Releasing the stderr buffer to the user after the first 'debug' log.
+			//  Yes, really.  Control flow here is controlled by these logs.
 			switch ctx["runc-level"] {
 			case "debug":
 				journal.Debug(logMsg["msg"].(string), ctx)
+				if !stderrReleased {
+					stderrStaller.Release()
+					stderrReleased = true
+				}
 			default:
 				fallthrough
 			case "error":
@@ -285,9 +299,15 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 					someError = true
 					break
 				}
+				if !stderrReleased {
+					stderrStaller.Discard()
+					stderrReleased = true
+				}
 				fallthrough
 			case "warning":
 				journal.Warn(logMsg["msg"].(string), ctx)
+				// If stderr isn't released yet, we can't release it on warnings:
+				//  it's likely that we're going to get something fatal momentarily.
 			}
 		}
 	}()
@@ -315,6 +335,9 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 		realError = executor.UnknownError.New("runc errored in an unrecognized fashion")
 	}
 	if realError != nil {
+		if !stderrReleased {
+			stderrStaller.Discard()
+		}
 		result.ExitCode = -1
 		panic(realError)
 	}
