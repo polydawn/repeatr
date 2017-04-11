@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/api/def"

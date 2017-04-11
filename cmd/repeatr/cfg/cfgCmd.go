@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/codegangsta/cli"
 	"github.com/go-yaml/yaml"
 	"github.com/ugorji/go/codec"
+	"github.com/urfave/cli"
 	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"

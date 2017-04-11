@@ -5,8 +5,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/codegangsta/cli"
 	"github.com/ugorji/go/codec"
+	"github.com/urfave/cli"
 	"go.polydawn.net/go-sup"
 	"go.polydawn.net/meep"
 
