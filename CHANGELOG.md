@@ -2,6 +2,7 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+- Change: `runc` executor updated!  Repeatr now references a runc release from the 1.0rc3+ region (build specified in a formula, and reproducible).
 - Feature: `overlay` is now supported as a COW filesystem!  If your host has overlayfs, it will be used in preference to AUFS; then AUFS, then so on down the fallback tree as before.
   - Note that there is no "migration" necessary, because why would there be?
 - Bugfix: now emit well-formed tar when an output is a single file.  Previously the tar emitted would always mark the first entry as a dir, and thus not be valid if the following content was a single file.
