@@ -142,6 +142,7 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	// Prepare command to exec
 	args := []string{
 		"--root", filepath.Join(e.workspacePath, "shared"), // a tmpfs would be appropriate
+		"--debug",
 		"--log", logPath,
 		"--log-format", "json",
 		"run",
@@ -201,7 +202,7 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 		dec := json.NewDecoder(runcLog)
 		for {
 			// Parse log lines.
-			var logMsg map[string]string
+			var logMsg map[string]interface{}
 			err := dec.Decode(&logMsg)
 			if err != nil {
 				if err == io.EOF {
@@ -257,10 +258,10 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 				// Note: Some other errors were previously raised in the pattern of `executor.TaskExecError.New("runc cannot operate in this environment!")`,
 				// but none of these are currently here because we cachebusted our known error strings when upgrading runc.
 			} {
-				if !strings.HasPrefix(logMsg["msg"], tr.prefix) {
+				if !strings.HasPrefix(logMsg["msg"].(string), tr.prefix) {
 					continue
 				}
-				if !strings.HasSuffix(logMsg["msg"], tr.suffix) {
+				if !strings.HasSuffix(logMsg["msg"].(string), tr.suffix) {
 					continue
 				}
 				realError = tr.err
@@ -269,15 +270,24 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 
 			// Log again.
 			// The level of alarm we raise depends:
-			//  - With runc, everything we hear is at least a warning;
+			//  - If it's clearly flagged debug level, accept that;
 			//  - If we recognized it above, it's no more than a warning;
 			//  - If we *didn't* recognize and handle it explicitly, and
 			//    we can see a clear indication it's fatal, then log big and red.
-			if realError == nil && ctx["runc-level"] == "error" {
-				journal.Error(logMsg["msg"], ctx)
-				someError = true
-			} else {
-				journal.Warn(logMsg["msg"], ctx)
+			switch ctx["runc-level"] {
+			case "debug":
+				journal.Debug(logMsg["msg"].(string), ctx)
+			default:
+				fallthrough
+			case "error":
+				if realError == nil {
+					journal.Error(logMsg["msg"].(string), ctx)
+					someError = true
+					break
+				}
+				fallthrough
+			case "warning":
+				journal.Warn(logMsg["msg"].(string), ctx)
 			}
 		}
 	}()
