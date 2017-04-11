@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	"go.polydawn.net/go-sup"
 	"go.polydawn.net/meep"
 

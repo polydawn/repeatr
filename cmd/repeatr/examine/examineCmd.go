@@ -4,8 +4,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/codegangsta/cli"
 	"github.com/inconshreveable/log15"
+	"github.com/urfave/cli"
 	"go.polydawn.net/meep"
 
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
