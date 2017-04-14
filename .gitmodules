@@ -49,27 +49,6 @@
 [submodule ".gopath/src/golang.org/x/crypto"]
 	path = .gopath/src/golang.org/x/crypto
 	url = https://go.googlesource.com/crypto
-[submodule ".gopath/src/gopkg.in/sourcegraph/go-vcsurl.v1"]
-	path = .gopath/src/gopkg.in/sourcegraph/go-vcsurl.v1
-	url = https://gopkg.in/sourcegraph/go-vcsurl.v1
-[submodule ".gopath/src/gopkg.in/src-d/go-git.v3"]
-	path = .gopath/src/gopkg.in/src-d/go-git.v3
-	url = https://gopkg.in/src-d/go-git.v3
-[submodule ".gopath/src/github.com/sourcegraph/go-vcsurl"]
-	path = .gopath/src/github.com/sourcegraph/go-vcsurl
-	url = https://github.com/sourcegraph/go-vcsurl
-[submodule ".gopath/src/github.com/src-d/go-git"]
-	path = .gopath/src/github.com/src-d/go-git
-	url = https://github.com/src-d/go-git
-[submodule ".gopath/src/github.com/klauspost/cpuid"]
-	path = .gopath/src/github.com/klauspost/cpuid
-	url = https://github.com/klauspost/cpuid
-[submodule ".gopath/src/github.com/klauspost/compress"]
-	path = .gopath/src/github.com/klauspost/compress
-	url = https://github.com/klauspost/compress
-[submodule ".gopath/src/github.com/sergi/go-diff"]
-	path = .gopath/src/github.com/sergi/go-diff
-	url = https://github.com/sergi/go-diff
 [submodule ".gopath/src/github.com/pkg/profile"]
 	path = .gopath/src/github.com/pkg/profile
 	url = https://github.com/pkg/profile
