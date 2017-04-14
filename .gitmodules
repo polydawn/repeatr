@@ -82,3 +82,9 @@
 [submodule ".gopath/src/go.polydawn.net/meep"]
 	path = .gopath/src/go.polydawn.net/meep
 	url = https://github.com/polydawn/meep.git
+[submodule ".gopath/src/github.com/go-stack/stack"]
+	path = .gopath/src/github.com/go-stack/stack
+	url = https://github.com/go-stack/stack
+[submodule ".gopath/src/cloud.google.com/go"]
+	path = .gopath/src/cloud.google.com/go
+	url = https://github.com/GoogleCloudPlatform/google-cloud-go
