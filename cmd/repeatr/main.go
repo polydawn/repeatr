@@ -11,8 +11,8 @@ import (
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/cmd/repeatr/bhv"
-	"go.polydawn.net/repeatr/cmd/repeatr/cfg"
 	"go.polydawn.net/repeatr/cmd/repeatr/examine"
+	"go.polydawn.net/repeatr/cmd/repeatr/formula"
 	"go.polydawn.net/repeatr/cmd/repeatr/pack"
 	"go.polydawn.net/repeatr/cmd/repeatr/run"
 	"go.polydawn.net/repeatr/cmd/repeatr/twerk"
@@ -60,15 +60,15 @@ func Main(
 					},
 					cli.StringSliceFlag{
 						Name:  "patch, p",
-						Usage: "files with additional pieces of formula to apply before launch",
+						Usage: "Files with additional pieces of formula to apply before launch",
 					},
 					cli.StringSliceFlag{
 						Name:  "env, e",
-						Usage: "apply additional environment vars to formula before launch (overrides 'patch').  Format like '-e KEY=val'",
+						Usage: "Apply additional environment vars to formula before launch (overrides 'patch').  Format like '-e KEY=val'",
 					},
 					cli.BoolFlag{
 						Name:  "serialize, s",
-						Usage: "serialize output onto stdout",
+						Usage: "Serialize output onto stdout",
 					},
 				},
 				Action: runCmd.Run(stdout, stderr),
@@ -84,11 +84,11 @@ func Main(
 					},
 					cli.StringSliceFlag{
 						Name:  "patch, p",
-						Usage: "files with additional pieces of formula to apply before launch",
+						Usage: "Files with additional pieces of formula to apply before launch",
 					},
 					cli.StringSliceFlag{
 						Name:  "env, e",
-						Usage: "apply additional environment vars to formula before launch (overrides 'patch').  Format like '-e KEY=val'",
+						Usage: "Apply additional environment vars to formula before launch (overrides 'patch').  Format like '-e KEY=val'",
 					},
 					cli.StringFlag{
 						Name:  "policy, P",
@@ -152,7 +152,7 @@ func Main(
 			},
 			{
 				Name:  "examine",
-				Usage: "examine a ware and the metadata of its contents, or a filesystem",
+				Usage: "Examine a ware and the metadata of its contents, or a filesystem",
 				Description: strings.Join([]string{
 					"`repeatr examine` produces a human-readable manifest of every file in the named item",
 					"(either wares or local filesystems may be examined), their properties, and their hashes.",
@@ -163,7 +163,7 @@ func Main(
 				Subcommands: []cli.Command{
 					{
 						Name:  "ware",
-						Usage: "examine a ware from a warehouse",
+						Usage: "Examine a ware from a warehouse",
 						Flags: []cli.Flag{
 							cli.StringFlag{
 								Name:  "kind",
@@ -182,20 +182,27 @@ func Main(
 					},
 					{
 						Name:   "file",
-						Usage:  "examine a local filesystem",
+						Usage:  "Examine a local filesystem",
 						Action: examineCmd.ExamineFile(stdout, stderr),
 					},
 				},
 			},
 			{
-				Name:   "cfg",
-				Usage:  "Manipulate config and formulas programmatically (parse, validate, etc).",
+				Name:   "formula",
+				Usage:  "Manipulate formulas programmatically (parse, validate, etc).",
 				Action: subcommandHelpThunk,
-				Subcommands: []cli.Command{{
-					Name:   "parse",
-					Usage:  "Parse config and re-emit as json; error if any gross syntatic failures.",
-					Action: cfgCmd.Parse(stdin, stdout, stderr),
-				}},
+				Subcommands: []cli.Command{
+					{
+						Name:   "parse",
+						Usage:  "Parse formula and re-emit as json; error if any gross syntatic failures.",
+						Action: formulaCmd.Parse(stdin, stdout, stderr),
+					},
+					{
+						Name:   "setuphash",
+						Usage:  "Print the setup hash of a formula",
+						Action: formulaCmd.SetupHash(stdin, stdout, stderr),
+					},
+				},
 			},
 			{
 				Name:  "version",
