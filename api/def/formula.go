@@ -31,7 +31,7 @@ type Formula struct {
 	there is no reason you should treat it as anything but opaque.
 	The returned string may be relied upon to be all alphanumeric characters.
 */
-func (f Formula) Hash() string {
+func (f Formula) SetupHash() string {
 	// Copy and zero other things that we don't want to include in canonical IDs.
 	// This is working around lack of useful ways to pass encoding style hints down
 	//  with our current libraries.

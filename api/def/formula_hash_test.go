@@ -9,7 +9,7 @@ import (
 )
 
 func TestFormulaHashFixtures(t *testing.T) {
-	Convey("Formulas should hash consistently", t, func() {
+	Convey("Formulas should SetupHash consistently", t, func() {
 		Convey("Given fixture 1", func() {
 			frm := &rdef.Formula{
 				Inputs: rdef.InputGroup{
@@ -25,20 +25,20 @@ func TestFormulaHashFixtures(t *testing.T) {
 				},
 			}
 			Convey("It should match the fixture", func() {
-				So(frm.Hash(), ShouldEqual, "7dCwntFg7FtcUNs4FcRaUknXWWskG889kypU9y3BpWdVmT4aMA76zkZyjaNYL1x989")
+				So(frm.SetupHash(), ShouldEqual, "7dCwntFg7FtcUNs4FcRaUknXWWskG889kypU9y3BpWdVmT4aMA76zkZyjaNYL1x989")
 			})
 			Convey("Given a fixture that varies only in warehouses, it should match the same fixture", func() {
 				frm.Inputs["rootfs"].Warehouses = rdef.WarehouseCoords{"file+ca://./local/"}
-				So(frm.Hash(), ShouldEqual, "7dCwntFg7FtcUNs4FcRaUknXWWskG889kypU9y3BpWdVmT4aMA76zkZyjaNYL1x989")
+				So(frm.SetupHash(), ShouldEqual, "7dCwntFg7FtcUNs4FcRaUknXWWskG889kypU9y3BpWdVmT4aMA76zkZyjaNYL1x989")
 			})
-			Convey("Given changes in outputs, it should have a different fixture", func() {
+			Convey("Given changes in output slots, it should have a different fixture", func() {
 				frm.Outputs = rdef.OutputGroup{
 					"product": &rdef.Output{
 						Type:      "tar",
 						MountPath: "/output",
 					},
 				}
-				So(frm.Hash(), ShouldEqual, "8h8bRDwDAS39QtyQ7SNn9BYKZkXCxkxWMpCcHAMKdbvYe2qQ3r7TduVccHeCe8dk4y")
+				So(frm.SetupHash(), ShouldEqual, "8h8bRDwDAS39QtyQ7SNn9BYKZkXCxkxWMpCcHAMKdbvYe2qQ3r7TduVccHeCe8dk4y")
 			})
 		})
 	})
