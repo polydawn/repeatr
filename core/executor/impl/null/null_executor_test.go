@@ -26,8 +26,7 @@ func Test(t *testing.T) {
 			},
 			Outputs: def.OutputGroup{
 				"out": &def.Output{
-					Type:       "mock",
-					Conjecture: true,
+					Type: "mock",
 				},
 			},
 		}
