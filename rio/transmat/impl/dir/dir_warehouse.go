@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/lib/guid"
@@ -157,7 +156,7 @@ func (wc *writeController) commit(saveAs rio.CommitID) {
 		}
 		// if there was already a dir there, another actor committed the same thing in a race,
 		//  which is fine: we'll just see ourselves out.
-		if err2 := err.(*os.LinkError); err2.Err == syscall.ENOTEMPTY {
+		if _, ok := err.(*os.LinkError); ok && os.IsExist(err) {
 			os.RemoveAll(wc.tmpPath)
 			return
 		}

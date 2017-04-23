@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"go.polydawn.net/meep"
 
@@ -64,8 +63,7 @@ func (wa workArea) getNosubchFinalPath(commitHash string) string {
 func moveOrShrug(from string, to string) {
 	err := os.Rename(from, to)
 	if err != nil {
-		if err2, ok := err.(*os.LinkError); ok &&
-			err2.Err == syscall.EBUSY || err2.Err == syscall.ENOTEMPTY {
+		if _, ok := err.(*os.LinkError); ok && os.IsExist(err) {
 			// oh, fine.  somebody raced us to it.  we believe in them: just return.
 			return
 		}

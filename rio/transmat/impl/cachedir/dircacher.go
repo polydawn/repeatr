@@ -3,7 +3,6 @@ package cachedir
 import (
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"github.com/inconshreveable/log15"
 	"go.polydawn.net/meep"
@@ -86,8 +85,7 @@ func (ct *CachingTransmat) Materialize(
 		// build more realistic syncs around this later, but posix mv atomicity might actually do enough.
 		err := os.Rename(arena.Path(), permPath)
 		if err != nil {
-			if err2, ok := err.(*os.LinkError); ok &&
-				err2.Err == syscall.EBUSY || err2.Err == syscall.ENOTEMPTY {
+			if _, ok := err.(*os.LinkError); ok && os.IsExist(err) {
 				// oh, fine.  somebody raced us to it.
 				if err := os.RemoveAll(arena.Path()); err != nil {
 					// not systemically fatal, but like, wtf mate.
