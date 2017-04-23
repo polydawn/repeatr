@@ -42,10 +42,7 @@ func (f Stage2) ID() string {
 	for _, spec := range f2.Inputs {
 		spec.Warehouses = nil
 	}
-	for name, spec := range f2.Outputs {
-		if spec.Conjecture == false {
-			delete(f2.Outputs, name)
-		}
+	for _, spec := range f2.Outputs {
 		spec.Warehouses = nil
 	}
 	// hash the rest, and thar we be

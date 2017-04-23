@@ -30,9 +30,8 @@ type Formula struct {
 	The returned string is the base58 encoding of a SHA-384 hash, though
 	there is no reason you should treat it as anything but opaque.
 	The returned string may be relied upon to be all alphanumeric characters.
-	FIXME actually use said encoding.
 */
-func (f Formula) Hash() string {
+func (f Formula) SetupHash() string {
 	// Copy and zero other things that we don't want to include in canonical IDs.
 	// This is working around lack of useful ways to pass encoding style hints down
 	//  with our current libraries.
