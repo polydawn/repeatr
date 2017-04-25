@@ -65,6 +65,11 @@ func EmitRuncConfigStruct(frm def.Formula, job executor.Job, rootPath string, tt
 				// Note that this mount causes a LOT of magic to be implied.
 				// Runc takes the existence of this as an instruction
 				// to populate it with a bunch of device nodes and symlink.
+				//
+				// Somewhat wildly, the only way to opt *out* of this
+				// is *not* in fact to refrain from making this mount,
+				// but actually to bind *something* into this position:
+				// https://github.com/opencontainers/runc/blob/94cfb7955b8460e0f4943e3a18a6fe6b45d9d8d3/libcontainer/rootfs_linux.go#L30
 				"destination": "/dev",
 				"type":        "tmpfs",
 				"source":      "tmpfs",
