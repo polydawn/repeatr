@@ -2,6 +2,18 @@ recent /// not yet released
 ---------------------------
 
 - *your changes here!*
+
+
+v0.15 -- 8fb1a9ebd85eadacc861b0c149221af6808270d4 -- 2017 Apr 25
+----------------------------------------------------------------
+
+Portability and internal systems updates galore: v0.15 should quietly make things better.  No major shakeups to formulas or APIs.
+
+Have you seen the new projects in the ecosystem?
+[Reppl](https://github.com/polydawn/reppl/) brings pipelining tools to the table, so you can now compose complex build processes with multiple formulas easily.
+[r2k8s](https://github.com/polydawn/r2k8s) demonstrates integrating Repeatr and Kubernetes, making it possible to run services in k8s, as well as use k8s clusters as resources for running builds.
+Repeatr might not be changing much in this release, but there's a lot of other stuff to play with!
+
 - Change: `runc` executor updated!  Repeatr now references a runc release from the 1.0rc3+ region (build specified in a formula, and reproducible).
 - Change: the working directory will now always be ensured to be owned and writable by the container process UID.  (This is followup to the "cradle" system introduced back in v0.11, and if necessary can be disabled the same way as before.)
   - This makes it much easier to have inputs that are placed inside the working directory!  Previously that would cause directories to be implicitly created as necessary, potentially resulting in a CWD that was unwritable to UID>0.  Now, such input configuration may still result in such implicit directory creation, but the CWD itself will consistently be writable, which is usually what the user expects.
