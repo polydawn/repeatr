@@ -276,13 +276,26 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 
 			// Log again.
 			// The level of alarm we raise depends:
-			//  - If it's clearly flagged debug level, accept that;
 			//  - If we recognized it above, it's no more than a warning;
+			//  - If it's clearly flagged debug level, accept that;
 			//  - If we *didn't* recognize and handle it explicitly, and
 			//    we can see a clear indication it's fatal, then log big and red.
 			// There's one additional truly alarming responsibility of this code:
 			//  Releasing the stderr buffer to the user after the first 'debug' log.
 			//  Yes, really.  Control flow here is controlled by these logs.
+			// Any control path that causes us to return *must* involve
+			//  either discarding or releasing the stderrStaller --
+			//  failing to do so will result in a deadlock between the
+			//  two processes, because runc will not return because it's
+			//  blocked on the write to its stderr stream!
+			if realError != nil {
+				journal.Warn(logMsg["msg"].(string), ctx)
+				if !stderrReleased {
+					stderrStaller.Discard()
+					stderrReleased = true
+				}
+				return
+			}
 			switch ctx["runc-level"] {
 			case "debug":
 				journal.Debug(logMsg["msg"].(string), ctx)
@@ -293,16 +306,13 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 			default:
 				fallthrough
 			case "error":
-				if realError == nil {
-					journal.Error(logMsg["msg"].(string), ctx)
-					realError = executor.UnknownError.New("runc errored in an unrecognized fashion")
-					break
-				}
+				journal.Error(logMsg["msg"].(string), ctx)
+				realError = executor.UnknownError.New("runc errored in an unrecognized fashion")
 				if !stderrReleased {
 					stderrStaller.Discard()
 					stderrReleased = true
 				}
-				fallthrough
+				return
 			case "warning":
 				journal.Warn(logMsg["msg"].(string), ctx)
 				// If stderr isn't released yet, we can't release it on warnings:
@@ -322,16 +332,9 @@ func (e *Executor) Execute(formula def.Formula, job executor.Job, jobPath string
 	tailerDone.Wait()
 
 	// If we had a CnC error (rather than the real subprocess exit code):
-	//  - unblock the child's stderr stream, but devnull it (the real error is
-	//     in the logs, and we're handling it already; we don't want to
-	//     confuse the user by letting the message be repeated in stderr
-	//     as if it came from their contained process).
 	//  - reset code to -1 because the runc exit code wasn't really from the job command
 	//  - raise the error
 	if realError != nil {
-		if !stderrReleased {
-			stderrStaller.Discard()
-		}
 		result.ExitCode = -1
 		panic(realError)
 	}
