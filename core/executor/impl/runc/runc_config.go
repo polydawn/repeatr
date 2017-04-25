@@ -61,6 +61,37 @@ func EmitRuncConfigStruct(frm def.Formula, job executor.Job, rootPath string, tt
 				"type":        "proc",
 				"source":      "proc",
 			},
+			map[string]interface{}{
+				// Note that this mount causes a LOT of magic to be implied.
+				// Runc takes the existence of this as an instruction
+				// to populate it with a bunch of device nodes and symlink.
+				"destination": "/dev",
+				"type":        "tmpfs",
+				"source":      "tmpfs",
+				"options": []string{
+					"nosuid",
+					"strictatime",
+					"mode=755",
+					"size=65536k",
+				},
+			},
+			map[string]interface{}{
+				// This, together with /dev, is an implicit requirement
+				// for interactive mode to work: one of the first things
+				// runc does when setting up a terminal is attempt to
+				// open /dev/ptmx, which is a symlink pointing into here.
+				"destination": "/dev/pts",
+				"type":        "devpts",
+				"source":      "devpts",
+				"options": []string{
+					"nosuid",
+					"noexec",
+					"newinstance",
+					"ptmxmode=0666",
+					"mode=0620",
+					"gid=5", // alarming magic number
+				},
+			},
 		},
 		"linux": map[string]interface{}{
 			"resources": map[string]interface{}{
