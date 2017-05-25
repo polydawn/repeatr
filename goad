@@ -8,10 +8,6 @@ cmd="$pkg/cmd/$name"     # if you have a main.main not at the repo root, set thi
 
 
 
-### other config scripts?  invoke here.
-LDFLAGS=""
-. meta/build/version.sh
-
 ### For demo runs and tests, ask them to lump all their state in one, unique dir.
 ### At the same time, tell it to use this local filesystem for assets.
 mkdir -p /tmp/repeatr-test/
@@ -34,13 +30,11 @@ SUBSECTION="./$SUBSECTION"
 
 
 
-
-
 if [ -z "$SUBCOMMAND" ] ; then
 	(
 		go generate "$SUBSECTION"
 		go fmt "$SUBSECTION"
-		go install -ldflags "$LDFLAGS" "$cmd" && {
+		go install "$cmd" && {
 			echo -e "\E[1;32minstall successful.\E[0;m\n"
 		} || {
 			echo -e "\E[1;41minstall failed!\E[0;m"
@@ -90,7 +84,7 @@ else
 		;;
 	install)
 		go generate "./..."
-		go install -ldflags "$LDFLAGS" "$cmd"
+		go install "$cmd"
 		;;
 	bench)
 		profPath="$GOPATH/tmp/prof/"

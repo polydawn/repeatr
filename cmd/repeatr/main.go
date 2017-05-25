@@ -17,8 +17,9 @@ import (
 	"go.polydawn.net/repeatr/cmd/repeatr/run"
 	"go.polydawn.net/repeatr/cmd/repeatr/twerk"
 	"go.polydawn.net/repeatr/cmd/repeatr/unpack"
-	"go.polydawn.net/repeatr/cmd/repeatr/version"
 )
+
+const appVersion = "v0.15+dev"
 
 func main() {
 	os.Exit(Main(os.Args, os.Stdin, os.Stdout, os.Stderr))
@@ -42,7 +43,7 @@ func Main(
 		Name:      "repeatr",
 		Usage:     "Run it. Run it again.",
 		UsageText: "Repeatr runs processes in containers, provisioning their inputs and saving their outputs using reliable, immutable, content-addressable goodness.",
-		Version:   "v0.15+dev",
+		Version:   appVersion,
 		Writer:    stderr,
 		Commands: []cli.Command{
 			{
@@ -229,8 +230,6 @@ func Main(
 		// Put some more info in our version printer.
 		// Also, version goes to stdout.
 		fmt.Fprintf(os.Stdout, "%v %v\n", ctx.App.Name, ctx.App.Version)
-		fmt.Fprintf(os.Stdout, "git commit %v\n", version.GitCommit)
-		fmt.Fprintf(os.Stdout, "build date %v\n", version.BuildDate)
 	}
 	meep.Try(func() {
 		if err := app.Run(args); err != nil {

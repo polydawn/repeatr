@@ -21,12 +21,8 @@ if [ ! -d .git ]; then echo "this script assumes it is run from a local git repo
 # Of course you could use any commit hash you want.
 GITCOMMIT=${GITCOMMIT:-$(git rev-parse HEAD)}
 
-# Nil builddate by default.  But if you want to set one, go ahead.
-BUILDDATE=${BUILDDATE:-"xxx"}
-
 # CI requires some special modes, but you probably don't on localhost.
 CI_FLAGS=${CI_FLAGS:-}
-
 
 
 ### Assemble the full formula
@@ -59,9 +55,6 @@ action:
 			./goad install
 			>&2 echo build complete!
 	cwd: "/task/repeatr/"
-	env:
-		"GITCOMMIT": "${GITCOMMIT}"
-		"BUILDDATE": "${BUILDDATE}"
 outputs:
 	"executable":
 		type: "tar"
