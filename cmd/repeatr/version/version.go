@@ -6,7 +6,9 @@ package version
 	and supplies values at compile time that override these placeholders.
 */
 var (
-	GitCommit string = "!!unknown!!"
-
-	BuildDate string = "!!unknown!!"
+	GitCommit     string = "!!unknown!!"
+	GitDirty      string = "!!unknown!!"
+	GitCommitDate string = "!!unknown!!"
+	GitAuthorDate string = "!!unknown!!"
+	GitTreeHash   string = "!!unknown!!"
 )
