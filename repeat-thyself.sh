@@ -39,8 +39,8 @@ inputs:
 		silo: "http+ca://repeatr.s3.amazonaws.com/assets/"
 	"/app/go/":
 		type: "tar"
-		hash: "vbl0TwPjBrjoph65IaWxOy-Yl0MZXtXEDKcxodzY0_-inUDq7rPVTEDvqugYpJAH"
-		silo: "https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz"
+		hash: "jZ8NkMmCPUb5rTHtjBLZEe0usTSDjgGfD71hN07wuuPfkoqG6pLB0FR4GKmQRAva"
+		silo: "https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz"
 	"/task/repeatr/":
 		type: "git"
 		hash: "${GITCOMMIT}"
