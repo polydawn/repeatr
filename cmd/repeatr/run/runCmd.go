@@ -42,6 +42,15 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 		case l == 1:
 			formulaPath = ctx.Args()[0]
 		}
+
+		// Estimate what capabilities we need, and check if we have them.
+		// Better to error out with a friendly warning asap rather than choke when we've already spent a ton of time on a doomed process.
+		//
+		// We know we're gonna use materialization at full power, so we definitely need CAP_CHOWN;
+		// we're going to use a caching area, for which we either need to check a ton of dir owner/group/chmods, or have CAP_DAC_OVERRIDE (and we'll go with the latter rule because it's easier in practice);
+		// and the the power level needed by the executor depends on the implementation, but we've also figured that out by now.
+		// TODO
+
 		// Parse formula
 		formula := hitch.LoadFormulaFromFile(formulaPath)
 		// Parse patches into formulas as well.
