@@ -67,3 +67,6 @@
 [submodule ".gopath/src/cloud.google.com/go"]
 	path = .gopath/src/cloud.google.com/go
 	url = https://github.com/GoogleCloudPlatform/google-cloud-go
+[submodule ".gopath/src/github.com/syndtr/gocapability"]
+	path = .gopath/src/github.com/syndtr/gocapability
+	url = https://github.com/syndtr/gocapability
