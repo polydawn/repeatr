@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/syndtr/gocapability/capability"
 	"github.com/ugorji/go/codec"
 	"github.com/urfave/cli"
 	"go.polydawn.net/go-sup"
@@ -50,6 +51,14 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 		// we're going to use a caching area, for which we either need to check a ton of dir owner/group/chmods, or have CAP_DAC_OVERRIDE (and we'll go with the latter rule because it's easier in practice);
 		// and the the power level needed by the executor depends on the implementation, but we've also figured that out by now.
 		// TODO
+		fmt.Printf("allcaps:     %s\n", capability.List())
+		ourCaps, _ := capability.NewPid(0) // zero means self
+		fmt.Printf("EFFECTIVE:   %s\n", ourCaps.StringCap(capability.EFFECTIVE))
+		fmt.Printf("PERMITTED:   %s\n", ourCaps.StringCap(capability.PERMITTED))
+		fmt.Printf("INHERITABLE: %s\n", ourCaps.StringCap(capability.INHERITABLE))
+		fmt.Printf("BOUNDING:    %s\n", ourCaps.StringCap(capability.BOUNDING))
+		fmt.Printf("AMBIENT:     %s\n", ourCaps.StringCap(capability.AMBIENT))
+		return nil
 
 		// Parse formula
 		formula := hitch.LoadFormulaFromFile(formulaPath)
