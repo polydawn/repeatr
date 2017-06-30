@@ -48,13 +48,19 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 		// Better to error out with a friendly warning asap rather than choke when we've already spent a ton of time on a doomed process.
 		fulcrum := fulcrum.Scan()
 		if !fulcrum.CanShareIOCache() {
-			panic("womp")
+			panic(meep.Meep(&cmdbhv.ErrPermissions{
+				Message: "insufficient permissions -- run again with sudo?\n\n" +
+					"repeatr needs root priviledges (or more specifically, CAP_DAC_OVERRIDE) in order to manage filesystems.",
+			}))
 		}
 		if !fulcrum.CanMaterializeOwnership() {
-			panic("womp")
+			panic(meep.Meep(&cmdbhv.ErrPermissions{
+				Message: "insufficient permissions -- run again with sudo?\n\n" +
+					"repeatr needs root priviledges (or more specifically, CAP_CHOWN) in order to unpack filesystems with their full attributes intact.",
+			}))
 		}
 		if !fulcrum.CanUseExecutor(executor) {
-			panic("womp")
+			panic("womp") // FIXME ... a good error message here needs a *string* from the executor too :I
 		}
 
 		// Parse formula

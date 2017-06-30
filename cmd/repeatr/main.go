@@ -248,6 +248,11 @@ func Main(
 				exitcode = cmdbhv.EXIT_BADARGS
 				fmt.Fprintf(stderr, "%s\n", e)
 			}},
+		{ByType: &cmdbhv.ErrPermissions{},
+			Handler: func(e error) {
+				exitcode = cmdbhv.EXIT_PERMS
+				fmt.Fprintf(stderr, "%s\n", e)
+			}},
 	})
 	return
 }
