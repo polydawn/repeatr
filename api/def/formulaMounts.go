@@ -43,7 +43,7 @@ type Input struct {
 	Hash       string          `json:"hash"`           // identifying hash of input data.  included in Formula.SetupHash.
 	Warehouses WarehouseCoords `json:"silo,omitempty"` // secondary content lookup descriptor.  *not* included in Formula.SetupHash.
 	MountPath  string          `json:"mount"`          // filepath where this input should be mounted in the execution context.  included in Formula.SetupHash.
-	Tag        string          `json:"tag"`            // human readable name tag for this input.  ONLY USED FOR DOWNSTREAM APIs; do not reference this.
+	Tag        string          `json:"tag,omitempty"`  // human readable name tag for this input.  ONLY USED FOR DOWNSTREAM APIs; do not reference this.
 }
 
 /*
@@ -89,7 +89,7 @@ type Output struct {
 	Warehouses WarehouseCoords `json:"silo,omitempty"`  // where to ship the output data.
 	MountPath  string          `json:"mount,omitempty"` // filepath where this output will be yanked from the job when it reaches completion.
 	Filters    *Filters        `json:"filters,omitempty"`
-	Tag        string          `json:"tag"` // human readable name tag for this ouput.  ONLY USED FOR DOWNSTREAM APIs; do not reference this.
+	Tag        string          `json:"tag,omitempty"` // human readable name tag for this ouput.  ONLY USED FOR DOWNSTREAM APIs; do not reference this.
 }
 
 /*
