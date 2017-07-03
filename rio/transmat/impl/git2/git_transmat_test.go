@@ -52,6 +52,7 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 			var dataHash_1 rio.CommitID
 			var dataHash_2 rio.CommitID
 			var dataHash_3 rio.CommitID
+			var dataHash_4 rio.CommitID
 			git.Bake("init", "--", "repo-a").RunAndReport()
 			testutil.UsingDir("repo-a", func() {
 				git.Bake("commit", "--allow-empty", "-m", "testrepo-a initial commit").RunAndReport()
@@ -65,9 +66,21 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 				git.Bake("commit", "-m", "testrepo-a commit 2").RunAndReport()
 				dataHash_3 = rio.CommitID(strings.Trim(git.Bake("rev-parse", "HEAD").Output(), "\n"))
 				// Create submodule
-				// git.Bake("init", "--", "subrepo-a").RunAndReport()
-				// git.Bake("submodule", "add", "--", "./subrepo-a")).RunAndReport()
-				// ioutil.WriteFile("./subrepo-a/file-sub", []byte("zxcvb"), 0644)
+				git.Bake("init", "--", "subrepo-a").RunAndReport()
+				testutil.UsingDir("subrepo-a", func() {
+					ioutil.WriteFile("./submodule-file-1", []byte("zxcvb"), 0644)
+					// Create sub-submodule
+					git.Bake("init", "--", "subrepo-b").RunAndReport()
+					testutil.UsingDir("subrepo-b", func() {
+						ioutil.WriteFile("./submodule-file-2", []byte("fihasd"), 0644)
+						git.Bake("commit", "-m", "sub sub repo commit").RunAndReport()
+					})
+					git.Bake("submodule", "add", "--", "./subrepo-b").RunAndReport()
+					git.Bake("commit", "-m", "sub repo commit").RunAndReport()
+				})
+				git.Bake("submodule", "add", "--", "./subrepo-a").RunAndReport()
+				git.Bake("commit", "-m", "testrepo-a commit add submodules").RunAndReport()
+				dataHash_4 = rio.CommitID(strings.Trim(git.Bake("rev-parse", "HEAD").Output(), "\n"))
 			})
 
 			transmat := New("./workdir")
@@ -75,14 +88,18 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 			Convey("Materialization should be able to produce the latest commit", FailureContinues, func() {
 				uris := []rio.SiloURI{rio.SiloURI("./repo-a")}
 				// materialize from the ID returned by foreign git
-				arena := transmat.Materialize(Kind, dataHash_3, uris, testutil.TestLogger(c), rio.AcceptHashMismatch)
+				arena := transmat.Materialize(Kind, dataHash_4, uris, testutil.TestLogger(c), rio.AcceptHashMismatch)
 				// assert hash match
 				// (normally survival would attest this, but we used the `AcceptHashMismatch` to supress panics in the name of letting the test see more after failures.)
-				So(arena.Hash(), ShouldEqual, dataHash_3)
+				So(arena.Hash(), ShouldEqual, dataHash_4)
 				// check filesystem to loosely match the original fixture
 				So(filepath.Join(arena.Path(), "file-a"), testutil.ShouldBeFile)
 				So(filepath.Join(arena.Path(), "file-e"), testutil.ShouldBeFile)
 				So(filepath.Join(arena.Path(), ".git"), testutil.ShouldBeNotFile)
+				// Check submodule exists
+				So(filepath.Join(arena.Path(), "subrepo-a", "submodule-file-1"), testutil.ShouldBeFile)
+				// Check submodules of submodules do NOT exist
+				So(filepath.Join(arena.Path(), "subrepo-a", "subrepo-b", "submodule-file-2"), testutil.ShouldBeNotFile)
 			})
 
 			Convey("Materialization should be able to produce older commits", FailureContinues, func() {
@@ -96,6 +113,10 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 				So(filepath.Join(arena.Path(), "file-a"), testutil.ShouldBeFile)
 				So(filepath.Join(arena.Path(), "file-e"), testutil.ShouldBeNotFile)
 				So(filepath.Join(arena.Path(), ".git"), testutil.ShouldBeNotFile)
+				// Check submodule does not exist
+				So(filepath.Join(arena.Path(), "subrepo-a", "submodule-file-1"), testutil.ShouldBeNotFile)
+				// Check submodules of submodules do NOT exist
+				So(filepath.Join(arena.Path(), "subrepo-a", "subrepo-b", "submodule-file-2"), testutil.ShouldBeNotFile)
 			})
 
 			Convey("Materialization should work, even when cwd is inside the repo", FailureContinues, func() {
@@ -111,6 +132,10 @@ func TestGitLocalFileInputCompat(t *testing.T) {
 					So(filepath.Join(arena.Path(), "file-a"), testutil.ShouldBeFile)
 					So(filepath.Join(arena.Path(), "file-e"), testutil.ShouldBeFile)
 					So(filepath.Join(arena.Path(), ".git"), testutil.ShouldBeNotFile)
+					// Check submodule does not exist
+					So(filepath.Join(arena.Path(), "subrepo-a", "submodule-file-1"), testutil.ShouldBeNotFile)
+					// Check submodules of submodules do NOT exist
+					So(filepath.Join(arena.Path(), "subrepo-a", "subrepo-b", "submodule-file-2"), testutil.ShouldBeNotFile)
 				})
 			})
 		})),
