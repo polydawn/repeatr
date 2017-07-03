@@ -67,3 +67,21 @@
 [submodule ".gopath/src/cloud.google.com/go"]
 	path = .gopath/src/cloud.google.com/go
 	url = https://github.com/GoogleCloudPlatform/google-cloud-go
+[submodule ".gopath/src/gopkg.in/warnings.v0"]
+	path = .gopath/src/gopkg.in/warnings.v0
+	url = https://gopkg.in/warnings.v0
+[submodule ".gopath/src/gopkg.in/src-d/go-billy.v3"]
+	path = .gopath/src/gopkg.in/src-d/go-billy.v3
+	url = https://gopkg.in/src-d/go-billy.v3
+[submodule ".gopath/src/gopkg.in/src-d/go-git.v4"]
+	path = .gopath/src/gopkg.in/src-d/go-git.v4
+	url = https://gopkg.in/src-d/go-git.v4
+[submodule ".gopath/src/github.com/sergi/go-diff"]
+	path = .gopath/src/github.com/sergi/go-diff
+	url = https://github.com/sergi/go-diff
+[submodule ".gopath/src/github.com/xanzy/ssh-agent"]
+	path = .gopath/src/github.com/xanzy/ssh-agent
+	url = https://github.com/xanzy/ssh-agent
+[submodule ".gopath/src/github.com/src-d/gcfg"]
+	path = .gopath/src/github.com/src-d/gcfg
+	url = https://github.com/src-d/gcfg
