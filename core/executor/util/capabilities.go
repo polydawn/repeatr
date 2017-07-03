@@ -21,6 +21,7 @@ import (
 	"go.polydawn.net/repeatr/rio/transmat/impl/dir"
 	"go.polydawn.net/repeatr/rio/transmat/impl/file"
 	"go.polydawn.net/repeatr/rio/transmat/impl/git"
+	"go.polydawn.net/repeatr/rio/transmat/impl/git2"
 	"go.polydawn.net/repeatr/rio/transmat/impl/gs"
 	"go.polydawn.net/repeatr/rio/transmat/impl/s3"
 	"go.polydawn.net/repeatr/rio/transmat/impl/tar"
@@ -54,6 +55,7 @@ func DefaultTransmat() rio.Transmat {
 		rio.TransmatKind("gs"):   dirCacher,
 		rio.TransmatKind("file"): fileCacher,
 		rio.TransmatKind("git"):  git.New(filepath.Join(workDir, "git")),
+		rio.TransmatKind("git2"): git2.New(filepath.Join(workDir, "git")),
 	})
 	return universalTransmat
 }
