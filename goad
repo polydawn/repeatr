@@ -119,6 +119,7 @@ else
 		if [ "$TRAVIS" == 'true' -a "$TRAVIS_PULL_REQUEST" != 'false' ]; then
 			echo "skipping repeat-thyself test" 1>&2
 		else
+			echo "running repeat-thyself test" 1>&2
 			./repeat-thyself.sh
 		fi
 		;;
