@@ -70,5 +70,6 @@ var TryPlanWhitelist = meep.TryPlan{
 	{ByType: &def.ErrWarehouseProblem{}, Handler: func(e error) { panic(e) }},
 	{ByType: &def.ErrWareDNE{}, Handler: func(e error) { panic(e) }},
 	{ByType: &def.ErrHashMismatch{}, Handler: func(e error) { panic(e) }},
+	{ByType: &def.ErrWareCorrupt{}, Handler: func(e error) { panic(e) }},
 	{CatchAny: true, Handler: meep.TryHandlerMapto(&ErrUnknown{})},
 }
