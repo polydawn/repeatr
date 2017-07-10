@@ -64,11 +64,6 @@ func New(workPath string) rio.Transmat {
 	Gitignore files may also inadventantly cause trouble.  Transmat.Materialize
 	will act *consistently*, but it does not overcome these issues in git
 	(doing so would require additional metadata or protocol extensions).
-
-	This transmat is *not* currently well optimized, and should generally be assumed
-	to be re-cloning on all materializations -- specifically, it is not smart
-	enough to recognize requests for different commits and trees from the
-	same repos in order to save reclones.
 */
 func (t *GitTransmat) Materialize(
 	kind rio.TransmatKind,
