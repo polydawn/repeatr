@@ -229,8 +229,11 @@ func Main(
 		// Put some more info in our version printer.
 		// Also, version goes to stdout.
 		fmt.Fprintf(os.Stdout, "%v %v\n", ctx.App.Name, ctx.App.Version)
-		fmt.Fprintf(os.Stdout, "git commit %v\n", version.GitCommit)
-		fmt.Fprintf(os.Stdout, "build date %v\n", version.BuildDate)
+		fmt.Fprintf(os.Stdout, "git commit: %v\n", version.GitCommit)
+		fmt.Fprintf(os.Stdout, "git dirty: %v\n", version.GitDirty)
+		fmt.Fprintf(os.Stdout, "git tree hash: %v\n", version.GitTreeHash)
+		fmt.Fprintf(os.Stdout, "git commit date: %v\n", version.GitCommitDate)
+		fmt.Fprintf(os.Stdout, "git author date: %v\n", version.GitAuthorDate)
 	}
 	meep.Try(func() {
 		if err := app.Run(args); err != nil {
