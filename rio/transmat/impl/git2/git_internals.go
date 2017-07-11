@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.polydawn.net/meep"
+	"go.polydawn.net/repeatr/api/def"
 	"go.polydawn.net/repeatr/rio"
 
 	"github.com/inconshreveable/log15"
@@ -88,7 +89,7 @@ func gitCheckout(commit *object.Commit, fs billy.Filesystem) {
 	tree, err := commit.Tree()
 	if err != nil {
 		panic(meep.Meep(
-			&rio.ErrInternal{Msg: "Commit missing tree object"},
+			&def.ErrWareCorrupt{Msg: "Commit missing tree object"},
 			meep.Cause(err),
 		))
 	}
@@ -113,7 +114,7 @@ func listSubmodules(commit *object.Commit, fs billy.Filesystem, commitHash plumb
 	tree, err := commit.Tree()
 	if err != nil {
 		panic(meep.Meep(
-			&rio.ErrInternal{Msg: "Commit missing tree object"},
+			&def.ErrWareCorrupt{Msg: "Commit missing tree object"},
 			meep.Cause(err),
 		))
 	}
@@ -121,7 +122,7 @@ func listSubmodules(commit *object.Commit, fs billy.Filesystem, commitHash plumb
 	cfgModules, err := readGitmodulesFile(fs)
 	if err != nil {
 		panic(meep.Meep(
-			&rio.ErrInternal{Msg: "Unable to read gitmodules file"},
+			&def.ErrWareCorrupt{Msg: "Unable to read gitmodules file"},
 			meep.Cause(err),
 		))
 	}
@@ -130,21 +131,22 @@ func listSubmodules(commit *object.Commit, fs billy.Filesystem, commitHash plumb
 	if cfgModules != nil {
 		for _, submodule := range cfgModules.Submodules {
 			if submodule == nil {
+				// Should protect against incomplete entries
 				panic(meep.Meep(
-					&rio.ErrInternal{Msg: "nil submodule in list"},
+					&def.ErrWareCorrupt{Msg: "nil submodule in list"},
 				))
 			}
 			entry, err := tree.FindEntry(submodule.Path)
 			if err != nil {
 				panic(meep.Meep(
-					&rio.ErrInternal{Msg: "Failed to match submodule entry to tree entry"},
+					&def.ErrWareCorrupt{Msg: "Failed to match submodule entry to tree entry"},
 					meep.Cause(err),
 				))
 			}
 			isSubmodule := entry.Mode == filemode.Submodule
 			if !isSubmodule {
 				panic(meep.Meep(
-					&rio.ErrInternal{Msg: "gitmodule entry is not a submodule"},
+					&def.ErrWareCorrupt{Msg: "gitmodule entry is not a submodule"},
 				))
 			}
 			result[submodule] = entry
@@ -190,7 +192,7 @@ func gitClone(log log15.Logger, remote string, commitHash plumbing.Hash, cacheDi
 		uploadRequest.Wants = []plumbing.Hash{commitHash}
 		if uploadRequest.IsEmpty() {
 			panic(meep.Meep(
-				&rio.ErrInternal{Msg: "Empty upload-pack-request"},
+				&def.ErrWarehouseProblem{Msg: "Empty upload-pack-request"},
 			))
 		}
 		gitFetch(remote, gitStore, uploadRequest)

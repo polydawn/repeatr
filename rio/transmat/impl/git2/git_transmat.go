@@ -64,7 +64,7 @@ func selectWarehouse(log log15.Logger, siloURIs []rio.SiloURI) *Warehouse {
 		wh := NewWarehouse(uri)
 		pong := wh.Ping()
 		if pong == nil {
-			log.Info("git: connected to remote warehouse", "remote", uri)
+			log.Info("git: connected to remote warehouse", "remote", wh.url)
 			warehouse = wh
 			break
 		} else {
