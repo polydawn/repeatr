@@ -13,7 +13,7 @@ function frame { msg1a "$@" ; indent ; msg1b "done ($@)" ; echo ; }
 function framedo { "$@" 2>&1 | frame "$@" ; }
 
 ## Find ye executable.
-if [ -x .gopath/bin/repeatr ]; then PATH=$PWD/.gopath/bin/:$PATH; fi
+if [ -x bin/repeatr ]; then PATH=$PWD/bin/:$PATH; fi
 >&2 echo "Testing with `which repeatr` --"
 >&2 echo "`repeatr version | indent`"
 >&2 echo

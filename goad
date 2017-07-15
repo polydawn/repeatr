@@ -1,41 +1,45 @@
 #!/bin/bash
 set -euo pipefail
 
-# Project details
+### Project details
 name="repeatr"
 pkg="go.polydawn.net/$name" # everything under here will be tested
 cmd="$pkg/cmd/$name"     # if you have a main.main not at the repo root, set this
 
 
 
-### other config scripts?  invoke here.
-LDFLAGS=""
-. meta/build/version.sh
+### Normalize path -- all work should be relative to this script's location.
+## Set up gopath -- also relative to this dir, so we work in isolation.
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+export GOPATH="$PWD/.gopath/"
+export GOBIN="$PWD/bin/"
 
-### For demo runs and tests, ask them to lump all their state in one, unique dir.
-### At the same time, tell it to use this local filesystem for assets.
+
+
+### other config scripts?  invoke here.
+## pass pointer to project root dir down, for tests (tests run in varying CWDs, so need this hint)
+export PROJ="$PWD"
+## For demo runs and tests, ask them to lump all their state in one, unique dir.
+## At the same time, tell it to use this local filesystem for assets.
 mkdir -p /tmp/repeatr-test/
 chmod 01777 /tmp/repeatr-test/ 2>/dev/null || true
 export REPEATR_BASE="/tmp/repeatr-test/$(date +%Y.%m.%d..%H.%M.%S)..$RANDOM$RANDOM"
 export REPEATR_ASSETS="file+ca://$PWD/meta/assets-cache/"
+## use LDFLAGS to inject vars at compile time.
+LDFLAGS=""
 
 
 
-# Set up gopath -- relative to this dir, so we work in isolation.
-cd "$( dirname "${BASH_SOURCE[0]}" )"
-export GOPATH="$PWD"/.gopath/
-
+### Last bits of our flag parsery.
 # subcommand arg?
 SUBCOMMAND=${1:-}
-
 # subsection arg?
 SUBSECTION=${2:-"..."}
 SUBSECTION="./$SUBSECTION"
+# default test timeouts are far too high.  override this if you like.
+TEST_TIMEOUT="${TEST_TIMEOUT:-"35s"}"
 
-
-
-
-
+### action begins!
 if [ -z "$SUBCOMMAND" ] ; then
 	(
 		go generate "$SUBSECTION"
@@ -110,7 +114,7 @@ else
 		# use e.g.: go tool pprof --text .gopath/tmp/prof/bench.bin .gopath/tmp/prof/cpu.pprof
 		;;
 	test-acceptance)
-		[ -x "$GOPATH/bin/repeatr" ] || { echo "run 'goad install' first" 2>&1 ; exit 19; }
+		[ -x "$GOBIN/repeatr" ] || { echo "run 'goad install' first" 2>&1 ; exit 19; }
 		# demo and basic acceptance scenarios should run just about anywhere
 		./demo.sh -t
 		# repeat-thyself should usually run, but it has to sit out in travis PR-mode because of the synthetic commit which isn't actually cloneable
@@ -135,7 +139,7 @@ else
 		;;
 	convey)
 		shift
-		go install github.com/smartystreets/goconvey && "$GOPATH"/bin/goconvey "$@"
+		go install github.com/smartystreets/goconvey && "$GOBIN"/goconvey "$@"
 		;;
 	cover)
 		coverFile="$GOPATH/tmp/cover/cover.out"
@@ -181,13 +185,13 @@ else
 		}
 		;;
 	clean)
-		rm -rf "$GOPATH/bin" "$GOPATH/pkg" "$GOPATH/tmp" "demo"
+		rm -rf "$GOBIN" "$GOPATH/pkg" "$GOPATH/tmp" "demo"
 		;;
 	sys)
 		# i would call this `install` following make tradition, but, well, `go install` means something different, so.
 		go generate "./..."
 		go install "$cmd"
-		cp "$GOPATH/bin/repeatr" /usr/bin/repeatr
+		cp "$GOBIN/repeatr" /usr/bin/repeatr
 		ls -la /usr/bin/repeatr
 		repeatr --version
 		;;
