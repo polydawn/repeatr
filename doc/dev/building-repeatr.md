@@ -29,7 +29,7 @@ cd repeatr
 ./goad install
 ```
 
-This should leave a `repeatr` executable at `.gopath/bin/repeatr`.
+This should leave a `repeatr` executable at `bin/repeatr`.
 
 This executable is statically linked[1] and all you need to start running with repeatr.
 
