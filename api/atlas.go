@@ -2,18 +2,43 @@ package api
 
 import (
 	"github.com/polydawn/refmt/obj/atlas"
-
-	"go.polydawn.net/repeatr/api/rdef"
 )
 
-var Atlas = atlas.MustBuild(
-	ReleaseItemID_AtlasEntry,
+var rioAtlasEntries = []*atlas.AtlasEntry{
+	WareID_AtlasEntry,
+}
+
+var repeatrAtlasEntries = []*atlas.AtlasEntry{
+	Formula_AtlasEntry,
+	FormulaAction_AtlasEntry,
+	RunRecord_AtlasEntry,
+}
+
+var hitchAtlasEntries = []*atlas.AtlasEntry{
 	Catalog_AtlasEntry,
 	ReleaseEntry_AtlasEntry,
-	rdef.WareID_AtlasEntry,
 	Replay_AtlasEntry,
 	Step_AtlasEntry,
-	rdef.Formula_AtlasEntry,
-	rdef.FormulaAction_AtlasEntry,
-	rdef.RunRecord_AtlasEntry,
+}
+
+var RepeatrAtlas = atlas.MustBuild(
+	aecat(
+		rioAtlasEntries,
+		repeatrAtlasEntries,
+	)...,
 )
+
+var HitchAtlas = atlas.MustBuild(
+	aecat(
+		rioAtlasEntries,
+		repeatrAtlasEntries,
+		hitchAtlasEntries,
+	)...,
+)
+
+func aecat(aess ...[]*atlas.AtlasEntry) (r []*atlas.AtlasEntry) {
+	for _, aes := range aess {
+		r = append(r, aes...)
+	}
+	return
+}

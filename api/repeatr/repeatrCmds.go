@@ -14,11 +14,11 @@ import (
 	"context"
 	"time"
 
-	"go.polydawn.net/repeatr/api/rdef"
+	"go.polydawn.net/repeatr/api"
 )
 
-func Run(ctx context.Context, formula rdef.Formula, stream chan<- *Event) (rdef.RunRecord, error) {
-	return rdef.RunRecord{}, nil
+func Run(ctx context.Context, formula *api.Formula, stream chan<- *Event) (*api.RunRecord, error) {
+	return nil, nil
 }
 
 /*
@@ -29,9 +29,9 @@ func Run(ctx context.Context, formula rdef.Formula, stream chan<- *Event) (rdef.
 	defined in the union because it's about where they're sent on the wire.)
 */
 type Event struct {
-	Log       *LogItem        `refmt:"log,omitempty"`       // Log events are repeatr's logs.
-	Journal   string          `refmt:"journal,omitempty"`   // User output strings are called journal events.
-	RunRecord *rdef.RunRecord `refmt:"runRecord,omitempty"` // RunRecords are the final event emitted by a run.
+	Log       *LogItem       `refmt:"log,omitempty"`       // Log events are repeatr's logs.
+	Journal   string         `refmt:"journal,omitempty"`   // User output strings are called journal events.
+	RunRecord *api.RunRecord `refmt:"runRecord,omitempty"` // RunRecords are the final event emitted by a run.
 }
 
 /*

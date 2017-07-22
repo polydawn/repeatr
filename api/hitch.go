@@ -1,12 +1,18 @@
 package api
 
+/*
+	This file is all serializable types used in Hitch to track state.
+
+	Formulas and other parts refered to in the "replay" section is all
+	Repeatr stuff (in the 'repeatr.go') file;
+	WareIDs and other fileset-related basics is Rio stuff (in the 'rio.go') file.
+*/
+
 import (
 	"fmt"
 	"strings"
 
 	"github.com/polydawn/refmt/obj/atlas"
-
-	"go.polydawn.net/repeatr/api/rdef"
 )
 
 /*
@@ -94,7 +100,7 @@ var Catalog_AtlasEntry = atlas.BuildEntry(Catalog{}).StructMap().Autogenerate().
 
 type ReleaseEntry struct {
 	Name     ReleaseName
-	Items    map[ItemName]rdef.WareID
+	Items    map[ItemName]WareID
 	Metadata map[string]string
 	Hazards  map[string]string
 	Replay   *Replay
@@ -146,7 +152,7 @@ type Step struct {
 	// If step referred to by a "wire" has more than one RunRecord, the wired
 	// output slot MUST have resulted in the same WareID hash
 	// all the RunRecords, or the replay is invalid.
-	Imports map[rdef.AbsPath]ReleaseItemID
+	Imports map[AbsPath]ReleaseItemID
 
 	// The formula for this step, exactly as executed by the releaser.
 	//
@@ -162,7 +168,7 @@ type Step struct {
 	// and dedup the computation; the steps are still stored separately, because
 	// it is correct to render them separately in order to represent the
 	// releaser's original intentions clearly.
-	Formula *rdef.Formula
+	Formula *Formula
 
 	// RunRecords from executions of this formula.
 	// May be one or multiple.
@@ -178,7 +184,7 @@ type Step struct {
 	// (It's perfectly fine for RunRecords to have differing results for outputs
 	// that *aren't* so referenced; an output slot which captures logs, for example,
 	// may often differ between runs, but since it's not passed forward, so be it.)
-	RunRecords map[rdef.RunRecordHash]*rdef.RunRecord
+	RunRecords map[RunRecordHash]*RunRecord
 
 	// FUTURE/REVIEW: we may want to include a concept of "checkpoints":
 	// they're named in the same space as steps using formulas,
