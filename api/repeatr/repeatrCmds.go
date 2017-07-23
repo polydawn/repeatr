@@ -20,6 +20,9 @@ import (
 type RunFunc func(
 	ctx context.Context,
 	formula *api.Formula,
+	warehouses api.WorkspaceWarehouseCfg,
+	// still need output instructions?             // eh belongs in formula, though string may map to warehouse suite.
+	// still need per-input instruction overrides? // eh belongs in formula, though string may map to warehouse suite.
 	stream chan<- *Event,
 ) (*api.RunRecord, error)
 
