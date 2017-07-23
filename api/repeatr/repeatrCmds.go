@@ -17,9 +17,11 @@ import (
 	"go.polydawn.net/repeatr/api"
 )
 
-func Run(ctx context.Context, formula *api.Formula, stream chan<- *Event) (*api.RunRecord, error) {
-	return nil, nil
-}
+type RunFunc func(
+	ctx context.Context,
+	formula *api.Formula,
+	stream chan<- *Event,
+) (*api.RunRecord, error)
 
 /*
 	A "union" type of all the kinds of event that may be generated in the
