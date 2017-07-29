@@ -20,9 +20,9 @@ import (
 type RunFunc func(
 	ctx context.Context,
 	formula *api.Formula,
-	warehouses api.WorkspaceWarehouseCfg,
-	// still need output instructions?             // eh belongs in formula, though string may map to warehouse suite.
-	// still need per-input instruction overrides? // eh belongs in formula, though string may map to warehouse suite.
+	defaultWarehouses []api.WarehouseAddr, // default input warehouses
+	outputWarehouses map[api.AbsPath][]api.WarehouseAddr, // output warehouses
+	inputWarehouses map[api.AbsPath][]api.WarehouseAddr, // input override warehouses
 	stream chan<- *Event,
 ) (*api.RunRecord, error)
 
