@@ -1,4 +1,4 @@
-# Repeatr [![Build status](https://img.shields.io/travis/polydawn/repeatr/master.svg?style=flat-square)](https://travis-ci.org/polydawn/repeatr)
+# Repeatr [![Build status](https://img.shields.io/travis/polydawn/repeatr/master.svg?style=flat-square)](https://travis-ci.org/polydawn/repeatr) [![GoDoc](https://godoc.org/github.com/polydawn/repeatr?status.svg)](https://godoc.org/github.com/polydawn/repeatr)
 
 ```
 repeatr run same_thing_in > same_thing_out
