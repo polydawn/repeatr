@@ -8,6 +8,7 @@ package api
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/polydawn/refmt/obj/atlas"
 )
@@ -82,6 +83,32 @@ type (
 	*/
 	WorkspaceWarehouseCfg map[WarehouseAddr]WarehouseCfg
 )
+
+/*
+	FilesetFilters define how certain filesystem metadata should be treated
+	when packing or unpacking files.
+
+		For each value:
+		  If set: use that number;
+		    default for pack is to flatten;
+		    default for unpack is to respect packed metadata.
+		  To keep during pack: set the keep bool.
+		If keep is true, the value must be nil or the filter is invalid.
+*/
+type FilesetFilters struct {
+	FlattenUID struct {
+		Keep  bool    `json:"keep,omitempty"`
+		Value *uint32 `json:"value,omitempty"`
+	} `json:"uid"`
+	FlattenGID struct {
+		Keep  bool    `json:"keep,omitempty"`
+		Value *uint32 `json:"value,omitempty"`
+	} `json:"gid"`
+	FlattenMtime struct {
+		Keep  bool       `json:"keep,omitempty"`
+		Value *time.Time `json:"value,omitempty"`
+	} `json:"mtime"`
+}
 
 /*
 	For workspace configuration: warehouses may involve auth, so
