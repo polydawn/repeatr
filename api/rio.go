@@ -16,6 +16,7 @@ import (
 /*
 	Ware IDs are content-addressable, cryptographic hashes which uniquely identify
 	a "ware" -- a packed filesystem snapshot.
+	A ware contains one or more files and directories, and metadata for each.
 
 	Ware IDs are serialized as a string in two parts, separated by a colon --
 	for example like "git:f23ae1829" or "tar:WJL8or32vD".

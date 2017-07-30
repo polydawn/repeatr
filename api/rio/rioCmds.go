@@ -23,12 +23,26 @@ type UnpackFunc func(
 	path string, // Where to unpack the fileset (absolute path).
 	filters api.FilesetFilters, // Optionally: filters we should apply while unpacking.
 	warehouses []api.WarehouseAddr, // Warehouses we can try to fetch from.
-	monitor MaterializeMonitor, // Optionally: callbacks for progress monitoring.
+	monitor Monitor, // Optionally: callbacks for progress monitoring.
 ) (api.WareID, error)
 
-type MaterializeMonitor struct {
-	// placeholder, todo
+type PackFunc func(
+	ctx context.Context, // Long-running call.  Cancellable.
+	path string, // The fileset to scan and pack (absolute path).
+	filters api.FilesetFilters, // Optionally: filters we should apply while unpacking.
+	warehouse api.WarehouseAddr, // Warehouse to save into (or blank to just scan).
+	monitor Monitor, // Optionally: callbacks for progress monitoring.
+) (api.WareID, error)
 
+type MirrorFunc func(
+	ctx context.Context, // Long-running call.  Cancellable.
+	wareID api.WareID, // What wareID to mirror.
+	target api.WarehouseAddr, // Warehouse to ensure the ware is mirrored into.
+	sources []api.WarehouseAddr, // Warehouses we can try to fetch from.
+	monitor Monitor, // Optionally: callbacks for progress monitoring.
+) (api.WareID, error)
+
+type Monitor struct {
 	/*
 		Callback for notifications about progress updates.
 
