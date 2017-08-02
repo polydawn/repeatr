@@ -8,6 +8,7 @@ package api
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/polydawn/refmt/obj/atlas"
 )
@@ -15,6 +16,7 @@ import (
 /*
 	Ware IDs are content-addressable, cryptographic hashes which uniquely identify
 	a "ware" -- a packed filesystem snapshot.
+	A ware contains one or more files and directories, and metadata for each.
 
 	Ware IDs are serialized as a string in two parts, separated by a colon --
 	for example like "git:f23ae1829" or "tar:WJL8or32vD".
@@ -50,3 +52,53 @@ var WareID_AtlasEntry = atlas.BuildEntry(WareID{}).Transform().
 	Complete()
 
 type AbsPath string // Identifier for output slots.  Coincidentally, a path.
+
+type (
+	/*
+		WarehouseAddr strings describe a protocol and dial address for talking to
+		a storage warehouse.
+
+		The serial format is an opaque string, though they typically resemble
+		(and for internal use, are parsed as) URLs.
+	*/
+	WarehouseAddr string
+
+	/*
+		Configuration details for a warehouse.
+
+		Many warehouses don't *need* any configuration; the addr string
+		can tell the whole story.  But if you need auth or other fanciness,
+		here's the place to specify it.
+	*/
+	WarehouseCfg struct {
+		Auth     string      // auth info, if needed.  usually points to another file.
+		Addr     interface{} // additional addr info, for protocols that require it.
+		Priority int         // higher is checked first.
+	}
+)
+
+/*
+	FilesetFilters define how certain filesystem metadata should be treated
+	when packing or unpacking files.
+
+		For each value:
+		  If set: use that number;
+		    default for pack is to flatten;
+		    default for unpack is to respect packed metadata.
+		  To keep during pack: set the keep bool.
+		If keep is true, the value must be nil or the filter is invalid.
+*/
+type FilesetFilters struct {
+	FlattenUID struct {
+		Keep  bool    `json:"keep,omitempty"`
+		Value *uint32 `json:"value,omitempty"`
+	} `json:"uid"`
+	FlattenGID struct {
+		Keep  bool    `json:"keep,omitempty"`
+		Value *uint32 `json:"value,omitempty"`
+	} `json:"gid"`
+	FlattenMtime struct {
+		Keep  bool       `json:"keep,omitempty"`
+		Value *time.Time `json:"value,omitempty"`
+	} `json:"mtime"`
+}
