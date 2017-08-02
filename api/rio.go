@@ -75,14 +75,6 @@ type (
 		Addr     interface{} // additional addr info, for protocols that require it.
 		Priority int         // higher is checked first.
 	}
-
-	/*
-		A suite of warehouses.  A transmat can take the entire set,
-		and will select the ones it knows how to use, sort them,
-		ping each in parallel, and start fetching from the most preferred
-		one (or, from several, if it's a really smart protocol like that).
-	*/
-	WorkspaceWarehouseCfg map[WarehouseAddr]WarehouseCfg
 )
 
 /*
