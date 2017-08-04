@@ -1,3 +1,15 @@
 [submodule ".gopath/src/github.com/polydawn/refmt"]
 	path = .gopath/src/github.com/polydawn/refmt
 	url = https://github.com/polydawn/refmt
+[submodule ".gopath/src/github.com/smartystreets/logging"]
+	path = .gopath/src/github.com/smartystreets/logging
+	url = https://github.com/smartystreets/logging
+[submodule ".gopath/src/github.com/smartystreets/goconvey"]
+	path = .gopath/src/github.com/smartystreets/goconvey
+	url = https://github.com/smartystreets/goconvey
+[submodule ".gopath/src/github.com/smartystreets/assertions"]
+	path = .gopath/src/github.com/smartystreets/assertions
+	url = https://github.com/smartystreets/assertions
+[submodule ".gopath/src/github.com/jtolds/gls"]
+	path = .gopath/src/github.com/jtolds/gls
+	url = https://github.com/jtolds/gls
