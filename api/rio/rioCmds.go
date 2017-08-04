@@ -14,7 +14,7 @@ package rio
 import (
 	"context"
 
-	"go.polydawn.net/repeatr/api"
+	"go.polydawn.net/timeless-api"
 )
 
 type UnpackFunc func(
@@ -61,3 +61,8 @@ type Monitor struct {
 	*/
 	NotifyFn func(phase, desc string, totalProg, totalWork int)
 }
+
+const (
+	ErrWareCorrupt = "rio-ware-corrupt"
+	ErrCancelled   = "rio-cancelled"
+)
