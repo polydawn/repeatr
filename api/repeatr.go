@@ -48,6 +48,7 @@ type RunRecord struct {
 	Time      int64              // time at start of build.
 	FormulaID SetupHash          // HID of formula ran.
 	Results   map[AbsPath]WareID // wares produced by the run!
+	ExitCode  int                // exit code of the contained process.
 
 	// --- below: addntl optional metadata ---
 
