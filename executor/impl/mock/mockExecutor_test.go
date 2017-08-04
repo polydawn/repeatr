@@ -1,4 +1,4 @@
-package demo
+package mock
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 func Test(t *testing.T) {
 	var e repeatr.RunFunc = Executor{}.Run
 
-	Convey("Nil Executor mocking utilities", t, func() {
+	Convey("Mock Executor sanity tests", t, func() {
 		formula := &api.Formula{
 			Inputs: map[api.AbsPath]api.WareID{
 				"/data/test": api.WareID{"mocktar", "weofijqweoi"},
