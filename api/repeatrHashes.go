@@ -24,7 +24,7 @@ import (
 	there is no reason you should treat it as anything but opaque.
 	The returned string may be relied upon to be all alphanumeric characters.
 */
-func (frm Formula) SetupHash() string {
+func (frm Formula) SetupHash() SetupHash {
 	msg, err := refmt.MarshalAtlased(
 		cbor.EncodeOptions{},
 		frm,
@@ -35,5 +35,5 @@ func (frm Formula) SetupHash() string {
 	}
 	hasher := sha512.New384()
 	hasher.Write(msg)
-	return misc.Base58Encode(hasher.Sum(nil))
+	return SetupHash(misc.Base58Encode(hasher.Sum(nil)))
 }
