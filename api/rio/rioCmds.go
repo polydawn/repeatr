@@ -14,7 +14,7 @@ package rio
 import (
 	"context"
 
-	"go.polydawn.net/repeatr/api"
+	"go.polydawn.net/timeless-api"
 )
 
 type UnpackFunc func(

@@ -14,7 +14,7 @@ import (
 	"context"
 	"time"
 
-	"go.polydawn.net/repeatr/api"
+	"go.polydawn.net/timeless-api"
 )
 
 type RunFunc func(
