@@ -61,3 +61,8 @@ type Monitor struct {
 	*/
 	NotifyFn func(phase, desc string, totalProg, totalWork int)
 }
+
+const (
+	ErrWareCorrupt = "rio-ware-corrupt"
+	ErrCancelled   = "rio-cancelled"
+)
