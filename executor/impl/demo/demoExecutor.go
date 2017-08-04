@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha512"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/polydawn/refmt/misc"
@@ -27,6 +28,20 @@ func (cfg Executor) Run(
 	inputWarehouses map[api.AbsPath][]api.WarehouseAddr, // input override warehouses
 	stream chan<- *repeatr.Event,
 ) (*api.RunRecord, error) {
+	// Only accept "mock" input and output specifications.
+	//  Since this executor doesn't do any *real* executing, we certainly
+	//  don't want to let it be used improperly accidentically.
+	for _, inputWare := range formula.Inputs {
+		if !strings.HasPrefix(inputWare.Type, "mock") {
+			return nil, Errorf(repeatr.ErrUsage, "the mock executor can only run with mock inputs!")
+		}
+	}
+	for _, outputSpec := range formula.Outputs {
+		if !strings.HasPrefix(outputSpec, "mock") {
+			return nil, Errorf(repeatr.ErrUsage, "the mock executor can only run with mock outputs!")
+		}
+	}
+
 	// Gather host environment data.
 	//  This will be reported in the runrecord as some advisory/logging metadata.
 	hostname, err := os.Hostname()

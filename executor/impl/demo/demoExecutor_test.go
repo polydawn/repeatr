@@ -16,13 +16,13 @@ func Test(t *testing.T) {
 	Convey("Nil Executor mocking utilities", t, func() {
 		formula := &api.Formula{
 			Inputs: map[api.AbsPath]api.WareID{
-				"/data/test": api.WareID{"tar", "weofijqweoi"},
+				"/data/test": api.WareID{"mocktar", "weofijqweoi"},
 			},
 			Action: api.FormulaAction{
 				Exec: []string{"thing"},
 			},
 			Outputs: map[api.AbsPath]string{
-				"/out": "mock",
+				"/out": "mocktar",
 			},
 		}
 

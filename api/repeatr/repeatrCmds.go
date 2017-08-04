@@ -52,5 +52,6 @@ type LogItem struct {
 type ErrorCategory string
 
 const (
+	ErrUsage    ErrorCategory = "repeatr-usage-error"    // Indicates some piece of user input to a command was invalid and unrunnable.
 	ErrExecutor ErrorCategory = "repeatr-executor-error" // Indicates an executor failed to finish (or possibly even start) executing a formula's action.
 )
