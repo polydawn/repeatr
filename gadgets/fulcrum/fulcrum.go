@@ -32,7 +32,8 @@ type Fulcrum struct {
 }
 
 // Whether we have enough caps to confidently access all of `$REPEATR_BASE/io/*`.
-// We sum this up as "have CAP_DAC_OVERRIDE" (or, on mac, is uid==0).
+// We sum this up as "have CAP_DAC_OVERRIDE";
+// or, on mac, is uid==0.
 func (f Fulcrum) CanShareIOCache() bool {
 	if !f.onLinux {
 		return f.ourUID == 0
@@ -41,12 +42,14 @@ func (f Fulcrum) CanShareIOCache() bool {
 }
 
 // Whether we have enough caps to confidently use materialize files with ownership info.
-// This is pretty literally "have CAP_CHOWN" (or, on mac, is uid==0).
+// This requires "have CAP_CHOWN", but also "have CAP_FOWNER" (because we need this cap
+// in order to be able to set mtimes on files *after having chown'd them*);
+// or, on mac, is uid==0.
 func (f Fulcrum) CanMaterializeOwnership() bool {
 	if !f.onLinux {
 		return f.ourUID == 0
 	}
-	return f.ourCaps.Get(capability.EFFECTIVE, capability.CAP_CHOWN)
+	return f.ourCaps.Get(capability.EFFECTIVE, capability.CAP_CHOWN|capability.CAP_FOWNER)
 }
 
 func (f Fulcrum) CanUseExecutor(e executor.Executor) bool {

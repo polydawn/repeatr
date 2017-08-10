@@ -56,7 +56,7 @@ func Run(stdout, stderr io.Writer) cli.ActionFunc {
 		if !fulcrum.CanMaterializeOwnership() {
 			panic(meep.Meep(&cmdbhv.ErrPermissions{
 				Message: "insufficient permissions -- run again with sudo?\n\n" +
-					"repeatr needs root priviledges (or more specifically, CAP_CHOWN) in order to unpack filesystems with their full attributes intact.",
+					"repeatr needs root priviledges (or more specifically, CAP_CHOWN and CAP_FOWNER) in order to unpack filesystems with their full attributes intact.",
 			}))
 		}
 		if !fulcrum.CanUseExecutor(executor) {
