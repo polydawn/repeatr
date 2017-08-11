@@ -48,3 +48,10 @@ type LogItem struct {
 	Msg   string            `refmt:"msg"`
 	Ctx   map[string]string `refmt:"ctx,omitempty"`
 }
+
+type ErrorCategory string
+
+const (
+	ErrUsage    ErrorCategory = "repeatr-usage-error"    // Indicates some piece of user input to a command was invalid and unrunnable.
+	ErrExecutor ErrorCategory = "repeatr-executor-error" // Indicates an executor failed to finish (or possibly even start) executing a formula's action.
+)
