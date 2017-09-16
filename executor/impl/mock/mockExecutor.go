@@ -9,10 +9,10 @@ import (
 
 	"github.com/polydawn/refmt/misc"
 
+	"go.polydawn.net/go-timeless-api"
+	"go.polydawn.net/go-timeless-api/repeatr"
 	. "go.polydawn.net/repeatr/lib/errcat"
 	"go.polydawn.net/repeatr/lib/guid"
-	"go.polydawn.net/timeless-api"
-	"go.polydawn.net/timeless-api/repeatr"
 )
 
 type Executor struct {

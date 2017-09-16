@@ -6,8 +6,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"go.polydawn.net/timeless-api"
-	"go.polydawn.net/timeless-api/repeatr"
+	"go.polydawn.net/go-timeless-api"
+	"go.polydawn.net/go-timeless-api/repeatr"
 )
 
 func Test(t *testing.T) {
