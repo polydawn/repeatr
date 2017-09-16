@@ -3,9 +3,9 @@ package core
 import (
 	"context"
 
-	"go.polydawn.net/repeatr/executor"
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/repeatr/executor"
 )
 
 type Runner struct {
