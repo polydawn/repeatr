@@ -5,6 +5,7 @@ import (
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/repeatr/executor/mixins"
 	"go.polydawn.net/rio/stitch"
 )
 
@@ -20,6 +21,11 @@ func (cfg Executor) Run(
 	input repeatr.InputControl,
 	monitor repeatr.Monitor,
 ) (*api.RunRecord, error) {
+	// Start filling out record keeping!
+	//  Includes picking a random guid for the job, which we use in all temp files.
+	rr := &api.RunRecord{}
+	mixins.InitRunRecord(rr, formula)
+
 	// Make work dirs.
 	// TODO
 
