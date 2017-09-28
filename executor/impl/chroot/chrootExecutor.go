@@ -3,13 +3,18 @@ package chroot
 import (
 	"context"
 
+	. "github.com/polydawn/go-errcat"
+
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
 	"go.polydawn.net/repeatr/executor/mixins"
+	"go.polydawn.net/rio/fs"
+	"go.polydawn.net/rio/fs/osfs"
 	"go.polydawn.net/rio/stitch"
 )
 
 type Executor struct {
+	workspaceFs   fs.FS             // A working dir per execution will be made in here.
 	assemblerTool *stitch.Assembler // Contains: unpackTool, caching cfg, and placer tools.
 }
 
@@ -27,10 +32,27 @@ func (cfg Executor) Run(
 	mixins.InitRunRecord(rr, formula)
 
 	// Make work dirs.
-	// TODO
+	jobPath := fs.MustRelPath(rr.Guid)
+	chrootPath := jobPath.Join(fs.MustRelPath("chroot"))
+	if err := cfg.workspaceFs.Mkdir(jobPath, 0700); err != nil {
+		return nil, Recategorize(err, repeatr.ErrLocalCacheProblem)
+	}
+	if err := cfg.workspaceFs.Mkdir(chrootPath, 0755); err != nil {
+		return nil, Recategorize(err, repeatr.ErrLocalCacheProblem)
+	}
+	chrootFs := osfs.New(cfg.workspaceFs.BasePath().Join(chrootPath))
 
 	// Shell out to assembler.
-	// TODO
+	unpackSpecs := stitch.FormulaToUnpackTree(formula, api.Filter_NoMutation)
+	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs)
+	if err != nil {
+		return nil, err // TODO ugh basically the entire gammut of rio errors can come up here
+	}
+	defer func() {
+		if err := cleanupFunc(); err != nil {
+			// TODO log it
+		}
+	}()
 
 	// Invoke containment and run!
 	// TODO
