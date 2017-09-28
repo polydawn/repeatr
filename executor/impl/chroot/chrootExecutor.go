@@ -46,7 +46,7 @@ func (cfg Executor) Run(
 	unpackSpecs := stitch.FormulaToUnpackTree(formula, api.Filter_NoMutation)
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs)
 	if err != nil {
-		return nil, err // TODO ugh basically the entire gammut of rio errors can come up here
+		return nil, repeatr.ReboxRioError(err)
 	}
 	defer func() {
 		if err := cleanupFunc(); err != nil {
