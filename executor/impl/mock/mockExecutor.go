@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/polydawn/go-errcat"
 	"github.com/polydawn/refmt/misc"
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
-	. "go.polydawn.net/repeatr/lib/errcat"
 	"go.polydawn.net/repeatr/lib/guid"
 )
 
