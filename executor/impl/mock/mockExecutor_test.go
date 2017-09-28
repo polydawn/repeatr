@@ -21,8 +21,8 @@ func Test(t *testing.T) {
 			Action: api.FormulaAction{
 				Exec: []string{"thing"},
 			},
-			Outputs: map[api.AbsPath]string{
-				"/out": "mocktar",
+			Outputs: map[api.AbsPath]api.OutputSpec{
+				"/out": api.OutputSpec{PackFmt: "mocktar"},
 			},
 		}
 
