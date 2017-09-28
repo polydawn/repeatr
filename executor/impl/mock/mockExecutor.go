@@ -22,11 +22,9 @@ var _ repeatr.RunFunc = Executor{}.Run
 
 func (cfg Executor) Run(
 	ctx context.Context,
-	formula *api.Formula,
-	defaultWarehouses []api.WarehouseAddr, // default input warehouses
-	outputWarehouses map[api.AbsPath][]api.WarehouseAddr, // output warehouses
-	inputWarehouses map[api.AbsPath][]api.WarehouseAddr, // input override warehouses
-	stream chan<- *repeatr.Event,
+	formula api.Formula,
+	input repeatr.InputControl,
+	monitor repeatr.Monitor,
 ) (*api.RunRecord, error) {
 	// Only accept "mock" input and output specifications.
 	//  Since this executor doesn't do any *real* executing, we certainly
