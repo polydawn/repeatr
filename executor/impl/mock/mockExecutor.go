@@ -22,11 +22,9 @@ var _ repeatr.RunFunc = Executor{}.Run
 
 func (cfg Executor) Run(
 	ctx context.Context,
-	formula *api.Formula,
-	defaultWarehouses []api.WarehouseAddr, // default input warehouses
-	outputWarehouses map[api.AbsPath][]api.WarehouseAddr, // output warehouses
-	inputWarehouses map[api.AbsPath][]api.WarehouseAddr, // input override warehouses
-	stream chan<- *repeatr.Event,
+	formula api.Formula,
+	input repeatr.InputControl,
+	monitor repeatr.Monitor,
 ) (*api.RunRecord, error) {
 	// Only accept "mock" input and output specifications.
 	//  Since this executor doesn't do any *real* executing, we certainly
@@ -37,7 +35,7 @@ func (cfg Executor) Run(
 		}
 	}
 	for _, outputSpec := range formula.Outputs {
-		if !strings.HasPrefix(outputSpec, "mock") {
+		if !strings.HasPrefix(outputSpec.PackFmt, "mock") {
 			return nil, Errorf(repeatr.ErrUsage, "the mock executor can only run with mock outputs!")
 		}
 	}
@@ -64,13 +62,12 @@ func (cfg Executor) Run(
 	// Fabricate outputs.
 	//  The demo executor just *makes stuff up*, mostly deterministically
 	//  based on the setup hash.
-	for outputName, packType := range formula.Outputs {
+	for outputName, outputSpec := range formula.Outputs {
 		hasher := sha512.New384()
 		hasher.Write([]byte(setupHash))
 		hasher.Write([]byte(outputName))
-		hasher.Write([]byte(packType))
 		rr.Results[outputName] = api.WareID{
-			packType,
+			outputSpec.PackFmt,
 			misc.Base58Encode(hasher.Sum(nil)),
 		}
 	}

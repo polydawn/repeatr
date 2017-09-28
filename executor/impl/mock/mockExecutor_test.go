@@ -14,15 +14,15 @@ func Test(t *testing.T) {
 	var e repeatr.RunFunc = Executor{}.Run
 
 	Convey("Mock Executor sanity tests", t, func() {
-		formula := &api.Formula{
+		formula := api.Formula{
 			Inputs: map[api.AbsPath]api.WareID{
 				"/data/test": api.WareID{"mocktar", "weofijqweoi"},
 			},
 			Action: api.FormulaAction{
 				Exec: []string{"thing"},
 			},
-			Outputs: map[api.AbsPath]string{
-				"/out": "mocktar",
+			Outputs: map[api.AbsPath]api.OutputSpec{
+				"/out": api.OutputSpec{PackFmt: "mocktar"},
 			},
 		}
 
@@ -30,8 +30,7 @@ func Test(t *testing.T) {
 			rr1, err := e(
 				context.Background(),
 				formula,
-				nil, nil, nil, // warehouse info is quite irrelevant to a dummy executor
-				make(chan<- *repeatr.Event, 100), // dummy channel, big enough to swallow all events
+				repeatr.InputControl{}, repeatr.Monitor{},
 			)
 			So(err, ShouldBeNil)
 			So(rr1.Results, ShouldHaveLength, 1)
@@ -40,8 +39,7 @@ func Test(t *testing.T) {
 				rr2, err := e(
 					context.Background(),
 					formula,
-					nil, nil, nil, // warehouse info is quite irrelevant to a dummy executor
-					make(chan<- *repeatr.Event, 100), // dummy channel, big enough to swallow all events
+					repeatr.InputControl{}, repeatr.Monitor{},
 				)
 				So(err, ShouldBeNil)
 				So(rr1.Results, ShouldResemble, rr2.Results)
@@ -52,8 +50,7 @@ func Test(t *testing.T) {
 				rr2, err := e(
 					context.Background(),
 					formula,
-					nil, nil, nil, // warehouse info is quite irrelevant to a dummy executor
-					make(chan<- *repeatr.Event, 100), // dummy channel, big enough to swallow all events
+					repeatr.InputControl{}, repeatr.Monitor{},
 				)
 				So(err, ShouldBeNil)
 				So(rr1.Results, ShouldNotResemble, rr2.Results)
