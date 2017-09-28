@@ -19,3 +19,6 @@
 [submodule ".gopath/src/github.com/polydawn/go-errcat"]
 	path = .gopath/src/github.com/polydawn/go-errcat
 	url = https://github.com/polydawn/go-errcat
+[submodule ".gopath/src/go.polydawn.net/rio"]
+	path = .gopath/src/go.polydawn.net/rio
+	url = https://github.com/polydawn/rio
