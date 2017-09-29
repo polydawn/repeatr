@@ -9,6 +9,7 @@ import (
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/go-timeless-api/rio"
 	"go.polydawn.net/repeatr/executor/mixins"
 	"go.polydawn.net/rio/fs"
 	"go.polydawn.net/rio/fs/osfs"
@@ -18,6 +19,7 @@ import (
 type Executor struct {
 	workspaceFs   fs.FS             // A working dir per execution will be made in here.
 	assemblerTool *stitch.Assembler // Contains: unpackTool, caching cfg, and placer tools.
+	packTool      rio.PackFunc
 }
 
 var _ repeatr.RunFunc = Executor{}.Run
@@ -45,7 +47,7 @@ func (cfg Executor) Run(
 	chrootFs := osfs.New(cfg.workspaceFs.BasePath().Join(chrootPath))
 
 	// Shell out to assembler.
-	unpackSpecs := stitch.FormulaToUnpackTree(formula, api.Filter_NoMutation)
+	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, api.Filter_NoMutation)
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs)
 	if err != nil {
 		return rr, repeatr.ReboxRioError(err)
@@ -62,7 +64,11 @@ func (cfg Executor) Run(
 	_ = cmd
 
 	// Pack outputs.
-	// TODO
+	packSpecs := stitch.FormulaToPackSpecs(formula)
+	rr.Results, err = stitch.PackMulti(ctx, cfg.packTool, chrootFs, packSpecs)
+	if err != nil {
+		return rr, err
+	}
 
 	// Done!
 	return rr, nil

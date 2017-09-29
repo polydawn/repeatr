@@ -28,12 +28,12 @@ func (cfg Executor) Run(
 	//  Since this executor doesn't do any *real* executing, we certainly
 	//  don't want to let it be used improperly accidentically.
 	for _, inputWare := range formula.Inputs {
-		if !strings.HasPrefix(inputWare.Type, "mock") {
+		if !strings.HasPrefix(string(inputWare.Type), "mock") {
 			return nil, Errorf(repeatr.ErrUsage, "the mock executor can only run with mock inputs!")
 		}
 	}
 	for _, outputSpec := range formula.Outputs {
-		if !strings.HasPrefix(outputSpec.PackFmt, "mock") {
+		if !strings.HasPrefix(string(outputSpec.PackType), "mock") {
 			return nil, Errorf(repeatr.ErrUsage, "the mock executor can only run with mock outputs!")
 		}
 	}
@@ -51,7 +51,7 @@ func (cfg Executor) Run(
 		hasher.Write([]byte(rr.FormulaID))
 		hasher.Write([]byte(outputName))
 		rr.Results[outputName] = api.WareID{
-			outputSpec.PackFmt,
+			outputSpec.PackType,
 			misc.Base58Encode(hasher.Sum(nil)),
 		}
 	}
