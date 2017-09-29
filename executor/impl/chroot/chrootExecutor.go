@@ -40,7 +40,7 @@ func (cfg Executor) Run(
 		return nil, Recategorize(err, repeatr.ErrLocalCacheProblem)
 	}
 	if err := cfg.workspaceFs.Mkdir(chrootPath, 0755); err != nil {
-		return nil, Recategorize(err, repeatr.ErrLocalCacheProblem)
+		return rr, Recategorize(err, repeatr.ErrLocalCacheProblem)
 	}
 	chrootFs := osfs.New(cfg.workspaceFs.BasePath().Join(chrootPath))
 
@@ -48,7 +48,7 @@ func (cfg Executor) Run(
 	unpackSpecs := stitch.FormulaToUnpackTree(formula, api.Filter_NoMutation)
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs)
 	if err != nil {
-		return nil, repeatr.ReboxRioError(err)
+		return rr, repeatr.ReboxRioError(err)
 	}
 	defer func() {
 		if err := cleanupFunc(); err != nil {
@@ -65,7 +65,7 @@ func (cfg Executor) Run(
 	// TODO
 
 	// Done!
-	return nil, nil
+	return rr, nil
 }
 
 /*
