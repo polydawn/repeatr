@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 
@@ -15,8 +16,11 @@ func main() {
 	ctx := context.Background()
 	bhv := Main(ctx, os.Args, os.Stdin, os.Stdout, os.Stderr)
 	err := bhv.action()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+	}
 	exitCode := repeatr.GetExitCode(err)
-	os.Exit(int(exitCode))
+	os.Exit(exitCode)
 }
 
 // Holder type which makes it easier for us to inspect
@@ -52,7 +56,6 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 		return behavior{
 			parsedArgs: err,
 			action: func() error {
-				//fmt.Fprintln(stderr, err)  // ?
 				return Errorf(repeatr.ErrUsage, "error parsing args: %s", err)
 			},
 		}
