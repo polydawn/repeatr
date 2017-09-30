@@ -8,6 +8,7 @@ inputs:
 		hash: "vg5TMw0aRSIQGPybkhMvZmwwI6rzAz6CoAOC0ecUUY02Cn2_7x9GM2DclHXutEPH"
 		silo: "https://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz"
 action:
+	policy: sysad
 	command:
 		- "/bin/bash"
 		- "-c"
