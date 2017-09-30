@@ -16,6 +16,4 @@ action:
 			export GOROOT=/app/go/go
 			export PATH=$PATH:/app/go/go/bin
 
-			./goad fmt
-			./goad install
-			./goad test
+			./goad

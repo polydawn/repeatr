@@ -17,6 +17,8 @@ export GOBIN="$PWD/bin/"
 
 
 ### other config scripts?  invoke here.
+## we need to exec to other tools in our suite!  modify PATH:
+PATH=$GOBIN:$PATH
 ## pass pointer to project root dir down, for tests (tests run in varying CWDs, so need this hint)
 export PROJ="$PWD"
 ## use LDFLAGS to inject vars at compile time.
@@ -36,6 +38,10 @@ TEST_TIMEOUT="${TEST_TIMEOUT:-"35s"}"
 ### action begins!
 if [ -z "$SUBCOMMAND" ] ; then
 	(
+		### This project needs RIO to work.  Build it first.
+		go install go.polydawn.net/rio/cmd/rio
+
+		### Now onto this project:
 		go fmt "$SUBSECTION"
 		go install -ldflags "$LDFLAGS" "$cmd" && {
 			echo -e "\E[1;32minstall successful.\E[0;m\n"
