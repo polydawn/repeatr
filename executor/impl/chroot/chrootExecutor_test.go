@@ -27,9 +27,9 @@ func TestChrootExecutor(t *testing.T) {
 			Action: api.FormulaAction{
 				Exec: []string{"/bin/echo", "hello world"},
 			},
-			//	Outputs: map[AbsPath]OutputSpec{
-			//		"/saveme": {PackType: "tar"},
-			//	},
+			Outputs: map[api.AbsPath]api.OutputSpec{
+				"/": {PackType: "tar", Filters: api.FilesetFilters{"keep", "keep", "keep", false}},
+			},
 			FetchUrls: map[api.AbsPath][]api.WarehouseAddr{
 				"/": []api.WarehouseAddr{
 					"file://../../../fixtures/busybash.tgz",
