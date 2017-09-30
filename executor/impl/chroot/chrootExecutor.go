@@ -14,6 +14,7 @@ import (
 	"go.polydawn.net/repeatr/executor/mixins"
 	"go.polydawn.net/rio/fs"
 	"go.polydawn.net/rio/fs/osfs"
+	"go.polydawn.net/rio/fsOp"
 	"go.polydawn.net/rio/stitch"
 )
 
@@ -37,6 +38,10 @@ func (cfg Executor) Run(
 	mixins.InitRunRecord(rr, formula)
 
 	// Make work dirs.
+	//  Including whole workspace dir and parents, if necessary.
+	if err := fsOp.MkdirAll(osfs.New(fs.AbsolutePath{}), cfg.workspaceFs.BasePath().CoerceRelative(), 0700); err != nil {
+		return nil, Errorf(repeatr.ErrLocalCacheProblem, "cannot initialize workspace dirs: %s", err)
+	}
 	jobPath := fs.MustRelPath(rr.Guid)
 	chrootPath := jobPath.Join(fs.MustRelPath("chroot"))
 	if err := cfg.workspaceFs.Mkdir(jobPath, 0700); err != nil {
