@@ -2,17 +2,20 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 
+	. "github.com/polydawn/go-errcat"
 	"gopkg.in/alecthomas/kingpin.v2"
+
+	"go.polydawn.net/go-timeless-api/repeatr"
 )
 
 func main() {
 	ctx := context.Background()
 	bhv := Main(ctx, os.Args, os.Stdin, os.Stdout, os.Stderr)
-	exitCode := bhv.action()
+	err := bhv.action()
+	exitCode := repeatr.GetExitCode(err)
 	os.Exit(int(exitCode))
 }
 
@@ -20,7 +23,7 @@ func main() {
 //  the args parser result in test code before running logic.
 type behavior struct {
 	parsedArgs interface{}
-	action     func() int
+	action     func() error
 }
 
 func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) behavior {
@@ -39,21 +42,18 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 	cmdRun.Arg("formula", "Path to formula file.").
 		Required().
 		StringVar(&argsRun.FormulaPath)
-	bhvs[cmdRun.FullCommand()] = behavior{&argsRun,
-		func() int {
-			// TODO do stuff
-			return 100
-		},
-	}
+	bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
+		return Run(ctx, "chroot", argsRun.FormulaPath, nil, stdout, stderr)
+	}}
 
 	// Parse!
 	parsedCmdStr, err := app.Parse(args[1:])
 	if err != nil {
 		return behavior{
 			parsedArgs: err,
-			action: func() int {
-				fmt.Fprintln(stderr, err)
-				return 1
+			action: func() error {
+				//fmt.Fprintln(stderr, err)  // ?
+				return Errorf(repeatr.ErrUsage, "error parsing args: %s", err)
 			},
 		}
 	}
