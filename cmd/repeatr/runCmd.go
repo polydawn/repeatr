@@ -2,7 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"os"
+
+	. "github.com/polydawn/go-errcat"
+	"github.com/polydawn/refmt/json"
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
@@ -19,6 +24,16 @@ func Run(
 	stdin io.Reader,
 	stdout, stderr io.Writer,
 ) (err error) {
+	// Load and parse formula.
+	f, err := os.Open(formulaPath)
+	if err != nil {
+		return Errorf(repeatr.ErrUsage, "error opening formula file: %s", err)
+	}
+	var formula api.Formula
+	if err := json.NewUnmarshallerAtlased(f, api.RepeatrAtlas).Unmarshal(&formula); err != nil {
+		return Errorf(repeatr.ErrUsage, "formula does not parse: %s", err)
+	}
+
 	// Pack and unpack tools are always the Rio exec client.
 	var (
 		unpackTool rio.UnpackFunc = rioexecclient.UnpackFunc
@@ -41,14 +56,15 @@ func Run(
 	// Invoke executor engine.
 	rr, err := executor(
 		ctx,
-		api.Formula{}, // TODO load and parse
+		formula,
 		repeatr.InputControl{},
 		repeatr.Monitor{}, // TODO rig up IO proxy
 	)
-	if err != nil {
-		return err // TODO probably print rr anyway
+	// Always attempt to emit the runrecord json, even if we have an error
+	//  and it may be incomplete.
+	if err := json.NewMarshallerAtlased(stdout, api.RepeatrAtlas).Marshal(rr); err != nil {
+		fmt.Fprintf(stderr, "%s", err)
 	}
-	_ = rr
-
-	return nil
+	// Return the executor error.
+	return err
 }
