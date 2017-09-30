@@ -36,6 +36,10 @@ TEST_TIMEOUT="${TEST_TIMEOUT:-"35s"}"
 ### action begins!
 if [ -z "$SUBCOMMAND" ] ; then
 	(
+		### This project needs RIO to work.  Build it first.
+		go install go.polydawn.net/rio/cmd/rio
+
+		### Now onto this project:
 		go fmt "$SUBSECTION"
 		go install -ldflags "$LDFLAGS" "$cmd" && {
 			echo -e "\E[1;32minstall successful.\E[0;m\n"

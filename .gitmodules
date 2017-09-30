@@ -22,3 +22,15 @@
 [submodule ".gopath/src/go.polydawn.net/rio"]
 	path = .gopath/src/go.polydawn.net/rio
 	url = https://github.com/polydawn/rio
+[submodule ".gopath/src/xi2.org/x/xz"]
+	path = .gopath/src/xi2.org/x/xz
+	url = https://github.com/xi2/xz
+[submodule ".gopath/src/gopkg.in/alecthomas/kingpin.v2"]
+	path = .gopath/src/gopkg.in/alecthomas/kingpin.v2
+	url = https://gopkg.in/alecthomas/kingpin.v2
+[submodule ".gopath/src/github.com/alecthomas/template"]
+	path = .gopath/src/github.com/alecthomas/template
+	url = https://github.com/alecthomas/template
+[submodule ".gopath/src/github.com/alecthomas/units"]
+	path = .gopath/src/github.com/alecthomas/units
+	url = https://github.com/alecthomas/units
