@@ -40,18 +40,14 @@ func TestChrootExecutor(t *testing.T) {
 			}
 
 			asm, err := stitch.NewAssembler(unpackTool)
-			if err != nil {
-				t.Fatal(err)
-			}
+			AssertNoError(t, err)
 			exe := Executor{
 				osfs.New(tmpDir.Join(fs.MustRelPath("ws"))),
 				asm,
 				packTool,
 			}
 			rr, err := exe.Run(context.Background(), frm, repeatr.InputControl{}, repeatr.Monitor{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			WantNoError(t, err)
 			t.Logf("%v\n", rr)
 		})
 	})
