@@ -7,11 +7,30 @@ import (
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
 	"go.polydawn.net/go-timeless-api/rio"
+	. "go.polydawn.net/repeatr/testutil"
 	"go.polydawn.net/rio/client"
 	"go.polydawn.net/rio/fs"
 	"go.polydawn.net/rio/fs/osfs"
 	"go.polydawn.net/rio/stitch"
 )
+
+// Base formula full of sensible defaults and ready to run:
+var baseFormula = api.Formula{
+	Inputs: map[api.AbsPath]api.WareID{
+		"/": api.WareID{"tar", "6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6"},
+	},
+	Action: api.FormulaAction{
+		Exec: []string{"/bin/echo", "hello world"},
+	},
+	Outputs: map[api.AbsPath]api.OutputSpec{
+		"/": {PackType: "tar", Filters: api.Filter_NoMutation},
+	},
+	FetchUrls: map[api.AbsPath][]api.WarehouseAddr{
+		"/": []api.WarehouseAddr{
+			"file://../../../fixtures/busybash.tgz",
+		},
+	},
+}
 
 func TestChrootExecutor(t *testing.T) {
 	var (
@@ -19,37 +38,33 @@ func TestChrootExecutor(t *testing.T) {
 		packTool   rio.PackFunc   = rioexecclient.PackFunc
 	)
 
-	t.Run("hello-world formula should work", func(t *testing.T) {
-		frm := api.Formula{
-			Inputs: map[api.AbsPath]api.WareID{
-				"/": api.WareID{"tar", "6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6"},
-			},
-			Action: api.FormulaAction{
-				Exec: []string{"/bin/echo", "hello world"},
-			},
-			//	Outputs: map[AbsPath]OutputSpec{
-			//		"/saveme": {PackType: "tar"},
-			//	},
-			FetchUrls: map[api.AbsPath][]api.WarehouseAddr{
-				"/": []api.WarehouseAddr{
-					"file://../../../fixtures/busybash.tgz",
-				},
-			},
-		}
-
+	WithTmpdir(func(tmpDir fs.AbsolutePath) {
+		// Setup assembler and executor.  Both are reusable.
 		asm, err := stitch.NewAssembler(unpackTool)
-		if err != nil {
-			t.Fatal(err)
-		}
+		AssertNoError(t, err)
 		exe := Executor{
-			osfs.New(fs.MustAbsolutePath("/tmp/testsss")),
+			osfs.New(tmpDir.Join(fs.MustRelPath("ws"))),
 			asm,
 			packTool,
 		}
-		rr, err := exe.Run(context.Background(), frm, repeatr.InputControl{}, repeatr.Monitor{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Logf("%v\n", rr)
+
+		t.Run("hello-world formula should work", func(t *testing.T) {
+			frm := baseFormula.Clone()
+
+			rr, err := exe.Run(context.Background(), frm, repeatr.InputControl{}, repeatr.Monitor{})
+			WantNoError(t, err)
+
+			t.Run("exit code should be success", func(t *testing.T) {
+				WantEqual(t, rr.ExitCode, 0)
+			})
+			t.Run("txt should be echo'd string", func(t *testing.T) {
+				// TODO actually support that...
+			})
+			t.Run("output ware from '/' should be familiar!", func(t *testing.T) {
+				WantEqual(t, map[api.AbsPath]api.WareID{
+					"/": baseFormula.Inputs["/"],
+				}, rr.Results)
+			})
+		})
 	})
 }

@@ -72,7 +72,7 @@ func (cfg Executor) Run(
 	}
 
 	// Pack outputs.
-	packSpecs := stitch.FormulaToPackSpecs(formula)
+	packSpecs := stitch.FormulaToPackSpecs(formula, api.Filter_DefaultFlatten)
 	rr.Results, err = stitch.PackMulti(ctx, cfg.packTool, chrootFs, packSpecs)
 	if err != nil {
 		return rr, err
