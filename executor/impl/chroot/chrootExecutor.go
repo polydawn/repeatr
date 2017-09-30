@@ -65,7 +65,23 @@ func (cfg Executor) Run(
 	}()
 
 	// Invoke containment and run!
-	cmd := buildCmd(formula, chrootFs.BasePath())
+	cmdName := formula.Action.Exec[0]
+	cmd := exec.Command(cmdName, formula.Action.Exec[1:]...)
+	// TODO port policy concepts
+	// userinfo := cradle.UserinfoForPolicy(f.Action.Policy)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Chroot: chrootFs.BasePath().String(),
+		// TODO port policy concepts
+		//Credential: &syscall.Credential{
+		//	Uid: uint32(userinfo.Uid),
+		//	Gid: uint32(userinfo.Gid),
+		//},
+	}
+	cmd.Dir = string(formula.Action.Cwd)
+	cmd.Env = envToSlice(formula.Action.Env)
+	proxy := mixins.NewOutputForwarder(ctx, monitor.Chan)
+	cmd.Stdout = proxy
+	cmd.Stderr = proxy
 	rr.ExitCode, err = runCmd(cmd)
 	if err != nil {
 		return rr, err
@@ -128,25 +144,6 @@ func sanityCheckFs(frm api.Formula, chrootFs fs.FS) error {
 	//  they simply launch you with so much privilege that it doesn't matter.)
 
 	return nil
-}
-
-func buildCmd(frm api.Formula, chrootPath fs.AbsolutePath) *exec.Cmd {
-	cmdName := frm.Action.Exec[0]
-	cmd := exec.Command(cmdName, frm.Action.Exec[1:]...)
-	// TODO port policy concepts
-	// userinfo := cradle.UserinfoForPolicy(f.Action.Policy)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Chroot: chrootPath.String(),
-		// TODO port policy concepts
-		//Credential: &syscall.Credential{
-		//	Uid: uint32(userinfo.Uid),
-		//	Gid: uint32(userinfo.Gid),
-		//},
-	}
-	cmd.Dir = string(frm.Action.Cwd)
-	cmd.Env = envToSlice(frm.Action.Env)
-	// TODO IO proxy wiring
-	return cmd
 }
 
 func runCmd(cmd *exec.Cmd) (int, error) {
