@@ -2,6 +2,7 @@ package chroot
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"syscall"
 
@@ -60,8 +61,10 @@ func (cfg Executor) Run(
 
 	// Invoke containment and run!
 	cmd := buildCmd(formula, chrootFs.BasePath())
-	// TODO
-	_ = cmd
+	rr.ExitCode, err = runCmd(cmd)
+	if err != nil {
+		return rr, err
+	}
 
 	// Pack outputs.
 	packSpecs := stitch.FormulaToPackSpecs(formula)
@@ -139,6 +142,35 @@ func buildCmd(frm api.Formula, chrootPath fs.AbsolutePath) *exec.Cmd {
 	cmd.Env = envToSlice(frm.Action.Env)
 	// TODO IO proxy wiring
 	return cmd
+}
+
+func runCmd(cmd *exec.Cmd) (int, error) {
+	if err := cmd.Start(); err != nil {
+		return -1, Errorf(repeatr.ErrExecutor, "executor failed to launch: %s", err)
+	}
+	err := cmd.Wait()
+	if err == nil {
+		return 0, nil
+	}
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok { // This is basically an "if stdlib isn't what we thought it is" error, so panic-worthy.
+		panic(fmt.Errorf("unknown exit reason: %T %s", err, err))
+	}
+	waitStatus, ok := exitErr.ProcessState.Sys().(syscall.WaitStatus)
+	if !ok { // This is basically a "if stdlib[...]" or OS portability issue, so also panic-able.
+		panic(fmt.Errorf("unknown process state implementation %T", exitErr.ProcessState.Sys()))
+	}
+	if waitStatus.Exited() {
+		return waitStatus.ExitStatus(), nil
+	} else if waitStatus.Signaled() {
+		// In bash, when a processs ends from a signal, the $? variable is set to 128+SIG.
+		// We follow that same convention here.
+		// So, a process terminated by ctrl-C returns 130.  A script that died to kill-9 returns 137.
+		return int(waitStatus.Signal()) + 128, nil
+	} else {
+		return -1, Errorf(repeatr.ErrExecutor, "unknown process wait status (%#v)", waitStatus)
+	}
+
 }
 
 func envToSlice(env map[string]string) []string {
