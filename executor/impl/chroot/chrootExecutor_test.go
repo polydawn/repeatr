@@ -1,6 +1,7 @@
 package chroot
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -51,14 +52,15 @@ func TestChrootExecutor(t *testing.T) {
 		t.Run("hello-world formula should work", func(t *testing.T) {
 			frm := baseFormula.Clone()
 
-			rr, err := exe.Run(context.Background(), frm, repeatr.InputControl{}, repeatr.Monitor{})
+			bm := bufferingMonitor{}.init()
+			rr, err := exe.Run(context.Background(), frm, repeatr.InputControl{}, bm.monitor())
 			WantNoError(t, err)
 
 			t.Run("exit code should be success", func(t *testing.T) {
 				WantEqual(t, rr.ExitCode, 0)
 			})
 			t.Run("txt should be echo'd string", func(t *testing.T) {
-				// TODO actually support that...
+				WantEqual(t, bm.Txt.String(), "hello world\n")
 			})
 			t.Run("output ware from '/' should be familiar!", func(t *testing.T) {
 				WantEqual(t, map[api.AbsPath]api.WareID{
@@ -67,4 +69,25 @@ func TestChrootExecutor(t *testing.T) {
 			})
 		})
 	})
+}
+
+type bufferingMonitor struct {
+	Txt bytes.Buffer
+	Ch  chan repeatr.Event
+	Err error
+}
+
+func (bm bufferingMonitor) init() *bufferingMonitor {
+	bm = bufferingMonitor{
+		Ch: make(chan repeatr.Event),
+	}
+	go func() { // leaks.  fuck the police.
+		for {
+			bm.Err = repeatr.CopyOut(<-bm.Ch, &bm.Txt)
+		}
+	}()
+	return &bm
+}
+func (bm *bufferingMonitor) monitor() repeatr.Monitor {
+	return repeatr.Monitor{Chan: bm.Ch}
 }
