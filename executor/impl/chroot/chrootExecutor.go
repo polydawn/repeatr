@@ -31,7 +31,7 @@ func NewExecutor(
 ) (repeatr.RunFunc, error) {
 	asm, err := stitch.NewAssembler(unpackTool)
 	if err != nil {
-		return nil, err
+		return nil, repeatr.ReboxRioError(err)
 	}
 	return Executor{
 		osfs.New(workDir),
