@@ -71,8 +71,9 @@ func Run(
 	// Always attempt to emit the runrecord json, even if we have an error
 	//  and it may be incomplete.
 	if err := json.NewMarshallerAtlased(stdout, api.RepeatrAtlas).Marshal(rr); err != nil {
-		fmt.Fprintf(stderr, "%s", err)
+		fmt.Fprintf(stderr, "%s\n", err)
 	}
+	stdout.Write([]byte{'\n'})
 	// Return the executor error.
 	return err
 }
