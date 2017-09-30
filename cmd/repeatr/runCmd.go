@@ -53,12 +53,20 @@ func Run(
 		}
 	}
 
+	// Prepare monitor and IO forwarding.
+	evtChan := make(chan repeatr.Event)
+	go func() { // leaks.  fuck the police.
+		for {
+			repeatr.CopyOut(<-evtChan, stderr)
+		}
+	}()
+
 	// Invoke executor engine.
 	rr, err := executor(
 		ctx,
 		formula,
 		repeatr.InputControl{},
-		repeatr.Monitor{}, // TODO rig up IO proxy
+		repeatr.Monitor{evtChan},
 	)
 	// Always attempt to emit the runrecord json, even if we have an error
 	//  and it may be incomplete.
