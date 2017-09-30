@@ -30,7 +30,7 @@ func TestChrootExecutor(t *testing.T) {
 					Exec: []string{"/bin/echo", "hello world"},
 				},
 				Outputs: map[api.AbsPath]api.OutputSpec{
-					"/": {PackType: "tar", Filters: api.FilesetFilters{"keep", "keep", "keep", false}},
+					"/": {PackType: "tar", Filters: api.Filter_NoMutation},
 				},
 				FetchUrls: map[api.AbsPath][]api.WarehouseAddr{
 					"/": []api.WarehouseAddr{
