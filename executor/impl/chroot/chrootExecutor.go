@@ -24,6 +24,22 @@ type Executor struct {
 	packTool      rio.PackFunc
 }
 
+func NewExecutor(
+	workDir fs.AbsolutePath,
+	unpackTool rio.UnpackFunc,
+	packTool rio.PackFunc,
+) (repeatr.RunFunc, error) {
+	asm, err := stitch.NewAssembler(unpackTool)
+	if err != nil {
+		return nil, repeatr.ReboxRioError(err)
+	}
+	return Executor{
+		osfs.New(workDir),
+		asm,
+		packTool,
+	}.Run, nil
+}
+
 var _ repeatr.RunFunc = Executor{}.Run
 
 func (cfg Executor) Run(
