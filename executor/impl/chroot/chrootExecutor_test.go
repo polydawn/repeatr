@@ -53,7 +53,18 @@ func TestChrootExecutor(t *testing.T) {
 
 			rr, err := exe.Run(context.Background(), frm, repeatr.InputControl{}, repeatr.Monitor{})
 			WantNoError(t, err)
-			t.Logf("%v\n", rr)
+
+			t.Run("exit code should be success", func(t *testing.T) {
+				WantEqual(t, rr.ExitCode, 0)
+			})
+			t.Run("txt should be echo'd string", func(t *testing.T) {
+				// TODO actually support that...
+			})
+			t.Run("output ware from '/' should be familiar!", func(t *testing.T) {
+				WantEqual(t, map[api.AbsPath]api.WareID{
+					"/": baseFormula.Inputs["/"],
+				}, rr.Results)
+			})
 		})
 	})
 }

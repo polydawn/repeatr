@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -15,5 +16,13 @@ func WantNoError(t *testing.T, err error)   { t.Helper(); lambdaNoError(t.Errorf
 func lambdaNoError(act thunk, err error) {
 	if err != nil {
 		act("unexpected error: %s", err)
+	}
+}
+
+func AssertEqual(t *testing.T, want, got interface{}) { t.Helper(); lambdaEqual(t.Fatalf, want, got) }
+func WantEqual(t *testing.T, want, got interface{})   { t.Helper(); lambdaEqual(t.Errorf, want, got) }
+func lambdaEqual(act thunk, want, got interface{}) {
+	if reflect.DeepEqual(want, got) == false {
+		act("expected equality: want %v, got %v", want, got)
 	}
 }
