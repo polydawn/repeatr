@@ -68,6 +68,24 @@ func TestChrootExecutor(t *testing.T) {
 				}, rr.Results)
 			})
 		})
+		t.Run("requesting outputs from non-existent paths should return zeros gracefully", func(t *testing.T) {
+			frm := baseFormula.Clone()
+			frm.Outputs = map[api.AbsPath]api.OutputSpec{
+				"/nada": {PackType: "tar", Filters: api.Filter_NoMutation},
+			}
+
+			rr, err := exe.Run(context.Background(), frm, repeatr.InputControl{}, repeatr.Monitor{})
+			WantNoError(t, err)
+
+			t.Run("exit code should be success", func(t *testing.T) {
+				WantEqual(t, rr.ExitCode, 0)
+			})
+			t.Run("output entry should exist with type but be clearly blank", func(t *testing.T) {
+				WantEqual(t, map[api.AbsPath]api.WareID{
+					"/nada": api.WareID{"tar", "-"},
+				}, rr.Results)
+			})
+		})
 	})
 }
 
