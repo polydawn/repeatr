@@ -25,11 +25,12 @@ func Test(t *testing.T) {
 				"/out": api.OutputSpec{PackType: "mocktar"},
 			},
 		}
+		formulaCtx := api.FormulaContext{}
 
 		Convey("Should produce results", func() {
 			rr1, err := e(
 				context.Background(),
-				formula,
+				formula, formulaCtx,
 				repeatr.InputControl{}, repeatr.Monitor{},
 			)
 			So(err, ShouldBeNil)
@@ -38,7 +39,7 @@ func Test(t *testing.T) {
 			Convey("Should produce *consistent* results", func() {
 				rr2, err := e(
 					context.Background(),
-					formula,
+					formula, formulaCtx,
 					repeatr.InputControl{}, repeatr.Monitor{},
 				)
 				So(err, ShouldBeNil)
@@ -49,7 +50,7 @@ func Test(t *testing.T) {
 				formula.Action = api.FormulaAction{Exec: []string{"differentthing"}}
 				rr2, err := e(
 					context.Background(),
-					formula,
+					formula, formulaCtx,
 					repeatr.InputControl{}, repeatr.Monitor{},
 				)
 				So(err, ShouldBeNil)

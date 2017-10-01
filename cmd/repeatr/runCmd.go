@@ -29,9 +29,9 @@ func Run(
 	if err != nil {
 		return Errorf(repeatr.ErrUsage, "error opening formula file: %s", err)
 	}
-	var formula api.Formula
-	if err := json.NewUnmarshallerAtlased(f, api.RepeatrAtlas).Unmarshal(&formula); err != nil {
-		return Errorf(repeatr.ErrUsage, "formula does not parse: %s", err)
+	var formulaUnion api.FormulaUnion
+	if err := json.NewUnmarshallerAtlased(f, api.RepeatrAtlas).Unmarshal(&formulaUnion); err != nil {
+		return Errorf(repeatr.ErrUsage, "formula file does not parse: %s", err)
 	}
 
 	// Pack and unpack tools are always the Rio exec client.
@@ -64,7 +64,8 @@ func Run(
 	// Invoke executor engine.
 	rr, err := executor(
 		ctx,
-		formula,
+		formulaUnion.Formula,
+		*formulaUnion.Context,
 		repeatr.InputControl{},
 		repeatr.Monitor{evtChan},
 	)
