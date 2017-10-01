@@ -21,6 +21,7 @@ var _ repeatr.RunFunc = Executor{}.Run
 func (cfg Executor) Run(
 	ctx context.Context,
 	formula api.Formula,
+	formulaCtx api.FormulaContext,
 	input repeatr.InputControl,
 	monitor repeatr.Monitor,
 ) (*api.RunRecord, error) {

@@ -15,23 +15,27 @@ import (
 	"go.polydawn.net/rio/stitch"
 )
 
-// Base formula full of sensible defaults and ready to run:
-var baseFormula = api.Formula{
-	Inputs: map[api.AbsPath]api.WareID{
-		"/": api.WareID{"tar", "6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6"},
-	},
-	Action: api.FormulaAction{
-		Exec: []string{"/bin/echo", "hello world"},
-	},
-	Outputs: map[api.AbsPath]api.OutputSpec{
-		"/": {PackType: "tar", Filters: api.Filter_NoMutation},
-	},
-	FetchUrls: map[api.AbsPath][]api.WarehouseAddr{
-		"/": []api.WarehouseAddr{
-			"file://../../../fixtures/busybash.tgz",
+var (
+	// Base formula full of sensible defaults and ready to run:
+	baseFormula = api.Formula{
+		Inputs: map[api.AbsPath]api.WareID{
+			"/": api.WareID{"tar", "6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6"},
 		},
-	},
-}
+		Action: api.FormulaAction{
+			Exec: []string{"/bin/echo", "hello world"},
+		},
+		Outputs: map[api.AbsPath]api.OutputSpec{
+			"/": {PackType: "tar", Filters: api.Filter_NoMutation},
+		},
+	}
+	baseFormulaCtx = api.FormulaContext{
+		FetchUrls: map[api.AbsPath][]api.WarehouseAddr{
+			"/": []api.WarehouseAddr{
+				"file://../../../fixtures/busybash.tgz",
+			},
+		},
+	}
+)
 
 func TestChrootExecutor(t *testing.T) {
 	var (
@@ -53,7 +57,7 @@ func TestChrootExecutor(t *testing.T) {
 			frm := baseFormula.Clone()
 
 			bm := bufferingMonitor{}.init()
-			rr, err := exe.Run(context.Background(), frm, repeatr.InputControl{}, bm.monitor())
+			rr, err := exe.Run(context.Background(), frm, baseFormulaCtx, repeatr.InputControl{}, bm.monitor())
 			WantNoError(t, err)
 
 			t.Run("exit code should be success", func(t *testing.T) {
@@ -65,24 +69,6 @@ func TestChrootExecutor(t *testing.T) {
 			t.Run("output ware from '/' should be familiar!", func(t *testing.T) {
 				WantEqual(t, map[api.AbsPath]api.WareID{
 					"/": baseFormula.Inputs["/"],
-				}, rr.Results)
-			})
-		})
-		t.Run("requesting outputs from non-existent paths should return zeros gracefully", func(t *testing.T) {
-			frm := baseFormula.Clone()
-			frm.Outputs = map[api.AbsPath]api.OutputSpec{
-				"/nada": {PackType: "tar", Filters: api.Filter_NoMutation},
-			}
-
-			rr, err := exe.Run(context.Background(), frm, repeatr.InputControl{}, repeatr.Monitor{})
-			WantNoError(t, err)
-
-			t.Run("exit code should be success", func(t *testing.T) {
-				WantEqual(t, rr.ExitCode, 0)
-			})
-			t.Run("output entry should exist with type but be clearly blank", func(t *testing.T) {
-				WantEqual(t, map[api.AbsPath]api.WareID{
-					"/nada": api.WareID{"tar", "-"},
 				}, rr.Results)
 			})
 		})

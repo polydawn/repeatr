@@ -45,6 +45,7 @@ var _ repeatr.RunFunc = Executor{}.Run
 func (cfg Executor) Run(
 	ctx context.Context,
 	formula api.Formula,
+	formulaCtx api.FormulaContext,
 	input repeatr.InputControl,
 	monitor repeatr.Monitor,
 ) (*api.RunRecord, error) {
@@ -61,15 +62,15 @@ func (cfg Executor) Run(
 	jobPath := fs.MustRelPath(rr.Guid)
 	chrootPath := jobPath.Join(fs.MustRelPath("chroot"))
 	if err := cfg.workspaceFs.Mkdir(jobPath, 0700); err != nil {
-		return nil, Recategorize(err, repeatr.ErrLocalCacheProblem)
+		return nil, Recategorize(repeatr.ErrLocalCacheProblem, err)
 	}
 	if err := cfg.workspaceFs.Mkdir(chrootPath, 0755); err != nil {
-		return rr, Recategorize(err, repeatr.ErrLocalCacheProblem)
+		return rr, Recategorize(repeatr.ErrLocalCacheProblem, err)
 	}
 	chrootFs := osfs.New(cfg.workspaceFs.BasePath().Join(chrootPath))
 
 	// Shell out to assembler.
-	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, api.Filter_NoMutation)
+	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs)
 	if err != nil {
 		return rr, repeatr.ReboxRioError(err)
@@ -104,7 +105,7 @@ func (cfg Executor) Run(
 	}
 
 	// Pack outputs.
-	packSpecs := stitch.FormulaToPackSpecs(formula, api.Filter_DefaultFlatten)
+	packSpecs := stitch.FormulaToPackSpecs(formula, formulaCtx, api.Filter_DefaultFlatten)
 	rr.Results, err = stitch.PackMulti(ctx, cfg.packTool, chrootFs, packSpecs)
 	if err != nil {
 		return rr, err
