@@ -63,3 +63,18 @@ func CheckRoundtripRootfs(t *testing.T, runTool repeatr.RunFunc) {
 		})
 	})
 }
+
+func CheckReportingExitCodes(t *testing.T, runTool repeatr.RunFunc) {
+	t.Run("non-zero exits should report cleanly", func(t *testing.T) {
+		frm := baseFormula.Clone()
+		frm.Action = api.FormulaAction{
+			Exec: []string{"/bin/bash", "-c", "exit 14"},
+		}
+
+		bm := bufferingMonitor{}.init()
+		rr, err := runTool(context.Background(), frm, baseFormulaCtx, repeatr.InputControl{}, bm.monitor())
+		WantNoError(t, err)
+
+		WantEqual(t, rr.ExitCode, 14)
+	})
+}

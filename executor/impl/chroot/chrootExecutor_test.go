@@ -30,5 +30,6 @@ func TestChrootExecutor(t *testing.T) {
 
 		tests.CheckHelloWorldTxt(t, exe.Run)
 		tests.CheckRoundtripRootfs(t, exe.Run)
+		tests.CheckReportingExitCodes(t, exe.Run)
 	})
 }
