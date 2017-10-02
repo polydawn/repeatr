@@ -1,6 +1,7 @@
 package chroot
 
 import (
+	"os"
 	"testing"
 
 	"go.polydawn.net/go-timeless-api/rio"
@@ -20,6 +21,8 @@ func TestChrootExecutor(t *testing.T) {
 
 	WithTmpdir(func(tmpDir fs.AbsolutePath) {
 		// Setup assembler and executor.  Both are reusable.
+		//  Use env to communicate our test tempdir down to Rio.
+		os.Setenv("RIO_BASE", tmpDir.String()+"/rio")
 		asm, err := stitch.NewAssembler(unpackTool)
 		AssertNoError(t, err)
 		exe := Executor{
