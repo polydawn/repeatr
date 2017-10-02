@@ -95,6 +95,9 @@ func (cfg Executor) Run(
 		//},
 	}
 	cmd.Dir = string(formula.Action.Cwd)
+	if formula.Action.Cwd == "" {
+		cmd.Dir = "/"
+	}
 	cmd.Env = envToSlice(formula.Action.Env)
 	proxy := mixins.NewOutputForwarder(ctx, monitor.Chan)
 	cmd.Stdout = proxy
