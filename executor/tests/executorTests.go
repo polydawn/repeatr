@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"context"
 	"testing"
 
 	"go.polydawn.net/go-timeless-api"
@@ -30,32 +29,24 @@ var (
 
 func CheckHelloWorldTxt(t *testing.T, runTool repeatr.RunFunc) {
 	t.Run("hello-world formula should work", func(t *testing.T) {
-		frm := baseFormula.Clone()
-
-		bm := bufferingMonitor{}.init()
-		rr, err := runTool(context.Background(), frm, baseFormulaCtx, repeatr.InputControl{}, bm.monitor())
-		WantNoError(t, err)
-
+		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
+		rr, txt := shouldRun(t, runTool, frm, frmCtx)
 		t.Run("exit code should be success", func(t *testing.T) {
 			WantEqual(t, rr.ExitCode, 0)
 		})
 		t.Run("txt should be echo'd string", func(t *testing.T) {
-			WantEqual(t, bm.Txt.String(), "hello world\n")
+			WantEqual(t, txt, "hello world\n")
 		})
 	})
 }
 
 func CheckRoundtripRootfs(t *testing.T, runTool repeatr.RunFunc) {
 	t.Run("output unmodified root fileset should work", func(t *testing.T) {
-		frm := baseFormula.Clone()
+		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
 		frm.Outputs = map[api.AbsPath]api.OutputSpec{
 			"/": {PackType: "tar", Filters: api.Filter_NoMutation},
 		}
-
-		bm := bufferingMonitor{}.init()
-		rr, err := runTool(context.Background(), frm, baseFormulaCtx, repeatr.InputControl{}, bm.monitor())
-		WantNoError(t, err)
-
+		rr, _ := shouldRun(t, runTool, frm, frmCtx)
 		t.Run("output ware from '/' should be familiar!", func(t *testing.T) {
 			WantEqual(t, map[api.AbsPath]api.WareID{
 				"/": baseFormula.Inputs["/"],
@@ -66,15 +57,11 @@ func CheckRoundtripRootfs(t *testing.T, runTool repeatr.RunFunc) {
 
 func CheckReportingExitCodes(t *testing.T, runTool repeatr.RunFunc) {
 	t.Run("non-zero exits should report cleanly", func(t *testing.T) {
-		frm := baseFormula.Clone()
+		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
 		frm.Action = api.FormulaAction{
 			Exec: []string{"/bin/bash", "-c", "exit 14"},
 		}
-
-		bm := bufferingMonitor{}.init()
-		rr, err := runTool(context.Background(), frm, baseFormulaCtx, repeatr.InputControl{}, bm.monitor())
-		WantNoError(t, err)
-
+		rr, _ := shouldRun(t, runTool, frm, frmCtx)
 		WantEqual(t, rr.ExitCode, 14)
 	})
 }
