@@ -3,6 +3,8 @@ package tests
 import (
 	"testing"
 
+	"github.com/polydawn/go-errcat"
+
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
 	. "go.polydawn.net/repeatr/testutil"
@@ -63,5 +65,17 @@ func CheckReportingExitCodes(t *testing.T, runTool repeatr.RunFunc) {
 		}
 		rr, _ := shouldRun(t, runTool, frm, frmCtx)
 		WantEqual(t, rr.ExitCode, 14)
+	})
+}
+
+func CheckErrorFromUnfetchableWares(t *testing.T, runTool repeatr.RunFunc) {
+	t.Run("an unfetchable input should error", func(t *testing.T) {
+		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
+		// Add a ware (the hash doesn't matter much), and yet no fetch URLs.
+		frm.Inputs["/unfetchable"] = api.WareID{"tar", "asdfasdfasdf"}
+		rr, txt, err := run(t, runTool, frm, frmCtx)
+		WantEqual(t, errcat.Category(err), repeatr.ErrWarehouseUnavailable)
+		WantEqual(t, rr.ExitCode, -1)
+		WantEqual(t, txt, "")
 	})
 }

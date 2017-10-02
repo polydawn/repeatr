@@ -11,10 +11,14 @@ import (
 )
 
 func shouldRun(t *testing.T, runTool repeatr.RunFunc, frm api.Formula, frmCtx api.FormulaContext) (api.RunRecord, string) {
+	rr, txt, err := run(t, runTool, frm, baseFormulaCtx)
+	WantNoError(t, err)
+	return *rr, txt
+}
+func run(t *testing.T, runTool repeatr.RunFunc, frm api.Formula, frmCtx api.FormulaContext) (*api.RunRecord, string, error) {
 	bm := bufferingMonitor{}.init()
 	rr, err := runTool(context.Background(), frm, baseFormulaCtx, repeatr.InputControl{}, bm.monitor())
-	WantNoError(t, err)
-	return *rr, bm.Txt.String()
+	return rr, bm.Txt.String(), err
 }
 
 type bufferingMonitor struct {
