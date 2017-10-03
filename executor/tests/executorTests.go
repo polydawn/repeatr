@@ -50,9 +50,10 @@ func CheckRoundtripRootfs(t *testing.T, runTool repeatr.RunFunc) {
 		}
 		rr, _ := shouldRun(t, runTool, frm, frmCtx)
 		t.Run("output ware from '/' should be familiar!", func(t *testing.T) {
-			WantEqual(t, map[api.AbsPath]api.WareID{
-				"/": baseFormula.Inputs["/"],
-			}, rr.Results)
+			WantEqual(t, rr.Results,
+				map[api.AbsPath]api.WareID{
+					"/": baseFormula.Inputs["/"],
+				})
 		})
 	})
 }
