@@ -85,6 +85,15 @@ func (cfg Executor) Run(
 		}
 	}()
 
+	// Sanity check the ready filesystem.
+	//  Some errors produce *very* unclear results from exec (for example
+	//  at the kernel level, EACCES can mean *many* different things...), and
+	//  so it's better that we try to detect common errors early and thus be
+	//  able to give good messages.
+	if err := sanityCheckFs(formula, chrootFs); err != nil {
+		return rr, err
+	}
+
 	// Invoke containment and run!
 	cmdName := formula.Action.Exec[0]
 	cmd := exec.Command(cmdName, formula.Action.Exec[1:]...)
@@ -133,8 +142,7 @@ func (cfg Executor) Run(
 */
 func sanityCheckFs(frm api.Formula, chrootFs fs.FS) error {
 	// Check that the CWD exists and is a directory.
-	// FIXME this needs boxed symlink traversal to give correct answers
-	stat, err := chrootFs.LStat(fs.MustAbsolutePath(string(frm.Action.Cwd)).CoerceRelative())
+	stat, err := chrootFs.Stat(fs.MustAbsolutePath(string(frm.Action.Cwd)).CoerceRelative())
 	if err != nil {
 		return Errorf(repeatr.ErrJobInvalid, "cwd invalid: %s", err)
 	}
@@ -145,7 +153,7 @@ func sanityCheckFs(frm api.Formula, chrootFs fs.FS) error {
 	// Check that the command exists and is executable.
 	//  (If the format is not executable, that's another ball of wax, and
 	//  not so simple to detect, so we don't.)
-	stat, err = chrootFs.LStat(fs.MustAbsolutePath(frm.Action.Exec[0]).CoerceRelative())
+	stat, err = chrootFs.Stat(fs.MustAbsolutePath(frm.Action.Exec[0]).CoerceRelative())
 	if err != nil {
 		return Errorf(repeatr.ErrJobInvalid, "exec invalid: %s", err)
 	}
