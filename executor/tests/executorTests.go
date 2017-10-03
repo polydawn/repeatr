@@ -79,3 +79,15 @@ func CheckErrorFromUnfetchableWares(t *testing.T, runTool repeatr.RunFunc) {
 		WantEqual(t, txt, "")
 	})
 }
+
+func CheckDefaultUid(t *testing.T, runTool repeatr.RunFunc) {
+	t.Run("the default uid should be non-zero", func(t *testing.T) {
+		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
+		frm.Action = api.FormulaAction{
+			Exec: []string{"/bin/bash", "-c", "echo $UID"}, // bash sets the UID env.
+		}
+		rr, txt := shouldRun(t, runTool, frm, frmCtx)
+		WantEqual(t, rr.ExitCode, 0)
+		WantEqual(t, txt, "1000\n")
+	})
+}

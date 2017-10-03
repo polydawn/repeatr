@@ -11,6 +11,7 @@ import (
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
 	"go.polydawn.net/go-timeless-api/rio"
+	"go.polydawn.net/repeatr/executor/cradle"
 	"go.polydawn.net/repeatr/executor/mixins"
 	"go.polydawn.net/rio/fs"
 	"go.polydawn.net/rio/fs/osfs"
@@ -69,6 +70,9 @@ func (cfg Executor) Run(
 	}
 	chrootFs := osfs.New(cfg.workspaceFs.BasePath().Join(chrootPath))
 
+	// Initialize default values.
+	formula = cradle.FormulaDefaults(formula)
+
 	// Shell out to assembler.
 	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs)
@@ -84,20 +88,14 @@ func (cfg Executor) Run(
 	// Invoke containment and run!
 	cmdName := formula.Action.Exec[0]
 	cmd := exec.Command(cmdName, formula.Action.Exec[1:]...)
-	// TODO port policy concepts
-	// userinfo := cradle.UserinfoForPolicy(f.Action.Policy)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Chroot: chrootFs.BasePath().String(),
-		// TODO port policy concepts
-		//Credential: &syscall.Credential{
-		//	Uid: uint32(userinfo.Uid),
-		//	Gid: uint32(userinfo.Gid),
-		//},
+		Credential: &syscall.Credential{
+			Uid: uint32(*formula.Action.Userinfo.Uid),
+			Gid: uint32(*formula.Action.Userinfo.Gid),
+		},
 	}
 	cmd.Dir = string(formula.Action.Cwd)
-	if formula.Action.Cwd == "" {
-		cmd.Dir = "/"
-	}
 	cmd.Env = envToSlice(formula.Action.Env)
 	proxy := mixins.NewOutputForwarder(ctx, monitor.Chan)
 	cmd.Stdout = proxy

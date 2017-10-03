@@ -35,5 +35,7 @@ func TestChrootExecutor(t *testing.T) {
 		tests.CheckRoundtripRootfs(t, exe.Run)
 		tests.CheckReportingExitCodes(t, exe.Run)
 		tests.CheckErrorFromUnfetchableWares(t, exe.Run)
+		tests.CheckDefaultUid(t, exe.Run)
+
 	})
 }
