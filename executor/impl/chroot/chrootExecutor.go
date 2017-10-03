@@ -11,6 +11,7 @@ import (
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
 	"go.polydawn.net/go-timeless-api/rio"
+	"go.polydawn.net/repeatr/executor/cradle"
 	"go.polydawn.net/repeatr/executor/mixins"
 	"go.polydawn.net/rio/fs"
 	"go.polydawn.net/rio/fs/osfs"
@@ -69,6 +70,9 @@ func (cfg Executor) Run(
 	}
 	chrootFs := osfs.New(cfg.workspaceFs.BasePath().Join(chrootPath))
 
+	// Initialize default values.
+	formula = cradle.FormulaDefaults(formula)
+
 	// Shell out to assembler.
 	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs)
@@ -81,23 +85,26 @@ func (cfg Executor) Run(
 		}
 	}()
 
+	// Sanity check the ready filesystem.
+	//  Some errors produce *very* unclear results from exec (for example
+	//  at the kernel level, EACCES can mean *many* different things...), and
+	//  so it's better that we try to detect common errors early and thus be
+	//  able to give good messages.
+	if err := sanityCheckFs(formula, chrootFs); err != nil {
+		return rr, err
+	}
+
 	// Invoke containment and run!
 	cmdName := formula.Action.Exec[0]
 	cmd := exec.Command(cmdName, formula.Action.Exec[1:]...)
-	// TODO port policy concepts
-	// userinfo := cradle.UserinfoForPolicy(f.Action.Policy)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Chroot: chrootFs.BasePath().String(),
-		// TODO port policy concepts
-		//Credential: &syscall.Credential{
-		//	Uid: uint32(userinfo.Uid),
-		//	Gid: uint32(userinfo.Gid),
-		//},
+		Credential: &syscall.Credential{
+			Uid: uint32(*formula.Action.Userinfo.Uid),
+			Gid: uint32(*formula.Action.Userinfo.Gid),
+		},
 	}
 	cmd.Dir = string(formula.Action.Cwd)
-	if formula.Action.Cwd == "" {
-		cmd.Dir = "/"
-	}
 	cmd.Env = envToSlice(formula.Action.Env)
 	proxy := mixins.NewOutputForwarder(ctx, monitor.Chan)
 	cmd.Stdout = proxy
@@ -135,8 +142,7 @@ func (cfg Executor) Run(
 */
 func sanityCheckFs(frm api.Formula, chrootFs fs.FS) error {
 	// Check that the CWD exists and is a directory.
-	// FIXME this needs boxed symlink traversal to give correct answers
-	stat, err := chrootFs.LStat(fs.MustAbsolutePath(string(frm.Action.Cwd)).CoerceRelative())
+	stat, err := chrootFs.Stat(fs.MustAbsolutePath(string(frm.Action.Cwd)).CoerceRelative())
 	if err != nil {
 		return Errorf(repeatr.ErrJobInvalid, "cwd invalid: %s", err)
 	}
@@ -147,7 +153,7 @@ func sanityCheckFs(frm api.Formula, chrootFs fs.FS) error {
 	// Check that the command exists and is executable.
 	//  (If the format is not executable, that's another ball of wax, and
 	//  not so simple to detect, so we don't.)
-	stat, err = chrootFs.LStat(fs.MustAbsolutePath(frm.Action.Exec[0]).CoerceRelative())
+	stat, err = chrootFs.Stat(fs.MustAbsolutePath(frm.Action.Exec[0]).CoerceRelative())
 	if err != nil {
 		return Errorf(repeatr.ErrJobInvalid, "exec invalid: %s", err)
 	}

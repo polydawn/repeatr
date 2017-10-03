@@ -50,9 +50,10 @@ func CheckRoundtripRootfs(t *testing.T, runTool repeatr.RunFunc) {
 		}
 		rr, _ := shouldRun(t, runTool, frm, frmCtx)
 		t.Run("output ware from '/' should be familiar!", func(t *testing.T) {
-			WantEqual(t, map[api.AbsPath]api.WareID{
-				"/": baseFormula.Inputs["/"],
-			}, rr.Results)
+			WantEqual(t, rr.Results,
+				map[api.AbsPath]api.WareID{
+					"/": baseFormula.Inputs["/"],
+				})
 		})
 	})
 }
@@ -77,5 +78,17 @@ func CheckErrorFromUnfetchableWares(t *testing.T, runTool repeatr.RunFunc) {
 		WantEqual(t, errcat.Category(err), repeatr.ErrWarehouseUnavailable)
 		WantEqual(t, rr.ExitCode, -1)
 		WantEqual(t, txt, "")
+	})
+}
+
+func CheckDefaultUid(t *testing.T, runTool repeatr.RunFunc) {
+	t.Run("the default uid should be non-zero", func(t *testing.T) {
+		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
+		frm.Action = api.FormulaAction{
+			Exec: []string{"/bin/bash", "-c", "echo $UID"}, // bash sets the UID env.
+		}
+		rr, txt := shouldRun(t, runTool, frm, frmCtx)
+		WantEqual(t, rr.ExitCode, 0)
+		WantEqual(t, txt, "1000\n")
 	})
 }
