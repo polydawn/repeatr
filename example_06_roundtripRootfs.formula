@@ -1,0 +1,26 @@
+{
+	"formula": {
+		"inputs": {
+			"/": "tar:6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6"
+		},
+		"action": {
+			"exec": ["/bin/echo", "hello world!"],
+			"cradle": "disable"
+		},
+		"outputs": {
+			"/": {
+				"packtype": "tar",
+				"filters": {"uid":"keep", "gid":"keep", "mtime":"keep", "sticky":"keep"}}
+		}
+	},
+	"context": {
+		"fetchUrls": {
+			"/": [
+				"file://./fixtures/busybash.tgz"
+			],
+		},
+		"saveUrls": {
+			"/": "ca+file://./wares/"
+		}
+	}
+}

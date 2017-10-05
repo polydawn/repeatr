@@ -1,0 +1,18 @@
+{
+	"formula": {
+		"inputs": {
+			"/": "tar:6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6",
+			"/wow": "mount:ro:/tmp"
+		},
+		"action": {
+			"exec": ["/bin/ls", "-la", "/wow"]
+		},
+	},
+	"context": {
+		"fetchUrls": {
+			"/": [
+				"file://./fixtures/busybash.tgz"
+			],
+		},
+	}
+}

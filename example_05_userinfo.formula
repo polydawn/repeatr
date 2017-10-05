@@ -1,0 +1,28 @@
+{
+	"formula": {
+		"inputs": {
+			"/": "tar:6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6"
+		},
+		"action": {
+			"exec": ["/bin/bash", "-c", "pwd ; ls -la ; mkdir out ; echo $USER is the best ever | tee out/info.txt"],
+			"userinfo": {
+				"uid": 2000,
+				"gid": 2000,
+				"username": "crashoverride"
+			}
+		},
+		"outputs": {
+			"/task/out": {"packtype": "tar", "filters": {}}
+		}
+	},
+	"context": {
+		"fetchUrls": {
+			"/": [
+				"file://./fixtures/busybash.tgz"
+			],
+		},
+		"saveUrls": {
+			"/task/out": "ca+file://./wares/"
+		}
+	}
+}
