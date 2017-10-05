@@ -23,7 +23,7 @@ frm="$(cat <<EOF
 				"/": "$(hitch show "demo.polydawn.net/pipeline/base:v0.1:linux-amd64")"
 			},
 			"action": {
-				"exec": ["/bin/bash", "-c", "mkdir out ; echo hello world! | tee out/hello.txt"]
+				"exec": ["/bin/bash", "-c", "mkdir out ; echo hello world! | tee out/hello.txt ; echo $RANDOM | tee -a out/hello.txt"]
 			},
 			"outputs": {
 				"/task/out": {"packtype": "tar"}
