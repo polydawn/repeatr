@@ -7,6 +7,7 @@ import (
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/go-timeless-api/util"
 	"go.polydawn.net/rio/fs"
 	"go.polydawn.net/rio/fsOp"
 )
@@ -77,22 +78,32 @@ func TidyFilesystem(frm api.Formula, chrootFs fs.FS) error {
 	default:
 	}
 	// Foist usable bits onto cwd and parents.
-	if err := fsOp.MkdirAll(chrootFs, fs.MustAbsolutePath(string(frm.Action.Cwd)).CoerceRelative(), 0755); err != nil {
+	if err := fsOp.MkdirUsable(chrootFs, fs.MustAbsolutePath(string(frm.Action.Cwd)).CoerceRelative(), DirpropsForUserinfo(*frm.Action.Userinfo)); err != nil {
 		return Errorf(repeatr.ErrJobInvalid, "failed building cradle fs (cwd): %s", err)
 	}
-	// TODO and ensure fixed perms
 	// Foist usable bits onto homedir and parents.
-	if err := fsOp.MkdirAll(chrootFs, fs.MustAbsolutePath(string(frm.Action.Userinfo.Homedir)).CoerceRelative(), 0755); err != nil {
+	if err := fsOp.MkdirUsable(chrootFs, fs.MustAbsolutePath(string(frm.Action.Userinfo.Homedir)).CoerceRelative(), DirpropsForUserinfo(*frm.Action.Userinfo)); err != nil {
 		return Errorf(repeatr.ErrJobInvalid, "failed building cradle fs (homedir): %s", err)
 	}
-	// TODO and ensure fixed perms
 	// Force standard tempdir bits onto /tmp.
-	defer fsOp.RepairMtime(chrootFs, fs.MustRelPath("."))()
-	if err := fsOp.MkdirAll(chrootFs, fs.MustRelPath("./tmp"), 01777); err != nil {
+	tmpPath := fs.MustRelPath("tmp")
+	defer fsOp.RepairMtime(chrootFs, fs.RelPath{})()
+	defer fsOp.RepairMtime(chrootFs, tmpPath)()
+	if err := fsOp.MkdirAll(chrootFs, tmpPath, 01777); err != nil {
 		return Errorf(repeatr.ErrJobInvalid, "failed building cradle fs (tmp): %s", err)
 	}
-	// TODO and ensure fixed perms
+	if err := chrootFs.Chmod(tmpPath, 01777); err != nil {
+		return Errorf(repeatr.ErrJobInvalid, "failed building cradle fs (tmp): %s", err)
+	}
 	return nil
 }
 
-// TODO func DirpropsForUserinfo(api.FormulaUserinfo) fs.Metadata
+func DirpropsForUserinfo(userinfo api.FormulaUserinfo) fs.Metadata {
+	return fs.Metadata{
+		Type:  fs.Type_Dir,
+		Perms: 0755,
+		Uid:   uint32(*userinfo.Uid),
+		Gid:   uint32(*userinfo.Gid),
+		Mtime: apiutil.DefaultMtime,
+	}
+}
