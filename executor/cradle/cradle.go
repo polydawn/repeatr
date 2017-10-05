@@ -3,7 +3,13 @@ package cradle
 import (
 	"fmt"
 
+	. "github.com/polydawn/go-errcat"
+
 	"go.polydawn.net/go-timeless-api"
+	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/go-timeless-api/util"
+	"go.polydawn.net/rio/fs"
+	"go.polydawn.net/rio/fsOp"
 )
 
 func FormulaDefaults(frm api.Formula) api.Formula {
@@ -21,17 +27,14 @@ func FormulaDefaults(frm api.Formula) api.Formula {
 	}
 	// If cradle is disabled, set a zero cwd and skip the rest.
 	switch frm.Action.Cradle {
-	case "disabled":
+	case "disable":
 		frm.Action.Cwd = "/"
 		return frm
 	default:
 		// '/task' is the default when cradle is enabled, because any dir at
 		//   all is more sensible than the bare root dir, and since cradle
 		//   is enabled, we'll make sure it's writable and ready to go.
-		frm.Action.Cwd = "/"
-		// FIXME : this should be frm.Action.Cwd = "/task"
-		//  but we can't do that until we add the filesystem setup parts
-		//  or the result is nonsensical and crash-by-default
+		frm.Action.Cwd = "/task"
 	}
 	// Compute remainder of userinfo.
 	//  (These aren't used if cradle=disabled, so we don't set them until now.)
@@ -66,14 +69,41 @@ func FormulaDefaults(frm api.Formula) api.Formula {
 	}
 	return frm
 }
+func ptrint(i int) *int { return &i }
 
-func ptrint(i int) *int {
-	return &i
+func TidyFilesystem(frm api.Formula, chrootFs fs.FS) error {
+	switch frm.Action.Cradle {
+	case "disable":
+		return nil
+	default:
+	}
+	// Foist usable bits onto cwd and parents.
+	if err := fsOp.MkdirUsable(chrootFs, fs.MustAbsolutePath(string(frm.Action.Cwd)).CoerceRelative(), DirpropsForUserinfo(*frm.Action.Userinfo)); err != nil {
+		return Errorf(repeatr.ErrJobInvalid, "failed building cradle fs (cwd): %s", err)
+	}
+	// Foist usable bits onto homedir and parents.
+	if err := fsOp.MkdirUsable(chrootFs, fs.MustAbsolutePath(string(frm.Action.Userinfo.Homedir)).CoerceRelative(), DirpropsForUserinfo(*frm.Action.Userinfo)); err != nil {
+		return Errorf(repeatr.ErrJobInvalid, "failed building cradle fs (homedir): %s", err)
+	}
+	// Force standard tempdir bits onto /tmp.
+	tmpPath := fs.MustRelPath("tmp")
+	defer fsOp.RepairMtime(chrootFs, fs.RelPath{})()
+	defer fsOp.RepairMtime(chrootFs, tmpPath)()
+	if err := fsOp.MkdirAll(chrootFs, tmpPath, 01777); err != nil {
+		return Errorf(repeatr.ErrJobInvalid, "failed building cradle fs (tmp): %s", err)
+	}
+	if err := chrootFs.Chmod(tmpPath, 01777); err != nil {
+		return Errorf(repeatr.ErrJobInvalid, "failed building cradle fs (tmp): %s", err)
+	}
+	return nil
 }
 
-// TODO func DirpropsForUserinfo(api.FormulaUserinfo) fs.Metadata
-
-// all of these are both mkdir and force props:
-//	 - ensureWorkingDir(rootfsPath, frm)
-//	 - ensureHomeDir(rootfsPath, frm.Action.Policy)
-//	 - ensureTempDir(rootfsPath)
+func DirpropsForUserinfo(userinfo api.FormulaUserinfo) fs.Metadata {
+	return fs.Metadata{
+		Type:  fs.Type_Dir,
+		Perms: 0755,
+		Uid:   uint32(*userinfo.Uid),
+		Gid:   uint32(*userinfo.Gid),
+		Mtime: apiutil.DefaultMtime,
+	}
+}

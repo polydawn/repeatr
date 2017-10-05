@@ -75,7 +75,7 @@ func (cfg Executor) Run(
 
 	// Shell out to assembler.
 	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
-	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs)
+	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs, cradle.DirpropsForUserinfo(*formula.Action.Userinfo))
 	if err != nil {
 		return rr, repeatr.ReboxRioError(err)
 	}
@@ -84,6 +84,11 @@ func (cfg Executor) Run(
 			// TODO log it
 		}
 	}()
+
+	// Last bit of filesystem brushup: run cradle fs mutations.
+	if err := cradle.TidyFilesystem(formula, chrootFs); err != nil {
+		return rr, err
+	}
 
 	// Sanity check the ready filesystem.
 	//  Some errors produce *very* unclear results from exec (for example

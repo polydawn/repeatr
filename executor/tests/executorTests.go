@@ -45,6 +45,7 @@ func CheckHelloWorldTxt(t *testing.T, runTool repeatr.RunFunc) {
 func CheckRoundtripRootfs(t *testing.T, runTool repeatr.RunFunc) {
 	t.Run("output unmodified root fileset should work", func(t *testing.T) {
 		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
+		frm.Action.Cradle = "disable" // prevent homedir and cwd from being made
 		frm.Outputs = map[api.AbsPath]api.OutputSpec{
 			"/": {PackType: "tar", Filters: api.Filter_NoMutation},
 		}
