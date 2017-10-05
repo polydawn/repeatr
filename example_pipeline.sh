@@ -23,7 +23,7 @@ frm="$(cat <<EOF
 				"/": "$(hitch show "demo.polydawn.net/pipeline/base:v0.1:linux-amd64")"
 			},
 			"action": {
-				"exec": ["/bin/echo", "hello world!"]
+				"exec": ["/bin/bash", "-c", "mkdir out ; echo hello world! | tee out/hello.txt"]
 			},
 			"outputs": {
 				"/task/out": {"packtype": "tar"}
@@ -36,4 +36,32 @@ frm="$(cat <<EOF
 	}
 EOF
 )"
-repeatr run <(echo "$frm")
+rr1="$(repeatr run <(echo "$frm") | tee /dev/stderr)"
+
+hitch catalog create "demo.polydawn.net/pipeline/foobar"
+hitch release start "demo.polydawn.net/pipeline/foobar" "v0.1"
+hitch release add-item "data" "$(echo "$rr1" | jq -r '.results["/task/out"]' )"
+hitch release commit
+hitch show "demo.polydawn.net/pipeline/foobar"
+
+frm="$(cat <<EOF
+	{
+		"formula": {
+			"inputs": {
+				"/":           "$(hitch show "demo.polydawn.net/pipeline/base:v0.1:linux-amd64")"
+				"/task/input": "$(hitch show "demo.polydawn.net/pipeline/foobar:v0.1:data")"
+			},
+			"action": {
+				"exec": ["/bin/bash", "-c", "set -x ; cat input/hello.txt"]
+			}
+		},
+		"context": {
+			"fetchUrls": {
+				"/": ["ca+file://./wares/"],
+				"/task/input": ["ca+file://./wares/"]
+			}
+		}
+	}
+EOF
+)"
+rr2="$(repeatr run <(echo "$frm") | tee /dev/stderr)"
