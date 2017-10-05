@@ -82,14 +82,53 @@ func CheckErrorFromUnfetchableWares(t *testing.T, runTool repeatr.RunFunc) {
 	})
 }
 
-func CheckDefaultUid(t *testing.T, runTool repeatr.RunFunc) {
-	t.Run("the default uid should be non-zero", func(t *testing.T) {
+func CheckUserinfoDefault(t *testing.T, runTool repeatr.RunFunc) {
+	t.Run("the userinfo should result in non-zero uid, sensible homedir, standard username, etc", func(t *testing.T) {
 		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
 		frm.Action = api.FormulaAction{
-			Exec: []string{"/bin/bash", "-c", "echo $UID"}, // bash sets the UID env.
+			// note: bash sets the UID env, so that's asking a valid question.
+			Exec: []string{"/bin/bash", "-c", "echo $UID ; echo $USER ; cd ~ ; pwd"},
 		}
 		rr, txt := shouldRun(t, runTool, frm, frmCtx)
 		WantEqual(t, rr.ExitCode, 0)
-		WantEqual(t, txt, "1000\n")
+		WantEqual(t, txt, "1000\nreuser\n/home/reuser\n")
+	})
+}
+
+func CheckAdvancedUserinfo(t *testing.T, runTool repeatr.RunFunc) {
+	t.Run("setting custom userinfo should work", func(t *testing.T) {
+		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
+		i4 := 4
+		frm.Action = api.FormulaAction{
+			// note: bash sets the UID env, so that's asking a valid question.
+			Exec: []string{"/bin/bash", "-c", "echo $UID ; echo $USER ; cd ~ ; pwd"},
+			Userinfo: &api.FormulaUserinfo{
+				Uid:      &i4,
+				Gid:      &i4,
+				Username: "bob",
+				Homedir:  "/home/bananas",
+			},
+		}
+		rr, txt := shouldRun(t, runTool, frm, frmCtx)
+		WantEqual(t, rr.ExitCode, 0)
+		WantEqual(t, txt, "4\nbob\n/home/bananas\n")
+	})
+}
+
+func CheckRootyUserinfo(t *testing.T, runTool repeatr.RunFunc) {
+	t.Run("setting rooty userinfo should result in conventional paths", func(t *testing.T) {
+		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
+		i0 := 0
+		frm.Action = api.FormulaAction{
+			// note: bash sets the UID env, so that's asking a valid question.
+			Exec: []string{"/bin/bash", "-c", "echo $UID ; echo $USER ; cd ~ ; pwd"},
+			Userinfo: &api.FormulaUserinfo{
+				Uid: &i0,
+				Gid: &i0,
+			},
+		}
+		rr, txt := shouldRun(t, runTool, frm, frmCtx)
+		WantEqual(t, rr.ExitCode, 0)
+		WantEqual(t, txt, "0\nroot\n/root\n")
 	})
 }
