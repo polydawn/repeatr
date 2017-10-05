@@ -85,6 +85,11 @@ func (cfg Executor) Run(
 		}
 	}()
 
+	// Last bit of filesystem brushup: run cradle fs mutations.
+	if err := cradle.TidyFilesystem(formula, chrootFs); err != nil {
+		return rr, err
+	}
+
 	// Sanity check the ready filesystem.
 	//  Some errors produce *very* unclear results from exec (for example
 	//  at the kernel level, EACCES can mean *many* different things...), and
