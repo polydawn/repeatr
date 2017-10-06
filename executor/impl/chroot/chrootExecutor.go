@@ -111,6 +111,19 @@ func (cfg Executor) Run(
 	}
 	cmd.Dir = string(formula.Action.Cwd)
 	cmd.Env = envToSlice(formula.Action.Env)
+	if input.Chan != nil {
+		pipe, _ := cmd.StdinPipe()
+		go func() {
+			for {
+				chunk, ok := <-input.Chan
+				if !ok {
+					pipe.Close()
+					return
+				}
+				pipe.Write([]byte(chunk))
+			}
+		}()
+	}
 	proxy := mixins.NewOutputForwarder(ctx, monitor.Chan)
 	cmd.Stdout = proxy
 	cmd.Stderr = proxy

@@ -11,10 +11,11 @@ import (
 	"go.polydawn.net/go-timeless-api/repeatr"
 )
 
-func Run(
+func Twerk(
 	ctx context.Context,
 	executorName string,
 	formulaPath string,
+	stdin io.Reader,
 	stdout, stderr io.Writer,
 ) (err error) {
 	// Prepare monitor and IO forwarding.
@@ -26,6 +27,28 @@ func Run(
 		}
 	}()
 	inputControl := repeatr.InputControl{}
+	if stdin != nil {
+		inputChan := make(chan string)
+		inputControl.Chan = inputChan
+		go func() {
+			buf := [1024]byte{}
+			for {
+				n, err := stdin.Read(buf[:])
+				if err != nil {
+					if err == io.EOF {
+						close(inputChan)
+						return
+					}
+					fmt.Fprintf(stderr, "%s\n", err)
+					return
+				}
+				inputChan <- string(buf[0:n])
+				// TODO Blocking.  If you want this to "DTRT" for an
+				// interactive terminal, sending those IOCTLs is something
+				// you must have done already.
+			}
+		}()
+	}
 
 	// Call helper for all the bits that are in common with twerk mode
 	//  (load formula, demux stuff, actually launch).
