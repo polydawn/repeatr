@@ -39,16 +39,30 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 
 	// Args struct defs and flag declarations.
 	bhvs := map[string]behavior{}
-	argsRun := struct {
-		FormulaPath string
-	}{}
-	cmdRun := app.Command("run", "Execute a formula.")
-	cmdRun.Arg("formula", "Path to formula file.").
-		Required().
-		StringVar(&argsRun.FormulaPath)
-	bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
-		return Run(ctx, "chroot", argsRun.FormulaPath, nil, stdout, stderr)
-	}}
+	{
+		cmdRun := app.Command("run", "Execute a formula.")
+		argsRun := struct {
+			FormulaPath string
+		}{}
+		cmdRun.Arg("formula", "Path to formula file.").
+			Required().
+			StringVar(&argsRun.FormulaPath)
+		bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
+			return Run(ctx, "chroot", argsRun.FormulaPath, stdout, stderr)
+		}}
+	}
+	{
+		cmdTwerk := app.Command("twerk", "Execute a formula *interactively*.")
+		argsTwerk := struct {
+			FormulaPath string
+		}{}
+		cmdTwerk.Arg("formula", "Path to formula file.").
+			Required().
+			StringVar(&argsTwerk.FormulaPath)
+		bhvs[cmdTwerk.FullCommand()] = behavior{&argsTwerk, func() error {
+			return Twerk(ctx, "chroot", argsTwerk.FormulaPath, stdin, stdout, stderr)
+		}}
+	}
 
 	// Parse!
 	parsedCmdStr, err := app.Parse(args[1:])
