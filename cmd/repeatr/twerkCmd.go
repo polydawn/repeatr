@@ -35,7 +35,12 @@ func Twerk(
 			for {
 				n, err := stdin.Read(buf[:])
 				if err != nil {
-					panic(err) // FIXME calmer
+					if err == io.EOF {
+						close(inputChan)
+						return
+					}
+					fmt.Fprintf(stderr, "%s\n", err)
+					return
 				}
 				inputChan <- string(buf[0:n])
 				// TODO Blocking.  If you want this to "DTRT" for an

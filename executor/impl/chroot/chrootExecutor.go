@@ -115,7 +115,12 @@ func (cfg Executor) Run(
 		pipe, _ := cmd.StdinPipe()
 		go func() {
 			for {
-				pipe.Write([]byte(<-input.Chan))
+				chunk, ok := <-input.Chan
+				if !ok {
+					pipe.Close()
+					return
+				}
+				pipe.Write([]byte(chunk))
 			}
 		}()
 	}
