@@ -19,7 +19,7 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 	}
-	exitCode := repeatr.GetExitCode(err)
+	exitCode := repeatr.ExitCodeForError(err)
 	os.Exit(exitCode)
 }
 
