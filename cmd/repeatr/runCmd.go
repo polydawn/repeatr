@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/polydawn/refmt/json"
 
@@ -20,9 +21,27 @@ func Run(
 	// Prepare monitor and IO forwarding.
 	evtChan := make(chan repeatr.Event)
 	monitor := repeatr.Monitor{evtChan}
+	monitorWg := sync.WaitGroup{}
+	monitorWg.Add(1)
 	go func() {
+		defer monitorWg.Done()
 		for {
-			repeatr.CopyOut(<-evtChan, stderr)
+			select {
+			case evt, ok := <-evtChan:
+				if !ok {
+					return
+				}
+				switch {
+				case evt.Log != nil:
+					fmt.Fprintf(stderr, "log: lvl=%s msg=%s\n", evt.Log.Level, evt.Log.Msg)
+				case evt.Output != nil:
+					repeatr.CopyOut(evt, stderr)
+				case evt.Result != nil:
+					// pass
+				}
+			case <-ctx.Done():
+				return
+			}
 		}
 	}()
 	inputControl := repeatr.InputControl{}
@@ -36,6 +55,7 @@ func Run(
 		inputControl,
 		monitor,
 	)
+	monitorWg.Wait()
 
 	// If a runrecord was returned always try to print it, even if we have
 	//  an error and thus it may be incomplete.

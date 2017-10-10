@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"sync"
 	"syscall"
 
 	. "github.com/polydawn/go-errcat"
@@ -48,8 +49,12 @@ func (cfg Executor) Run(
 	formula api.Formula,
 	formulaCtx api.FormulaContext,
 	input repeatr.InputControl,
-	monitor repeatr.Monitor,
+	mon repeatr.Monitor,
 ) (*api.RunRecord, error) {
+	if mon.Chan != nil {
+		defer close(mon.Chan)
+	}
+
 	// Start filling out record keeping!
 	//  Includes picking a random guid for the job, which we use in all temp files.
 	rr := &api.RunRecord{}
@@ -75,7 +80,40 @@ func (cfg Executor) Run(
 
 	// Shell out to assembler.
 	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
+	var wg sync.WaitGroup
+	if mon.Chan != nil {
+		for i, _ := range unpackSpecs {
+			wg.Add(1)
+			ch := make(chan rio.Event)
+			unpackSpecs[i].Monitor = rio.Monitor{ch}
+			go func() {
+				defer wg.Done()
+				for {
+					select {
+					case evt, ok := <-ch:
+						if !ok {
+							return
+						}
+						switch {
+						case evt.Log != nil:
+							mon.Chan <- repeatr.Event{Log: &repeatr.Event_Log{
+								Time:   evt.Log.Time,
+								Level:  repeatr.LogLevel(evt.Log.Level),
+								Msg:    evt.Log.Msg,
+								Detail: evt.Log.Detail,
+							}}
+						case evt.Progress != nil:
+							// pass... for now
+						}
+					case <-ctx.Done():
+						return
+					}
+				}
+			}()
+		}
+	}
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs, cradle.DirpropsForUserinfo(*formula.Action.Userinfo))
+	wg.Wait()
 	if err != nil {
 		return rr, repeatr.ReboxRioError(err)
 	}
@@ -124,7 +162,7 @@ func (cfg Executor) Run(
 			}
 		}()
 	}
-	proxy := mixins.NewOutputForwarder(ctx, monitor.Chan)
+	proxy := mixins.NewOutputForwarder(ctx, mon.Chan)
 	cmd.Stdout = proxy
 	cmd.Stderr = proxy
 	rr.ExitCode, err = runCmd(cmd)
