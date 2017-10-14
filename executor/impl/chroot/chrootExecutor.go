@@ -81,7 +81,7 @@ func (cfg Executor) Run(
 		return &rr, err
 	}
 
-	// Check the action commands can look to be executable on this filesystem.
+	// Check that action commands appear to be executable on this filesystem.
 	if err := mixins.CheckFSReadyForExec(formula, chrootFs); err != nil {
 		return &rr, err
 	}
