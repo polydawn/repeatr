@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os/exec"
 	"syscall"
-	"time"
 
 	. "github.com/polydawn/go-errcat"
 
@@ -71,24 +70,7 @@ func (cfg Executor) Run(
 	if err != nil {
 		return &rr, repeatr.ReboxRioError(err)
 	}
-	defer func() {
-		err := cleanupFunc()
-		if err == nil {
-			return
-		}
-		if mon.Chan == nil {
-			return // sad, but no one to log it to, and not fatal.
-		}
-		mon.Chan <- repeatr.Event{
-			Log: &repeatr.Event_Log{
-				Time:  time.Now(),
-				Level: repeatr.LogError,
-				Msg:   "error during cleanup",
-				Detail: [][2]string{
-					{"error", err.Error()},
-				},
-			}}
-	}()
+	defer mixins.CleanupFuncWithLogging(cleanupFunc, mon)()
 
 	// Last bit of filesystem brushup: run cradle fs mutations.
 	if err := cradle.TidyFilesystem(formula, chrootFs); err != nil {

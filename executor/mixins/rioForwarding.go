@@ -3,6 +3,7 @@ package mixins
 import (
 	"context"
 	"sync"
+	"time"
 
 	"go.polydawn.net/go-timeless-api/repeatr"
 	"go.polydawn.net/go-timeless-api/rio"
@@ -64,5 +65,32 @@ func forwardRioUnpackLogLoop(
 		case <-ctx.Done():
 			return
 		}
+	}
+}
+
+/*
+	Wraps a Rio stitch cleanup func to log any errors to the `repeatr.Event`
+	channel.
+
+	Typical usage is to defer this (just like you would the CleanupFunc).
+*/
+func CleanupFuncWithLogging(cleanupFunc func() error, mon repeatr.Monitor) func() {
+	return func() {
+		err := cleanupFunc()
+		if err == nil {
+			return
+		}
+		if mon.Chan == nil {
+			return // sad, but no one to log it to, and not fatal.
+		}
+		mon.Chan <- repeatr.Event{
+			Log: &repeatr.Event_Log{
+				Time:  time.Now(),
+				Level: repeatr.LogError,
+				Msg:   "error during cleanup",
+				Detail: [][2]string{
+					{"error", err.Error()},
+				},
+			}}
 	}
 }
