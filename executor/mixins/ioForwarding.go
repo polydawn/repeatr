@@ -41,3 +41,26 @@ func (chw chanWriter) Write(bs []byte) (int, error) {
 	}
 	return len(bs), nil
 }
+
+/*
+	Proxies each item in the channel into a call to the given `io.WriteCloser`.
+	The writer is closed when the channel is closed.
+	(Pairs well with `cmd.StdinPipe`.)
+*/
+func RunInputWriteForwarder(ctx context.Context, writeTo io.WriteCloser, ch <-chan string) {
+	go func() {
+		for {
+			select {
+			case chunk, ok := <-ch:
+				if !ok {
+					writeTo.Close()
+					return
+				}
+				writeTo.Write([]byte(chunk))
+			case <-ctx.Done():
+				writeTo.Close()
+				return
+			}
+		}
+	}()
+}

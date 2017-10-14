@@ -100,16 +100,7 @@ func (cfg Executor) Run(
 	cmd.Env = envToSlice(formula.Action.Env)
 	if input.Chan != nil {
 		pipe, _ := cmd.StdinPipe()
-		go func() {
-			for {
-				chunk, ok := <-input.Chan
-				if !ok {
-					pipe.Close()
-					return
-				}
-				pipe.Write([]byte(chunk))
-			}
-		}()
+		mixins.RunInputWriteForwarder(ctx, pipe, input.Chan)
 	}
 	proxy := mixins.NewOutputEventWriter(ctx, mon.Chan)
 	cmd.Stdout = proxy
