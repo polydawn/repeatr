@@ -162,7 +162,7 @@ func (cfg Executor) Run(
 			}
 		}()
 	}
-	proxy := mixins.NewOutputForwarder(ctx, mon.Chan)
+	proxy := mixins.NewOutputEventWriter(ctx, mon.Chan)
 	cmd.Stdout = proxy
 	cmd.Stderr = proxy
 	rr.ExitCode, err = runCmd(cmd)

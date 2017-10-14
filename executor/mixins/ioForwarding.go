@@ -16,7 +16,7 @@ import (
 	If given a nil channel, the returned writer will be ioutil.Discard
 	(so yes, you can use it on `repeatr.Monitor.Chan` without even looking).
 */
-func NewOutputForwarder(ctx context.Context, ch chan<- repeatr.Event) io.Writer {
+func NewOutputEventWriter(ctx context.Context, ch chan<- repeatr.Event) io.Writer {
 	if ch == nil {
 		return ioutil.Discard
 	}
