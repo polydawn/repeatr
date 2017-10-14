@@ -62,6 +62,8 @@ func (cfg Executor) Run(
 		return nil, err
 	}
 
+	// Use standard filesystem setup/teardown, handing it our 'run' thunk
+	//  to invoke while it's living.
 	rr.Results, err = mixins.WithFilesystem(ctx,
 		chrootFs, cfg.assemblerTool, cfg.packTool,
 		formula, formulaCtx, mon,
