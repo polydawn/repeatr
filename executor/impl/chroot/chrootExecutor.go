@@ -139,7 +139,6 @@ func runCmd(cmd *exec.Cmd) (int, error) {
 	} else {
 		return -1, Errorf(repeatr.ErrExecutor, "unknown process wait status (%#v)", waitStatus)
 	}
-
 }
 
 func envToSlice(env map[string]string) []string {
