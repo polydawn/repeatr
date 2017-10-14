@@ -65,8 +65,9 @@ func (cfg Executor) Run(
 	rr.Results, err = mixins.WithFilesystem(ctx,
 		chrootFs, cfg.assemblerTool, cfg.packTool,
 		formula, formulaCtx, mon,
-		func(chrootFs fs.FS) error {
-			return run(ctx, &rr, formula.Action, chrootFs, input, mon)
+		func(chrootFs fs.FS) (err error) {
+			rr.ExitCode, err = run(ctx, formula.Action, chrootFs, input, mon)
+			return
 		},
 	)
 	return &rr, err
@@ -74,15 +75,14 @@ func (cfg Executor) Run(
 
 func run(
 	ctx context.Context,
-	rr *api.RunRecord,
 	action api.FormulaAction,
 	chrootFs fs.FS,
 	input repeatr.InputControl,
 	mon repeatr.Monitor,
-) (err error) {
+) (int, error) {
 	// Check that action commands appear to be executable on this filesystem.
 	if err := mixins.CheckFSReadyForExec(action, chrootFs); err != nil {
-		return err
+		return -1, err
 	}
 
 	// Configure the container.
@@ -108,8 +108,7 @@ func run(
 	cmd.Stderr = proxy
 
 	// Invoke!
-	rr.ExitCode, err = runCmd(cmd)
-	return err
+	return runCmd(cmd)
 }
 
 func runCmd(cmd *exec.Cmd) (int, error) {
