@@ -27,9 +27,9 @@ import (
 
 	Currently, we require exec paths to be absolute.
 */
-func CheckFSReadyForExec(frm api.Formula, chrootFs fs.FS) error {
+func CheckFSReadyForExec(action api.FormulaAction, chrootFs fs.FS) error {
 	// Check that the CWD exists and is a directory.
-	stat, err := chrootFs.Stat(fs.MustAbsolutePath(string(frm.Action.Cwd)).CoerceRelative())
+	stat, err := chrootFs.Stat(fs.MustAbsolutePath(string(action.Cwd)).CoerceRelative())
 	if err != nil {
 		return Errorf(repeatr.ErrJobInvalid, "cwd invalid: %s", err)
 	}
@@ -40,7 +40,7 @@ func CheckFSReadyForExec(frm api.Formula, chrootFs fs.FS) error {
 	// Check that the command exists and is executable.
 	//  (If the format is not executable, that's another ball of wax, and
 	//  not so simple to detect, so we don't.)
-	stat, err = chrootFs.Stat(fs.MustAbsolutePath(frm.Action.Exec[0]).CoerceRelative())
+	stat, err = chrootFs.Stat(fs.MustAbsolutePath(action.Exec[0]).CoerceRelative())
 	if err != nil {
 		return Errorf(repeatr.ErrJobInvalid, "exec invalid: %s", err)
 	}

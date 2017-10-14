@@ -62,38 +62,45 @@ func (cfg Executor) Run(
 		return nil, err
 	}
 
-	// Shell out to assembler.
-	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
-	wgRioLogs := mixins.ForwardRioUnpackLogs(ctx, mon, unpackSpecs)
-	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs, cradle.DirpropsForUserinfo(*formula.Action.Userinfo))
-	wgRioLogs.Wait()
-	if err != nil {
-		return &rr, repeatr.ReboxRioError(err)
-	}
-	defer mixins.CleanupFuncWithLogging(cleanupFunc, mon)()
+	// Use standard filesystem setup/teardown, handing it our 'run' thunk
+	//  to invoke while it's living.
+	rr.Results, err = mixins.WithFilesystem(ctx,
+		chrootFs, cfg.assemblerTool, cfg.packTool,
+		formula, formulaCtx, mon,
+		func(chrootFs fs.FS) (err error) {
+			rr.ExitCode, err = run(ctx, formula.Action, chrootFs, input, mon)
+			return
+		},
+	)
+	return &rr, err
+}
 
-	// Last bit of filesystem brushup: run cradle fs mutations.
-	if err := cradle.TidyFilesystem(formula, chrootFs); err != nil {
-		return &rr, err
-	}
-
+func run(
+	ctx context.Context,
+	action api.FormulaAction,
+	chrootFs fs.FS,
+	input repeatr.InputControl,
+	mon repeatr.Monitor,
+) (int, error) {
 	// Check that action commands appear to be executable on this filesystem.
-	if err := mixins.CheckFSReadyForExec(formula, chrootFs); err != nil {
-		return &rr, err
+	if err := mixins.CheckFSReadyForExec(action, chrootFs); err != nil {
+		return -1, err
 	}
 
-	// Invoke containment and run!
-	cmdName := formula.Action.Exec[0]
-	cmd := exec.Command(cmdName, formula.Action.Exec[1:]...)
+	// Configure the container.
+	cmdName := action.Exec[0]
+	cmd := exec.Command(cmdName, action.Exec[1:]...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Chroot: chrootFs.BasePath().String(),
 		Credential: &syscall.Credential{
-			Uid: uint32(*formula.Action.Userinfo.Uid),
-			Gid: uint32(*formula.Action.Userinfo.Gid),
+			Uid: uint32(*action.Userinfo.Uid),
+			Gid: uint32(*action.Userinfo.Gid),
 		},
 	}
-	cmd.Dir = string(formula.Action.Cwd)
-	cmd.Env = envToSlice(formula.Action.Env)
+	cmd.Dir = string(action.Cwd)
+	cmd.Env = envToSlice(action.Env)
+
+	// Wire I/O.
 	if input.Chan != nil {
 		pipe, _ := cmd.StdinPipe()
 		mixins.RunInputWriteForwarder(ctx, pipe, input.Chan)
@@ -101,20 +108,9 @@ func (cfg Executor) Run(
 	proxy := mixins.NewOutputEventWriter(ctx, mon.Chan)
 	cmd.Stdout = proxy
 	cmd.Stderr = proxy
-	rr.ExitCode, err = runCmd(cmd)
-	if err != nil {
-		return &rr, err
-	}
 
-	// Pack outputs.
-	packSpecs := stitch.FormulaToPackSpecs(formula, formulaCtx, api.Filter_DefaultFlatten)
-	rr.Results, err = stitch.PackMulti(ctx, cfg.packTool, chrootFs, packSpecs)
-	if err != nil {
-		return &rr, err
-	}
-
-	// Done!
-	return &rr, nil
+	// Invoke!
+	return runCmd(cmd)
 }
 
 func runCmd(cmd *exec.Cmd) (int, error) {
@@ -143,7 +139,6 @@ func runCmd(cmd *exec.Cmd) (int, error) {
 	} else {
 		return -1, Errorf(repeatr.ErrExecutor, "unknown process wait status (%#v)", waitStatus)
 	}
-
 }
 
 func envToSlice(env map[string]string) []string {
