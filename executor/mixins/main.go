@@ -21,7 +21,7 @@ func WithFilesystem(
 	formula api.Formula, // Following these instructions.
 	formulaCtx api.FormulaContext, // Fetching and saving from here.
 	mon repeatr.Monitor, // Logging to this.
-	fn func() error, // Then call this while it's set up.
+	fn func(fs.FS) error, // Then call this while it's set up.
 ) (results map[api.AbsPath]api.WareID, err error) {
 	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
 
@@ -41,7 +41,7 @@ func WithFilesystem(
 	}
 
 	// Do the thing!
-	if err := fn(); err != nil {
+	if err := fn(chrootFs); err != nil {
 		return nil, err
 	}
 

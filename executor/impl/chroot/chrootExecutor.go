@@ -65,7 +65,7 @@ func (cfg Executor) Run(
 	rr.Results, err = mixins.WithFilesystem(ctx,
 		chrootFs, cfg.assemblerTool, cfg.packTool,
 		formula, formulaCtx, mon,
-		func() error {
+		func(chrootFs fs.FS) error {
 			return run(ctx, &rr, formula.Action, chrootFs, input, mon)
 		},
 	)
