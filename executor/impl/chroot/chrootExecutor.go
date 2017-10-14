@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"sync"
 	"syscall"
 
 	. "github.com/polydawn/go-errcat"
@@ -65,40 +64,9 @@ func (cfg Executor) Run(
 
 	// Shell out to assembler.
 	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
-	var wg sync.WaitGroup
-	if mon.Chan != nil {
-		for i, _ := range unpackSpecs {
-			wg.Add(1)
-			ch := make(chan rio.Event)
-			unpackSpecs[i].Monitor = rio.Monitor{ch}
-			go func() {
-				defer wg.Done()
-				for {
-					select {
-					case evt, ok := <-ch:
-						if !ok {
-							return
-						}
-						switch {
-						case evt.Log != nil:
-							mon.Chan <- repeatr.Event{Log: &repeatr.Event_Log{
-								Time:   evt.Log.Time,
-								Level:  repeatr.LogLevel(evt.Log.Level),
-								Msg:    evt.Log.Msg,
-								Detail: evt.Log.Detail,
-							}}
-						case evt.Progress != nil:
-							// pass... for now
-						}
-					case <-ctx.Done():
-						return
-					}
-				}
-			}()
-		}
-	}
+	wgRioLogs := mixins.ForwardRioUnpackLogs(ctx, mon, unpackSpecs)
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs, cradle.DirpropsForUserinfo(*formula.Action.Userinfo))
-	wg.Wait()
+	wgRioLogs.Wait()
 	if err != nil {
 		return &rr, repeatr.ReboxRioError(err)
 	}
