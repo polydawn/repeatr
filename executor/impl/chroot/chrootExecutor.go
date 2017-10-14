@@ -57,8 +57,8 @@ func (cfg Executor) Run(
 
 	// Start filling out record keeping!
 	//  Includes picking a random guid for the job, which we use in all temp files.
-	rr := &api.RunRecord{}
-	mixins.InitRunRecord(rr, formula)
+	rr := api.RunRecord{}
+	mixins.InitRunRecord(&rr, formula)
 
 	// Make work dirs.
 	//  Including whole workspace dir and parents, if necessary.
@@ -71,7 +71,7 @@ func (cfg Executor) Run(
 		return nil, Recategorize(repeatr.ErrLocalCacheProblem, err)
 	}
 	if err := cfg.workspaceFs.Mkdir(chrootPath, 0755); err != nil {
-		return rr, Recategorize(repeatr.ErrLocalCacheProblem, err)
+		return &rr, Recategorize(repeatr.ErrLocalCacheProblem, err)
 	}
 	chrootFs := osfs.New(cfg.workspaceFs.BasePath().Join(chrootPath))
 
@@ -115,7 +115,7 @@ func (cfg Executor) Run(
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs, cradle.DirpropsForUserinfo(*formula.Action.Userinfo))
 	wg.Wait()
 	if err != nil {
-		return rr, repeatr.ReboxRioError(err)
+		return &rr, repeatr.ReboxRioError(err)
 	}
 	defer func() {
 		if err := cleanupFunc(); err != nil {
@@ -125,7 +125,7 @@ func (cfg Executor) Run(
 
 	// Last bit of filesystem brushup: run cradle fs mutations.
 	if err := cradle.TidyFilesystem(formula, chrootFs); err != nil {
-		return rr, err
+		return &rr, err
 	}
 
 	// Sanity check the ready filesystem.
@@ -134,7 +134,7 @@ func (cfg Executor) Run(
 	//  so it's better that we try to detect common errors early and thus be
 	//  able to give good messages.
 	if err := sanityCheckFs(formula, chrootFs); err != nil {
-		return rr, err
+		return &rr, err
 	}
 
 	// Invoke containment and run!
@@ -167,18 +167,18 @@ func (cfg Executor) Run(
 	cmd.Stderr = proxy
 	rr.ExitCode, err = runCmd(cmd)
 	if err != nil {
-		return rr, err
+		return &rr, err
 	}
 
 	// Pack outputs.
 	packSpecs := stitch.FormulaToPackSpecs(formula, formulaCtx, api.Filter_DefaultFlatten)
 	rr.Results, err = stitch.PackMulti(ctx, cfg.packTool, chrootFs, packSpecs)
 	if err != nil {
-		return rr, err
+		return &rr, err
 	}
 
 	// Done!
-	return rr, nil
+	return &rr, nil
 }
 
 /*

@@ -12,7 +12,7 @@ import (
 
 func shouldRun(t *testing.T, runTool repeatr.RunFunc, frm api.Formula, frmCtx api.FormulaContext) (api.RunRecord, string) {
 	rr, txt, err := run(t, runTool, frm, baseFormulaCtx)
-	WantNoError(t, err)
+	AssertNoError(t, err)
 	return *rr, txt
 }
 func run(t *testing.T, runTool repeatr.RunFunc, frm api.Formula, frmCtx api.FormulaContext) (*api.RunRecord, string, error) {
