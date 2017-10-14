@@ -34,3 +34,6 @@
 [submodule ".gopath/src/github.com/alecthomas/units"]
 	path = .gopath/src/github.com/alecthomas/units
 	url = https://github.com/alecthomas/units
+[submodule ".gopath/src/github.com/syndtr/gocapability"]
+	path = .gopath/src/github.com/syndtr/gocapability
+	url = https://github.com/syndtr/gocapability
