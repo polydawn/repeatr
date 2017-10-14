@@ -55,10 +55,13 @@ func (cfg Executor) Run(
 	}
 
 	// Workspace setup and params defaulting.
+	formula = cradle.FormulaDefaults(formula)                    // Initialize formula default values.
 	rr := api.RunRecord{}                                        // Start filling out record keeping!
 	mixins.InitRunRecord(&rr, formula)                           // Includes picking a random guid for the job, which we use in all temp files.
 	_, chrootFs, err := mixins.MakeWorkDirs(cfg.workspaceFs, rr) // Make work dirs. Including whole workspace dir and parents, if necessary.
-	formula = cradle.FormulaDefaults(formula)                    // Initialize formula default values.
+	if err != nil {
+		return nil, err
+	}
 
 	// Shell out to assembler.
 	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
