@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"sync"
 	"syscall"
 
 	. "github.com/polydawn/go-errcat"
@@ -16,7 +15,6 @@ import (
 	"go.polydawn.net/repeatr/executor/mixins"
 	"go.polydawn.net/rio/fs"
 	"go.polydawn.net/rio/fs/osfs"
-	"go.polydawn.net/rio/fsOp"
 	"go.polydawn.net/rio/stitch"
 )
 
@@ -55,86 +53,33 @@ func (cfg Executor) Run(
 		defer close(mon.Chan)
 	}
 
-	// Start filling out record keeping!
-	//  Includes picking a random guid for the job, which we use in all temp files.
-	rr := &api.RunRecord{}
-	mixins.InitRunRecord(rr, formula)
-
-	// Make work dirs.
-	//  Including whole workspace dir and parents, if necessary.
-	if err := fsOp.MkdirAll(osfs.New(fs.AbsolutePath{}), cfg.workspaceFs.BasePath().CoerceRelative(), 0700); err != nil {
-		return nil, Errorf(repeatr.ErrLocalCacheProblem, "cannot initialize workspace dirs: %s", err)
+	// Workspace setup and params defaulting.
+	formula = cradle.FormulaDefaults(formula)                    // Initialize formula default values.
+	rr := api.RunRecord{}                                        // Start filling out record keeping!
+	mixins.InitRunRecord(&rr, formula)                           // Includes picking a random guid for the job, which we use in all temp files.
+	_, chrootFs, err := mixins.MakeWorkDirs(cfg.workspaceFs, rr) // Make work dirs. Including whole workspace dir and parents, if necessary.
+	if err != nil {
+		return nil, err
 	}
-	jobPath := fs.MustRelPath(rr.Guid)
-	chrootPath := jobPath.Join(fs.MustRelPath("chroot"))
-	if err := cfg.workspaceFs.Mkdir(jobPath, 0700); err != nil {
-		return nil, Recategorize(repeatr.ErrLocalCacheProblem, err)
-	}
-	if err := cfg.workspaceFs.Mkdir(chrootPath, 0755); err != nil {
-		return rr, Recategorize(repeatr.ErrLocalCacheProblem, err)
-	}
-	chrootFs := osfs.New(cfg.workspaceFs.BasePath().Join(chrootPath))
-
-	// Initialize default values.
-	formula = cradle.FormulaDefaults(formula)
 
 	// Shell out to assembler.
 	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
-	var wg sync.WaitGroup
-	if mon.Chan != nil {
-		for i, _ := range unpackSpecs {
-			wg.Add(1)
-			ch := make(chan rio.Event)
-			unpackSpecs[i].Monitor = rio.Monitor{ch}
-			go func() {
-				defer wg.Done()
-				for {
-					select {
-					case evt, ok := <-ch:
-						if !ok {
-							return
-						}
-						switch {
-						case evt.Log != nil:
-							mon.Chan <- repeatr.Event{Log: &repeatr.Event_Log{
-								Time:   evt.Log.Time,
-								Level:  repeatr.LogLevel(evt.Log.Level),
-								Msg:    evt.Log.Msg,
-								Detail: evt.Log.Detail,
-							}}
-						case evt.Progress != nil:
-							// pass... for now
-						}
-					case <-ctx.Done():
-						return
-					}
-				}
-			}()
-		}
-	}
+	wgRioLogs := mixins.ForwardRioUnpackLogs(ctx, mon, unpackSpecs)
 	cleanupFunc, err := cfg.assemblerTool.Run(ctx, chrootFs, unpackSpecs, cradle.DirpropsForUserinfo(*formula.Action.Userinfo))
-	wg.Wait()
+	wgRioLogs.Wait()
 	if err != nil {
-		return rr, repeatr.ReboxRioError(err)
+		return &rr, repeatr.ReboxRioError(err)
 	}
-	defer func() {
-		if err := cleanupFunc(); err != nil {
-			// TODO log it
-		}
-	}()
+	defer mixins.CleanupFuncWithLogging(cleanupFunc, mon)()
 
 	// Last bit of filesystem brushup: run cradle fs mutations.
 	if err := cradle.TidyFilesystem(formula, chrootFs); err != nil {
-		return rr, err
+		return &rr, err
 	}
 
-	// Sanity check the ready filesystem.
-	//  Some errors produce *very* unclear results from exec (for example
-	//  at the kernel level, EACCES can mean *many* different things...), and
-	//  so it's better that we try to detect common errors early and thus be
-	//  able to give good messages.
-	if err := sanityCheckFs(formula, chrootFs); err != nil {
-		return rr, err
+	// Check that action commands appear to be executable on this filesystem.
+	if err := mixins.CheckFSReadyForExec(formula, chrootFs); err != nil {
+		return &rr, err
 	}
 
 	// Invoke containment and run!
@@ -151,81 +96,25 @@ func (cfg Executor) Run(
 	cmd.Env = envToSlice(formula.Action.Env)
 	if input.Chan != nil {
 		pipe, _ := cmd.StdinPipe()
-		go func() {
-			for {
-				chunk, ok := <-input.Chan
-				if !ok {
-					pipe.Close()
-					return
-				}
-				pipe.Write([]byte(chunk))
-			}
-		}()
+		mixins.RunInputWriteForwarder(ctx, pipe, input.Chan)
 	}
-	proxy := mixins.NewOutputForwarder(ctx, mon.Chan)
+	proxy := mixins.NewOutputEventWriter(ctx, mon.Chan)
 	cmd.Stdout = proxy
 	cmd.Stderr = proxy
 	rr.ExitCode, err = runCmd(cmd)
 	if err != nil {
-		return rr, err
+		return &rr, err
 	}
 
 	// Pack outputs.
 	packSpecs := stitch.FormulaToPackSpecs(formula, formulaCtx, api.Filter_DefaultFlatten)
 	rr.Results, err = stitch.PackMulti(ctx, cfg.packTool, chrootFs, packSpecs)
 	if err != nil {
-		return rr, err
+		return &rr, err
 	}
 
 	// Done!
-	return rr, nil
-}
-
-/*
-	Return an error if any part of the filesystem is invalid for running the
-	formula -- e.g. the CWD setting isn't a dir; the command binary
-	does not exist or is not executable; etc.
-
-	The formula is already expected to have been syntactically validated --
-	e.g. all paths have been checked to be absolute, etc.  This method will
-	panic if such invarients aren't held.
-
-	(It's better to check all these things before attempting to launch
-	containment because the error codes returned by kernel exec are sometimes
-	remarkably ambiguous or outright misleading in their names.)
-
-	Currently, we require exec paths to be absolute.
-*/
-func sanityCheckFs(frm api.Formula, chrootFs fs.FS) error {
-	// Check that the CWD exists and is a directory.
-	stat, err := chrootFs.Stat(fs.MustAbsolutePath(string(frm.Action.Cwd)).CoerceRelative())
-	if err != nil {
-		return Errorf(repeatr.ErrJobInvalid, "cwd invalid: %s", err)
-	}
-	if stat.Type != fs.Type_Dir {
-		return Errorf(repeatr.ErrJobInvalid, "cwd invalid: path is a %s, must be dir", stat.Type)
-	}
-
-	// Check that the command exists and is executable.
-	//  (If the format is not executable, that's another ball of wax, and
-	//  not so simple to detect, so we don't.)
-	stat, err = chrootFs.Stat(fs.MustAbsolutePath(frm.Action.Exec[0]).CoerceRelative())
-	if err != nil {
-		return Errorf(repeatr.ErrJobInvalid, "exec invalid: %s", err)
-	}
-	if stat.Type != fs.Type_File {
-		return Errorf(repeatr.ErrJobInvalid, "exec invalid: path is a %s, must be executable file", stat.Type)
-	}
-	// FUTURE: ideally we could also check if the file is properly executable,
-	//  and all parents have bits to be traversable (!), to the policy uid.
-	//  But this is also a loooot of work: and a correct answer (for groups
-	//  at least) requires *understanding the container's groups settings*,
-	//  and now you're in real hot water: parsing /etc files and hoping
-	//  nobody expects nsswitch to be too interesting.  Yeah.  Nuh uh.
-	//  (All of these are edge conditions tools like docker Don't Have because
-	//  they simply launch you with so much privilege that it doesn't matter.)
-
-	return nil
+	return &rr, nil
 }
 
 func runCmd(cmd *exec.Cmd) (int, error) {

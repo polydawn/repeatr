@@ -16,7 +16,7 @@ import (
 	If given a nil channel, the returned writer will be ioutil.Discard
 	(so yes, you can use it on `repeatr.Monitor.Chan` without even looking).
 */
-func NewOutputForwarder(ctx context.Context, ch chan<- repeatr.Event) io.Writer {
+func NewOutputEventWriter(ctx context.Context, ch chan<- repeatr.Event) io.Writer {
 	if ch == nil {
 		return ioutil.Discard
 	}
@@ -40,4 +40,27 @@ func (chw chanWriter) Write(bs []byte) (int, error) {
 		return 0, nil
 	}
 	return len(bs), nil
+}
+
+/*
+	Proxies each item in the channel into a call to the given `io.WriteCloser`.
+	The writer is closed when the channel is closed.
+	(Pairs well with `cmd.StdinPipe`.)
+*/
+func RunInputWriteForwarder(ctx context.Context, writeTo io.WriteCloser, ch <-chan string) {
+	go func() {
+		for {
+			select {
+			case chunk, ok := <-ch:
+				if !ok {
+					writeTo.Close()
+					return
+				}
+				writeTo.Write([]byte(chunk))
+			case <-ctx.Done():
+				writeTo.Close()
+				return
+			}
+		}
+	}()
 }
