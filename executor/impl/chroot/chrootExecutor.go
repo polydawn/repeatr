@@ -66,7 +66,7 @@ func (cfg Executor) Run(
 		chrootFs, cfg.assemblerTool, cfg.packTool,
 		formula, formulaCtx, mon,
 		func() error {
-			return run(ctx, &rr, formula, chrootFs, input, mon)
+			return run(ctx, &rr, formula.Action, chrootFs, input, mon)
 		},
 	)
 	return &rr, err
@@ -75,28 +75,28 @@ func (cfg Executor) Run(
 func run(
 	ctx context.Context,
 	rr *api.RunRecord,
-	formula api.Formula,
+	action api.FormulaAction,
 	chrootFs fs.FS,
 	input repeatr.InputControl,
 	mon repeatr.Monitor,
 ) (err error) {
 	// Check that action commands appear to be executable on this filesystem.
-	if err := mixins.CheckFSReadyForExec(formula, chrootFs); err != nil {
+	if err := mixins.CheckFSReadyForExec(action, chrootFs); err != nil {
 		return err
 	}
 
 	// Configure the container.
-	cmdName := formula.Action.Exec[0]
-	cmd := exec.Command(cmdName, formula.Action.Exec[1:]...)
+	cmdName := action.Exec[0]
+	cmd := exec.Command(cmdName, action.Exec[1:]...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Chroot: chrootFs.BasePath().String(),
 		Credential: &syscall.Credential{
-			Uid: uint32(*formula.Action.Userinfo.Uid),
-			Gid: uint32(*formula.Action.Userinfo.Gid),
+			Uid: uint32(*action.Userinfo.Uid),
+			Gid: uint32(*action.Userinfo.Gid),
 		},
 	}
-	cmd.Dir = string(formula.Action.Cwd)
-	cmd.Env = envToSlice(formula.Action.Env)
+	cmd.Dir = string(action.Cwd)
+	cmd.Env = envToSlice(action.Env)
 
 	// Wire I/O.
 	if input.Chan != nil {
