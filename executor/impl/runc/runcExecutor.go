@@ -1,0 +1,136 @@
+package runc
+
+import (
+	"context"
+	"os/exec"
+
+	"go.polydawn.net/go-timeless-api"
+	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/go-timeless-api/rio"
+	"go.polydawn.net/repeatr/executor/cradle"
+	"go.polydawn.net/repeatr/executor/mixins"
+	"go.polydawn.net/rio/fs"
+	"go.polydawn.net/rio/fs/osfs"
+	"go.polydawn.net/rio/stitch"
+)
+
+type Executor struct {
+	workspaceFs   fs.FS             // A working dir per execution will be made in here.
+	assemblerTool *stitch.Assembler // Contains: unpackTool, caching cfg, and placer tools.
+	packTool      rio.PackFunc
+}
+
+func NewExecutor(
+	workDir fs.AbsolutePath,
+	unpackTool rio.UnpackFunc,
+	packTool rio.PackFunc,
+) (repeatr.RunFunc, error) {
+	asm, err := stitch.NewAssembler(unpackTool)
+	if err != nil {
+		return nil, repeatr.ReboxRioError(err)
+	}
+	return Executor{
+		osfs.New(workDir),
+		asm,
+		packTool,
+	}.Run, nil
+}
+
+var _ repeatr.RunFunc = Executor{}.Run
+
+func (cfg Executor) Run(
+	ctx context.Context,
+	formula api.Formula,
+	formulaCtx api.FormulaContext,
+	input repeatr.InputControl,
+	mon repeatr.Monitor,
+) (*api.RunRecord, error) {
+	if mon.Chan != nil {
+		defer close(mon.Chan)
+	}
+
+	// Workspace setup and params defaulting.
+	formula = cradle.FormulaDefaults(formula) // Initialize formula default values.
+	rr := api.RunRecord{}                     // Start filling out record keeping!
+	mixins.InitRunRecord(&rr, formula)        // Includes picking a random guid for the job, which we use in all temp files.
+
+	// Make work dirs. Including whole workspace dir and parents, if necessary.
+	jobFs, chrootFs, err := mixins.MakeWorkDirs(cfg.workspaceFs, rr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use standard filesystem setup/teardown, handing it our 'run' thunk
+	//  to invoke while it's living.
+	rr.Results, err = mixins.WithFilesystem(ctx,
+		chrootFs, cfg.assemblerTool, cfg.packTool,
+		formula, formulaCtx, mon,
+		func(chrootFs fs.FS) (err error) {
+			rr.ExitCode, err = run(ctx, rr.Guid, formula.Action, jobFs, chrootFs, input, mon)
+			return
+		},
+	)
+	return &rr, err
+}
+
+func run(
+	ctx context.Context,
+	jobID string,
+	action api.FormulaAction,
+	jobFs fs.FS, // a spot for other tmp/job-lifetime files.
+	chrootFs fs.FS,
+	input repeatr.InputControl,
+	mon repeatr.Monitor,
+) (int, error) {
+	// Check that action commands appear to be executable on this filesystem.
+	if err := mixins.CheckFSReadyForExec(action, chrootFs); err != nil {
+		return -1, err
+	}
+
+	// Configure the container.
+	//  For runc, this means we have to actually *write config to disk*.
+	//  We'll pass that path as an arg again shortly.
+	runcCfg, err := templateRuncConfig(jobID, action, chrootFs.BasePath().String(), true)
+	if err != nil {
+		return -1, err
+	}
+	runcCfgPathStr := jobFs.BasePath().String() + "/config.json"
+	if err := writeConfigToFile(runcCfgPathStr, runcCfg); err != nil {
+		return -1, err
+	}
+
+	// Select a path for runc logs.
+	//  Again, we'll need this again shortly.
+	runcLogPathStr := jobFs.BasePath().String() + "/log"
+
+	// Start templating commands.
+	cmd := exec.Command("repeatr-runc",
+		"--root", jobFs.BasePath().String()+"/tmp",
+		"--debug",
+		"--log", runcLogPathStr,
+		"--log-format", "json",
+		"run",
+		"--bundle", jobFs.BasePath().String(),
+		jobID,
+	)
+
+	// Wire I/O.
+	if input.Chan != nil {
+		pipe, _ := cmd.StdinPipe()
+		mixins.RunInputWriteForwarder(ctx, pipe, input.Chan)
+	}
+	proxy := mixins.NewOutputEventWriter(ctx, mon.Chan)
+	cmd.Stdout = proxy // TODO probably more here
+	cmd.Stderr = proxy // TODO probably more here
+
+	// Launch command process.
+	// TODO
+
+	// Watch logs; we have additional output handling to do.
+	// TODO
+
+	// Await command completion.
+	// TODO
+
+	return -1, nil
+}

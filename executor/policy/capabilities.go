@@ -1,6 +1,8 @@
 package policy
 
 import (
+	"strings"
+
 	. "github.com/polydawn/go-errcat"
 	"github.com/syndtr/gocapability/capability"
 
@@ -10,7 +12,7 @@ import (
 
 func GetCapsForPolicy(policy api.Policy) ([]capability.Cap, error) {
 	switch policy {
-	case api.Policy_Routine:
+	case "", api.Policy_Routine:
 		return []capability.Cap{
 			capability.CAP_AUDIT_WRITE,
 			capability.CAP_KILL,
@@ -76,4 +78,14 @@ func GetCapsForPolicy(policy api.Policy) ([]capability.Cap, error) {
 	default:
 		return nil, Errorf(rio.ErrUsage, "invalid policy %q", policy)
 	}
+}
+
+// Returns the capabilties as strings as documented in man 7 capabilities
+// (capslock, CAP_*, etc) (also, as runc understands them).
+func CapsToStrings(caps []capability.Cap) []string {
+	strs := make([]string, len(caps))
+	for i, c := range caps {
+		strs[i] = "CAP_" + strings.ToUpper(c.String())
+	}
+	return strs
 }
