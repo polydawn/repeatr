@@ -54,17 +54,11 @@ func (cfg Executor) Run(
 		defer close(mon.Chan)
 	}
 
-	// Start filling out record keeping!
-	//  Includes picking a random guid for the job, which we use in all temp files.
-	rr := api.RunRecord{}
-	mixins.InitRunRecord(&rr, formula)
-
-	// Make work dirs.
-	//  Including whole workspace dir and parents, if necessary.
-	_, chrootFs, err := mixins.MakeWorkDirs(cfg.workspaceFs, rr)
-
-	// Initialize default values.
-	formula = cradle.FormulaDefaults(formula)
+	// Workspace setup and params defaulting.
+	rr := api.RunRecord{}                                        // Start filling out record keeping!
+	mixins.InitRunRecord(&rr, formula)                           // Includes picking a random guid for the job, which we use in all temp files.
+	_, chrootFs, err := mixins.MakeWorkDirs(cfg.workspaceFs, rr) // Make work dirs. Including whole workspace dir and parents, if necessary.
+	formula = cradle.FormulaDefaults(formula)                    // Initialize formula default values.
 
 	// Shell out to assembler.
 	unpackSpecs := stitch.FormulaToUnpackSpecs(formula, formulaCtx, api.Filter_NoMutation)
