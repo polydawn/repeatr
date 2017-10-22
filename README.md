@@ -72,15 +72,14 @@ Read more
 
 
 
-Project Status
---------------
+:warning: Alpha Warning :warning:
+---------------------------------
 
-Alpha.  Feel free to use it in whatever environment you like, but currently,
-breaking changes to formats are possible and there's not going to be a lot of
-hand-holding on migrations until we reach a higher level of maturity.
+Repeatr is in Alpha.
 
-That said, Repeatr is self-hosting Repeatr's builds, so, we're not entirely
-*un*-invested in stability, either :)
+We're very conservative about breaking API changes, but be warned that they are in fact coming:
+a "v200" with *all* of our biggest lessoned-learned is coming in late October 2017.
+(There will be significant docs updates coming at the same time; please bear with us on the transition.)
 
 Working:
 
