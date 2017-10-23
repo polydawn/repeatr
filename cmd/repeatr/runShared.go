@@ -11,6 +11,7 @@ import (
 	"go.polydawn.net/go-timeless-api/repeatr"
 	"go.polydawn.net/go-timeless-api/rio"
 	"go.polydawn.net/repeatr/executor/impl/chroot"
+	"go.polydawn.net/repeatr/executor/impl/runc"
 	"go.polydawn.net/rio/client"
 	"go.polydawn.net/rio/fs"
 )
@@ -44,6 +45,14 @@ func run(
 	case "chroot":
 		executor, err = chroot.NewExecutor(
 			fs.MustAbsolutePath("/var/lib/timeless/repeatr/executor/chroot/"),
+			unpackTool, packTool,
+		)
+		if err != nil {
+			return nil, err
+		}
+	case "runc":
+		executor, err = runc.NewExecutor(
+			fs.MustAbsolutePath("/var/lib/timeless/repeatr/executor/runc/"),
 			unpackTool, packTool,
 		)
 		if err != nil {
