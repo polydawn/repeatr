@@ -62,7 +62,7 @@ func templateRuncConfig(jobID string, action api.FormulaAction, rootPath string,
 			"noNewPrivileges": true,
 		},
 		"root": map[string]interface{}{
-			"path":     "rootfs",
+			"path":     rootPath,
 			"readonly": false,
 		},
 		"hostname": hostname,

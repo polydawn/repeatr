@@ -2,7 +2,11 @@ package runc
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
+	"syscall"
+
+	. "github.com/polydawn/go-errcat"
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
@@ -90,7 +94,11 @@ func run(
 	// Configure the container.
 	//  For runc, this means we have to actually *write config to disk*.
 	//  We'll pass that path as an arg again shortly.
-	runcCfg, err := templateRuncConfig(jobID, action, chrootFs.BasePath().String(), true)
+	useTty := false
+	if input.Chan != nil {
+		useTty = true
+	}
+	runcCfg, err := templateRuncConfig(jobID, action, chrootFs.BasePath().String(), useTty)
 	if err != nil {
 		return -1, err
 	}
@@ -123,14 +131,41 @@ func run(
 	cmd.Stdout = proxy // TODO probably more here
 	cmd.Stderr = proxy // TODO probably more here
 
-	// Launch command process.
-	// TODO
+	// Launch runc process.
+	if err := cmd.Start(); err != nil {
+		return -1, Errorf(repeatr.ErrExecutor, "executor failed to launch: %s", err)
+	}
 
 	// Watch logs; we have additional output handling to do.
 	// TODO
 
-	// Await command completion.
-	// TODO
+	// Await command completion; return its exit code.
+	//  (If we get this far, the code from the 'real' work proc is all that's left.)
+	return cmdWait(cmd)
+}
 
-	return -1, nil
+// copypasta glue for get-the-real-exitcode-plz
+func cmdWait(cmd *exec.Cmd) (int, error) {
+	err := cmd.Wait()
+	if err == nil {
+		return 0, nil
+	}
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok { // This is basically an "if stdlib isn't what we thought it is" error, so panic-worthy.
+		panic(fmt.Errorf("unknown exit reason: %T %s", err, err))
+	}
+	waitStatus, ok := exitErr.ProcessState.Sys().(syscall.WaitStatus)
+	if !ok { // This is basically a "if stdlib[...]" or OS portability issue, so also panic-able.
+		panic(fmt.Errorf("unknown process state implementation %T", exitErr.ProcessState.Sys()))
+	}
+	if waitStatus.Exited() {
+		return waitStatus.ExitStatus(), nil
+	} else if waitStatus.Signaled() {
+		// In bash, when a processs ends from a signal, the $? variable is set to 128+SIG.
+		// We follow that same convention here.
+		// So, a process terminated by ctrl-C returns 130.  A script that died to kill-9 returns 137.
+		return int(waitStatus.Signal()) + 128, nil
+	} else {
+		return -1, Errorf(repeatr.ErrExecutor, "unknown process wait status (%#v)", waitStatus)
+	}
 }
