@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+REPEATR_FLAGS="${REPEATR_FLAGS:-}"
+
 rm -r .pipeline.demo || true
 mkdir .pipeline.demo
 cd .pipeline.demo
@@ -36,7 +38,7 @@ frm="$(cat <<EOF
 	}
 EOF
 )"
-rr1="$(repeatr run <(echo "$frm") | tee /dev/stderr)"
+rr1="$(repeatr run $REPEATR_FLAGS -- <(echo "$frm") | tee /dev/stderr)"
 
 hitch catalog create "demo.polydawn.net/pipeline/foobar"
 hitch release start "demo.polydawn.net/pipeline/foobar" "v0.1"
@@ -64,4 +66,4 @@ frm="$(cat <<EOF
 	}
 EOF
 )"
-rr2="$(repeatr run <(echo "$frm") | tee /dev/stderr)"
+rr2="$(repeatr run $REPEATR_FLAGS -- <(echo "$frm") | tee /dev/stderr)"
