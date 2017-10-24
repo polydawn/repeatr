@@ -1,0 +1,34 @@
+#!/bin/bash
+set -euo pipefail
+[ ${#BASH_SOURCE[@]} -lt 2 ] && { >&2 printf "this file is a library, and should not be invoked directly.\n"; exit 100; }
+
+## Load project details.
+{
+	if [ ! -f "$FLING_BASE/.goprj" ]; then
+		>&2 printf "project is not setup yet!  a config file in '.goprj' is needed.\n"
+		return 2
+	fi
+	function _load {
+		keyname=$1
+		value="$(sed -n 's/^'$keyname'=\(.*\)/\1/p' "$FLING_BASE/.goprj")"
+		[ $? -gt 0 ] && { return 1; }
+		echo $value
+	}
+	## Essentials.
+	export GOPRJ_NAME="$(_load "name")"
+	export GOPRJ_PKG="$(_load "pkg")"
+	## ...and extended config, if present.
+	export GOPRJ_TEST_TIMEOUT="$(_load "test.timeout")"
+	unset _load
+}
+
+## Set defaults for config not provided.
+## Default test timeouts are far too high.  override this if you like.
+GOPRJ_TEST_TIMEOUT="${GOPRJ_TEST_TIMEOUT:-"35s"}"
+GOPRJ_LDFLAGS=""
+
+## Export the go-toolchain-standard GOPATH var.
+export GOPATH="$FLING_BASE/.gopath/"
+export GOBIN="$FLING_BASE/bin/"
+
+# to debug: #env | grep ^GOPRJ_

@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+[ ${#BASH_SOURCE[@]} -lt 2 ] && { >&2 printf "this file is a library, and should not be invoked directly.\n"; exit 100; }
+
+source goprj.lib.shlib
+
+cd "$FLING_BASE"
+
+## Unique to this project:
+##  we need to exec to other tools in our suite!  modify PATH:
+export PATH="$GOBIN:$PATH"

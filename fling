@@ -1,0 +1,138 @@
+#!/bin/bash
+set -euo pipefail
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+
+##
+## Emits a line slice of command names found in the given dir.
+##
+## The pattern for command filenames is "cmd.*.sh".
+##
+## Commands may also declare flags, help text, and and other
+## similar autocomplete-helpful information in matching files
+## named "cmd.*.flingcfg"; to get this info for a command,
+## use `TODO`.
+##
+## Command names are sanitychecked to print cleanly without
+## escaping.  You may safely use them in standard for-loops
+## with normal IFS, etc.  Uncooperative names are simply
+## excluded from the return.
+##
+## The special command "cmd._.sh" will be skipped by this list.
+##
+function Fling_GetCommandsInDir {
+	dir=$1
+
+	while IFS= read -r -u3 -d $'\0' subcommand; do
+		if [ "$(printf %q "$subcommand")" != "$subcommand" ]; then continue; fi
+		subcommand="${subcommand#\./cmd\.}"
+		subcommand="${subcommand%\.sh}"
+		if [ "$subcommand" == "_" ]; then continue; fi
+		printf "%s\n" $subcommand
+	done 3< <(
+		cd "$dir" && find . -maxdepth 1 -type f -executable -name 'cmd.*.sh' -print0
+	)
+}
+
+##
+## Checks that a subcommand exists, printing a sensible error if not.
+##
+## Use before `Fling_InvokeCommand` if you want to handle non-existence separately.
+##
+function Fling_CheckCommand {
+	dir="$1"
+	cmd="$2"
+	shift 2 || true
+
+	## args validation
+	if [ "$(printf %q "$cmd")" != "$cmd" ]; then
+		>&2 printf "cannot possibly be a subcommand: too many strange chars!\n"
+		return 1
+	fi
+
+	## check it exists
+	if [ ! -x "$dir/cmd.$cmd.sh" ]; then
+		>&2 printf "no such command \"%q\".\n" "$cmd"
+		return 1
+	fi
+	return 0
+}
+
+
+##
+## Invokes a subcommand.  Varargs expected, and will be passed on.
+##
+## The subcommand script will be invoked with CWD set to its
+## own parent (subcommands are expected to load any library
+## files relative to themselves with a simple `source ./foo.shlib`).
+## The $FLING_BASE environment variable is provided to
+## refer back to the root dir of the project.
+##
+## All the same rules for command name sanity are checked as
+## they are in `Fling_GetCommandsInDir`.
+##
+function Fling_InvokeCommand {
+	dir="$1"
+	cmd="$2"
+	shift 2 || true
+
+	## args validation
+	Fling_CheckCommand "$dir" "$cmd"
+
+	## go
+	export FLING_BASE=${FLING_BASE:-$PWD}
+	(cd "$dir" && ./cmd.$cmd.sh)
+}
+
+##
+## Emits the usage text (short form, e.g. the thing you get
+## if you didn't give a command).
+##
+function Fling_EmitUsage {
+	>&2 printf "usage:\n\n"
+	>&2 printf "  fling <SUBCOMMAND>\n"
+	>&2 printf "  fling help\n"
+	>&2 printf "\n"
+
+	>&2 printf "subcommands:\n\n"
+	subcommands="$(Fling_GetCommandsInDir "fling.d")"
+	for subcommand in ${subcommands[@]}; do
+		>&2 printf "  - %s\n" $subcommand
+	done
+	>&2 printf "\n"
+}
+
+##
+## Main!
+##
+function Fling_Main {
+	cmd=${1:-}
+	shift || true
+
+	case "$cmd" in
+	'')
+		if Fling_CheckCommand "fling.d" "_" 2>/dev/null; then
+			Fling_InvokeCommand "fling.d" "_"
+		else
+			>&2 printf "fling v0.0.00 -- a command launcher.\n\n"
+			Fling_EmitUsage
+			exit 1
+		fi
+		;;
+	help)
+		>&2 printf "fling v0.0.00 -- a command launcher.\n\n"
+		Fling_EmitUsage
+		exit 1
+		;;
+	*)
+		## try to find a matching subcommand, and call it.
+		Fling_CheckCommand "fling.d" "$cmd" || {
+			## If not found, print usage.
+			>&2 printf "\n"
+			Fling_EmitUsage
+			exit 1
+		}
+		Fling_InvokeCommand "fling.d" "$cmd" "$@"
+		;;
+	esac
+}
+Fling_Main "$@"
