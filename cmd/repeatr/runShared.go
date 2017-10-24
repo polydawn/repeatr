@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	. "github.com/polydawn/go-errcat"
@@ -16,23 +15,19 @@ import (
 	"go.polydawn.net/rio/fs"
 )
 
-func run(
-	ctx context.Context,
-	executorName string,
-	formulaPath string,
-	inputControl repeatr.InputControl,
-	monitor repeatr.Monitor,
-) (rr *api.RunRecord, err error) {
-	// Load and parse formula.
+func loadFormula(formulaPath string) (*api.Formula, *api.FormulaContext, error) {
 	f, err := os.Open(formulaPath)
 	if err != nil {
-		return nil, Errorf(repeatr.ErrUsage, "error opening formula file: %s", err)
+		return nil, nil, Errorf(repeatr.ErrUsage, "error opening formula file: %s", err)
 	}
-	var formulaUnion api.FormulaUnion
-	if err := json.NewUnmarshallerAtlased(f, api.RepeatrAtlas).Unmarshal(&formulaUnion); err != nil {
-		return nil, Errorf(repeatr.ErrUsage, "formula file does not parse: %s", err)
+	var slot api.FormulaUnion
+	if err := json.NewUnmarshallerAtlased(f, api.RepeatrAtlas).Unmarshal(&slot); err != nil {
+		return nil, nil, Errorf(repeatr.ErrUsage, "formula file does not parse: %s", err)
 	}
+	return &slot.Formula, slot.Context, nil
+}
 
+func demuxExecutor(executorName string) (repeatr.RunFunc, error) {
 	// Pack and unpack tools are always the Rio exec client.
 	var (
 		unpackTool rio.UnpackFunc = rioexecclient.UnpackFunc
@@ -40,32 +35,18 @@ func run(
 	)
 
 	// Demux executor implementation from name.
-	var executor repeatr.RunFunc
 	switch executorName {
 	case "chroot":
-		executor, err = chroot.NewExecutor(
+		return chroot.NewExecutor(
 			fs.MustAbsolutePath("/var/lib/timeless/repeatr/executor/chroot/"),
 			unpackTool, packTool,
 		)
-		if err != nil {
-			return nil, err
-		}
 	case "runc":
-		executor, err = runc.NewExecutor(
+		return runc.NewExecutor(
 			fs.MustAbsolutePath("/var/lib/timeless/repeatr/executor/runc/"),
 			unpackTool, packTool,
 		)
-		if err != nil {
-			return nil, err
-		}
+	default:
+		return nil, Errorf(repeatr.ErrUsage, "not a known executor: %q", executorName)
 	}
-
-	// Invoke executor engine.
-	return executor(
-		ctx,
-		formulaUnion.Formula,
-		*formulaUnion.Context,
-		inputControl,
-		monitor,
-	)
 }

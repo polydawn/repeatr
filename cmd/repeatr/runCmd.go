@@ -18,6 +18,16 @@ func Run(
 	formulaPath string,
 	stdout, stderr io.Writer,
 ) (err error) {
+	// Load formula and build executor.
+	executor, err := demuxExecutor(executorName)
+	if err != nil {
+		return err
+	}
+	formula, formulaContext, err := loadFormula(formulaPath)
+	if err != nil {
+		return err
+	}
+
 	// Prepare monitor and IO forwarding.
 	evtChan := make(chan repeatr.Event)
 	monitor := repeatr.Monitor{evtChan}
@@ -46,12 +56,11 @@ func Run(
 	}()
 	inputControl := repeatr.InputControl{}
 
-	// Call helper for all the bits that are in common with twerk mode
-	//  (load formula, demux stuff, actually launch).
-	rr, err := run(
+	// Run!  (And wait for output forwarding worker to finish.)
+	rr, err := executor(
 		ctx,
-		executorName,
-		formulaPath,
+		*formula,
+		*formulaContext,
 		inputControl,
 		monitor,
 	)
