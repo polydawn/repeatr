@@ -5,3 +5,7 @@ set -euo pipefail
 source goprj.lib.shlib
 
 cd "$FLING_BASE"
+
+## Unique to this project:
+##  we need to exec to other tools in our suite!  modify PATH:
+export PATH="$GOBIN:$PATH"
