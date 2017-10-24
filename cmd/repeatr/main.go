@@ -43,24 +43,34 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 		cmdRun := app.Command("run", "Execute a formula.")
 		argsRun := struct {
 			FormulaPath string
+			Executor    string
 		}{}
 		cmdRun.Arg("formula", "Path to formula file.").
 			Required().
 			StringVar(&argsRun.FormulaPath)
+		cmdRun.Flag("executor", "Select an executor system to use").
+			Default("chroot").
+			EnumVar(&argsRun.Executor,
+				"runc", "chroot")
 		bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
-			return Run(ctx, "chroot", argsRun.FormulaPath, stdout, stderr)
+			return Run(ctx, argsRun.Executor, argsRun.FormulaPath, stdout, stderr)
 		}}
 	}
 	{
 		cmdTwerk := app.Command("twerk", "Execute a formula *interactively*.")
 		argsTwerk := struct {
 			FormulaPath string
+			Executor    string
 		}{}
 		cmdTwerk.Arg("formula", "Path to formula file.").
 			Required().
 			StringVar(&argsTwerk.FormulaPath)
+		cmdTwerk.Flag("executor", "Select an executor system to use").
+			Default("chroot").
+			EnumVar(&argsTwerk.Executor,
+				"runc", "chroot")
 		bhvs[cmdTwerk.FullCommand()] = behavior{&argsTwerk, func() error {
-			return Twerk(ctx, "chroot", argsTwerk.FormulaPath, stdin, stdout, stderr)
+			return Twerk(ctx, argsTwerk.Executor, argsTwerk.FormulaPath, stdin, stdout, stderr)
 		}}
 	}
 

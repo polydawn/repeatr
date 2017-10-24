@@ -16,21 +16,21 @@ import (
 // The runrecord need only have gotten past `mixins.InitRunRecord` so far
 // (we use it for its guid).
 func MakeWorkDirs(workspaceFs fs.FS, rr api.RunRecord) (
-	jobPath fs.RelPath, // Relative to workspaceFs.
+	jobFs fs.FS, // New osfs handle where you can put job-lifetime/tmp files.
 	chrootFs fs.FS, // New osfs handle for the chroot (conincidentally inside jobPath).
 	err error,
 ) {
-	if err := fsOp.MkdirAll(osfs.New(fs.AbsolutePath{}), workspaceFs.BasePath().CoerceRelative(), 0700); err != nil {
-		return fs.RelPath{}, nil, Errorf(repeatr.ErrLocalCacheProblem, "cannot initialize workspace dirs: %s", err)
+	wsPath := workspaceFs.BasePath()
+	if err := fsOp.MkdirAll(osfs.New(fs.AbsolutePath{}), wsPath.CoerceRelative(), 0700); err != nil {
+		return nil, nil, Errorf(repeatr.ErrLocalCacheProblem, "cannot initialize workspace dirs: %s", err)
 	}
-	jobPath = fs.MustRelPath(rr.Guid)
+	jobPath := fs.MustRelPath(rr.Guid)
 	chrootPath := jobPath.Join(fs.MustRelPath("chroot"))
 	if err := workspaceFs.Mkdir(jobPath, 0700); err != nil {
-		return fs.RelPath{}, nil, Recategorize(repeatr.ErrLocalCacheProblem, err)
+		return nil, nil, Recategorize(repeatr.ErrLocalCacheProblem, err)
 	}
 	if err := workspaceFs.Mkdir(chrootPath, 0755); err != nil {
-		return fs.RelPath{}, nil, Recategorize(repeatr.ErrLocalCacheProblem, err)
+		return nil, nil, Recategorize(repeatr.ErrLocalCacheProblem, err)
 	}
-	chrootFs = osfs.New(workspaceFs.BasePath().Join(chrootPath))
-	return
+	return osfs.New(wsPath.Join(jobPath)), osfs.New(wsPath.Join(chrootPath)), nil
 }

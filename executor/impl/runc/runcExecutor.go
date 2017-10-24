@@ -1,4 +1,4 @@
-package chroot
+package runc
 
 import (
 	"context"
@@ -59,7 +59,7 @@ func (cfg Executor) Run(
 	mixins.InitRunRecord(&rr, formula)        // Includes picking a random guid for the job, which we use in all temp files.
 
 	// Make work dirs. Including whole workspace dir and parents, if necessary.
-	_, chrootFs, err := mixins.MakeWorkDirs(cfg.workspaceFs, rr)
+	jobFs, chrootFs, err := mixins.MakeWorkDirs(cfg.workspaceFs, rr)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (cfg Executor) Run(
 		chrootFs, cfg.assemblerTool, cfg.packTool,
 		formula, formulaCtx, mon,
 		func(chrootFs fs.FS) (err error) {
-			rr.ExitCode, err = run(ctx, formula.Action, chrootFs, input, mon)
+			rr.ExitCode, err = run(ctx, rr.Guid, formula.Action, jobFs, chrootFs, input, mon)
 			return
 		},
 	)
@@ -79,7 +79,9 @@ func (cfg Executor) Run(
 
 func run(
 	ctx context.Context,
+	jobID string,
 	action api.FormulaAction,
+	jobFs fs.FS, // a spot for other tmp/job-lifetime files.
 	chrootFs fs.FS,
 	input repeatr.InputControl,
 	mon repeatr.Monitor,
@@ -90,17 +92,35 @@ func run(
 	}
 
 	// Configure the container.
-	cmdName := action.Exec[0]
-	cmd := exec.Command(cmdName, action.Exec[1:]...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Chroot: chrootFs.BasePath().String(),
-		Credential: &syscall.Credential{
-			Uid: uint32(*action.Userinfo.Uid),
-			Gid: uint32(*action.Userinfo.Gid),
-		},
+	//  For runc, this means we have to actually *write config to disk*.
+	//  We'll pass that path as an arg again shortly.
+	useTty := false
+	if input.Chan != nil {
+		useTty = true
 	}
-	cmd.Dir = string(action.Cwd)
-	cmd.Env = envToSlice(action.Env)
+	runcCfg, err := templateRuncConfig(jobID, action, chrootFs.BasePath().String(), useTty)
+	if err != nil {
+		return -1, err
+	}
+	runcCfgPathStr := jobFs.BasePath().String() + "/config.json"
+	if err := writeConfigToFile(runcCfgPathStr, runcCfg); err != nil {
+		return -1, err
+	}
+
+	// Select a path for runc logs.
+	//  Again, we'll need this again shortly.
+	runcLogPathStr := jobFs.BasePath().String() + "/log"
+
+	// Start templating commands.
+	cmd := exec.Command("repeatr-runc",
+		"--root", jobFs.BasePath().String()+"/tmp",
+		"--debug",
+		"--log", runcLogPathStr,
+		"--log-format", "json",
+		"run",
+		"--bundle", jobFs.BasePath().String(),
+		jobID,
+	)
 
 	// Wire I/O.
 	if input.Chan != nil {
@@ -108,17 +128,24 @@ func run(
 		mixins.RunInputWriteForwarder(ctx, pipe, input.Chan)
 	}
 	proxy := mixins.NewOutputEventWriter(ctx, mon.Chan)
-	cmd.Stdout = proxy
-	cmd.Stderr = proxy
+	cmd.Stdout = proxy // TODO probably more here
+	cmd.Stderr = proxy // TODO probably more here
 
-	// Invoke!
-	return runCmd(cmd)
-}
-
-func runCmd(cmd *exec.Cmd) (int, error) {
+	// Launch runc process.
 	if err := cmd.Start(); err != nil {
 		return -1, Errorf(repeatr.ErrExecutor, "executor failed to launch: %s", err)
 	}
+
+	// Watch logs; we have additional output handling to do.
+	// TODO
+
+	// Await command completion; return its exit code.
+	//  (If we get this far, the code from the 'real' work proc is all that's left.)
+	return cmdWait(cmd)
+}
+
+// copypasta glue for get-the-real-exitcode-plz
+func cmdWait(cmd *exec.Cmd) (int, error) {
 	err := cmd.Wait()
 	if err == nil {
 		return 0, nil
@@ -141,14 +168,4 @@ func runCmd(cmd *exec.Cmd) (int, error) {
 	} else {
 		return -1, Errorf(repeatr.ErrExecutor, "unknown process wait status (%#v)", waitStatus)
 	}
-}
-
-func envToSlice(env map[string]string) []string {
-	rv := make([]string, len(env))
-	i := 0
-	for k, v := range env {
-		rv[i] = k + "=" + v
-		i++
-	}
-	return rv
 }
