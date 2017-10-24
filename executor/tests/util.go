@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"context"
+	"sync"
 	"testing"
 
 	"go.polydawn.net/go-timeless-api"
@@ -16,28 +17,34 @@ func shouldRun(t *testing.T, runTool repeatr.RunFunc, frm api.Formula, frmCtx ap
 	return *rr, txt
 }
 func run(t *testing.T, runTool repeatr.RunFunc, frm api.Formula, frmCtx api.FormulaContext) (*api.RunRecord, string, error) {
-	bm := bufferingMonitor{}.init()
+	bm := bufferingMonitor{}
 	rr, err := runTool(context.Background(), frm, baseFormulaCtx, repeatr.InputControl{}, bm.monitor())
+	bm.await()
 	return rr, bm.Txt.String(), err
 }
 
 type bufferingMonitor struct {
-	Txt bytes.Buffer
 	Ch  chan repeatr.Event
+	Wg  sync.WaitGroup
+	Txt bytes.Buffer
 	Err error
 }
 
-func (bm bufferingMonitor) init() *bufferingMonitor {
-	bm = bufferingMonitor{
+func (bm *bufferingMonitor) monitor() repeatr.Monitor {
+	*bm = bufferingMonitor{
 		Ch: make(chan repeatr.Event),
 	}
-	go func() { // leaks.  fuck the police.
-		for {
-			bm.Err = repeatr.CopyOut(<-bm.Ch, &bm.Txt)
+	bm.Wg.Add(1)
+	go func() {
+		defer bm.Wg.Done()
+		for msg := range bm.Ch {
+			bm.Err = repeatr.CopyOut(msg, &bm.Txt)
 		}
 	}()
-	return &bm
-}
-func (bm *bufferingMonitor) monitor() repeatr.Monitor {
 	return repeatr.Monitor{Chan: bm.Ch}
+}
+
+func (bm *bufferingMonitor) await() error {
+	bm.Wg.Wait()
+	return bm.Err
 }
