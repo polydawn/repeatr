@@ -20,6 +20,10 @@ action:
 			export GOROOT=/app/go/go
 			export PATH=$PATH:/app/go/go/bin
 
+			# Ensure existence of all system mounts containers use.
+			#  Your bare host probably would've had these already, but this container doesn't.
+			./meta/cgroupfs-mount
+
 			# './fling init' unnecessary because repeatr already fetched submodules
 			./fling install-deps
 			./fling fetch-plugins
