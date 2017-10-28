@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"os"
 
 	. "github.com/polydawn/go-errcat"
@@ -49,4 +52,19 @@ func demuxExecutor(executorName string) (repeatr.RunFunc, error) {
 	default:
 		return nil, Errorf(repeatr.ErrUsage, "not a known executor: %q", executorName)
 	}
+}
+
+func printRunRecord(stdout, stderr io.Writer, rr *api.RunRecord) {
+	if rr == nil {
+		return
+	}
+	// Buffer rather than go direct to stdout so we can flush with linebreaks at the same time.
+	//  This makes output slightly more readable (otherwise a stderr write can get stuck
+	//  dangling after the runrecord...).
+	var buf bytes.Buffer
+	if err := json.NewMarshallerAtlased(&buf, api.RepeatrAtlas).Marshal(rr); err != nil {
+		fmt.Fprintf(stderr, "%s\n", err)
+	}
+	buf.Write([]byte{'\n'})
+	stdout.Write(buf.Bytes())
 }

@@ -6,9 +6,6 @@ import (
 	"io"
 	"sync"
 
-	"github.com/polydawn/refmt/json"
-
-	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
 )
 
@@ -68,12 +65,7 @@ func Run(
 
 	// If a runrecord was returned always try to print it, even if we have
 	//  an error and thus it may be incomplete.
-	if rr != nil {
-		if err := json.NewMarshallerAtlased(stdout, api.RepeatrAtlas).Marshal(rr); err != nil {
-			fmt.Fprintf(stderr, "%s\n", err)
-		}
-		stdout.Write([]byte{'\n'})
-	}
+	printRunRecord(stdout, stderr, rr)
 	// Return the executor error.
 	return err
 }
