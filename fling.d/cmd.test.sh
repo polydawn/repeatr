@@ -1,4 +1,5 @@
 #!/bin/bash
+source repeatr.preamble.shlib
 source goprj.preamble.shlib
 
 SUBSECTION=${1:-"..."}

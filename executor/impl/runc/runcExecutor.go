@@ -3,7 +3,9 @@ package runc
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 
 	. "github.com/polydawn/go-errcat"
@@ -20,6 +22,7 @@ import (
 
 type Executor struct {
 	workspaceFs   fs.FS             // A working dir per execution will be made in here.
+	cmdPath       string            // Absolute path to runc binary.
 	assemblerTool *stitch.Assembler // Contains: unpackTool, caching cfg, and placer tools.
 	packTool      rio.PackFunc
 }
@@ -33,11 +36,35 @@ func NewExecutor(
 	if err != nil {
 		return nil, repeatr.ReboxRioError(err)
 	}
+	cmdPath, err := findRuncBinary()
+	if err != nil {
+		return nil, err
+	}
 	return Executor{
 		osfs.New(workDir),
+		cmdPath,
 		asm,
 		packTool,
 	}.Run, nil
+}
+
+// Look for the runc plugin binary -- we expect it to be in a path relative
+//   to our self, OR we'll take a hint from the REPEATR_PLUGINS_PATH env var.
+func findRuncBinary() (string, error) {
+	pluginsPath := os.Getenv("REPEATR_PLUGINS_PATH")
+	if pluginsPath == "" {
+		selfPath, err := os.Executable()
+		if err != nil {
+			return "", Errorf(repeatr.ErrExecutor, "runc executor not available: cannot find plugin: %s", err)
+		}
+		pluginsPath = filepath.Join(filepath.Dir(selfPath), "plugins")
+	}
+	expectedPath := filepath.Join(pluginsPath, "repeatr-plugin-runc")
+	_, err := exec.LookPath(expectedPath)
+	if err != nil {
+		return "", Errorf(repeatr.ErrExecutor, "runc executor not available: cannot find plugin: %s", err)
+	}
+	return expectedPath, nil
 }
 
 var _ repeatr.RunFunc = Executor{}.Run
@@ -70,14 +97,14 @@ func (cfg Executor) Run(
 		chrootFs, cfg.assemblerTool, cfg.packTool,
 		formula, formulaCtx, mon,
 		func(chrootFs fs.FS) (err error) {
-			rr.ExitCode, err = run(ctx, rr.Guid, formula.Action, jobFs, chrootFs, input, mon)
+			rr.ExitCode, err = cfg.run(ctx, rr.Guid, formula.Action, jobFs, chrootFs, input, mon)
 			return
 		},
 	)
 	return &rr, err
 }
 
-func run(
+func (cfg Executor) run(
 	ctx context.Context,
 	jobID string,
 	action api.FormulaAction,
@@ -112,7 +139,7 @@ func run(
 	runcLogPathStr := jobFs.BasePath().String() + "/log"
 
 	// Start templating commands.
-	cmd := exec.Command("repeatr-runc",
+	cmd := exec.Command(cfg.cmdPath,
 		"--root", jobFs.BasePath().String()+"/tmp",
 		"--debug",
 		"--log", runcLogPathStr,

@@ -1,0 +1,3 @@
+
+# Explicitly export plugin paths, because the default rule of "relative to the binary" doesn't work for tests.
+export REPEATR_PLUGINS_PATH="$FLING_BASE/bin/plugins"
