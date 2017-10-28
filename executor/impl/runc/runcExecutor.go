@@ -151,8 +151,11 @@ func (cfg Executor) run(
 
 	// Wire I/O.
 	if input.Chan != nil {
-		pipe, _ := cmd.StdinPipe()
-		mixins.RunInputWriteForwarder(ctx, pipe, input.Chan)
+		// Dire hack: reach all the way out to the system stdin handle.
+		// We need this for TTY reasons.
+		// Future work: do our own PTY management, giving us room for handling
+		//  custom escape sequences, isolating this code better, etc.
+		cmd.Stdin = os.Stdin
 	}
 	proxy := mixins.NewOutputEventWriter(ctx, mon.Chan)
 	cmd.Stdout = proxy // TODO probably more here
