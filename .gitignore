@@ -1,3 +1,9 @@
-/bin/
+## ignore go build intermediates
 /.gopath/pkg/
 /.gopath/tmp/
+
+## ignore output bin
+/bin/
+
+## ignore mirror/caches for plugins
+/meta/assets-mirror/
