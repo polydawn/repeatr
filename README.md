@@ -41,10 +41,18 @@ Building from Source
 Git-clone, then in the repo dir:
 
 ```
-fling init # fetch libraries
-fling      # build & test
+fling init          # fetch libraries
+fling install-deps  # build rio component (used to fetch other plugins)
+fling fetch-plugins # fetch plugins
+fling               # build & test
 ```
+
+Future incremental builds are just `fling` -- the rest of that was all first-time setup.
 
 Binaries go into the `bin/` dir; add it to your $PATH.
 
 Libraries are handled via git submodules.  You can run `fling init` again at any time to re-sync them.
+Plugins are handled via `rio`, another part of the Timeless Stack that Repeatr builds upon.
+
+You can use `fling -h` to see other individual build and test command options.
+For example `fling test` will only run tests; `fling install` will not test, just build binares in `bin/`.
