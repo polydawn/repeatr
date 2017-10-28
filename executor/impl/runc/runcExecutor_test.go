@@ -9,8 +9,6 @@ import (
 	. "go.polydawn.net/repeatr/testutil"
 	"go.polydawn.net/rio/client"
 	"go.polydawn.net/rio/fs"
-	"go.polydawn.net/rio/fs/osfs"
-	"go.polydawn.net/rio/stitch"
 )
 
 func TestRuncExecutor(t *testing.T) {
@@ -23,22 +21,19 @@ func TestRuncExecutor(t *testing.T) {
 		// Setup assembler and executor.  Both are reusable.
 		//  Use env to communicate our test tempdir down to Rio.
 		os.Setenv("RIO_BASE", tmpDir.String()+"/rio")
-		asm, err := stitch.NewAssembler(unpackTool)
-		AssertNoError(t, err)
-		exe := Executor{
-			osfs.New(tmpDir.Join(fs.MustRelPath("ws"))),
-			asm,
+		runTool, err := NewExecutor(
+			tmpDir.Join(fs.MustRelPath("ws")),
+			unpackTool,
 			packTool,
-		}
+		)
+		AssertNoError(t, err)
 
-		// TODO uncomment 'em as they start to work :D
-		_, _ = exe, tests.CheckHelloWorldTxt
-		//	tests.CheckHelloWorldTxt(t, exe.Run)
-		//	tests.CheckRoundtripRootfs(t, exe.Run)
-		//	tests.CheckReportingExitCodes(t, exe.Run)
-		//	tests.CheckErrorFromUnfetchableWares(t, exe.Run)
-		//	tests.CheckUserinfoDefault(t, exe.Run)
-		//	tests.CheckAdvancedUserinfo(t, exe.Run)
-		//	tests.CheckRootyUserinfo(t, exe.Run)
+		tests.CheckHelloWorldTxt(t, runTool)
+		tests.CheckRoundtripRootfs(t, runTool)
+		tests.CheckReportingExitCodes(t, runTool)
+		tests.CheckErrorFromUnfetchableWares(t, runTool)
+		tests.CheckUserinfoDefault(t, runTool)
+		tests.CheckAdvancedUserinfo(t, runTool)
+		tests.CheckRootyUserinfo(t, runTool)
 	})
 }
