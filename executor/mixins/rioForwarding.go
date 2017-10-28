@@ -87,7 +87,7 @@ func CleanupFuncWithLogging(cleanupFunc func() error, mon repeatr.Monitor) func(
 			Log: &repeatr.Event_Log{
 				Time:  time.Now(),
 				Level: repeatr.LogError,
-				Msg:   "error during cleanup",
+				Msg:   "error during cleanup: " + err.Error(),
 				Detail: [][2]string{
 					{"error", err.Error()},
 				},
