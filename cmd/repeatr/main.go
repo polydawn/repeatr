@@ -49,7 +49,7 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 			Required().
 			StringVar(&argsRun.FormulaPath)
 		cmdRun.Flag("executor", "Select an executor system to use").
-			Default("chroot").
+			Default("runc").
 			EnumVar(&argsRun.Executor,
 				"runc", "chroot")
 		bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
@@ -66,7 +66,7 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 			Required().
 			StringVar(&argsTwerk.FormulaPath)
 		cmdTwerk.Flag("executor", "Select an executor system to use").
-			Default("chroot").
+			Default("runc").
 			EnumVar(&argsTwerk.Executor,
 				"runc", "chroot")
 		bhvs[cmdTwerk.FullCommand()] = behavior{&argsTwerk, func() error {
