@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	stdjson "encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -65,6 +66,9 @@ func printRunRecord(stdout, stderr io.Writer, rr *api.RunRecord) {
 	if err := json.NewMarshallerAtlased(&buf, api.RepeatrAtlas).Marshal(rr); err != nil {
 		fmt.Fprintf(stderr, "%s\n", err)
 	}
-	buf.Write([]byte{'\n'})
-	stdout.Write(buf.Bytes())
+	// Oh yey we need a second buffer to prittyprint (we should make refmt do this ffs)
+	var buf2 bytes.Buffer
+	stdjson.Indent(&buf2, buf.Bytes(), "", "\t")
+	buf2.Write([]byte{'\n'})
+	stdout.Write(buf2.Bytes())
 }
