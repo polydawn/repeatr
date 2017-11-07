@@ -39,9 +39,14 @@ Repeatr is in Alpha.
 This branch is the "v0.200" development branch -- it's all the accumulated API changes we've learned we wanted to make after several years.
 Some docs may refer to the older versions; please forgive the mess as we transition.
 
-This "v0.200" branch is nearly up to feature-parity with the previous versions already; we recommend being up here on the new stuff if you can.
+This "v0.200" branch is nearly up to feature-parity with the previous versions already; we recommend being up here on the new stuff if you can,
+but the "v0.15" releases are still stable and available if you so choose.
 
-There are no binary releases yet, as we're still in development; you'll have to build from source to enjoy the latest API.
+Despite being in alpha, we consider the repeatr API fairly stable, and are happy to recommend building with it.
+We made one set of breaking changes out of the last 2.5 years; and we expect this API to last at least twice as long as the previous one.
+
+Binary releases releases are available from the [github releases page](https://github.com/polydawn/repeatr/releases).
+It's also easy to build from source if you want the absolute latest bleeding-edge features.
 
 
 
