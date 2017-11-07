@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/rio/fs"
 )
 
 func Run(
@@ -14,7 +15,7 @@ func Run(
 	executorName string,
 	formulaPath string,
 	stdout, stderr io.Writer,
-	memoDir string,
+	memoDir *fs.AbsolutePath,
 ) (err error) {
 	// Load formula and build executor.
 	executor, err := demuxExecutor(executorName)
@@ -79,6 +80,12 @@ func Run(
 	// If a runrecord was returned always try to print it, even if we have
 	//  an error and thus it may be incomplete.
 	printRunRecord(stdout, stderr, rr)
+	// Memoization on the other hand only runs if there was no executor error.
+	if err == nil {
+		if err := saveMemo(formula.SetupHash(), memoDir, rr); err != nil {
+			fmt.Fprintf(stderr, "log: lvl=%s msg=%s err=%s\n", repeatr.LogWarn, "saving memoized runRecord failed", err)
+		}
+	}
 	// Return the executor error.
 	return err
 }

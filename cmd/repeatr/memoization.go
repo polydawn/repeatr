@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"path/filepath"
 
 	. "github.com/polydawn/go-errcat"
 	"github.com/polydawn/refmt"
@@ -10,6 +9,7 @@ import (
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/rio/fs"
 )
 
 /*
@@ -17,16 +17,13 @@ import (
 
 	If it doesn't exist (or memoDir is zero entirely), returns nil nil.
 */
-func loadMemo(setupHash api.SetupHash, memoDir string) (rr *api.RunRecord, err error) {
+func loadMemo(setupHash api.SetupHash, memoDir *fs.AbsolutePath) (rr *api.RunRecord, err error) {
 	// Nil result if no memodir.  That's fine.
-	if memoDir == "" {
+	if memoDir == nil {
 		return nil, nil
 	}
-
 	// Try to open file.
-	// REVIEW should probably use the threesplits too I guess?  unclear how far this needs to scale.
-	// REVIEW should we make sure this can jive with hitch runrecord layouts?  (which are not one-to-many with the setupHash?)
-	f, err := os.Open(filepath.Join(memoDir, string(setupHash)))
+	f, err := os.Open(memoPath(setupHash, *memoDir).String())
 	if err != nil {
 		// If not exists, no memo.  Fine.
 		if os.IsNotExist(err) {
@@ -36,10 +33,34 @@ func loadMemo(setupHash api.SetupHash, memoDir string) (rr *api.RunRecord, err e
 		return nil, Errorf(repeatr.ErrLocalCacheProblem, "error reading memodir: %s", err)
 	}
 	defer f.Close()
-
 	// Read and return the memoized runrecord.
+	rr = &api.RunRecord{}
 	if err := refmt.NewUnmarshallerAtlased(json.DecodeOptions{}, f, api.RepeatrAtlas).Unmarshal(rr); err != nil {
 		return nil, Errorf(repeatr.ErrLocalCacheProblem, "error parsing memo for setupHash %q: %s", setupHash, err)
 	}
 	return rr, nil
+}
+
+func saveMemo(setupHash api.SetupHash, memoDir *fs.AbsolutePath, rr *api.RunRecord) error {
+	// Skip if no memodir.  That's fine.
+	if memoDir == nil {
+		return nil
+	}
+	// Open file.
+	f, err := os.OpenFile(memoPath(setupHash, *memoDir).String(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return Errorf(repeatr.ErrLocalCacheProblem, "could not save memo: %s", err)
+	}
+	defer f.Close()
+	// Write.
+	if err := refmt.NewMarshallerAtlased(json.EncodeOptions{}, f, api.RepeatrAtlas).Marshal(rr); err != nil {
+		return Errorf(repeatr.ErrLocalCacheProblem, "could not save memo: %s", err)
+	}
+	return nil
+}
+
+func memoPath(setupHash api.SetupHash, memoDir fs.AbsolutePath) fs.AbsolutePath {
+	// REVIEW should probably use the threesplits too I guess?  unclear how far this needs to scale.
+	// REVIEW should we make sure this can jive with hitch runrecord layouts?  (which are not one-to-many with the setupHash?)
+	return memoDir.Join(fs.MustRelPath(string(setupHash)))
 }
