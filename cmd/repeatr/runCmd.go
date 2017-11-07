@@ -14,6 +14,7 @@ func Run(
 	executorName string,
 	formulaPath string,
 	stdout, stderr io.Writer,
+	memoDir string,
 ) (err error) {
 	// Load formula and build executor.
 	executor, err := demuxExecutor(executorName)
@@ -23,6 +24,18 @@ func Run(
 	formula, formulaContext, err := loadFormula(formulaPath)
 	if err != nil {
 		return err
+	}
+
+	// Consider possibility of memoization.
+	//  If a memo dir is set and it contains a relevant record, we just echo it.
+	rr, err := loadMemo(formula.SetupHash(), memoDir)
+	if err != nil {
+		return err
+	}
+	if rr != nil {
+		fmt.Fprintf(stderr, "log: lvl=%s msg=%s\n", repeatr.LogInfo, "memoized runRecord found for formula setupHash; eliding run")
+		printRunRecord(stdout, stderr, rr)
+		return nil
 	}
 
 	// Prepare monitor and IO forwarding.
@@ -54,7 +67,7 @@ func Run(
 	inputControl := repeatr.InputControl{}
 
 	// Run!  (And wait for output forwarding worker to finish.)
-	rr, err := executor(
+	rr, err = executor(
 		ctx,
 		*formula,
 		*formulaContext,

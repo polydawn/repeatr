@@ -53,7 +53,7 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 			EnumVar(&argsRun.Executor,
 				"runc", "chroot")
 		bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
-			return Run(ctx, argsRun.Executor, argsRun.FormulaPath, stdout, stderr)
+			return Run(ctx, argsRun.Executor, argsRun.FormulaPath, stdout, stderr, "")
 		}}
 	}
 	{
