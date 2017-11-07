@@ -11,13 +11,23 @@ Some of Repeatr's key features and goals include:
 
 - *Zero-ambiguity environment*: Repeatr is developed on the principle of "precise-by-default".  All files in your environment are managed by content-addressible storage (think: pinned as if by a git commit hash).
 - *Deep-time reproducibility*: Repeatr represents a commitment to reproducible results today, tomorrow, next week, next year, and... you get the picture.  Repeatr configuration explicitly enforces a split between << data identity >> and << data location >>.  The former never changes; the latter is explicitly variable.
-- *Communicable results*: Repeatr describes processes in a [Formula](doc/formulas.md).  Communicating a Formula -- via email, gist, pastebin, whatever -- should be enough for anyone to repeat your work.
+- *Communicable results*: Repeatr describes processes in a [Formula](https://polydawn.github.io/glossary#formula).  Communicating a Formula -- via email, gist, pastebin, whatever -- should be enough for anyone to repeat your work.
 - *Control over data flow*: Pull input files from multiple systems; explicitly declare sections of filesystem that are useful results to pass along.  Granular control lets you build pipelines that are clean, explicit, and fast.
 - *Variation builds on precision*: Repeatr designs for systems like automatic updates and matrix tests on environmental variations by building them *on top* of Formulas.  This allows clear identification of each version/test/etc, making it possible to clearly report what's been covered and what needs to be finished.  Other tools can generate and consume Formulas as an API, plotting complex pipelines and checking reproducibility of results however they see fit.
 
 Repeatr is *not* a build tool; think of it more as a workspace manager.
 It's important to have a clean workspace, fill it with good tools, and keep the materials going both in and out of your workspace well-inventoried.
 You can use `make`, `cake`, `rake`, `bake`, or whatever's popular this month inside Repeatr; Repeatr gives you a framework to make sure everyone plays nice.
+
+
+More documentation
+------------------
+
+Repeatr is just one part of an ecosystem of software called the Timeless Stack.
+
+The Timeless Stack documentation has its own repo: https://github.com/polydawn/timeless
+
+Much of the documentation is published in html book form: https://polydawn.github.io/
 
 
 
