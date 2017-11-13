@@ -10,6 +10,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/repeatr/config"
 )
 
 func main() {
@@ -53,7 +54,8 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 			EnumVar(&argsRun.Executor,
 				"runc", "chroot")
 		bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
-			return Run(ctx, argsRun.Executor, argsRun.FormulaPath, stdout, stderr)
+			memoDir := config.GetRepeatrMemoPath()
+			return Run(ctx, argsRun.Executor, argsRun.FormulaPath, stdout, stderr, memoDir)
 		}}
 	}
 	{
