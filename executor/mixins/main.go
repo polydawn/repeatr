@@ -47,5 +47,6 @@ func WithFilesystem(
 
 	// Pack outputs.
 	packSpecs := stitch.FormulaToPackSpecs(formula, formulaCtx, api.Filter_DefaultFlatten)
-	return stitch.PackMulti(ctx, packTool, chrootFs, packSpecs)
+	results, err = stitch.PackMulti(ctx, packTool, chrootFs, packSpecs)
+	return results, repeatr.ReboxRioError(err)
 }
