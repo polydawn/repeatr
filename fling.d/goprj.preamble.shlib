@@ -4,7 +4,7 @@ set -euo pipefail
 
 source goprj.lib.shlib
 
-cd "$FLING_BASE"
+cd "$GOPATH/src/$GOPRJ_PKG"
 
 ## Unique to this project:
 ##  we need to exec to other tools in our suite!  modify PATH:
