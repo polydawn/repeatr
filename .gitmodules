@@ -37,3 +37,42 @@
 [submodule ".gopath/src/github.com/syndtr/gocapability"]
 	path = .gopath/src/github.com/syndtr/gocapability
 	url = https://github.com/syndtr/gocapability
+[submodule ".gopath/src/gopkg.in/src-d/go-git.v4"]
+	path = .gopath/src/gopkg.in/src-d/go-git.v4
+	url = https://github.com/src-d/go-git
+[submodule ".gopath/src/gopkg.in/warnings.v0"]
+	path = .gopath/src/gopkg.in/warnings.v0
+	url = https://gopkg.in/warnings.v0
+[submodule ".gopath/src/golang.org/x/crypto"]
+	path = .gopath/src/golang.org/x/crypto
+	url = https://go.googlesource.com/crypto
+[submodule ".gopath/src/golang.org/x/net"]
+	path = .gopath/src/golang.org/x/net
+	url = https://go.googlesource.com/net
+[submodule ".gopath/src/github.com/kevinburke/ssh_config"]
+	path = .gopath/src/github.com/kevinburke/ssh_config
+	url = https://github.com/kevinburke/ssh_config
+[submodule ".gopath/src/github.com/pelletier/go-buffruneio"]
+	path = .gopath/src/github.com/pelletier/go-buffruneio
+	url = https://github.com/pelletier/go-buffruneio
+[submodule ".gopath/src/github.com/jbenet/go-context"]
+	path = .gopath/src/github.com/jbenet/go-context
+	url = https://github.com/jbenet/go-context
+[submodule ".gopath/src/github.com/src-d/gcfg"]
+	path = .gopath/src/github.com/src-d/gcfg
+	url = https://github.com/src-d/gcfg
+[submodule ".gopath/src/github.com/mitchellh/go-homedir"]
+	path = .gopath/src/github.com/mitchellh/go-homedir
+	url = https://github.com/mitchellh/go-homedir
+[submodule ".gopath/src/gopkg.in/src-d/go-billy.v4"]
+	path = .gopath/src/gopkg.in/src-d/go-billy.v4
+	url = https://github.com/src-d/go-billy
+[submodule ".gopath/src/golang.org/x/text"]
+	path = .gopath/src/golang.org/x/text
+	url = https://go.googlesource.com/text
+[submodule ".gopath/src/github.com/xanzy/ssh-agent"]
+	path = .gopath/src/github.com/xanzy/ssh-agent
+	url = https://github.com/xanzy/ssh-agent
+[submodule ".gopath/src/github.com/sergi/go-diff"]
+	path = .gopath/src/github.com/sergi/go-diff
+	url = https://github.com/sergi/go-diff
