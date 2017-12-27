@@ -6,6 +6,8 @@ import (
 	"io"
 	"sync"
 
+	. "github.com/polydawn/go-errcat"
+
 	"go.polydawn.net/go-timeless-api/repeatr"
 )
 
@@ -16,6 +18,8 @@ func Twerk(
 	stdin io.Reader,
 	stdout, stderr io.Writer,
 ) (err error) {
+	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
+
 	// Load formula and build executor.
 	executor, err := demuxExecutor(executorName)
 	if err != nil {

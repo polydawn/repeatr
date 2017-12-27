@@ -48,7 +48,9 @@ func (cfg Executor) Run(
 	formulaCtx api.FormulaContext,
 	input repeatr.InputControl,
 	mon repeatr.Monitor,
-) (*api.RunRecord, error) {
+) (_ *api.RunRecord, err error) {
+	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
+
 	if mon.Chan != nil {
 		defer close(mon.Chan)
 	}

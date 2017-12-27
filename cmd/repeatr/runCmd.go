@@ -6,6 +6,8 @@ import (
 	"io"
 	"sync"
 
+	. "github.com/polydawn/go-errcat"
+
 	"go.polydawn.net/go-timeless-api/repeatr"
 	"go.polydawn.net/rio/fs"
 )
@@ -17,6 +19,8 @@ func Run(
 	stdout, stderr io.Writer,
 	memoDir *fs.AbsolutePath,
 ) (err error) {
+	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
+
 	// Load formula and build executor.
 	executor, err := demuxExecutor(executorName)
 	if err != nil {
