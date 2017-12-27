@@ -108,6 +108,31 @@ func templateRuncConfig(jobID string, action api.FormulaAction, rootPath string,
 					"gid=5", // alarming magic number
 				},
 			},
+			map[string]interface{}{
+				// "/dev/shm" is not a requirement of posix or anything,
+				// but good luck running a wide variety of desktop
+				// applications without it; it's a defacto standard.
+				"destination": "/dev/shm",
+				"type":        "tmpfs",
+				"source":      "shm",
+				"options": []string{
+					"nosuid",
+					"noexec",
+					"nodev",
+					"mode=1777",
+					"size=65536k",
+				},
+			},
+			map[string]interface{}{
+				"destination": "/dev/mqueue",
+				"type":        "mqueue",
+				"source":      "mqueue",
+				"options": []string{
+					"nosuid",
+					"noexec",
+					"nodev",
+				},
+			},
 		},
 		"linux": map[string]interface{}{
 			"resources": map[string]interface{}{
