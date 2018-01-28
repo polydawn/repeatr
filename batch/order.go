@@ -17,7 +17,7 @@ import (
 	is more important than cleverness; so is the regional stability of the
 	sort in the face of changes in other parts of the graph.
 */
-func orderSteps(basting api.Basting) ([]string, error) {
+func OrderSteps(basting api.Basting) ([]string, error) {
 	result := make([]string, 0, len(basting.Steps))
 	todo := make(map[string]struct{}, len(basting.Steps))
 	for node := range basting.Steps {

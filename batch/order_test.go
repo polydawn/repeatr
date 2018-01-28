@@ -14,7 +14,7 @@ func TestNilRelationLexicalOrdering(t *testing.T) {
 		"stepA": {},
 		"stepC": {},
 	}}
-	order, err := orderSteps(basting)
+	order, err := OrderSteps(basting)
 	WantEqual(t, err, nil)
 	WantEqual(t, order, []string{
 		"stepA",
@@ -40,7 +40,7 @@ func TestFanoutLexicalOrdering(t *testing.T) {
 		}},
 		"step0": {},
 	}}
-	order, err := orderSteps(basting)
+	order, err := OrderSteps(basting)
 	WantEqual(t, err, nil)
 	WantEqual(t, order, []string{
 		"step0",
@@ -64,7 +64,7 @@ func TestFanInLexicalOrdering(t *testing.T) {
 			"/3": {"wire", "stepD", "/out"},
 		}},
 	}}
-	order, err := orderSteps(basting)
+	order, err := OrderSteps(basting)
 	WantEqual(t, err, nil)
 	WantEqual(t, order, []string{
 		"stepA",
@@ -88,7 +88,7 @@ func TestSimpleLinearOrdering(t *testing.T) {
 			"/": {"wire", "stepC", "/out"},
 		}},
 	}}
-	order, err := orderSteps(basting)
+	order, err := OrderSteps(basting)
 	WantEqual(t, err, nil)
 	WantEqual(t, order, []string{
 		"stepA",
@@ -151,7 +151,7 @@ func TestComplexOrdering(t *testing.T) {
 			"/1": {"wire", "stepJ", "/out"},
 		}},
 	}}
-	order, err := orderSteps(basting)
+	order, err := OrderSteps(basting)
 	WantEqual(t, err, nil)
 	WantEqual(t, order, []string{
 		"stepA", "stepB", "stepC", "stepD", "stepE",
