@@ -1,4 +1,4 @@
-package main
+package memo
 
 import (
 	"os"
@@ -17,13 +17,9 @@ import (
 
 	If it doesn't exist (or memoDir is zero entirely), returns nil nil.
 */
-func loadMemo(setupHash api.SetupHash, memoDir *fs.AbsolutePath) (rr *api.RunRecord, err error) {
-	// Nil result if no memodir.  That's fine.
-	if memoDir == nil {
-		return nil, nil
-	}
+func loadMemo(setupHash api.SetupHash, memoDir fs.AbsolutePath) (rr *api.RunRecord, err error) {
 	// Try to open file.
-	f, err := os.Open(memoPath(setupHash, *memoDir).String())
+	f, err := os.Open(memoPath(setupHash, memoDir).String())
 	if err != nil {
 		// If not exists, no memo.  Fine.
 		if os.IsNotExist(err) {
@@ -41,13 +37,9 @@ func loadMemo(setupHash api.SetupHash, memoDir *fs.AbsolutePath) (rr *api.RunRec
 	return rr, nil
 }
 
-func saveMemo(setupHash api.SetupHash, memoDir *fs.AbsolutePath, rr *api.RunRecord) error {
-	// Skip if no memodir.  That's fine.
-	if memoDir == nil {
-		return nil
-	}
+func saveMemo(setupHash api.SetupHash, memoDir fs.AbsolutePath, rr *api.RunRecord) error {
 	// Open file.
-	f, err := os.OpenFile(memoPath(setupHash, *memoDir).String(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := os.OpenFile(memoPath(setupHash, memoDir).String(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return Errorf(repeatr.ErrLocalCacheProblem, "could not save memo: %s", err)
 	}
@@ -61,6 +53,5 @@ func saveMemo(setupHash api.SetupHash, memoDir *fs.AbsolutePath, rr *api.RunReco
 
 func memoPath(setupHash api.SetupHash, memoDir fs.AbsolutePath) fs.AbsolutePath {
 	// REVIEW should probably use the threesplits too I guess?  unclear how far this needs to scale.
-	// REVIEW should we make sure this can jive with hitch runrecord layouts?  (which are not one-to-many with the setupHash?)
 	return memoDir.Join(fs.MustRelPath(string(setupHash)))
 }
