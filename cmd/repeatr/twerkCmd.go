@@ -88,6 +88,7 @@ func Twerk(
 		inputControl,
 		monitor,
 	)
+	close(monitor.Chan)
 	monitorWg.Wait()
 
 	// If a runrecord was returned always try to print it, even if we have

@@ -9,6 +9,7 @@ import (
 	. "github.com/polydawn/go-errcat"
 
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/repeatr/executor/impl/memo"
 	"go.polydawn.net/rio/fs"
 )
 
@@ -30,17 +31,12 @@ func Run(
 	if err != nil {
 		return err
 	}
-
-	// Consider possibility of memoization.
-	//  If a memo dir is set and it contains a relevant record, we just echo it.
-	rr, err := loadMemo(formula.SetupHash(), memoDir)
-	if err != nil {
-		return err
-	}
-	if rr != nil {
-		fmt.Fprintf(stderr, "log: lvl=%s msg=%s\n", repeatr.LogInfo, "memoized runRecord found for formula setupHash; eliding run")
-		printRunRecord(stdout, stderr, rr)
-		return nil
+	// If memodir was given, decorate the executor with memoization.
+	if memoDir != nil {
+		executor, err = memo.NewExecutor(*memoDir, executor)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Prepare monitor and IO forwarding.
@@ -72,24 +68,20 @@ func Run(
 	inputControl := repeatr.InputControl{}
 
 	// Run!  (And wait for output forwarding worker to finish.)
-	rr, err = executor(
+	rr, err := executor(
 		ctx,
 		*formula,
 		*formulaContext,
 		inputControl,
 		monitor,
 	)
+	close(monitor.Chan)
 	monitorWg.Wait()
 
 	// If a runrecord was returned always try to print it, even if we have
 	//  an error and thus it may be incomplete.
 	printRunRecord(stdout, stderr, rr)
-	// Memoization on the other hand only runs if there was no executor error.
-	if err == nil {
-		if err := saveMemo(formula.SetupHash(), memoDir, rr); err != nil {
-			fmt.Fprintf(stderr, "log: lvl=%s msg=%s err=%s\n", repeatr.LogWarn, "saving memoized runRecord failed", err)
-		}
-	}
+
 	// Return the executor error.
 	return err
 }

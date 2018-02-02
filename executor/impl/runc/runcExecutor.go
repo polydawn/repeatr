@@ -78,10 +78,6 @@ func (cfg Executor) Run(
 ) (_ *api.RunRecord, err error) {
 	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
 
-	if mon.Chan != nil {
-		defer close(mon.Chan)
-	}
-
 	// Workspace setup and params defaulting.
 	formula = cradle.FormulaDefaults(formula) // Initialize formula default values.
 	rr := api.RunRecord{}                     // Start filling out record keeping!

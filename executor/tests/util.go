@@ -19,6 +19,7 @@ func shouldRun(t *testing.T, runTool repeatr.RunFunc, frm api.Formula, frmCtx ap
 func run(t *testing.T, runTool repeatr.RunFunc, frm api.Formula, frmCtx api.FormulaContext) (*api.RunRecord, string, error) {
 	bm := bufferingMonitor{}
 	rr, err := runTool(context.Background(), frm, baseFormulaCtx, repeatr.InputControl{}, bm.monitor())
+	close(bm.Ch)
 	bm.await()
 	return rr, bm.Txt.String(), err
 }
