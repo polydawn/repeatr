@@ -8,12 +8,13 @@ import (
 
 	. "github.com/polydawn/go-errcat"
 
+	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
 	"go.polydawn.net/repeatr/executor/impl/memo"
 	"go.polydawn.net/rio/fs"
 )
 
-func Run(
+func RunCmd(
 	ctx context.Context,
 	executorName string,
 	formulaPath string,
@@ -22,20 +23,38 @@ func Run(
 ) (err error) {
 	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
 
-	// Load formula and build executor.
-	executor, err := demuxExecutor(executorName)
+	// Load formula.
+	formula, formulaCtx, err := loadFormula(formulaPath)
 	if err != nil {
 		return err
 	}
-	formula, formulaContext, err := loadFormula(formulaPath)
+
+	// Run!
+	_, err = Run(ctx, executorName, *formula, *formulaCtx, stdout, stderr, memoDir)
+	return err
+}
+
+// Run with all the I/O wiring to the terminal.
+// (Not particularly reusable, except in the Batch mode, which is also
+// somewhat placeholder and should later use an exec boundary and API.)
+func Run(
+	ctx context.Context,
+	executorName string,
+	formula api.Formula,
+	formulaCtx api.FormulaContext,
+	stdout, stderr io.Writer,
+	memoDir *fs.AbsolutePath,
+) (rr *api.RunRecord, err error) {
+	// Demux and initialize executor.
+	executor, err := demuxExecutor(executorName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// If memodir was given, decorate the executor with memoization.
 	if memoDir != nil {
 		executor, err = memo.NewExecutor(*memoDir, executor)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -68,10 +87,10 @@ func Run(
 	inputControl := repeatr.InputControl{}
 
 	// Run!  (And wait for output forwarding worker to finish.)
-	rr, err := executor(
+	rr, err = executor(
 		ctx,
-		*formula,
-		*formulaContext,
+		formula,
+		formulaCtx,
 		inputControl,
 		monitor,
 	)
@@ -82,6 +101,5 @@ func Run(
 	//  an error and thus it may be incomplete.
 	printRunRecord(stdout, stderr, rr)
 
-	// Return the executor error.
-	return err
+	return rr, err
 }

@@ -1,0 +1,64 @@
+{
+	"steps": {
+		"stepBar": {
+			"imports": {
+				"/": "example.timeless.io/base:201801:linux-amd64",
+				"/woof": "wire:stepFoo:/task/out"
+			},
+			"formula": {
+				"inputs": {
+					"/": "tar:6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6"
+				},
+				"action": {
+					"exec": [
+						"/bin/cat",
+						"/woof/records"
+					]
+				},
+				"outputs": {}
+			}
+		},
+		"stepFoo": {
+			"imports": {
+				"/": "example.timeless.io/base:201801:linux-amd64"
+			},
+			"formula": {
+				"inputs": {
+					"/": "tar:6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6"
+				},
+				"action": {
+					"exec": [
+						"/bin/bash",
+						"-c",
+						"mkdir out\nls -la /usr/bin | tee > out/records"
+					]
+				},
+				"outputs": {
+					"/task/out": {"packtype": "tar"}
+				}
+			}
+		}
+	},
+	"contexts": {
+		"stepBar": {
+			"fetchUrls": {
+				"/": [
+					"file://./fixtures/busybash.tgz"
+				],
+				"/woof": [
+					"ca+file://./wares/"
+				]
+			}
+		},
+		"stepFoo": {
+			"fetchUrls": {
+				"/": [
+					"file://./fixtures/busybash.tgz"
+				]
+			},
+			"saveUrls": {
+				"/task/out": "ca+file://./wares/"
+			}
+		}
+	}
+}

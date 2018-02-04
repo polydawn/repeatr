@@ -55,7 +55,25 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 				"runc", "chroot")
 		bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
 			memoDir := config.GetRepeatrMemoPath()
-			return Run(ctx, argsRun.Executor, argsRun.FormulaPath, stdout, stderr, memoDir)
+			return RunCmd(ctx, argsRun.Executor, argsRun.FormulaPath, stdout, stderr, memoDir)
+		}}
+	}
+	{
+		cmdBatch := app.Command("batch", "WIP -- Execute basted batch of formulas.")
+		argsBatch := struct {
+			BastingPath string
+			Executor    string
+		}{}
+		cmdBatch.Arg("basting", "Path to basting file.").
+			Required().
+			StringVar(&argsBatch.BastingPath)
+		cmdBatch.Flag("executor", "Select an executor system to use").
+			Default("runc").
+			EnumVar(&argsBatch.Executor,
+				"runc", "chroot")
+		bhvs[cmdBatch.FullCommand()] = behavior{&argsBatch, func() error {
+			memoDir := config.GetRepeatrMemoPath()
+			return BatchCmd(ctx, argsBatch.Executor, argsBatch.BastingPath, stdout, stderr, memoDir)
 		}}
 	}
 	{
