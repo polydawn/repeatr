@@ -31,6 +31,18 @@ func loadFormula(formulaPath string) (*api.Formula, *api.FormulaContext, error) 
 	return &slot.Formula, slot.Context, nil
 }
 
+func loadBasting(bastingPath string) (*api.Basting, error) {
+	f, err := os.Open(bastingPath)
+	if err != nil {
+		return nil, Errorf(repeatr.ErrUsage, "error opening basting file: %s", err)
+	}
+	var slot api.Basting
+	if err := json.NewUnmarshallerAtlased(f, api.HitchAtlas).Unmarshal(&slot); err != nil {
+		return nil, Errorf(repeatr.ErrUsage, "basting file does not parse: %s", err)
+	}
+	return &slot, nil
+}
+
 func demuxExecutor(executorName string) (repeatr.RunFunc, error) {
 	// Pack and unpack tools are always the Rio exec client.
 	var (
