@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	stdjson "encoding/json"
 	"fmt"
 	"io"
 
 	. "github.com/polydawn/go-errcat"
+	"github.com/polydawn/refmt/json"
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
@@ -63,5 +66,28 @@ func BatchCmd(
 		runRecords[stepName] = *rr
 	}
 
+	// Now that we've finished all steps, we can print all the final export wares:
+	//  (FUTURE: this format should be something almost ready to pipe into a `hitch commit` command!)
+	exports := map[api.ItemName]api.WareID{}
+	for itemName, wire := range basting.Exports {
+		exports[itemName] = runRecords[string(wire.ReleaseName)].Results[api.AbsPath(wire.ItemName)]
+	}
+	printBatchResults(stdout, stderr, exports)
+
 	return nil
+}
+
+func printBatchResults(stdout, stderr io.Writer, exports map[api.ItemName]api.WareID) {
+	// Buffer rather than go direct to stdout so we can flush with linebreaks at the same time.
+	//  This makes output slightly more readable (otherwise a stderr write can get stuck
+	//  dangling after the runrecord...).
+	var buf bytes.Buffer
+	if err := json.NewMarshallerAtlased(&buf, api.HitchAtlas).Marshal(exports); err != nil {
+		fmt.Fprintf(stderr, "%s\n", err)
+	}
+	// Oh yey we need a second buffer to prittyprint (we should make refmt do this ffs)
+	var buf2 bytes.Buffer
+	stdjson.Indent(&buf2, buf.Bytes(), "", "\t")
+	buf2.Write([]byte{'\n'})
+	stdout.Write(buf2.Bytes())
 }

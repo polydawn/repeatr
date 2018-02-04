@@ -18,6 +18,27 @@
 				"outputs": {}
 			}
 		},
+		"stepZaz": {
+			"imports": {
+				"/": "example.timeless.io/base:201801:linux-amd64",
+				"/reloc": "wire:stepFoo:/task/out"
+			},
+			"formula": {
+				"inputs": {
+					"/": "tar:6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6"
+				},
+				"action": {
+					"exec": [
+						"/bin/bash",
+						"-c",
+						"mkdir out\nwc /reloc/records | tee > out/summary"
+					]
+				},
+				"outputs": {
+					"/task/out": {"packtype": "tar"}
+				}
+			}
+		},
 		"stepFoo": {
 			"imports": {
 				"/": "example.timeless.io/base:201801:linux-amd64"
@@ -39,6 +60,10 @@
 			}
 		}
 	},
+	"exports": {
+		"verbose": "wire:stepFoo:/task/out",
+		"summary": "wire:stepZaz:/task/out",
+	}
 	"contexts": {
 		"stepBar": {
 			"fetchUrls": {
@@ -48,6 +73,19 @@
 				"/woof": [
 					"ca+file://./wares/"
 				]
+			}
+		},
+		"stepZaz": {
+			"fetchUrls": {
+				"/": [
+					"file://./fixtures/busybash.tgz"
+				],
+				"/reloc": [
+					"ca+file://./wares/"
+				]
+			},
+			"saveUrls": {
+				"/task/out": "ca+file://./wares/"
 			}
 		},
 		"stepFoo": {
