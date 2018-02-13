@@ -62,8 +62,8 @@
 	},
 	"exports": {
 		"verbose": "wire:stepFoo:/task/out",
-		"summary": "wire:stepZaz:/task/out",
-	}
+		"summary": "wire:stepZaz:/task/out"
+	},
 	"contexts": {
 		"stepBar": {
 			"fetchUrls": {
