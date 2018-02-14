@@ -29,7 +29,8 @@ func RunCmd(
 	}
 
 	// Run!
-	_, err = Run(ctx, executorName, *formula, *formulaCtx, stdout, stderr, memoDir)
+	printer := ansi{stdout, stderr} // todo: switch
+	_, err = Run(ctx, executorName, *formula, *formulaCtx, printer, memoDir)
 	return err
 }
 
@@ -41,7 +42,7 @@ func Run(
 	executorName string,
 	formula api.Formula,
 	formulaCtx api.FormulaContext,
-	stdout, stderr io.Writer,
+	printer printer,
 	memoDir *fs.AbsolutePath,
 ) (rr *api.RunRecord, err error) {
 	// Demux and initialize executor.
@@ -58,7 +59,6 @@ func Run(
 	}
 
 	// Prepare monitor and IO forwarding.
-	printer := ansi{stdout, stderr} // todo: switch
 	evtChan := make(chan repeatr.Event)
 	monitor := repeatr.Monitor{evtChan}
 	monitorWg := sync.WaitGroup{}

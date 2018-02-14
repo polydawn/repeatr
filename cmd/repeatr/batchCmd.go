@@ -6,6 +6,7 @@ import (
 	stdjson "encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	. "github.com/polydawn/go-errcat"
 	"github.com/polydawn/refmt/json"
@@ -24,6 +25,8 @@ func BatchCmd(
 	memoDir *fs.AbsolutePath,
 ) (err error) {
 	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
+
+	printer := ansi{stdout, stderr} // todo: switch
 
 	// Load basting & compute evaluation order.
 	basting, err := loadBasting(bastingPath)
@@ -46,20 +49,30 @@ func BatchCmd(
 		for path, imp := range imports {
 			if imp.CatalogName == "wire" {
 				formula.Inputs[path] = runRecords[string(imp.ReleaseName)].Results[api.AbsPath(imp.ItemName)]
-				fmt.Fprintf(stderr, "log: lvl=%s msg=%s %v\n", repeatr.LogInfo, "wire import resolved", [][2]string{
-					{"stepName", stepName},
-					{"stepNum", fmt.Sprintf("%d/%d", stepNum+1, len(stepOrder))},
-					{"path", string(path)},
-					{"import", imp.String()},
-					{"resolved", formula.Inputs[path].String()},
+				printer.printLog(repeatr.Event_Log{
+					Time:  time.Now(),
+					Level: repeatr.LogInfo,
+					Msg:   "wire import resolved",
+					Detail: [][2]string{
+						{"stepName", stepName},
+						{"stepNum", fmt.Sprintf("%d/%d", stepNum+1, len(stepOrder))},
+						{"path", string(path)},
+						{"import", imp.String()},
+						{"resolved", formula.Inputs[path].String()},
+					},
 				})
 				break
 			}
 		}
-		rr, err := Run(ctx, executorName, formula, formulaCtx, stdout, stderr, memoDir)
+		rr, err := Run(ctx, executorName, formula, formulaCtx, printer, memoDir)
 		if err != nil {
-			fmt.Fprintf(stderr, "log: lvl=%s msg=%s %v\n", repeatr.LogError, "executor reports error", [][2]string{
-				{"err", err.Error()},
+			printer.printLog(repeatr.Event_Log{
+				Time:  time.Now(),
+				Level: repeatr.LogError,
+				Msg:   "executor reports error",
+				Detail: [][2]string{
+					{"err", err.Error()},
+				},
 			})
 			return err
 		}
