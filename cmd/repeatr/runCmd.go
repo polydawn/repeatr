@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"sync"
 
@@ -59,6 +58,7 @@ func Run(
 	}
 
 	// Prepare monitor and IO forwarding.
+	printer := ansi{stdout, stderr} // todo: switch
 	evtChan := make(chan repeatr.Event)
 	monitor := repeatr.Monitor{evtChan}
 	monitorWg := sync.WaitGroup{}
@@ -73,9 +73,9 @@ func Run(
 				}
 				switch {
 				case evt.Log != nil:
-					fmt.Fprintf(stderr, "log: lvl=%s msg=%s\n", evt.Log.Level, evt.Log.Msg)
+					printer.printLog(*evt.Log)
 				case evt.Output != nil:
-					repeatr.CopyOut(evt, stderr)
+					printer.printOutput(*evt.Output)
 				case evt.Result != nil:
 					// pass
 				}
@@ -99,7 +99,7 @@ func Run(
 
 	// If a runrecord was returned always try to print it, even if we have
 	//  an error and thus it may be incomplete.
-	printRunRecord(stdout, stderr, rr)
+	printer.printResult(repeatr.Event_Result{*rr, nil}.SetError(err))
 
 	return rr, err
 }
