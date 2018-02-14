@@ -44,7 +44,7 @@ func (p ansi) printLog(evt repeatr.Event_Log) {
 	}
 	for i, detail := range evt.Detail {
 		msg.WriteString(fmt.Sprintf(" \033[1;34m%s: \033[1;30m%v", detail[0], detail[1]))
-		if i < len(evt.Detail) { // add comma for all values except the last
+		if i < len(evt.Detail)-1 { // add comma for all values except the last
 			msg.WriteByte(',')
 		}
 	}
