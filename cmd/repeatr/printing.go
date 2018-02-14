@@ -21,7 +21,7 @@ type printer interface {
 
 var (
 	_ printer = ansi{}
-	// todo: json
+	_ printer = jsonPrinter{}
 )
 
 type ansi struct{ stdout, stderr io.Writer }
@@ -106,4 +106,27 @@ func write(w io.Writer, msg, prefix, suffix []byte) (leftover []byte, err error)
 		msg = msg[adv:]
 	}
 	return []byte{}, nil
+}
+
+type jsonPrinter struct{ stdout io.Writer }
+
+func (p jsonPrinter) printLog(evt repeatr.Event_Log) {
+	if err := json.NewMarshallerAtlased(p.stdout, repeatr.Atlas).Marshal(repeatr.Event{Log: &evt}); err != nil {
+		panic(err)
+	}
+	p.stdout.Write([]byte{'\n'})
+}
+
+func (p jsonPrinter) printOutput(evt repeatr.Event_Output) {
+	if err := json.NewMarshallerAtlased(p.stdout, repeatr.Atlas).Marshal(repeatr.Event{Output: &evt}); err != nil {
+		panic(err)
+	}
+	p.stdout.Write([]byte{'\n'})
+}
+
+func (p jsonPrinter) printResult(evt repeatr.Event_Result) {
+	if err := json.NewMarshallerAtlased(p.stdout, repeatr.Atlas).Marshal(repeatr.Event{Result: &evt}); err != nil {
+		panic(err)
+	}
+	p.stdout.Write([]byte{'\n'})
 }
