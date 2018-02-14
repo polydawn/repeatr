@@ -33,11 +33,27 @@ func BatchCmd(
 	if err != nil {
 		return err
 	}
+	printer.printLog(repeatr.Event_Log{
+		Time:  time.Now(),
+		Level: repeatr.LogInfo,
+		Msg:   "calculating evaluation dependency order...",
+		Detail: [][2]string{
+			{"graphSize", fmt.Sprintf("%d", len(basting.Steps))},
+		},
+	})
 	stepOrder, err := batch.OrderSteps(*basting)
 	if err != nil {
 		return Errorf(repeatr.ErrUsage, "structurally invalid basting: %s", err)
 	}
-	fmt.Printf("orden: %s\n", stepOrder)
+	printer.printLog(repeatr.Event_Log{
+		Time:  time.Now(),
+		Level: repeatr.LogInfo,
+		Msg:   "calculated evaluation order!",
+		Detail: [][2]string{
+			{"graphSize", fmt.Sprintf("%d", len(basting.Steps))},
+			{"order", fmt.Sprintf("%s", stepOrder)},
+		},
+	})
 
 	// Run stuff!  In order.
 	//  This is placeholder implementation quality.  We should be
