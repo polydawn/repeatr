@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"sync"
 
@@ -30,7 +29,8 @@ func RunCmd(
 	}
 
 	// Run!
-	_, err = Run(ctx, executorName, *formula, *formulaCtx, stdout, stderr, memoDir)
+	printer := ansi{stdout, stderr} // todo: switch
+	_, err = Run(ctx, executorName, *formula, *formulaCtx, printer, memoDir)
 	return err
 }
 
@@ -42,7 +42,7 @@ func Run(
 	executorName string,
 	formula api.Formula,
 	formulaCtx api.FormulaContext,
-	stdout, stderr io.Writer,
+	printer printer,
 	memoDir *fs.AbsolutePath,
 ) (rr *api.RunRecord, err error) {
 	// Demux and initialize executor.
@@ -73,9 +73,9 @@ func Run(
 				}
 				switch {
 				case evt.Log != nil:
-					fmt.Fprintf(stderr, "log: lvl=%s msg=%s\n", evt.Log.Level, evt.Log.Msg)
+					printer.printLog(*evt.Log)
 				case evt.Output != nil:
-					repeatr.CopyOut(evt, stderr)
+					printer.printOutput(*evt.Output)
 				case evt.Result != nil:
 					// pass
 				}
@@ -99,7 +99,7 @@ func Run(
 
 	// If a runrecord was returned always try to print it, even if we have
 	//  an error and thus it may be incomplete.
-	printRunRecord(stdout, stderr, rr)
+	printer.printResult(repeatr.Event_Result{*rr, nil}.SetError(err))
 
 	return rr, err
 }
