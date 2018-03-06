@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	stdjson "encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -111,12 +110,9 @@ func printBatchResults(stdout, stderr io.Writer, exports map[api.ItemName]api.Wa
 	//  This makes output slightly more readable (otherwise a stderr write can get stuck
 	//  dangling after the runrecord...).
 	var buf bytes.Buffer
-	if err := json.NewMarshallerAtlased(&buf, api.HitchAtlas).Marshal(exports); err != nil {
+	if err := json.NewMarshallerAtlased(&buf, jsonPrettyOptions, api.HitchAtlas).Marshal(exports); err != nil {
 		fmt.Fprintf(stderr, "%s\n", err)
 	}
-	// Oh yey we need a second buffer to prittyprint (we should make refmt do this ffs)
-	var buf2 bytes.Buffer
-	stdjson.Indent(&buf2, buf.Bytes(), "", "\t")
-	buf2.Write([]byte{'\n'})
-	stdout.Write(buf2.Bytes())
+	buf.Write([]byte{'\n'})
+	stdout.Write(buf.Bytes())
 }

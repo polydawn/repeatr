@@ -24,6 +24,8 @@ var (
 	_ printer = jsonPrinter{}
 )
 
+var jsonPrettyOptions = json.EncodeOptions{Line: []byte{'\n'}, Indent: []byte("    ")}
+
 type ansi struct{ stdout, stderr io.Writer }
 
 var (
@@ -75,7 +77,7 @@ func (p ansi) printResult(evt repeatr.Event_Result) {
 		return
 	}
 	rrMsg := bytes.Buffer{}
-	if err := json.NewMarshallerAtlased(&rrMsg, api.RepeatrAtlas).Marshal(evt.RunRecord); err != nil {
+	if err := json.NewMarshallerAtlased(&rrMsg, jsonPrettyOptions, api.RepeatrAtlas).Marshal(evt.RunRecord); err != nil {
 		p.printLog(repeatr.Event_Log{
 			Time:   time.Now(),
 			Level:  repeatr.LogError,
@@ -111,21 +113,21 @@ func write(w io.Writer, msg, prefix, suffix []byte) (leftover []byte, err error)
 type jsonPrinter struct{ stdout io.Writer }
 
 func (p jsonPrinter) printLog(evt repeatr.Event_Log) {
-	if err := json.NewMarshallerAtlased(p.stdout, repeatr.Atlas).Marshal(repeatr.Event{Log: &evt}); err != nil {
+	if err := json.NewMarshallerAtlased(p.stdout, json.EncodeOptions{}, repeatr.Atlas).Marshal(repeatr.Event{Log: &evt}); err != nil {
 		panic(err)
 	}
 	p.stdout.Write([]byte{'\n'})
 }
 
 func (p jsonPrinter) printOutput(evt repeatr.Event_Output) {
-	if err := json.NewMarshallerAtlased(p.stdout, repeatr.Atlas).Marshal(repeatr.Event{Output: &evt}); err != nil {
+	if err := json.NewMarshallerAtlased(p.stdout, json.EncodeOptions{}, repeatr.Atlas).Marshal(repeatr.Event{Output: &evt}); err != nil {
 		panic(err)
 	}
 	p.stdout.Write([]byte{'\n'})
 }
 
 func (p jsonPrinter) printResult(evt repeatr.Event_Result) {
-	if err := json.NewMarshallerAtlased(p.stdout, repeatr.Atlas).Marshal(repeatr.Event{Result: &evt}); err != nil {
+	if err := json.NewMarshallerAtlased(p.stdout, jsonPrettyOptions, repeatr.Atlas).Marshal(repeatr.Event{Result: &evt}); err != nil {
 		panic(err)
 	}
 	p.stdout.Write([]byte{'\n'})
