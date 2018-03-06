@@ -29,7 +29,7 @@ func RunCmd(
 	}
 
 	// Run!
-	printer := ansi{stdout, stderr} // todo: switch
+	printer := &ansi{stdout: stdout, stderr: stderr} // todo: switch
 	_, err = Run(ctx, executorName, *formula, *formulaCtx, printer, memoDir)
 	return err
 }
