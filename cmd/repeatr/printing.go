@@ -69,6 +69,13 @@ func (p *ansi) printOutput(evt repeatr.Event_Output) {
 }
 
 func (p ansi) printResult(evt repeatr.Event_Result) {
+	// Ensure any more remaining buffered output gets flushed.
+	if len(p.leftover) > 0 {
+		p.printOutput(repeatr.Event_Output{
+			Time: time.Now(), Msg: "\n",
+		})
+	}
+	// If the run errored completely, log.
 	if evt.Error != nil {
 		p.printLog(repeatr.Event_Log{
 			Time:   time.Now(),
@@ -78,6 +85,7 @@ func (p ansi) printResult(evt repeatr.Event_Result) {
 		})
 		return
 	}
+	// Emit runrecord.
 	rrMsg := bytes.Buffer{}
 	if err := json.NewMarshallerAtlased(&rrMsg, jsonPrettyOptions, api.RepeatrAtlas).Marshal(evt.RunRecord); err != nil {
 		p.printLog(repeatr.Event_Log{
