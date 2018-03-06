@@ -20,13 +20,17 @@ type printer interface {
 }
 
 var (
-	_ printer = ansi{}
+	_ printer = &ansi{}
 	_ printer = jsonPrinter{}
 )
 
 var jsonPrettyOptions = json.EncodeOptions{Line: []byte{'\n'}, Indent: []byte("    ")}
 
-type ansi struct{ stdout, stderr io.Writer }
+type ansi struct {
+	stdout, stderr io.Writer
+
+	leftover []byte
+}
 
 var (
 	logFlare       = []byte("\033[0;36m-⟩ \033[0m")
@@ -55,15 +59,13 @@ func (p ansi) printLog(evt repeatr.Event_Log) {
 	msg.WriteTo(p.stderr)
 }
 
-func (p ansi) printOutput(evt repeatr.Event_Output) {
+func (p *ansi) printOutput(evt repeatr.Event_Output) {
 	prefix := bytes.NewBuffer(outputFlare)
 	prefix.WriteString(fmt.Sprintf("[\033[1;30m%v\033[0m] ", evt.Time.Local().Format("01-02 15:04:05")))
 	prefix.Write(outputFlare)
 	prefix.WriteByte('\t')
-	leftover, _ := write(p.stderr, []byte(evt.Msg), prefix.Bytes(), append(colorReset, '\n'))
-	if len(leftover) > 0 {
-		write(p.stderr, append(leftover, '\n'), prefix.Bytes(), append(colorReset, '\n'))
-	}
+	msg := append(p.leftover, []byte(evt.Msg)...)
+	p.leftover, _ = write(p.stderr, msg, prefix.Bytes(), append(colorReset, '\n'))
 }
 
 func (p ansi) printResult(evt repeatr.Event_Result) {

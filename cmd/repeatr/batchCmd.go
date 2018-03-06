@@ -25,7 +25,7 @@ func BatchCmd(
 ) (err error) {
 	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
 
-	printer := ansi{stdout, stderr} // todo: switch
+	printer := &ansi{stdout: stdout, stderr: stderr} // todo: switch
 
 	// Load basting & compute evaluation order.
 	basting, err := loadBasting(bastingPath)
