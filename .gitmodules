@@ -16,9 +16,9 @@
 [submodule ".gopath/src/go.polydawn.net/go-timeless-api"]
 	path = .gopath/src/go.polydawn.net/go-timeless-api
 	url = https://github.com/polydawn/go-timeless-api
-[submodule ".gopath/src/github.com/polydawn/go-errcat"]
-	path = .gopath/src/github.com/polydawn/go-errcat
-	url = https://github.com/polydawn/go-errcat
+[submodule ".gopath/src/github.com/warpfork/go-errcat"]
+	path = .gopath/src/github.com/warpfork/go-errcat
+	url = https://github.com/warpfork/go-errcat
 [submodule ".gopath/src/go.polydawn.net/rio"]
 	path = .gopath/src/go.polydawn.net/rio
 	url = https://github.com/polydawn/rio
@@ -76,3 +76,6 @@
 [submodule ".gopath/src/github.com/sergi/go-diff"]
 	path = .gopath/src/github.com/sergi/go-diff
 	url = https://github.com/sergi/go-diff
+[submodule ".gopath/src/github.com/emirpasic/gods"]
+	path = .gopath/src/github.com/emirpasic/gods
+	url = https://github.com/emirpasic/gods

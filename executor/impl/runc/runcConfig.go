@@ -3,9 +3,9 @@ package runc
 import (
 	"io/ioutil"
 
-	. "github.com/polydawn/go-errcat"
 	"github.com/polydawn/refmt"
 	"github.com/polydawn/refmt/json"
+	. "github.com/warpfork/go-errcat"
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"

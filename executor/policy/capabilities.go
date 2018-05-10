@@ -3,8 +3,8 @@ package policy
 import (
 	"strings"
 
-	. "github.com/polydawn/go-errcat"
 	"github.com/syndtr/gocapability/capability"
+	. "github.com/warpfork/go-errcat"
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/rio"

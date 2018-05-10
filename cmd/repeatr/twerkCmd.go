@@ -6,7 +6,7 @@ import (
 	"io"
 	"sync"
 
-	. "github.com/polydawn/go-errcat"
+	. "github.com/warpfork/go-errcat"
 
 	"go.polydawn.net/go-timeless-api/repeatr"
 )
