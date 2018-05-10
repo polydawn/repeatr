@@ -79,3 +79,6 @@
 [submodule ".gopath/src/github.com/emirpasic/gods"]
 	path = .gopath/src/github.com/emirpasic/gods
 	url = https://github.com/emirpasic/gods
+[submodule ".gopath/src/github.com/warpfork/go-wish"]
+	path = .gopath/src/github.com/warpfork/go-wish
+	url = https://github.com/warpfork/go-wish
