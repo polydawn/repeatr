@@ -40,13 +40,24 @@ func runTestcase(t *testing.T, tc testcase) {
 	if expected := tc.stdout(); expected != nil {
 		actual := strings.Split(stdoutBuf.String(), "\n")
 		actual = paveRunrecords(actual)
+		if os.Getenv("REFRESH_FIXTURES") != "" {
+			expected = actual
+			tc.hunks.PutSection("stdout", []byte(strings.Join(expected, "\n")))
+		}
 		Wish(t, strings.Join(actual, "\n"), ShouldEqual, strings.Join(expected, "\n"))
 	}
 	if expected := tc.stderr(); expected != nil {
 		actual := strings.Split(stderrBuf.String(), "\n")
 		actual = paveAnsicolors(actual)
 		actual = paveLogtimes(actual)
+		if os.Getenv("REFRESH_FIXTURES") != "" {
+			expected = actual
+			tc.hunks.PutSection("stderr", []byte(strings.Join(expected, "\n")))
+		}
 		Wish(t, strings.Join(actual, "\n"), ShouldEqual, strings.Join(expected, "\n"))
+	}
+	if os.Getenv("REFRESH_FIXTURES") != "" {
+		tc.saveHunks()
 	}
 }
 

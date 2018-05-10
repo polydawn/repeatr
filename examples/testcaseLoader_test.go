@@ -8,12 +8,14 @@ import (
 )
 
 func loadTestcase(filename string) (tc testcase) {
+	tc.hunksFile = filename
 	tc.hunks = wishfix.MustLoadFile(filename)
 	return
 }
 
 type testcase struct {
-	hunks wishfix.Hunks
+	hunksFile string
+	hunks     wishfix.Hunks
 }
 
 func (tc testcase) command() []string {
@@ -40,4 +42,8 @@ func (tc testcase) stderr() []string {
 		return nil
 	}
 	return strings.Split(string(bs), "\n")
+}
+
+func (tc testcase) saveHunks() {
+	wishfix.MustSaveFile(tc.hunksFile, tc.hunks)
 }
