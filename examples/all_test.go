@@ -39,16 +39,18 @@ func runTestcase(t *testing.T, tc testcase) {
 	}
 	if expected := tc.stdout(); expected != nil {
 		actual := strings.Split(stdoutBuf.String(), "\n")
+		actual = paveRunrecords(actual)
 		Wish(t, strings.Join(actual, "\n"), ShouldEqual, strings.Join(expected, "\n"))
 	}
 	if expected := tc.stderr(); expected != nil {
 		actual := strings.Split(stderrBuf.String(), "\n")
+		actual = paveAnsicolors(actual)
+		actual = paveLogtimes(actual)
 		Wish(t, strings.Join(actual, "\n"), ShouldEqual, strings.Join(expected, "\n"))
 	}
 }
 
 func TestAll(t *testing.T) {
-	t.Skip("wip :)")
 	tc := loadTestcase("hello.tcase")
 	runTestcase(t, tc)
 }
