@@ -1,0 +1,12 @@
+# repeatr testcase
+
+---
+# command
+
+	repeatr run hello.formula
+
+---
+# stdout
+
+---
+# stderr
