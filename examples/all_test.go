@@ -3,6 +3,7 @@ package examples
 import (
 	"bytes"
 	"context"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -15,6 +16,7 @@ import (
 func runTestcase(t *testing.T, tc testcase) {
 	t.Helper()
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	os.Setenv("PATH", os.Getenv("GOBIN"))
 	cmd := exec.CommandContext(ctx, tc.command()[0], tc.command()[1:]...)
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
