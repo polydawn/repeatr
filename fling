@@ -80,7 +80,7 @@ function Fling_InvokeCommand {
 
 	## go
 	export FLING_BASE=${FLING_BASE:-$PWD}
-	(cd "$dir" && ./cmd.$cmd.sh)
+	(cd "$dir" && ./cmd.$cmd.sh "$@")
 }
 
 ##
