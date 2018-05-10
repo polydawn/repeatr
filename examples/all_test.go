@@ -11,6 +11,9 @@ import (
 	"time"
 
 	. "github.com/warpfork/go-wish"
+
+	. "go.polydawn.net/repeatr/testutil"
+	"go.polydawn.net/rio/fs"
 )
 
 func runTestcase(t *testing.T, tc testcase) {
@@ -62,6 +65,11 @@ func runTestcase(t *testing.T, tc testcase) {
 }
 
 func TestAll(t *testing.T) {
-	tc := loadTestcase("hello.tcase")
-	runTestcase(t, tc)
+	t.Run("group1", func(t *testing.T) {
+		WithTmpdir(func(tmpDir fs.AbsolutePath) {
+			os.Setenv("RIO_BASE", tmpDir.String())
+			runTestcase(t, loadTestcase("hello-uncached.tcase"))
+			runTestcase(t, loadTestcase("hello-cached.tcase"))
+		})
+	})
 }

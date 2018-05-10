@@ -1,0 +1,27 @@
+# repeatr testcase
+
+---
+# command
+
+	repeatr run hello.formula
+
+---
+# stdout
+
+	{
+	    "guid": "xxxxxxxx-xxxxxxxx-xxxxxxxx",
+	    "time": "22222222222",
+	    "formulaID": "AteQchZcX1WATj4rnwsmDf4Gqhe6To4CWLj4j8Ghdjd3Ab4DJ7Abk2tuBfG96jruT",
+	    "exitCode": 0,
+	    "results": {},
+	    "hostname": "znn.xxxxx.yyy"
+	}
+
+---
+# stderr
+
+	-⟩ [MM-DD hh:mm:ss] -⟩ info: read for ware "tar:6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6" opened from warehouse "file://../fixtures/busybash.tgz" --- warehouse: file://../fixtures/busybash.tgz, wareID: tar:6q7G4hWr283FpTa5Lf8heVqw9t97b5VoMU6AGszuBYAz9EzQdeHVFAou7c4W9vFcQ6
+	≡⟩ [MM-DD hh:mm:ss] ≡⟩ 	hello world!
+	∴⟩ [MM-DD hh:mm:ss] runrecord follows:
+
+---
