@@ -31,6 +31,13 @@ type behavior struct {
 	action     func() error
 }
 
+type format string
+
+const (
+	format_Ansi = "ansi"
+	format_Json = "json"
+)
+
 func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) behavior {
 	// CLI boilerplate.
 	app := kingpin.New("repeatr", "Functional computation.")
@@ -39,6 +46,13 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 	app.ErrorWriter(stderr)
 
 	// Args struct defs and flag declarations.
+	baseArgs := struct {
+		Format string
+	}{}
+	app.Flag("format", "Output api format").
+		Default(format_Ansi).
+		EnumVar(&baseArgs.Format,
+			format_Ansi, format_Json)
 	bhvs := map[string]behavior{}
 	{
 		cmdRun := app.Command("run", "Execute a formula.")
@@ -55,7 +69,8 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 				"runc", "chroot")
 		bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
 			memoDir := config.GetRepeatrMemoPath()
-			return RunCmd(ctx, argsRun.Executor, argsRun.FormulaPath, stdout, stderr, memoDir)
+			printer := setupPrinter(format(baseArgs.Format), stdout, stderr)
+			return RunCmd(ctx, argsRun.Executor, argsRun.FormulaPath, printer, memoDir)
 		}}
 	}
 	{
@@ -109,4 +124,15 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 		return bhv
 	}
 	panic("unreachable, cli parser must error on unknown commands")
+}
+
+func setupPrinter(format format, stdout, stderr io.Writer) printer {
+	switch format {
+	case format_Ansi:
+		return &ansi{stdout: stdout, stderr: stderr}
+	case format_Json:
+		return jsonPrinter{stdout: stdout}
+	default:
+		panic("unreachable")
+	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"io"
 	"sync"
 
 	. "github.com/warpfork/go-errcat"
@@ -17,7 +16,7 @@ func RunCmd(
 	ctx context.Context,
 	executorName string,
 	formulaPath string,
-	stdout, stderr io.Writer,
+	printer printer,
 	memoDir *fs.AbsolutePath,
 ) (err error) {
 	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
@@ -29,7 +28,6 @@ func RunCmd(
 	}
 
 	// Run!
-	printer := &ansi{stdout: stdout, stderr: stderr} // todo: switch
 	_, err = Run(ctx, executorName, *formula, *formulaCtx, printer, memoDir)
 	return err
 }
