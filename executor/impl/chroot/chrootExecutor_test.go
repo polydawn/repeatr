@@ -14,6 +14,10 @@ import (
 )
 
 func TestChrootExecutor(t *testing.T) {
+	if os.Getuid() != 0 {
+		t.Skip("the chroot executor requires root privs")
+	}
+
 	var (
 		unpackTool rio.UnpackFunc = rioexecclient.UnpackFunc
 		packTool   rio.PackFunc   = rioexecclient.PackFunc
