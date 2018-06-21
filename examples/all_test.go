@@ -18,6 +18,11 @@ import (
 
 func runTestcase(t *testing.T, tc testcase) {
 	t.Helper()
+	if os.Getuid() != 0 {
+		t.Skip("end-to-end example tests require root privs to set up containment and filesystems")
+		// FUTURE: there should probably be another short section you can add to say "actually, run low-priv" which would be used for testing errors.  Though this would... need some work.
+	}
+
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	os.Setenv("PATH", os.Getenv("GOBIN"))
 	cmd := exec.CommandContext(ctx, tc.command()[0], tc.command()[1:]...)

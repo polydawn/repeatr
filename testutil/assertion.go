@@ -11,8 +11,11 @@ import (
 
 type thunk func(string, ...interface{})
 
-func AssertNoError(t *testing.T, err error) { t.Helper(); lambdaNoError(t, t.Fatalf, err) }
-func WantNoError(t *testing.T, err error)   { t.Helper(); lambdaNoError(t, t.Errorf, err) }
+func AssertNoError(t *testing.T, err error) {
+	t.Helper()
+	lambdaNoError(t, t.Fatalf, err)
+}
+func WantNoError(t *testing.T, err error) { t.Helper(); lambdaNoError(t, t.Errorf, err) }
 func lambdaNoError(t *testing.T, act thunk, err error) {
 	t.Helper()
 	if err != nil {

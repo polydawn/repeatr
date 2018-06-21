@@ -12,6 +12,10 @@ import (
 )
 
 func TestRuncExecutor(t *testing.T) {
+	if os.Getuid() != 0 {
+		t.Skip("the runc executor requires root privs")
+	}
+
 	var (
 		unpackTool rio.UnpackFunc = rioexecclient.UnpackFunc
 		packTool   rio.PackFunc   = rioexecclient.PackFunc
