@@ -13,6 +13,7 @@ import (
 	"go.polydawn.net/go-timeless-api/repeatr"
 	"go.polydawn.net/go-timeless-api/rio"
 	"go.polydawn.net/repeatr/executor/impl/chroot"
+	"go.polydawn.net/repeatr/executor/impl/gvisor"
 	"go.polydawn.net/repeatr/executor/impl/runc"
 	"go.polydawn.net/rio/client"
 	"go.polydawn.net/rio/fs"
@@ -59,6 +60,11 @@ func demuxExecutor(executorName string) (repeatr.RunFunc, error) {
 	case "runc":
 		return runc.NewExecutor(
 			fs.MustAbsolutePath("/var/lib/timeless/repeatr/executor/runc/"),
+			unpackTool, packTool,
+		)
+	case "gvisor":
+		return gvisor.NewExecutor(
+			fs.MustAbsolutePath("/var/lib/timeless/repeatr/executor/gvisor/"),
 			unpackTool, packTool,
 		)
 	default:

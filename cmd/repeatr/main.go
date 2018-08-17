@@ -66,7 +66,7 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 		cmdRun.Flag("executor", "Select an executor system to use").
 			Default("runc").
 			EnumVar(&argsRun.Executor,
-				"runc", "chroot")
+				"runc", "gvisor", "chroot")
 		bhvs[cmdRun.FullCommand()] = behavior{&argsRun, func() error {
 			memoDir := config.GetRepeatrMemoPath()
 			printer := setupPrinter(format(baseArgs.Format), stdout, stderr)
