@@ -35,6 +35,7 @@ func TestRuncExecutor(t *testing.T) {
 		tests.CheckHelloWorldTxt(t, runTool)
 		tests.CheckRoundtripRootfs(t, runTool)
 		tests.CheckReportingExitCodes(t, runTool)
+		tests.CheckSettingCwd(t, runTool)
 		tests.CheckErrorFromUnfetchableWares(t, runTool)
 		tests.CheckUserinfoDefault(t, runTool)
 		tests.CheckAdvancedUserinfo(t, runTool)

@@ -70,6 +70,32 @@ func CheckReportingExitCodes(t *testing.T, runTool repeatr.RunFunc) {
 	})
 }
 
+func CheckSettingCwd(t *testing.T, runTool repeatr.RunFunc) {
+	frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
+	frm.Action = api.FormulaAction{
+		Exec: []string{"/bin/pwd"},
+	}
+	t.Run("default cwd should be /task", func(t *testing.T) {
+		rr, txt := shouldRun(t, runTool, frm, frmCtx)
+		WantEqual(t, rr.ExitCode, 0)
+		WantEqual(t, txt, "/task\n")
+	})
+	t.Run("setting other cwd should work", func(t *testing.T) {
+		frm := frm.Clone()
+		frm.Action.Cwd = "/bin"
+		rr, txt := shouldRun(t, runTool, frm, frmCtx)
+		WantEqual(t, rr.ExitCode, 0)
+		WantEqual(t, txt, "/bin\n")
+	})
+	t.Run("setting nonexisting cwd should cause it to be created and work", func(t *testing.T) {
+		frm := frm.Clone()
+		frm.Action.Cwd = "/foo/bar/wow"
+		rr, txt := shouldRun(t, runTool, frm, frmCtx)
+		WantEqual(t, rr.ExitCode, 0)
+		WantEqual(t, txt, "/foo/bar/wow\n")
+	})
+}
+
 func CheckErrorFromUnfetchableWares(t *testing.T, runTool repeatr.RunFunc) {
 	t.Run("an unfetchable input should error", func(t *testing.T) {
 		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
