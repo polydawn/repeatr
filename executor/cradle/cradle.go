@@ -14,7 +14,12 @@ import (
 
 func FormulaDefaults(frm api.Formula) api.Formula {
 	frm = frm.Clone()
-	// Always fill in a zero userinfo.
+
+	//
+	// Some values always need to be filled in if blank:
+	//
+
+	// Always fill in a non-nil userinfo.
 	if frm.Action.Userinfo == nil {
 		frm.Action.Userinfo = &api.FormulaUserinfo{}
 	}
@@ -25,16 +30,33 @@ func FormulaDefaults(frm api.Formula) api.Formula {
 	if frm.Action.Userinfo.Gid == nil {
 		frm.Action.Userinfo.Gid = ptrint(1000)
 	}
+
+	//
+	// Some values vary in their treatment depending on if 'cradle' is enabled:
+	//
+
 	// If cradle is disabled, set a zero cwd and skip the rest.
+	if frm.Action.Cwd == "" {
+		switch frm.Action.Cradle {
+		case "disable":
+			frm.Action.Cwd = "/"
+		default:
+			// '/task' is the default when cradle is enabled, because any dir at
+			//   all is more sensible than the bare root dir, and since cradle
+			//   is enabled, we'll make sure it's writable and ready to go.
+			frm.Action.Cwd = "/task"
+		}
+	}
+
+	//
+	// The rest of these values are only set if 'cradle' is enabled:
+	//
+
 	switch frm.Action.Cradle {
 	case "disable":
-		frm.Action.Cwd = "/"
 		return frm
 	default:
-		// '/task' is the default when cradle is enabled, because any dir at
-		//   all is more sensible than the bare root dir, and since cradle
-		//   is enabled, we'll make sure it's writable and ready to go.
-		frm.Action.Cwd = "/task"
+		// pass
 	}
 	// Compute remainder of userinfo.
 	//  (These aren't used if cradle=disabled, so we don't set them until now.)
