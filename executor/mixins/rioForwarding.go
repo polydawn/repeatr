@@ -51,15 +51,15 @@ func forwardRioUnpackLogLoop(
 			if !ok {
 				return
 			}
-			switch {
-			case evt.Log != nil:
-				mon.Chan <- repeatr.Event{Log: &repeatr.Event_Log{
-					Time:   evt.Log.Time,
-					Level:  repeatr.LogLevel(evt.Log.Level),
-					Msg:    evt.Log.Msg,
-					Detail: evt.Log.Detail,
-				}}
-			case evt.Progress != nil:
+			switch evt2 := evt.(type) {
+			case rio.Event_Log:
+				mon.Chan <- repeatr.Event_Log{
+					Time:   evt2.Time,
+					Level:  repeatr.LogLevel(evt2.Level),
+					Msg:    evt2.Msg,
+					Detail: evt2.Detail,
+				}
+			case rio.Event_Progress:
 				// pass... for now
 			}
 		case <-ctx.Done():
@@ -80,17 +80,13 @@ func CleanupFuncWithLogging(cleanupFunc func() error, mon repeatr.Monitor) func(
 		if err == nil {
 			return
 		}
-		if mon.Chan == nil {
-			return // sad, but no one to log it to, and not fatal.
-		}
-		mon.Chan <- repeatr.Event{
-			Log: &repeatr.Event_Log{
-				Time:  time.Now(),
-				Level: repeatr.LogError,
-				Msg:   "error during cleanup: " + err.Error(),
-				Detail: [][2]string{
-					{"error", err.Error()},
-				},
-			}}
+		mon.Send(repeatr.Event_Log{
+			Time:  time.Now(),
+			Level: repeatr.LogError,
+			Msg:   "error during cleanup: " + err.Error(),
+			Detail: [][2]string{
+				{"error", err.Error()},
+			},
+		})
 	}
 }

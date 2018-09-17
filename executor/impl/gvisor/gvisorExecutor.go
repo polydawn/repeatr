@@ -72,15 +72,15 @@ var _ repeatr.RunFunc = Executor{}.Run
 func (cfg Executor) Run(
 	ctx context.Context,
 	formula api.Formula,
-	formulaCtx api.FormulaContext,
+	formulaCtx repeatr.FormulaContext,
 	input repeatr.InputControl,
 	mon repeatr.Monitor,
-) (_ *api.RunRecord, err error) {
+) (_ *api.FormulaRunRecord, err error) {
 	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
 
 	// Workspace setup and params defaulting.
 	formula = cradle.FormulaDefaults(formula) // Initialize formula default values.
-	rr := api.RunRecord{}                     // Start filling out record keeping!
+	rr := api.FormulaRunRecord{}              // Start filling out record keeping!
 	mixins.InitRunRecord(&rr, formula)        // Includes picking a random guid for the job, which we use in all temp files.
 
 	// Make work dirs. Including whole workspace dir and parents, if necessary.

@@ -21,11 +21,11 @@ func Test(t *testing.T) {
 			Action: api.FormulaAction{
 				Exec: []string{"thing"},
 			},
-			Outputs: map[api.AbsPath]api.OutputSpec{
-				"/out": api.OutputSpec{PackType: "mocktar"},
+			Outputs: map[api.AbsPath]api.FormulaOutputSpec{
+				"/out": api.FormulaOutputSpec{PackType: "mocktar"},
 			},
 		}
-		formulaCtx := api.FormulaContext{}
+		formulaCtx := repeatr.FormulaContext{}
 
 		Convey("Should produce results", func() {
 			rr1, err := e(

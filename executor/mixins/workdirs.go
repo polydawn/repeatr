@@ -15,7 +15,7 @@ import (
 //
 // The runrecord need only have gotten past `mixins.InitRunRecord` so far
 // (we use it for its guid).
-func MakeWorkDirs(workspaceFs fs.FS, rr api.RunRecord) (
+func MakeWorkDirs(workspaceFs fs.FS, rr api.FormulaRunRecord) (
 	jobFs fs.FS, // New osfs handle where you can put job-lifetime/tmp files.
 	chrootFs fs.FS, // New osfs handle for the chroot (conincidentally inside jobPath).
 	err error,

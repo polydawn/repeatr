@@ -20,9 +20,9 @@ var (
 			Exec: []string{"/bin/echo", "hello world"},
 		},
 	}
-	baseFormulaCtx = api.FormulaContext{
-		FetchUrls: map[api.AbsPath][]api.WarehouseAddr{
-			"/": []api.WarehouseAddr{
+	baseFormulaCtx = repeatr.FormulaContext{
+		FetchUrls: map[api.AbsPath][]api.WarehouseLocation{
+			"/": []api.WarehouseLocation{
 				"file://../../../fixtures/busybash.tgz",
 			},
 		},
@@ -46,8 +46,8 @@ func CheckRoundtripRootfs(t *testing.T, runTool repeatr.RunFunc) {
 	t.Run("output unmodified root fileset should work", func(t *testing.T) {
 		frm, frmCtx := baseFormula.Clone(), baseFormulaCtx
 		frm.Action.Cradle = "disable" // prevent homedir and cwd from being made
-		frm.Outputs = map[api.AbsPath]api.OutputSpec{
-			"/": {PackType: "tar", Filters: api.Filter_NoMutation},
+		frm.Outputs = map[api.AbsPath]api.FormulaOutputSpec{
+			"/": {PackType: "tar", Filter: api.FilesetPackFilter_Lossless},
 		}
 		rr, _ := shouldRun(t, runTool, frm, frmCtx)
 		t.Run("output ware from '/' should be familiar!", func(t *testing.T) {

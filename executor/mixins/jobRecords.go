@@ -15,7 +15,7 @@ import (
 	tempfiles and such!), and several host-specific things,
 	like the current time and the hostname.
 */
-func InitRunRecord(rr *api.RunRecord, frm api.Formula) {
+func InitRunRecord(rr *api.FormulaRunRecord, frm api.Formula) {
 	rr.Guid = guid.New()
 	rr.Time = time.Now().Unix()
 	rr.FormulaID = frm.SetupHash()

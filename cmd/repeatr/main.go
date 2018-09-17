@@ -10,6 +10,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/go-timeless-api/repeatr/fmt"
 	"go.polydawn.net/repeatr/config"
 )
 
@@ -74,24 +75,6 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 		}}
 	}
 	{
-		cmdBatch := app.Command("batch", "WIP -- Execute basted batch of formulas.")
-		argsBatch := struct {
-			BastingPath string
-			Executor    string
-		}{}
-		cmdBatch.Arg("basting", "Path to basting file.").
-			Required().
-			StringVar(&argsBatch.BastingPath)
-		cmdBatch.Flag("executor", "Select an executor system to use").
-			Default("runc").
-			EnumVar(&argsBatch.Executor,
-				"runc", "chroot")
-		bhvs[cmdBatch.FullCommand()] = behavior{&argsBatch, func() error {
-			memoDir := config.GetRepeatrMemoPath()
-			return BatchCmd(ctx, argsBatch.Executor, argsBatch.BastingPath, stdout, stderr, memoDir)
-		}}
-	}
-	{
 		cmdTwerk := app.Command("twerk", "Execute a formula *interactively*.")
 		argsTwerk := struct {
 			FormulaPath string
@@ -126,12 +109,12 @@ func Main(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io
 	panic("unreachable, cli parser must error on unknown commands")
 }
 
-func setupPrinter(format format, stdout, stderr io.Writer) printer {
+func setupPrinter(format format, stdout, stderr io.Writer) repeatrfmt.Printer {
 	switch format {
 	case format_Ansi:
-		return &ansi{stdout: stdout, stderr: stderr}
+		return repeatrfmt.NewAnsiPrinter(stdout, stderr)
 	case format_Json:
-		return jsonPrinter{stdout: stdout}
+		return repeatrfmt.NewJsonPrinter(stdout)
 	default:
 		panic("unreachable")
 	}
