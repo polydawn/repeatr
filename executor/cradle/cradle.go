@@ -2,12 +2,12 @@ package cradle
 
 import (
 	"fmt"
+	"time"
 
 	. "github.com/warpfork/go-errcat"
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
-	"go.polydawn.net/go-timeless-api/util"
 	"go.polydawn.net/rio/fs"
 	"go.polydawn.net/rio/fsOp"
 )
@@ -126,6 +126,6 @@ func DirpropsForUserinfo(userinfo api.FormulaUserinfo) fs.Metadata {
 		Perms: 0755,
 		Uid:   uint32(*userinfo.Uid),
 		Gid:   uint32(*userinfo.Gid),
-		Mtime: apiutil.DefaultMtime,
+		Mtime: time.Unix(api.DefaultTime, 0),
 	}
 }

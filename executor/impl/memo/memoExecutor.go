@@ -30,10 +30,10 @@ var _ repeatr.RunFunc = Executor{}.Run
 func (cfg Executor) Run(
 	ctx context.Context,
 	formula api.Formula,
-	formulaCtx api.FormulaContext,
+	formulaCtx repeatr.FormulaContext,
 	input repeatr.InputControl,
 	mon repeatr.Monitor,
-) (_ *api.RunRecord, err error) {
+) (_ *api.FormulaRunRecord, err error) {
 	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
 
 	// Consider possibility of early return of memoization data.
@@ -43,14 +43,14 @@ func (cfg Executor) Run(
 		return nil, err
 	}
 	if rr != nil {
-		mon.Chan <- repeatr.Event{Log: &repeatr.Event_Log{
+		mon.Send(repeatr.Event_Log{
 			Time:  time.Now(),
 			Level: repeatr.LogInfo,
 			Msg:   "memoized runRecord found for formula setupHash; eliding run",
 			Detail: [][2]string{
 				{"setupHash", string(formula.SetupHash())},
 			},
-		}}
+		})
 		return rr, nil
 	}
 
@@ -60,14 +60,14 @@ func (cfg Executor) Run(
 	// Save memo for next time (unless there was an executor error).
 	if err == nil {
 		if err := saveMemo(formula.SetupHash(), cfg.memoDir, rr); err != nil {
-			mon.Chan <- repeatr.Event{Log: &repeatr.Event_Log{
+			mon.Send(repeatr.Event_Log{
 				Time:  time.Now(),
 				Level: repeatr.LogWarn,
 				Msg:   "saving memoized runRecord failed",
 				Detail: [][2]string{
 					{"err", err.Error()},
 				},
-			}}
+			})
 		}
 	}
 

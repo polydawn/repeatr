@@ -8,6 +8,7 @@ import (
 
 	"go.polydawn.net/go-timeless-api"
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/go-timeless-api/repeatr/fmt"
 	"go.polydawn.net/repeatr/executor/impl/memo"
 	"go.polydawn.net/rio/fs"
 )
@@ -16,7 +17,7 @@ func RunCmd(
 	ctx context.Context,
 	executorName string,
 	formulaPath string,
-	printer printer,
+	printer repeatrfmt.Printer,
 	memoDir *fs.AbsolutePath,
 ) (err error) {
 	defer RequireErrorHasCategory(&err, repeatr.ErrorCategory(""))
@@ -39,10 +40,10 @@ func Run(
 	ctx context.Context,
 	executorName string,
 	formula api.Formula,
-	formulaCtx api.FormulaContext,
-	printer printer,
+	formulaCtx repeatr.FormulaContext,
+	printer repeatrfmt.Printer,
 	memoDir *fs.AbsolutePath,
-) (rr *api.RunRecord, err error) {
+) (rr *api.FormulaRunRecord, err error) {
 	// Demux and initialize executor.
 	executor, err := demuxExecutor(executorName)
 	if err != nil {
@@ -69,12 +70,12 @@ func Run(
 				if !ok {
 					return
 				}
-				switch {
-				case evt.Log != nil:
-					printer.printLog(*evt.Log)
-				case evt.Output != nil:
-					printer.printOutput(*evt.Output)
-				case evt.Result != nil:
+				switch evt2 := evt.(type) {
+				case repeatr.Event_Log:
+					printer.PrintLog(evt2)
+				case repeatr.Event_Output:
+					printer.PrintOutput(evt2)
+				case repeatr.Event_Result:
 					// pass
 				}
 			case <-ctx.Done():
@@ -97,7 +98,7 @@ func Run(
 
 	// If a runrecord was returned always try to print it, even if we have
 	//  an error and thus it may be incomplete.
-	printer.printResult(repeatr.Event_Result{*rr, nil}.SetError(err))
+	printer.PrintResult(repeatr.Event_Result{rr, repeatr.ToError(err)})
 
 	return rr, err
 }

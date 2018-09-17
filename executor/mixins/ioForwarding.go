@@ -30,11 +30,9 @@ type chanWriter struct {
 
 func (chw chanWriter) Write(bs []byte) (int, error) {
 	select {
-	case chw.ch <- repeatr.Event{
-		Output: &repeatr.Event_Output{
-			Time: time.Now(),
-			Msg:  string(bs),
-		},
+	case chw.ch <- repeatr.Event_Output{
+		Time: time.Now(),
+		Msg:  string(bs),
 	}: // nice
 	case <-chw.ctx.Done():
 		return 0, nil

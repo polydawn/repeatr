@@ -10,15 +10,15 @@ import (
 	"go.polydawn.net/go-timeless-api/rio"
 )
 
-func GetCapsForPolicy(policy api.Policy) ([]capability.Cap, error) {
+func GetCapsForPolicy(policy api.FormulaPolicy) ([]capability.Cap, error) {
 	switch policy {
-	case "", api.Policy_Routine:
+	case "", api.FormulaPolicy_Routine:
 		return []capability.Cap{
 			capability.CAP_AUDIT_WRITE,
 			capability.CAP_KILL,
 			capability.CAP_NET_BIND_SERVICE,
 		}, nil
-	case api.Policy_Governor:
+	case api.FormulaPolicy_Governor:
 		return []capability.Cap{
 			capability.CAP_AUDIT_WRITE,
 			capability.CAP_CHOWN,
@@ -34,7 +34,7 @@ func GetCapsForPolicy(policy api.Policy) ([]capability.Cap, error) {
 			capability.CAP_SETPCAP,
 			capability.CAP_SYS_CHROOT,
 		}, nil
-	case api.Policy_Sysad:
+	case api.FormulaPolicy_Sysad:
 		return []capability.Cap{
 			capability.CAP_AUDIT_CONTROL,
 			capability.CAP_AUDIT_READ,

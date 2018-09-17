@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"go.polydawn.net/go-timeless-api/rio"
+	"go.polydawn.net/go-timeless-api/rio/client/exec"
 	"go.polydawn.net/repeatr/executor/tests"
 	. "go.polydawn.net/repeatr/testutil"
-	"go.polydawn.net/rio/client"
 	"go.polydawn.net/rio/fs"
 )
 
@@ -17,8 +17,8 @@ func TestRuncExecutor(t *testing.T) {
 	}
 
 	var (
-		unpackTool rio.UnpackFunc = rioexecclient.UnpackFunc
-		packTool   rio.PackFunc   = rioexecclient.PackFunc
+		unpackTool rio.UnpackFunc = rioclient.UnpackFunc
+		packTool   rio.PackFunc   = rioclient.PackFunc
 	)
 
 	WithTmpdir(func(tmpDir fs.AbsolutePath) {

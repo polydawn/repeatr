@@ -21,10 +21,10 @@ var _ repeatr.RunFunc = Executor{}.Run
 func (cfg Executor) Run(
 	ctx context.Context,
 	formula api.Formula,
-	formulaCtx api.FormulaContext,
+	formulaCtx repeatr.FormulaContext,
 	input repeatr.InputControl,
 	monitor repeatr.Monitor,
-) (*api.RunRecord, error) {
+) (*api.FormulaRunRecord, error) {
 	// Only accept "mock" input and output specifications.
 	//  Since this executor doesn't do any *real* executing, we certainly
 	//  don't want to let it be used improperly accidentically.
@@ -41,7 +41,7 @@ func (cfg Executor) Run(
 
 	// Start filling out record keeping!
 	//  Includes picking a random guid for the job, which we use in all temp files.
-	rr := &api.RunRecord{}
+	rr := &api.FormulaRunRecord{}
 	mixins.InitRunRecord(rr, formula)
 
 	// Fabricate outputs.

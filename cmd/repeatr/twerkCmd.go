@@ -9,6 +9,7 @@ import (
 	. "github.com/warpfork/go-errcat"
 
 	"go.polydawn.net/go-timeless-api/repeatr"
+	"go.polydawn.net/go-timeless-api/repeatr/fmt"
 )
 
 func Twerk(
@@ -43,12 +44,12 @@ func Twerk(
 				if !ok {
 					return
 				}
-				switch {
-				case evt.Log != nil:
-					fmt.Fprintf(stderr, "log: lvl=%s msg=%s\n", evt.Log.Level, evt.Log.Msg)
-				case evt.Output != nil:
-					repeatr.CopyOut(evt, stderr)
-				case evt.Result != nil:
+				switch evt2 := evt.(type) {
+				case repeatr.Event_Log:
+					fmt.Fprintf(stderr, "log: lvl=%s msg=%s\n", evt2.Level, evt2.Msg)
+				case repeatr.Event_Output:
+					stderr.Write([]byte(evt2.Msg))
+				case repeatr.Event_Result:
 					// pass
 				}
 			case <-ctx.Done():
@@ -93,7 +94,7 @@ func Twerk(
 
 	// If a runrecord was returned always try to print it, even if we have
 	//  an error and thus it may be incomplete.
-	printRunRecord(stdout, stderr, rr)
+	repeatrfmt.NewAnsiPrinter(stdout, stderr).PrintResult(repeatr.Event_Result{rr, repeatr.ToError(err)})
 	// Return the executor error.
 	return err
 }
