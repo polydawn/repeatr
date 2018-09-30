@@ -27,25 +27,22 @@ Repeatr is just one part of an ecosystem of software called the Timeless Stack.
 
 The Timeless Stack documentation has its own repo: https://github.com/polydawn/timeless
 
-Much of the documentation is published in html book form: https://polydawn.github.io/
+Much of the documentation is published in html book form: https://repeatr.io/
 
+Other closely related projects include
+[Rio](https://github.com/polydawn/rio) -- this provides the filesystem snapshot and transport for Repeatr --
+and [Stellar](https://github.com/polydawn/stellar) -- which provides bigger-picture pipelining tools to drive around Repeatr in interesting (and more user-friendly) ways.
 
 
 :warning: Alpha Warning :warning:
 ---------------------------------
 
-Repeatr is in Alpha.
+Repeatr is in "version 0.x" ranges.  That means (technically) we are not promising backwards compatablity yet; releases may make API changes.
 
-This branch is the "v0.200" development branch -- it's all the accumulated API changes we've learned we wanted to make after several years.
-Some docs may refer to the older versions; please forgive the mess as we transition.
-
-This "v0.200" branch is nearly up to feature-parity with the previous versions already; we recommend being up here on the new stuff if you can,
-but the "v0.15" releases are still stable and available if you so choose.
-
-Despite being in alpha, we consider the repeatr API fairly stable, and are happy to recommend building with it.
+Despite this warning, we consider the repeatr API fairly stable, and are happy to recommend building with it.
 We made one set of breaking changes out of the last 2.5 years; and we expect this API to last at least twice as long as the previous one.
 
-Binary releases releases are available from the [github releases page](https://github.com/polydawn/repeatr/releases).
+Binary releases are available as a bundle in the [github releases page for the Timeless Stack](https://github.com/polydawn/timeless/releases).
 It's also easy to build from source if you want the absolute latest bleeding-edge features.
 
 
