@@ -82,3 +82,6 @@
 [submodule ".gopath/src/github.com/warpfork/go-wish"]
 	path = .gopath/src/github.com/warpfork/go-wish
 	url = https://github.com/warpfork/go-wish
+[submodule ".gopath/src/golang.org/x/sys"]
+	path = .gopath/src/golang.org/x/sys
+	url = https://go.googlesource.com/sys
